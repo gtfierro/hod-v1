@@ -1,18 +1,36 @@
 package main
 
 import (
-	"./goraptor"
-	"fmt"
 	"os"
+
+	"github.com/op/go-logging"
+	"github.com/urfave/cli"
 )
 
+// logger
+var log *logging.Logger
+
+func init() {
+	log = logging.MustGetLogger("hod")
+	var format = "%{color}%{level} %{shortfile} %{time:Jan 02 15:04:05} %{color:reset} ▶ %{message}"
+	var logBackend = logging.NewLogBackend(os.Stderr, "", 0)
+	logBackendLeveled := logging.AddModuleLevel(logBackend)
+	logging.SetBackend(logBackendLeveled)
+	logging.SetFormatter(logging.MustStringFormatter(format))
+}
+
 func main() {
-	file := os.Args[1]
-	p := turtle.NewParser(file)
-	for _, t := range p.Triples {
-		fmt.Println(t)
+	app := cli.NewApp()
+	app.Name = "hod"
+	app.Version = "0.1"
+	app.Usage = "BRICK database and query engine"
+
+	app.Commands = []cli.Command{
+		{
+			Name:   "benchload",
+			Usage:  "Benchmark loading a turtle file",
+			Action: benchLoad,
+		},
 	}
-	for pfx, ns := range p.Namespaces {
-		fmt.Println(pfx, "=>", ns)
-	}
+	app.Run(os.Args)
 }
