@@ -4,8 +4,8 @@ package turtle
 // #cgo LDFLAGS: -lraptor2
 // #include <stdio.h>
 // #include <raptor2.h>
-// extern void Transform();
-// extern void RegisterNamespace();
+// extern void transform();
+// extern void registerNamespace();
 //
 // static void
 // handle_triple(void* user_data, raptor_statement* triple)
@@ -14,7 +14,7 @@ package turtle
 //   char *subject = raptor_term_to_counted_string(triple->subject, &sub_len);
 //   char *predicate = raptor_term_to_counted_string(triple->predicate, &pred_len);
 //   char *object = raptor_term_to_counted_string(triple->object, &obj_len);
-//   Transform(subject, predicate, object, sub_len, pred_len, obj_len);
+//   transform(subject, predicate, object, sub_len, pred_len, obj_len);
 // }
 // static void
 // handle_namespace(void *user_data, raptor_namespace* namespace)
@@ -22,7 +22,7 @@ package turtle
 //   size_t ns_len, pfx_len;
 //   char *ns = raptor_uri_to_counted_string(raptor_namespace_get_uri(namespace), &ns_len);
 //   const char *pfx = raptor_namespace_get_counted_prefix(namespace, &pfx_len);
-//   RegisterNamespace(ns, pfx, ns_len, pfx_len);
+//   registerNamespace(ns, pfx, ns_len, pfx_len);
 // }
 // void parse_file(char *filename) {
 //   raptor_world *world = NULL;
@@ -53,6 +53,6 @@ package turtle
 // }
 import "C"
 
-func (p *Parser) ParseFile(filename string) {
+func (p *Parser) parseFile(filename string) {
 	C.parse_file(C.CString(filename))
 }

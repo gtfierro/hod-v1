@@ -6,10 +6,17 @@ package turtle
 // #include <raptor2.h>
 import "C"
 import (
-	"fmt"
 	"strings"
+	"sync"
 	"time"
 )
+
+var p *Parser
+
+type Parser struct {
+	dataset *DataSet
+	sync.Mutex
+}
 
 type URI struct {
 	Namespace string
@@ -43,41 +50,38 @@ func MakeTriple(sub, pred, obj string) Triple {
 	}
 }
 
-var p = &Parser{
-	count:      0,
-	Namespaces: make(map[string]string),
+func init() {
+	p = &Parser{}
 }
 
-//export Transform
-func Transform(_subject, _predicate, _object *C.char, sub_len, pred_len, obj_len C.int) {
+//export transform
+func transform(_subject, _predicate, _object *C.char, sub_len, pred_len, obj_len C.int) {
 	subject := C.GoStringN(_subject, sub_len)
 	predicate := C.GoStringN(_predicate, pred_len)
 	object := C.GoStringN(_object, obj_len)
-	p.addTriple(subject, predicate, object)
+	p.dataset.addTriple(subject, predicate, object)
 }
 
-//export RegisterNamespace
-func RegisterNamespace(_namespace, _prefix *C.char, ns_len, pfx_len C.int) {
+//export registerNamespace
+func registerNamespace(_namespace, _prefix *C.char, ns_len, pfx_len C.int) {
 	namespace := C.GoStringN(_namespace, ns_len)
 	prefix := C.GoStringN(_prefix, pfx_len)
-	p.Namespaces[prefix] = namespace
+	p.dataset.addNamespace(prefix, namespace)
 }
 
-type Parser struct {
-	count      int
-	Namespaces map[string]string
-	Triples    []Triple
-}
-
-func NewParser(filename string) *Parser {
-	start := time.Now()
-	p.ParseFile(filename)
-	took := time.Since(start)
-	fmt.Printf("Parsed %d records in %s\n", p.count, took)
+// Return Parser instance
+func GetParser() *Parser {
 	return p
 }
 
-func (p *Parser) addTriple(subject, predicate, object string) {
-	p.count += 1
-	p.Triples = append(p.Triples, MakeTriple(subject, predicate, object))
+// Parses the given filename using the turtle format.
+// Returns the dataset, and the time elapsed in parsing
+func (p *Parser) Parse(filename string) (DataSet, time.Duration) {
+	p.Lock()
+	start := time.Now()
+	p.dataset = newDataSet()
+	p.parseFile(filename)
+	took := time.Since(start)
+	p.Unlock()
+	return *p.dataset, took
 }
