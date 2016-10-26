@@ -1,15 +1,11 @@
 package main
 
 import (
-	"./turtle"
+	"./goraptor"
 	"os"
 )
 
 func main() {
 	file := os.Args[1]
-	f, e := os.Open(file)
-	if e != nil {
-		panic(e)
-	}
-	turtle.Parse(f)
+	turtle.ParseFile(file)
 }
