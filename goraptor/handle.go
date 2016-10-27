@@ -6,6 +6,10 @@ package turtle
 // #include <raptor2.h>
 import "C"
 import (
+	"io"
+	"io/ioutil"
+	"log"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -78,10 +82,33 @@ func GetParser() *Parser {
 // Returns the dataset, and the time elapsed in parsing
 func (p *Parser) Parse(filename string) (DataSet, time.Duration) {
 	p.Lock()
+	defer p.Unlock()
 	start := time.Now()
 	p.dataset = newDataSet()
 	p.parseFile(filename)
 	took := time.Since(start)
-	p.Unlock()
 	return *p.dataset, took
+}
+
+// Writes the contents of the reader to a temporary file, and then reads in that file
+func (p *Parser) ParseReader(r io.Reader) (DataSet, time.Duration, error) {
+	p.Lock()
+	defer p.Unlock()
+	start := time.Now()
+	p.dataset = newDataSet()
+	f, err := ioutil.TempFile(".", "_raptor")
+	if err != nil {
+		return *p.dataset, time.Since(start), err
+	}
+	defer func() {
+		os.Remove(f.Name())
+	}()
+	n, err := io.Copy(f, r)
+	if err != nil {
+		return *p.dataset, time.Since(start), err
+	}
+	log.Printf("Wrote %d bytes", n)
+	p.parseFile(f.Name())
+	took := time.Since(start)
+	return *p.dataset, took, nil
 }
