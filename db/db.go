@@ -2,33 +2,37 @@ package db
 
 import (
 	"encoding/binary"
+	"os"
 	"strings"
+	"time"
 
 	turtle "github.com/gtfierro/hod/goraptor"
+	"github.com/op/go-logging"
 	"github.com/pkg/errors"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/zhangxinngang/murmur"
 )
 
+// logger
+var log *logging.Logger
+
+func init() {
+	log = logging.MustGetLogger("hod")
+	var format = "%{color}%{level} %{shortfile} %{time:Jan 02 15:04:05} %{color:reset} ▶ %{message}"
+	var logBackend = logging.NewLogBackend(os.Stderr, "", 0)
+	logBackendLeveled := logging.AddModuleLevel(logBackend)
+	logging.SetBackend(logBackendLeveled)
+	logging.SetFormatter(logging.MustStringFormatter(format))
+}
+
 type DB struct {
 	// store []byte(entity URI) => primary key
 	entityDB *leveldb.DB
-	pkDB     *leveldb.DB
+	// store primary key => [](entity URI)
+	pkDB *leveldb.DB
+	// graph structure
+	graphDB *leveldb.DB
 }
-
-// type DataSet struct {
-//	Namespaces  map[string]string
-//	Triples     []Triple
-// }
-// type Triple struct {
-// 	Subject   URI
-// 	Predicate URI
-// 	Object    URI
-// }
-// type URI struct {
-// 	Namespace string
-// 	Value     string
-// }
 
 func NewDB(path string) (*DB, error) {
 	path = strings.TrimSuffix(path, "/")
@@ -46,9 +50,16 @@ func NewDB(path string) (*DB, error) {
 		return nil, errors.Wrapf(err, "Could not open pkDB file %s", pkDBPath)
 	}
 
+	graphDBPath := path + "/db-graph"
+	graphDB, err := leveldb.OpenFile(graphDBPath, nil)
+	if err != nil {
+		return nil, errors.Wrapf(err, "Could not open graphDB file %s", graphDBPath)
+	}
+
 	db := &DB{
 		entityDB: entityDB,
 		pkDB:     pkDB,
+		graphDB:  graphDB,
 	}
 
 	return db, nil
@@ -108,6 +119,7 @@ func (db *DB) insertEntity(entity turtle.URI, hashdest []byte, enttx, pktx *leve
 }
 
 func (db *DB) LoadDataset(dataset turtle.DataSet) error {
+	start := time.Now()
 	// start transactions
 	enttx, err := db.entityDB.OpenTransaction()
 	if err != nil {
@@ -118,6 +130,7 @@ func (db *DB) LoadDataset(dataset turtle.DataSet) error {
 		return errors.Wrap(err, "Could not open transaction on pk dataset")
 	}
 
+	// load triples and primary keys
 	var hashdest = make([]byte, 4)
 	for _, triple := range dataset.Triples {
 		if err := db.insertEntity(triple.Subject, hashdest, enttx, pktx); err != nil {
@@ -129,15 +142,51 @@ func (db *DB) LoadDataset(dataset turtle.DataSet) error {
 		if err := db.insertEntity(triple.Object, hashdest, enttx, pktx); err != nil {
 			return err
 		}
-
 	}
 
+	// finish those transactions
 	if err := enttx.Commit(); err != nil {
 		return errors.Wrap(err, "Could not commit transaction")
 	}
 	if err := pktx.Commit(); err != nil {
 		return errors.Wrap(err, "Could not commit transaction")
 	}
+	log.Infof("Built lookup tables in %s", time.Since(start))
+
+	// TODO: build graph
+	start = time.Now()
+	if err := db.buildGraph(dataset); err != nil {
+		return errors.Wrap(err, "Could not build graph")
+	}
+	log.Infof("Built graph in %s", time.Since(start))
 
 	return nil
+}
+
+// returns the uint32 hash of the given URI (this is adjusted for uniqueness)
+func (db *DB) GetHash(entity turtle.URI) ([4]byte, error) {
+	var hash [4]byte
+	val, err := db.entityDB.Get(entity.Bytes(), nil)
+	if err != nil {
+		return [4]byte{}, err
+	}
+	copy(hash[:], val)
+	return hash, nil
+}
+
+func (db *DB) GetEntity(uri turtle.URI) (*Entity, error) {
+	var entity = NewEntity()
+	hash, err := db.GetHash(uri)
+	if err != nil {
+		return nil, err
+	}
+	bytes, err := db.graphDB.Get(hash[:], nil)
+	if err != nil {
+		return nil, err
+	}
+	_, err = entity.UnmarshalMsg(bytes)
+	if err != nil {
+		return nil, err
+	}
+	return entity, nil
 }

@@ -17,7 +17,7 @@ func benchLoad(c *cli.Context) error {
 	p := turtle.GetParser()
 	ds, duration := p.Parse(filename)
 	rate := float64((float64(ds.NumTriples()) / float64(duration.Nanoseconds())) * 1e9)
-	fmt.Printf("Loaded %d triples, %d namespaces in %s (%f/sec)\n", ds.NumTriples(), ds.NumNamespaces(), duration, rate)
+	fmt.Printf("Loaded %d triples, %d namespaces in %s (%.0f/sec)\n", ds.NumTriples(), ds.NumNamespaces(), duration, rate)
 	return nil
 }
 
@@ -35,7 +35,7 @@ func load(c *cli.Context) error {
 	p := turtle.GetParser()
 	ds, duration := p.Parse(filename)
 	rate := float64((float64(ds.NumTriples()) / float64(duration.Nanoseconds())) * 1e9)
-	fmt.Printf("Loaded %d triples, %d namespaces in %s (%f/sec)\n", ds.NumTriples(), ds.NumNamespaces(), duration, rate)
+	log.Infof("Loaded %d triples, %d namespaces in %s (%.0f/sec)", ds.NumTriples(), ds.NumNamespaces(), duration, rate)
 
 	err = db.LoadDataset(ds)
 	if err != nil {
