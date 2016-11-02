@@ -27,6 +27,14 @@ type URI struct {
 	Value     string
 }
 
+func (u URI) String() string {
+	return u.Namespace + "#" + u.Value
+}
+
+func (u URI) Bytes() []byte {
+	return []byte(u.Namespace + "#" + u.Value)
+}
+
 func ParseURI(uri string) URI {
 	uri = strings.TrimLeft(uri, "<")
 	uri = strings.TrimRight(uri, ">")
