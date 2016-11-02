@@ -31,6 +31,18 @@ func main() {
 			Usage:  "Benchmark loading a turtle file",
 			Action: benchLoad,
 		},
+		{
+			Name:   "load",
+			Usage:  "Load dataset into hoddb",
+			Action: load,
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:  "path, p",
+					Value: ".",
+					Usage: "Path where the database files will be placed",
+				},
+			},
+		},
 	}
 	app.Run(os.Args)
 }
