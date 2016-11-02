@@ -15,6 +15,7 @@ func benchLoad(c *cli.Context) error {
 	filename := c.Args().Get(0)
 	p := turtle.GetParser()
 	ds, duration := p.Parse(filename)
-	fmt.Printf("Loaded %d triples, %d namespaces in %s\n", ds.NumTriples(), ds.NumNamespaces(), duration)
+	rate := float64((float64(ds.NumTriples()) / float64(duration.Nanoseconds())) * 1e9)
+	fmt.Printf("Loaded %d triples, %d namespaces in %s (%f/sec)\n", ds.NumTriples(), ds.NumNamespaces(), duration, rate)
 	return nil
 }
