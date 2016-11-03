@@ -39,6 +39,7 @@ func ParseURI(uri string) URI {
 	uri = strings.TrimLeft(uri, "<")
 	uri = strings.TrimRight(uri, ">")
 	parts := strings.Split(uri, "#")
+	parts[0] = strings.TrimRight(parts[0], "#")
 	if len(parts) != 2 {
 		return URI{Value: uri}
 	}

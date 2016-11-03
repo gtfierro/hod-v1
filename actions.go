@@ -45,3 +45,30 @@ func load(c *cli.Context) error {
 
 	return nil
 }
+
+func dump(c *cli.Context) error {
+	if c.NArg() == 0 {
+		return errors.New("Need to specify a turtle file to load")
+	}
+	filename := c.Args().Get(0)
+	p := turtle.GetParser()
+	ds, _ := p.Parse(filename)
+	for _, triple := range ds.Triples {
+		var s = triple.Subject.Value
+		var p = triple.Predicate.Value
+		var o = triple.Object.Value
+		for pfx, full := range ds.Namespaces {
+			if triple.Subject.Namespace == full {
+				s = pfx + ":" + s
+			}
+			if triple.Predicate.Namespace == full {
+				p = pfx + ":" + p
+			}
+			if triple.Object.Namespace == full {
+				o = pfx + ":" + o
+			}
+		}
+		fmt.Printf("%s\t%s\t%s\n", s, p, o)
+	}
+	return nil
+}

@@ -32,6 +32,11 @@ func main() {
 			Action: benchLoad,
 		},
 		{
+			Name:   "dump",
+			Usage:  "Dump contents of turtle file",
+			Action: dump,
+		},
+		{
 			Name:   "load",
 			Usage:  "Load dataset into hoddb",
 			Action: load,

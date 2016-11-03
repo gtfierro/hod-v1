@@ -1,5 +1,9 @@
 package turtle
 
+import (
+	"strings"
+)
+
 type DataSet struct {
 	triplecount int
 	nscount     int
@@ -23,6 +27,7 @@ func (d *DataSet) addTriple(subject, predicate, object string) {
 
 func (d *DataSet) addNamespace(prefix, namespace string) {
 	d.nscount += 1
+	namespace = strings.TrimRight(namespace, "#")
 	d.Namespaces[prefix] = namespace
 }
 
