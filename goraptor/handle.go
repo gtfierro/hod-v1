@@ -28,7 +28,10 @@ type URI struct {
 }
 
 func (u URI) String() string {
-	return u.Namespace + "#" + u.Value
+	if u.Namespace != "" {
+		return u.Namespace + "#" + u.Value
+	}
+	return u.Value
 }
 
 func (u URI) Bytes() []byte {
