@@ -135,10 +135,11 @@ func (db *DB) followPredicateChainFromEnd(entityHash [4]byte, path []PathPattern
 			panic(fmt.Sprintf("Cannot find predicate %s", pattern.Predicate))
 		}
 		// want to find all subjects that have pattern.Predicate relationship to us
-		for idx, obj := range pe.Objects {
-			if obj == entityHash {
-				subjectHashes = append(subjectHashes, pe.Subjects[idx])
-			}
+		subjects := pe.Objects[string(entityHash[:])]
+		for subHash := range subjects {
+			var hash [4]byte
+			copy(hash[:], []byte(subHash))
+			subjectHashes = append(subjectHashes, hash)
 		}
 	}
 	return subjectHashes

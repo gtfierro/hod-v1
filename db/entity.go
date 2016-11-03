@@ -43,29 +43,30 @@ func (e *Entity) AddEdge(predicate, endpoint [4]byte) {
 type PredicateEntity struct {
 	PK [4]byte `msg:"p"`
 	// note: we have to use string keys to get msgp to work
-	Subjects [][4]byte `msg:"s"`
-	Objects  [][4]byte `msg:"o"`
+	Subjects map[string]map[string]uint32 `msg:"s"`
+	Objects  map[string]map[string]uint32 `msg:"o"`
 }
 
 func NewPredicateEntity() *PredicateEntity {
 	return &PredicateEntity{
-		Subjects: [][4]byte{},
-		Objects:  [][4]byte{},
+		Subjects: make(map[string]map[string]uint32),
+		Objects:  make(map[string]map[string]uint32),
 	}
 }
 
 func (e *PredicateEntity) AddSubjectObject(subject, object [4]byte) {
-	for _, ent := range e.Subjects {
-		if ent == subject {
-			goto object
-		}
+	// if we have the subject
+	if ms, found := e.Subjects[string(subject[:])]; found {
+		// find the map of related objects
+		ms[string(object[:])] = 0
+	} else {
+		e.Subjects[string(subject[:])] = map[string]uint32{string(object[:]): 0}
 	}
-	e.Subjects = append(e.Subjects, subject)
-object:
-	for _, ent := range e.Objects {
-		if ent == object {
-			return
-		}
+
+	if ms, found := e.Objects[string(object[:])]; found {
+		// find the map of related objects
+		ms[string(subject[:])] = 0
+	} else {
+		e.Objects[string(object[:])] = map[string]uint32{string(subject[:]): 0}
 	}
-	e.Objects = append(e.Objects, object)
 }

@@ -2,6 +2,7 @@ package db
 
 import (
 	"encoding/binary"
+	"fmt"
 	"os"
 	"strings"
 	"time"
@@ -105,7 +106,10 @@ func (db *DB) hashURI(u turtle.URI, dest []byte, salt uint32) {
 func (db *DB) insertEntity(entity turtle.URI, hashdest []byte, enttx, pktx *leveldb.Transaction) error {
 	// check if we've inserted Subject already
 	if exists, err := enttx.Has(entity.Bytes(), nil); err == nil && exists {
-		return nil
+		// populate hash anyway
+		hash, err := enttx.Get(entity.Bytes(), nil)
+		copy(hashdest, hash[:])
+		return err
 	} else if err != nil {
 		return errors.Wrapf(err, "Error checking db membership for %s", entity.String())
 	}
@@ -153,6 +157,8 @@ func (db *DB) loadPredicateEntity(predicate turtle.URI, _predicateHash, _subject
 
 	pred.AddSubjectObject(subjectHash, objectHash)
 	db.predIndex[predicate] = pred
+	//log.Debugf("adding %x %x", _subjectHash, _objectHash)
+	//log.Debugf("new index %s => %+v", predicate, pred)
 
 	//predtx.Put
 
@@ -281,6 +287,10 @@ func (db *DB) LoadDataset(dataset turtle.DataSet) error {
 	}
 	log.Infof("Built graph in %s", time.Since(start))
 
+	for pfx, uri := range db.namespaces {
+		fmt.Printf("%s => %s\n", pfx, uri)
+	}
+
 	return nil
 }
 
@@ -318,6 +328,14 @@ func (db *DB) GetURI(hash [4]byte) (turtle.URI, error) {
 		return turtle.URI{}, err
 	}
 	return turtle.ParseURI(string(val)), nil
+}
+
+func (db *DB) MustGetURI(hash [4]byte) turtle.URI {
+	val, err := db.pkDB.Get(hash[:], nil)
+	if err != nil {
+		panic(err)
+	}
+	return turtle.ParseURI(string(val))
 }
 
 func (db *DB) GetEntity(uri turtle.URI) (*Entity, error) {
