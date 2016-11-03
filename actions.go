@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/gtfierro/hod/db"
+	hod "github.com/gtfierro/hod/db"
 	"github.com/gtfierro/hod/goraptor"
 
 	"github.com/pkg/errors"
@@ -35,7 +35,7 @@ func load(c *cli.Context) error {
 	frame := c.String("frame")
 	relships, _ := p.Parse(frame)
 
-	db, err := db.NewDB(path)
+	db, err := hod.NewDB(path)
 	if err != nil {
 		return err
 	}
@@ -45,6 +45,23 @@ func load(c *cli.Context) error {
 		return err
 	}
 	fmt.Println("Successfully loaded dataset!")
+
+	// try to run a query
+	q := &hod.Query{
+		Select: hod.SelectClause{Variables: []string{"?zone"}},
+		Where: []hod.Filter{
+			{
+				Subject: "?zone",
+				Path: []hod.PathPattern{
+					{
+						Predicate: "rdf:type",
+					},
+				},
+				Object: "brick:HVAC_Zone",
+			},
+		},
+	}
+	db.RunQuery(q)
 
 	return nil
 }
