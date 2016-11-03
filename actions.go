@@ -47,17 +47,17 @@ func load(c *cli.Context) error {
 	fmt.Println("Successfully loaded dataset!")
 
 	// try to run a query
-	q := &hod.Query{
+	q := hod.Query{
 		Select: hod.SelectClause{Variables: []string{"?zone"}},
 		Where: []hod.Filter{
 			{
-				Subject: "?zone",
+				Subject: turtle.URI{Value: "?zone"},
 				Path: []hod.PathPattern{
 					{
-						Predicate: "rdf:type",
+						Predicate: turtle.URI{"rdf", "type"},
 					},
 				},
-				Object: "brick:HVAC_Zone",
+				Object: turtle.URI{"brick", "HVAC_Zone"},
 			},
 		},
 	}
