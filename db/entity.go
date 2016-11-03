@@ -39,3 +39,33 @@ func (e *Entity) AddEdge(predicate, endpoint [4]byte) {
 	e.Edges[string(predicate[:])] = edgeList
 	return
 }
+
+type PredicateEntity struct {
+	PK [4]byte `msg:"p"`
+	// note: we have to use string keys to get msgp to work
+	Subjects [][4]byte `msg:"s"`
+	Objects  [][4]byte `msg:"o"`
+}
+
+func NewPredicateEntity() *PredicateEntity {
+	return &PredicateEntity{
+		Subjects: [][4]byte{},
+		Objects:  [][4]byte{},
+	}
+}
+
+func (e *PredicateEntity) AddSubjectObject(subject, object [4]byte) {
+	for _, ent := range e.Subjects {
+		if ent == subject {
+			goto object
+		}
+	}
+	e.Subjects = append(e.Subjects, subject)
+object:
+	for _, ent := range e.Objects {
+		if ent == object {
+			return
+		}
+	}
+	e.Objects = append(e.Objects, object)
+}
