@@ -27,16 +27,19 @@ func load(c *cli.Context) error {
 	}
 	filename := c.Args().Get(0)
 	path := c.String("path")
-	db, err := db.NewDB(path)
-	if err != nil {
-		return err
-	}
-
 	p := turtle.GetParser()
 	ds, duration := p.Parse(filename)
 	rate := float64((float64(ds.NumTriples()) / float64(duration.Nanoseconds())) * 1e9)
 	log.Infof("Loaded %d triples, %d namespaces in %s (%.0f/sec)", ds.NumTriples(), ds.NumNamespaces(), duration, rate)
 
+	frame := c.String("frame")
+	relships, _ := p.Parse(frame)
+
+	db, err := db.NewDB(path)
+	if err != nil {
+		return err
+	}
+	err = db.LoadRelationships(relships)
 	err = db.LoadDataset(ds)
 	if err != nil {
 		return err

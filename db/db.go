@@ -32,6 +32,8 @@ type DB struct {
 	pkDB *leveldb.DB
 	// graph structure
 	graphDB *leveldb.DB
+	// store relationships and their inverses
+	relationships map[turtle.URI]turtle.URI
 }
 
 func NewDB(path string) (*DB, error) {
@@ -57,9 +59,10 @@ func NewDB(path string) (*DB, error) {
 	}
 
 	db := &DB{
-		entityDB: entityDB,
-		pkDB:     pkDB,
-		graphDB:  graphDB,
+		entityDB:      entityDB,
+		pkDB:          pkDB,
+		graphDB:       graphDB,
+		relationships: make(map[turtle.URI]turtle.URI),
 	}
 
 	return db, nil
@@ -115,6 +118,46 @@ func (db *DB) insertEntity(entity turtle.URI, hashdest []byte, enttx, pktx *leve
 	if err := pktx.Put(hashdest, entity.Bytes(), nil); err != nil {
 		return errors.Wrapf(err, "Error inserting pk %s", hashdest)
 	}
+	return nil
+}
+
+func (db *DB) LoadRelationships(dataset turtle.DataSet) error {
+	// iterate through dataset, and pull out all that have a "rdf:type" of "owl:ObjectProperty"
+	// then we want to find the mapping that has "owl:inverseOf"
+	var relationships = make(map[turtle.URI]struct{})
+
+	rdf_namespace, found := dataset.Namespaces["rdf"]
+	if !found {
+		return errors.New("Relationships has no rdf namespace")
+	}
+	owl_namespace, found := dataset.Namespaces["owl"]
+	if !found {
+		return errors.New("Relationships has no owl namespace")
+	}
+
+	for _, triple := range dataset.Triples {
+		if triple.Predicate.Namespace == rdf_namespace &&
+			triple.Predicate.Value == "type" &&
+			triple.Object.Namespace == owl_namespace &&
+			triple.Object.Value == "ObjectProperty" {
+			relationships[triple.Subject] = struct{}{}
+		}
+	}
+
+	for _, triple := range dataset.Triples {
+		if triple.Predicate.Namespace == owl_namespace && triple.Predicate.Value == "inverseOf" {
+			// check that the subject/object of the inverseOf relationships are both actually relationships
+			if _, found := relationships[triple.Subject]; !found {
+				continue
+			}
+			if _, found := relationships[triple.Object]; !found {
+				continue
+			}
+			db.relationships[triple.Subject] = triple.Object
+			db.relationships[triple.Object] = triple.Subject
+		}
+	}
+
 	return nil
 }
 

@@ -46,6 +46,11 @@ func main() {
 					Value: ".",
 					Usage: "Path where the database files will be placed",
 				},
+				cli.StringFlag{
+					Name:  "frame, f",
+					Value: "BrickFrame.ttl",
+					Usage: "turtle file of brick relationships",
+				},
 			},
 		},
 	}

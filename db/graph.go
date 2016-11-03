@@ -89,11 +89,17 @@ func (db *DB) buildGraph(dataset turtle.DataSet) error {
 			return err
 		}
 
+		// add the forward edge
 		predHash := predicates[triple.Predicate.String()]
 		subject.AddEdge(predHash, object.PK)
-		//TODO: get reverse edge
-		//object.AddEdge(reversePredHash, subjHash)
-		//db.graphDB.Put(subjHash[:],
+
+		// find the inverse edge
+		reverseEdge, found := db.relationships[triple.Predicate]
+		// if an inverse edge exists, then we add it to the object
+		if found {
+			reverseEdgeHash := predicates[reverseEdge.String()]
+			object.AddEdge(reverseEdgeHash, subject.PK)
+		}
 
 		// re-put in graph
 		bytes, err := subject.MarshalMsg(nil)
@@ -101,6 +107,14 @@ func (db *DB) buildGraph(dataset turtle.DataSet) error {
 			return err
 		}
 		if err := db.graphDB.Put(subject.PK[:], bytes, nil); err != nil {
+			return err
+		}
+
+		bytes, err = object.MarshalMsg(nil)
+		if err != nil {
+			return err
+		}
+		if err := db.graphDB.Put(object.PK[:], bytes, nil); err != nil {
 			return err
 		}
 
