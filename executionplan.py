@@ -6,7 +6,7 @@ def build_terms(query):
     for t in terms:
         ret.append(Term(map(lambda x: x.strip(), t.split(" "))))
     return ret
-        
+
 
 select = ["?vav"]
 terms = [["?zone","rdf:type","brick:HVAC_Zone"],
@@ -36,17 +36,40 @@ class Term:
         v.append(self.predicate) if self.predicateIsVar else None
         v.append(self.object) if self.objectIsVar else None
         return v
+    def resolvedVars(self):
+        v = []
+        v.append(self.subject) if self.subjectIsVar and self.subjectIsResolved else None
+        v.append(self.predicate) if self.predicateIsVar and self.predicateIsResolved else None
+        v.append(self.object) if self.objectIsVar and self.objectIsResolved else None
+        return v
+
     def getParentVariables(self):
-        v = self.variables()
+        v = self.resolvedVars()
+        #print self,'resolved',v
         for p in self.parents:
-            print self, "get par",p
             v.extend(p.getParentVariables())
         return v
     def resolveAll(self):
         self.subjectIsResolved = True
         self.objectIsResolved = True
         self.predicateIsResolved = True
-        
+    def resolveDown(self, vars):
+        for v in self.variables():
+            if v in vars:
+                if v == self.subject:
+                    self.subjectIsResolved = True
+                elif v == self.predicate:
+                    self.predicateIsResolved = True
+                elif v == self.object:
+                    self.objectIsResolved = True
+        print self,'has vars',self.numberVars()
+        if self.numberVars() > 1: return
+        self.resolveAll()
+        myvars = self.getParentVariables()
+        for c in self.children:
+            c.resolveDown(myvars)
+
+
     def dependsOn(self, term):
         myvars = self.variables()
         depends = False
@@ -85,7 +108,7 @@ class Term:
         print "  "*indent + str(self)
         for child in self.children:
             child.dump(indent+1)
-        
+
     def __repr__(self):
         return """<%s %s %s>""" % (self.subject, self.predicate, self.object)
 
@@ -96,7 +119,7 @@ def run_terms(terms):
     print terms
     for t in terms:
         if t.numberVars() == 1:
-            t.resolveAll()        
+            t.resolveAll()
             defining_terms.append(t)
 
     # now we find the defining terms that depend on these
@@ -105,7 +128,7 @@ def run_terms(terms):
         finished = True
         for idx, t in enumerate(terms):
             if t.numberVars() == 0: continue
-            if t.numberVars() < 2: 
+            if t.numberVars() < 2:
                 t.resolveAll()
                 terms[idx] = t
                 continue
@@ -119,7 +142,7 @@ def run_terms(terms):
                     print 'resolved?',t,dt,t.numberVars()
                     terms[idx] = t
                     if t not in dt.children:
-                        
+
                         dt.children.append(t)
                         terms[idx2] = dt
 
@@ -128,6 +151,44 @@ def run_terms(terms):
     #for t in defining_terms:
     #    t.dump()
     return
+
+#def expand(roots):
+#    f = [
+
+def run_terms2(terms):
+    # first find all the 1-var terms
+    i = 0
+    roots = []
+    while len(terms) > 0:
+        if i > 2: break
+        i += 1
+        print '-'*10,i,'-'*10
+        for t in terms:
+            # TODO: only add if we are not already in the graph
+            if t.numberVars() < 2:
+                roots.append(t)
+        terms = [t for t in terms if t not in roots]
+        print 'roots',roots
+        print 'terms',terms
+
+        for t in terms:
+            print t.numberVars()
+
+        # attach children to 1-var terms if they share a variable
+        for t in terms:
+            for r in roots:
+                if t.dependsOn(r):
+                    r.children.append(t)
+                    break
+
+        # propagate vars
+        for r in roots:
+            r.resolveDown([])
+        for t in terms:
+            print t.numberVars()
+
+        for r in roots:
+            r.dump()
 
 
 #q1 = """
@@ -167,7 +228,7 @@ q1 = """
     ?equipment bf:feeds+ ?zone .
     ?zone bf:hasPart ?room .
 """
-run_terms(build_terms(q1))
+#run_terms2(build_terms(q1))
 #print '-'*30
 #
 #q1 = """
@@ -180,13 +241,13 @@ run_terms(build_terms(q1))
 #run_terms(build_terms(q1))
 #print '-'*30
 
-#q1 = """
-#    ?a bf:feeds ?b .
-#    ?b bf:feeds ?c .
-#    ?c bf:feeds ?d .
-#    ?d bf:feeds ?d .
-#    ?e bf:feeds ?loc .
-#    ?loc bf:hasPoint brick:Power_Meter .
-#"""
-#run_terms(build_terms(q1))
-#
+q1 = """
+    ?a bf:feeds ?b .
+    ?b bf:feeds ?c .
+    ?c bf:feeds ?d .
+    ?d bf:feeds ?e .
+    ?e bf:feeds ?loc .
+    ?loc bf:hasPoint brick:Power_Meter .
+"""
+run_terms2(build_terms(q1))
+
