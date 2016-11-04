@@ -47,6 +47,9 @@ func load(c *cli.Context) error {
 	fmt.Println("Successfully loaded dataset!")
 
 	// try to run a query
+	// 1. ?zone rdf:type brick:HVAC_Zone
+	// 2. ?sensor rdf:type/rdfs:subClassOf* brick:Zone_Temperature_Sensor
+	// 3. ?vav bf:feeds+ ?zone
 	q := hod.Query{
 		Select: hod.SelectClause{Variables: []string{"?zone"}},
 		Where: []hod.Filter{
@@ -58,6 +61,15 @@ func load(c *cli.Context) error {
 					},
 				},
 				Object: turtle.URI{"brick", "HVAC_Zone"},
+			},
+			{
+				Subject: turtle.URI{Value: "?vav"},
+				Path: []hod.PathPattern{
+					{
+						Predicate: turtle.URI{"bf", "feeds"},
+					},
+				},
+				Object: turtle.URI{Value: "?zone"},
 			},
 		},
 	}

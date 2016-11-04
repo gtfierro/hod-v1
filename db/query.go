@@ -67,38 +67,33 @@ func (db *DB) RunQuery(q Query) {
 	}
 }
 
+// We need an execution plan for the list of filters contained in a query. How do we do this?
+func (db *DB) formExecutionPlan(list []Filter) {
+}
+
 func (db *DB) runFilter(f Filter) error {
 	var (
 		subjectIsVariable = strings.HasPrefix(f.Subject.Value, "?")
 		objectIsVariable  = strings.HasPrefix(f.Object.Value, "?")
 	)
-	fmt.Println(f)
-	// if the subject is a variable, then we need to anchor to something else,
-	// so we skip this part. If the subject is *not* a variable, then we pull all
-	// the triples it starts in (or create a function to do this)
-	if !subjectIsVariable {
-		entity, err := db.GetEntity(f.Subject)
-		if err != nil {
-			return err
-		}
-		fmt.Printf("%+v\n", entity)
-	}
-	if !objectIsVariable {
+	// right now this only handles the first path predicate
+	if !subjectIsVariable && !objectIsVariable {
+		log.Noticef("S/O anchored: S: %s, O: %s", f.Subject.String(), f.Object.String())
+		results := db.getSubjectObjectFromPred(f.Path[0])
+		log.Infof("Got %d results", len(results))
+	} else if !subjectIsVariable {
+		log.Noticef("S anchored: S: %s, O: %s", f.Subject.String(), f.Object.String())
+	} else if !objectIsVariable {
+		log.Noticef("O anchored: S: %s, O: %s", f.Subject.String(), f.Object.String())
 		entity, err := db.GetEntity(f.Object)
 		if err != nil {
 			return err
 		}
-		fmt.Printf("%+v\n", entity)
-		results := db.followPredicateChainFromEnd(entity.PK, f.Path)
-		for _, res := range results {
-			uri, err := db.GetURI(res)
-			if err != nil {
-				return err
-			}
-			fmt.Println("=>", uri)
-		}
+		results := db.getSubjectFromPredObject(entity.PK, f.Path[0])
+		log.Infof("Got %d results", len(results))
+	} else {
+		log.Noticef("not anchored!: S: %s, O: %s", f.Subject.String(), f.Object.String())
 	}
-
 	return nil
 }
 
@@ -129,18 +124,58 @@ func (db *DB) followPredicateChainFromEnd(entityHash [4]byte, path []PathPattern
 	// now we consult the predicate index
 	var subjectHashes [][4]byte
 	// TODO: this is wrong because it doesn't traverse from the last results of subjects
+	// TODO NEXT: follow a path of predicates
 	for _, pattern := range path {
-		pe, found := db.predIndex[pattern.Predicate]
-		if !found {
-			panic(fmt.Sprintf("Cannot find predicate %s", pattern.Predicate))
-		}
-		// want to find all subjects that have pattern.Predicate relationship to us
-		subjects := pe.Objects[string(entityHash[:])]
-		for subHash := range subjects {
-			var hash [4]byte
-			copy(hash[:], []byte(subHash))
-			subjectHashes = append(subjectHashes, hash)
-		}
+		subjectHashes = append(subjectHashes, db.getSubjectFromPredObject(entityHash, pattern)...)
 	}
 	return subjectHashes
 }
+
+// Given object and predicate, get all subjects
+func (db *DB) getSubjectFromPredObject(objectHash [4]byte, pattern PathPattern) [][4]byte {
+	// get the object, look in its "in" edges for the path pattern
+	objEntity, err := db.GetEntityFromHash(objectHash)
+	if err != nil {
+		panic(err)
+	}
+	// get predicate hash
+	predHash, err := db.GetHash(pattern.Predicate)
+	if err != nil {
+		panic(err)
+	}
+	return objEntity.InEdges[string(predHash[:])]
+}
+
+// Given object and predicate, get all subjects
+func (db *DB) getObjectFromSubjectPred(subjectHash [4]byte, pattern PathPattern) [][4]byte {
+	// get the object, look in its "out" edges for the path pattern
+	subEntity, err := db.GetEntityFromHash(subjectHash)
+	if err != nil {
+		panic(err)
+	}
+	// get predicate hash
+	predHash, err := db.GetHash(pattern.Predicate)
+	if err != nil {
+		panic(err)
+	}
+	return subEntity.InEdges[string(predHash[:])]
+}
+
+// Given a predicate, it returns pairs of (subject, object) that are connected by that relationship
+func (db *DB) getSubjectObjectFromPred(pattern PathPattern) (soPair [][][4]byte) {
+	pe, found := db.predIndex[pattern.Predicate]
+	if !found {
+		panic(fmt.Sprintf("Cannot find predicate %s", pattern.Predicate))
+	}
+	for subject, objectMap := range pe.Subjects {
+		for object := range objectMap {
+			var sh, oh [4]byte
+			copy(sh[:], subject)
+			copy(oh[:], object)
+			soPair = append(soPair, [][4]byte{sh, oh})
+		}
+	}
+	return soPair
+}
+
+// Given subject and predicate, get all objects

@@ -354,3 +354,13 @@ func (db *DB) GetEntity(uri turtle.URI) (*Entity, error) {
 	}
 	return entity, nil
 }
+
+func (db *DB) GetEntityFromHash(hash [4]byte) (*Entity, error) {
+	bytes, err := db.graphDB.Get(hash[:], nil)
+	if err != nil {
+		return nil, err
+	}
+	ent := NewEntity()
+	_, err = ent.UnmarshalMsg(bytes)
+	return ent, err
+}

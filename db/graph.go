@@ -39,10 +39,8 @@ func (db *DB) buildGraph(dataset turtle.DataSet) error {
 		// check if entity exists
 		if exists, err := db.graphDB.Has(subjHash[:], nil); err == nil && !exists {
 			// if not exists, create a new entity and insert it
-			subEnt := &Entity{
-				PK:    subjHash,
-				Edges: make(map[string][][4]byte),
-			}
+			subEnt := NewEntity()
+			subEnt.PK = subjHash
 			bytes, err := subEnt.MarshalMsg(nil)
 			if err != nil {
 				return err
@@ -62,10 +60,8 @@ func (db *DB) buildGraph(dataset turtle.DataSet) error {
 		// check if entity exists
 		if exists, err := db.graphDB.Has(objHash[:], nil); err == nil && !exists {
 			// if not exists, create a new entity and insert it
-			objEnt := &Entity{
-				PK:    objHash,
-				Edges: make(map[string][][4]byte),
-			}
+			objEnt := NewEntity()
+			objEnt.PK = objHash
 			bytes, err := objEnt.MarshalMsg(nil)
 			if err != nil {
 				return err
@@ -91,14 +87,16 @@ func (db *DB) buildGraph(dataset turtle.DataSet) error {
 
 		// add the forward edge
 		predHash := predicates[triple.Predicate.String()]
-		subject.AddEdge(predHash, object.PK)
+		subject.AddOutEdge(predHash, object.PK)
+		object.AddInEdge(predHash, subject.PK)
 
 		// find the inverse edge
 		reverseEdge, found := db.relationships[triple.Predicate]
 		// if an inverse edge exists, then we add it to the object
 		if found {
 			reverseEdgeHash := predicates[reverseEdge.String()]
-			object.AddEdge(reverseEdgeHash, subject.PK)
+			object.AddOutEdge(reverseEdgeHash, subject.PK)
+			subject.AddInEdge(reverseEdgeHash, object.PK)
 		}
 
 		// re-put in graph
