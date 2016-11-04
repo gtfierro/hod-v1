@@ -6,25 +6,29 @@ import ()
 type Entity struct {
 	PK [4]byte `msg:"p"`
 	// note: we have to use string keys to get msgp to work
-	Edges map[string][][4]byte `msg:"e"`
+	InEdges  map[string][][4]byte `msg:"ein"`
+	OutEdges map[string][][4]byte `msg:"eout"`
 }
 
+// TODO: distinguish between "in" edges (edges for which I am object)
+// and "out" edges (edges for which I am subject)
 func NewEntity() *Entity {
 	return &Entity{
-		Edges: make(map[string][][4]byte),
+		InEdges:  make(map[string][][4]byte),
+		OutEdges: make(map[string][][4]byte),
 	}
 }
 
-func (e *Entity) AddEdge(predicate, endpoint [4]byte) {
+func (e *Entity) AddInEdge(predicate, endpoint [4]byte) {
 	var (
 		edgeList [][4]byte
 		found    bool
 	)
 	// check if we already have an edgelist for the given predicate
-	if edgeList, found = e.Edges[string(predicate[:])]; !found {
+	if edgeList, found = e.InEdges[string(predicate[:])]; !found {
 		// if we don't, then create a new one and put the endpoint in it
 		edgeList = [][4]byte{endpoint}
-		e.Edges[string(predicate[:])] = edgeList
+		e.InEdges[string(predicate[:])] = edgeList
 		return
 	}
 	// else, we check if our endpoint is already in the edge list
@@ -36,7 +40,32 @@ func (e *Entity) AddEdge(predicate, endpoint [4]byte) {
 	}
 	// else, we add it into the edge list and return
 	edgeList = append(edgeList, endpoint)
-	e.Edges[string(predicate[:])] = edgeList
+	e.InEdges[string(predicate[:])] = edgeList
+	return
+}
+
+func (e *Entity) AddOutEdge(predicate, endpoint [4]byte) {
+	var (
+		edgeList [][4]byte
+		found    bool
+	)
+	// check if we already have an edgelist for the given predicate
+	if edgeList, found = e.OutEdges[string(predicate[:])]; !found {
+		// if we don't, then create a new one and put the endpoint in it
+		edgeList = [][4]byte{endpoint}
+		e.OutEdges[string(predicate[:])] = edgeList
+		return
+	}
+	// else, we check if our endpoint is already in the edge list
+	for _, edge := range edgeList {
+		// if it is, return
+		if edge == endpoint {
+			return
+		}
+	}
+	// else, we add it into the edge list and return
+	edgeList = append(edgeList, endpoint)
+	e.OutEdges[string(predicate[:])] = edgeList
 	return
 }
 
