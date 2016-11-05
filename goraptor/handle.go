@@ -38,6 +38,10 @@ func (u URI) Bytes() []byte {
 	return []byte(u.Namespace + "#" + u.Value)
 }
 
+func (u URI) IsVariable() bool {
+	return strings.HasPrefix(u.Value, "?")
+}
+
 func ParseURI(uri string) URI {
 	uri = strings.TrimLeft(uri, "<")
 	uri = strings.TrimRight(uri, ">")
