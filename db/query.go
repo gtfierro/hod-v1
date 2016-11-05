@@ -214,7 +214,44 @@ func filterTermList(removeFrom, removeList []*queryTerm) []*queryTerm {
 	return ret
 }
 
-func buildQueryPlan(filters []Filter) {
+func (db *DB) RunQuery(q Query) {
+	// "clean" the query by expanding out the prefixes
+	for idx, filter := range q.Where {
+		if !strings.HasPrefix(filter.Subject.Value, "?") {
+			if full, found := db.namespaces[filter.Subject.Namespace]; found {
+				filter.Subject.Namespace = full
+			}
+			q.Where[idx] = filter
+		}
+		if !strings.HasPrefix(filter.Object.Value, "?") {
+			if full, found := db.namespaces[filter.Object.Namespace]; found {
+				filter.Object.Namespace = full
+			}
+			q.Where[idx] = filter
+		}
+		for idx2, pred := range filter.Path {
+			if !strings.HasPrefix(pred.Predicate.Value, "?") {
+				if full, found := db.namespaces[pred.Predicate.Namespace]; found {
+					pred.Predicate.Namespace = full
+				}
+				filter.Path[idx2] = pred
+			}
+		}
+		q.Where[idx] = filter
+	}
+
+	fmt.Println("-------------- start query plan -------------")
+	qp := db.formExecutionPlan(q.Where)
+	fmt.Println("-------------- end query plan -------------")
+
+	db.runExecutionPlan(qp)
+	//for _, filter := range q.Where {
+	//	db.runFilter(filter)
+	//}
+}
+
+// We need an execution plan for the list of filters contained in a query. How do we do this?
+func (db *DB) formExecutionPlan(filters []Filter) *queryPlan {
 	qp := makeQueryPlan()
 	terms := make([]*queryTerm, len(filters))
 	for i, f := range filters {
@@ -242,46 +279,22 @@ func buildQueryPlan(filters []Filter) {
 		terms = filterTermList(terms, added)
 	}
 	qp.dump()
+	return qp
 }
 
-func (db *DB) RunQuery(q Query) {
-	// TODO: FINISH build the query plan
-	fmt.Println("-------------- start query plan -------------")
-	buildQueryPlan(q.Where)
-	fmt.Println("-------------- end query plan -------------")
-
-	// "clean" the query by expanding out the prefixes
-	for idx, filter := range q.Where {
-		if !strings.HasPrefix(filter.Subject.Value, "?") {
-			if full, found := db.namespaces[filter.Subject.Namespace]; found {
-				filter.Subject.Namespace = full
-			}
-			q.Where[idx] = filter
-		}
-		if !strings.HasPrefix(filter.Object.Value, "?") {
-			if full, found := db.namespaces[filter.Object.Namespace]; found {
-				filter.Object.Namespace = full
-			}
-			q.Where[idx] = filter
-		}
-		for idx2, pred := range filter.Path {
-			if !strings.HasPrefix(pred.Predicate.Value, "?") {
-				if full, found := db.namespaces[pred.Predicate.Namespace]; found {
-					pred.Predicate.Namespace = full
-				}
-				filter.Path[idx2] = pred
-			}
-		}
-		q.Where[idx] = filter
+// okay how do we run the execution plan?
+func (db *DB) runExecutionPlan(qp *queryPlan) {
+	stack := list.New()
+	// first, resolve all the roots and store the intermediate results
+	for _, r := range qp.roots {
+		stack.PushFront(r)
+	}
+	for stack.Len() > 0 {
+		node := stack.Remove(stack.Front()).(*queryTerm)
+		fmt.Println(node)
+		db.runFilter(node.Filter)
 	}
 
-	for _, filter := range q.Where {
-		db.runFilter(filter)
-	}
-}
-
-// We need an execution plan for the list of filters contained in a query. How do we do this?
-func (db *DB) formExecutionPlan(list []Filter) {
 }
 
 func (db *DB) runFilter(f Filter) error {
@@ -310,7 +323,7 @@ func (db *DB) runFilter(f Filter) error {
 	return nil
 }
 
-//// takes the inverse of every relationship. If no inverse exists, returns nil
+// takes the inverse of every relationship. If no inverse exists, returns nil
 func (db *DB) reversePathPattern(path []PathPattern) []PathPattern {
 	var reverse = make([]PathPattern, len(path))
 	for idx, pred := range path {
