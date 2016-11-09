@@ -25,11 +25,11 @@ import (
 
 %%
 
-query        : selectClause WHERE whereTriples
+query        : selectClause WHERE LBRACE whereTriples RBRACE
              {
                yylex.(*lexer).varlist = $1.varlist
                yylex.(*lexer).distinct = $1.distinct
-               yylex.(*lexer).triples = $3.triples
+               yylex.(*lexer).triples = $4.triples
              }
              ;
 
@@ -49,9 +49,9 @@ varList      : VAR
              {
                 $$.varlist = []turtle.URI{turtle.ParseURI($1.str)}
              }
-             | VAR COMMA varList
+             | VAR varList
              {
-                $$.varlist = append([]turtle.URI{turtle.ParseURI($1.str)}, $3.varlist...)
+                $$.varlist = append([]turtle.URI{turtle.ParseURI($1.str)}, $2.varlist...)
              }
              ;
 
@@ -101,13 +101,13 @@ func newlexer(r io.Reader) *lexer {
 		[]Definition{
             {Token: LBRACE,  Pattern: "\\{"},
             {Token: RBRACE,  Pattern: "\\}"},
-            {Token: COMMA,  Pattern: ","},
+            {Token: COMMA,  Pattern: "\\,"},
             {Token: DOT,  Pattern: "\\."},
             {Token: SELECT,  Pattern: "SELECT"},
             {Token: DISTINCT,  Pattern: "DISTINCT"},
             {Token: WHERE,  Pattern: "WHERE"},
+            {Token: URI,  Pattern: "[a-zA-Z]+:[a-zA-Z0-9_\\-+%$#@]+"},
             {Token: VAR,  Pattern: "?[a-zA-Z0-9_]+"},
-            {Token: URI,  Pattern: "[a-zA-Z]+:[a-zA-Z0-9_-+%$#@]+"},
         })
 	scanner.SetInput(r)
     return &lexer{
@@ -124,7 +124,6 @@ func (l *lexer) Lex(lval *yySymType) int {
         return eof
     }
     lval.str = string(r.Value)
-    fmt.Printf("%s: %s\n",TokenName(r.Token), string(r.Value))
     return int(r.Token)
 }
 

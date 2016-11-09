@@ -68,13 +68,13 @@ func newlexer(r io.Reader) *lexer {
 		[]Definition{
 			{Token: LBRACE, Pattern: "\\{"},
 			{Token: RBRACE, Pattern: "\\}"},
-			{Token: COMMA, Pattern: ","},
+			{Token: COMMA, Pattern: "\\,"},
 			{Token: DOT, Pattern: "\\."},
 			{Token: SELECT, Pattern: "SELECT"},
 			{Token: DISTINCT, Pattern: "DISTINCT"},
 			{Token: WHERE, Pattern: "WHERE"},
+			{Token: URI, Pattern: "[a-zA-Z]+:[a-zA-Z0-9_\\-+%$#@]+"},
 			{Token: VAR, Pattern: "?[a-zA-Z0-9_]+"},
-			{Token: URI, Pattern: "[a-zA-Z]+:[a-zA-Z0-9_-+%$#@]+"},
 		})
 	scanner.SetInput(r)
 	return &lexer{
@@ -91,7 +91,6 @@ func (l *lexer) Lex(lval *yySymType) int {
 		return eof
 	}
 	lval.str = string(r.Value)
-	fmt.Printf("%s: %s\n", TokenName(r.Token), string(r.Value))
 	return int(r.Token)
 }
 
@@ -116,23 +115,23 @@ const yyPrivate = 57344
 var yyTokenNames []string
 var yyStates []string
 
-const yyLast = 28
+const yyLast = 29
 
 var yyAct = [...]int{
 
-	10, 5, 11, 12, 13, 12, 13, 6, 14, 7,
-	25, 17, 18, 7, 22, 8, 24, 19, 20, 21,
-	15, 4, 23, 3, 9, 16, 2, 1,
+	13, 14, 15, 16, 15, 16, 11, 6, 7, 26,
+	23, 4, 25, 7, 19, 20, 17, 5, 8, 18,
+	21, 22, 3, 24, 9, 10, 12, 2, 1,
 }
 var yyPact = [...]int{
 
-	19, -1000, 15, 2, -6, -1000, -2, 13, -1000, -6,
-	-8, -8, -1000, -1000, -1000, -2, -1000, -8, -8, -1000,
-	4, -8, -1000, 7, 0, -1000,
+	18, -1000, 5, 2, 10, -1000, -3, -3, -7, -1000,
+	-1000, 7, -7, -9, -9, -1000, -1000, -1000, -1000, -9,
+	-9, 0, -9, -1000, 3, -1, -1000,
 }
 var yyPgo = [...]int{
 
-	0, 27, 26, 15, 1, 24, 0,
+	0, 28, 27, 6, 17, 26, 0,
 }
 var yyR1 = [...]int{
 
@@ -141,20 +140,20 @@ var yyR1 = [...]int{
 }
 var yyR2 = [...]int{
 
-	0, 3, 2, 3, 1, 3, 1, 2, 4, 6,
+	0, 5, 2, 3, 1, 2, 1, 2, 4, 6,
 	1, 1,
 }
 var yyChk = [...]int{
 
-	-1000, -1, -2, 4, 6, -4, 5, 11, -3, -5,
-	-6, 8, 11, 12, -4, 7, -3, -6, -6, -4,
-	-6, -6, 10, -6, 9, 10,
+	-1000, -1, -2, 4, 6, -4, 5, 11, 8, -4,
+	-4, -3, -5, -6, 8, 11, 12, 9, -3, -6,
+	-6, -6, -6, 10, -6, 9, 10,
 }
 var yyDef = [...]int{
 
-	0, -2, 0, 0, 0, 2, 0, 4, 1, 6,
-	0, 0, 10, 11, 3, 0, 7, 0, 0, 5,
-	0, 0, 8, 0, 0, 9,
+	0, -2, 0, 0, 0, 2, 0, 4, 0, 3,
+	5, 0, 6, 0, 0, 10, 11, 1, 7, 0,
+	0, 0, 0, 8, 0, 0, 9,
 }
 var yyTok1 = [...]int{
 
@@ -507,12 +506,12 @@ yydefault:
 	switch yynt {
 
 	case 1:
-		yyDollar = yyS[yypt-3 : yypt+1]
+		yyDollar = yyS[yypt-5 : yypt+1]
 		//line lang.y:29
 		{
 			yylex.(*lexer).varlist = yyDollar[1].varlist
 			yylex.(*lexer).distinct = yyDollar[1].distinct
-			yylex.(*lexer).triples = yyDollar[3].triples
+			yylex.(*lexer).triples = yyDollar[4].triples
 		}
 	case 2:
 		yyDollar = yyS[yypt-2 : yypt+1]
@@ -535,10 +534,10 @@ yydefault:
 			yyVAL.varlist = []turtle.URI{turtle.ParseURI(yyDollar[1].str)}
 		}
 	case 5:
-		yyDollar = yyS[yypt-3 : yypt+1]
+		yyDollar = yyS[yypt-2 : yypt+1]
 		//line lang.y:53
 		{
-			yyVAL.varlist = append([]turtle.URI{turtle.ParseURI(yyDollar[1].str)}, yyDollar[3].varlist...)
+			yyVAL.varlist = append([]turtle.URI{turtle.ParseURI(yyDollar[1].str)}, yyDollar[2].varlist...)
 		}
 	case 6:
 		yyDollar = yyS[yypt-1 : yypt+1]
