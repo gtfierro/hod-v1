@@ -1,9 +1,13 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	hod "github.com/gtfierro/hod/db"
 	"github.com/gtfierro/hod/goraptor"
+	query "github.com/gtfierro/hod/query"
+	"os"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/urfave/cli"
@@ -46,34 +50,21 @@ func load(c *cli.Context) error {
 	}
 	fmt.Println("Successfully loaded dataset!")
 
-	// try to run a query
-	// 1. ?zone rdf:type brick:HVAC_Zone
-	// 2. ?sensor rdf:type/rdfs:subClassOf* brick:Zone_Temperature_Sensor
-	// 3. ?vav bf:feeds+ ?zone
-	q := hod.Query{
-		Select: hod.SelectClause{Variables: []string{"?zone"}},
-		Where: []hod.Filter{
-			{
-				Subject: turtle.URI{Value: "?zone"},
-				Path: []hod.PathPattern{
-					{
-						Predicate: turtle.URI{"rdf", "type"},
-					},
-				},
-				Object: turtle.URI{"brick", "HVAC_Zone"},
-			},
-			{
-				Subject: turtle.URI{Value: "?vav"},
-				Path: []hod.PathPattern{
-					{
-						Predicate: turtle.URI{"bf", "feeds"},
-					},
-				},
-				Object: turtle.URI{Value: "?zone"},
-			},
-		},
+	scanner := bufio.NewScanner(os.Stdin)
+	bufQuery := ""
+	for scanner.Scan() {
+		line := scanner.Text()
+		bufQuery += line
+		if strings.HasSuffix(line, ";") {
+			q, err := query.Parse(strings.NewReader(bufQuery))
+			if err != nil {
+				log.Error(err)
+			} else {
+				db.RunQuery(q)
+			}
+			bufQuery = ""
+		}
 	}
-	db.RunQuery(q)
 
 	return nil
 }

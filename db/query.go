@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"strings"
 
-	turtle "github.com/gtfierro/hod/goraptor"
+	query "github.com/gtfierro/hod/query"
 )
 
 // make a set of structs that capture what these queries want to do
@@ -18,25 +18,6 @@ import (
 //
 // First we "clean" these by making sure that they have their full
 // namespaces rather than the prefix
-
-type Query struct {
-	Select SelectClause
-	Where  []Filter
-}
-
-type SelectClause struct {
-	Variables []string
-}
-
-type Filter struct {
-	Subject turtle.URI
-	Path    []PathPattern
-	Object  turtle.URI
-}
-
-type PathPattern struct {
-	Predicate turtle.URI
-}
 
 // struct to hold the graph of the query plan
 type queryPlan struct {
@@ -115,14 +96,14 @@ func (qp *queryPlan) addChild(qt *queryTerm) bool {
 // stores the state/variables for a particular triple
 // from a SPARQL query
 type queryTerm struct {
-	Filter
+	query.Filter
 	children  []*queryTerm
 	qp        *queryPlan
 	variables []string
 }
 
 // initializes a queryTerm from a given Filter
-func (qp *queryPlan) makeQueryTerm(f Filter) *queryTerm {
+func (qp *queryPlan) makeQueryTerm(f query.Filter) *queryTerm {
 	qt := &queryTerm{
 		f,
 		[]*queryTerm{},
@@ -214,7 +195,7 @@ func filterTermList(removeFrom, removeList []*queryTerm) []*queryTerm {
 	return ret
 }
 
-func (db *DB) RunQuery(q Query) {
+func (db *DB) RunQuery(q query.Query) {
 	// "clean" the query by expanding out the prefixes
 	for idx, filter := range q.Where {
 		if !strings.HasPrefix(filter.Subject.Value, "?") {
@@ -251,7 +232,7 @@ func (db *DB) RunQuery(q Query) {
 }
 
 // We need an execution plan for the list of filters contained in a query. How do we do this?
-func (db *DB) formExecutionPlan(filters []Filter) *queryPlan {
+func (db *DB) formExecutionPlan(filters []query.Filter) *queryPlan {
 	qp := makeQueryPlan()
 	terms := make([]*queryTerm, len(filters))
 	for i, f := range filters {
@@ -297,7 +278,7 @@ func (db *DB) runExecutionPlan(qp *queryPlan) {
 
 }
 
-func (db *DB) runFilter(f Filter) error {
+func (db *DB) runFilter(f query.Filter) error {
 	var (
 		subjectIsVariable = strings.HasPrefix(f.Subject.Value, "?")
 		objectIsVariable  = strings.HasPrefix(f.Object.Value, "?")
@@ -324,8 +305,8 @@ func (db *DB) runFilter(f Filter) error {
 }
 
 // takes the inverse of every relationship. If no inverse exists, returns nil
-func (db *DB) reversePathPattern(path []PathPattern) []PathPattern {
-	var reverse = make([]PathPattern, len(path))
+func (db *DB) reversePathPattern(path []query.PathPattern) []query.PathPattern {
+	var reverse = make([]query.PathPattern, len(path))
 	for idx, pred := range path {
 		if inverse, found := db.relationships[pred.Predicate]; found {
 			pred.Predicate = inverse
@@ -339,7 +320,7 @@ func (db *DB) reversePathPattern(path []PathPattern) []PathPattern {
 
 // retrieve set of entities reachable starting from the given entity as the 'object'
 // what if entity is a variable?
-func (db *DB) followPredicateChainFromEnd(entityHash [4]byte, path []PathPattern) [][4]byte {
+func (db *DB) followPredicateChainFromEnd(entityHash [4]byte, path []query.PathPattern) [][4]byte {
 	// we first check if we have a reversible path
 	reversePath := db.reversePathPattern(path)
 	if reversePath != nil {
@@ -358,7 +339,7 @@ func (db *DB) followPredicateChainFromEnd(entityHash [4]byte, path []PathPattern
 }
 
 // Given object and predicate, get all subjects
-func (db *DB) getSubjectFromPredObject(objectHash [4]byte, pattern PathPattern) [][4]byte {
+func (db *DB) getSubjectFromPredObject(objectHash [4]byte, pattern query.PathPattern) [][4]byte {
 	// get the object, look in its "in" edges for the path pattern
 	objEntity, err := db.GetEntityFromHash(objectHash)
 	if err != nil {
@@ -373,7 +354,7 @@ func (db *DB) getSubjectFromPredObject(objectHash [4]byte, pattern PathPattern) 
 }
 
 // Given object and predicate, get all subjects
-func (db *DB) getObjectFromSubjectPred(subjectHash [4]byte, pattern PathPattern) [][4]byte {
+func (db *DB) getObjectFromSubjectPred(subjectHash [4]byte, pattern query.PathPattern) [][4]byte {
 	// get the object, look in its "out" edges for the path pattern
 	subEntity, err := db.GetEntityFromHash(subjectHash)
 	if err != nil {
@@ -388,7 +369,7 @@ func (db *DB) getObjectFromSubjectPred(subjectHash [4]byte, pattern PathPattern)
 }
 
 // Given a predicate, it returns pairs of (subject, object) that are connected by that relationship
-func (db *DB) getSubjectObjectFromPred(pattern PathPattern) (soPair [][][4]byte) {
+func (db *DB) getSubjectObjectFromPred(pattern query.PathPattern) (soPair [][][4]byte) {
 	pe, found := db.predIndex[pattern.Predicate]
 	if !found {
 		panic(fmt.Sprintf("Cannot find predicate %s", pattern.Predicate))
