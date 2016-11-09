@@ -36,6 +36,7 @@ type Scanner struct {
 	tokenizer  *bufio.Scanner
 	defs       []Definition
 	lineNumber int
+	leftover   []byte
 }
 
 func NewScanner(defs []Definition) *Scanner {
@@ -46,7 +47,8 @@ func NewScanner(defs []Definition) *Scanner {
 		quote:      "",
 		inQuotes:   false,
 		defs:       defs,
-		lineNumber: 0,
+		lineNumber: 1,
+		leftover:   []byte{},
 	}
 }
 
@@ -55,7 +57,26 @@ func (s *Scanner) SetInput(input io.Reader) {
 	s.tokenizer.Split(s.ScanWords)
 }
 
+func (s *Scanner) matchBytesToToken(bytes []byte) *Result {
+	for _, def := range s.defs {
+		if result := def.regexp.Find(bytes); result != nil {
+			if len(result) != len(bytes) { // stuff leftover!
+				s.leftover = append(s.leftover, bytes[len(result):]...)
+			}
+			return &Result{Token: def.Token, Value: result, Line: s.lineNumber}
+		}
+	}
+	return &Result{Token: Error, Line: s.lineNumber, Value: []byte("No match for '" + string(bytes) + "'")}
+}
+
 func (s *Scanner) Next() *Result {
+	if len(s.leftover) > 0 {
+		res := s.matchBytesToToken(s.leftover)
+		if res.Token != Error {
+			s.leftover = []byte{}
+			return res
+		}
+	}
 	if !s.tokenizer.Scan() {
 		err := s.tokenizer.Err()
 		var ev []byte
@@ -65,12 +86,7 @@ func (s *Scanner) Next() *Result {
 		return &Result{Token: Error, Line: s.lineNumber, Value: ev}
 	}
 	bytes := s.tokenizer.Bytes()
-	for _, def := range s.defs {
-		if result := def.regexp.Find(bytes); result != nil {
-			return &Result{Token: def.Token, Value: result, Line: s.lineNumber}
-		}
-	}
-	return &Result{Token: Error, Line: s.lineNumber, Value: []byte("No match for '" + string(bytes) + "'")}
+	return s.matchBytesToToken(bytes)
 }
 
 func (s *Scanner) Tokenize() []*Result {

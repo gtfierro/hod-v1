@@ -20,12 +20,12 @@ import (
 }
 
 %token SELECT DISTINCT WHERE
-%token COMMA LBRACE RBRACE DOT
+%token COMMA LBRACE RBRACE DOT SEMICOLON
 %token VAR URI
 
 %%
 
-query        : selectClause WHERE LBRACE whereTriples RBRACE
+query        : selectClause WHERE LBRACE whereTriples RBRACE SEMICOLON
              {
                yylex.(*lexer).varlist = $1.varlist
                yylex.(*lexer).distinct = $1.distinct
@@ -102,12 +102,13 @@ func newlexer(r io.Reader) *lexer {
             {Token: LBRACE,  Pattern: "\\{"},
             {Token: RBRACE,  Pattern: "\\}"},
             {Token: COMMA,  Pattern: "\\,"},
+            {Token: SEMICOLON,  Pattern: ";"},
             {Token: DOT,  Pattern: "\\."},
             {Token: SELECT,  Pattern: "SELECT"},
             {Token: DISTINCT,  Pattern: "DISTINCT"},
             {Token: WHERE,  Pattern: "WHERE"},
             {Token: URI,  Pattern: "[a-zA-Z]+:[a-zA-Z0-9_\\-+%$#@]+"},
-            {Token: VAR,  Pattern: "?[a-zA-Z0-9_]+"},
+            {Token: VAR,  Pattern: "\\?[a-zA-Z0-9_]+"},
         })
 	scanner.SetInput(r)
     return &lexer{
@@ -128,7 +129,7 @@ func (l *lexer) Lex(lval *yySymType) int {
 }
 
 func (l *lexer) Error(s string) {
-    l.error = fmt.Errorf(s)
+    l.error = fmt.Errorf("Error parsing: %s. Current line %d. Recent token '%s'", s, l.scanner.lineNumber, l.scanner.tokenizer.Text())
 }
 
 func TokenName(t Token) string {

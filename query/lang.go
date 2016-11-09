@@ -28,8 +28,9 @@ const COMMA = 57349
 const LBRACE = 57350
 const RBRACE = 57351
 const DOT = 57352
-const VAR = 57353
-const URI = 57354
+const SEMICOLON = 57353
+const VAR = 57354
+const URI = 57355
 
 var yyToknames = [...]string{
 	"$end",
@@ -42,6 +43,7 @@ var yyToknames = [...]string{
 	"LBRACE",
 	"RBRACE",
 	"DOT",
+	"SEMICOLON",
 	"VAR",
 	"URI",
 }
@@ -69,12 +71,13 @@ func newlexer(r io.Reader) *lexer {
 			{Token: LBRACE, Pattern: "\\{"},
 			{Token: RBRACE, Pattern: "\\}"},
 			{Token: COMMA, Pattern: "\\,"},
+			{Token: SEMICOLON, Pattern: ";"},
 			{Token: DOT, Pattern: "\\."},
 			{Token: SELECT, Pattern: "SELECT"},
 			{Token: DISTINCT, Pattern: "DISTINCT"},
 			{Token: WHERE, Pattern: "WHERE"},
 			{Token: URI, Pattern: "[a-zA-Z]+:[a-zA-Z0-9_\\-+%$#@]+"},
-			{Token: VAR, Pattern: "?[a-zA-Z0-9_]+"},
+			{Token: VAR, Pattern: "\\?[a-zA-Z0-9_]+"},
 		})
 	scanner.SetInput(r)
 	return &lexer{
@@ -95,7 +98,7 @@ func (l *lexer) Lex(lval *yySymType) int {
 }
 
 func (l *lexer) Error(s string) {
-	l.error = fmt.Errorf(s)
+	l.error = fmt.Errorf("Error parsing: %s. Current line %d. Recent token '%s'", s, l.scanner.lineNumber, l.scanner.tokenizer.Text())
 }
 
 func TokenName(t Token) string {
@@ -115,23 +118,23 @@ const yyPrivate = 57344
 var yyTokenNames []string
 var yyStates []string
 
-const yyLast = 29
+const yyLast = 30
 
 var yyAct = [...]int{
 
-	13, 14, 15, 16, 15, 16, 11, 6, 7, 26,
-	23, 4, 25, 7, 19, 20, 17, 5, 8, 18,
-	21, 22, 3, 24, 9, 10, 12, 2, 1,
+	13, 14, 15, 16, 6, 15, 16, 7, 21, 11,
+	27, 7, 24, 26, 19, 20, 17, 8, 5, 4,
+	22, 23, 18, 3, 25, 9, 10, 12, 2, 1,
 }
 var yyPact = [...]int{
 
-	18, -1000, 5, 2, 10, -1000, -3, -3, -7, -1000,
-	-1000, 7, -7, -9, -9, -1000, -1000, -1000, -1000, -9,
-	-9, 0, -9, -1000, 3, -1, -1000,
+	19, -1000, 13, -1, 9, -1000, -5, -5, -7, -1000,
+	-1000, 7, -7, -10, -10, -1000, -1000, -3, -1000, -10,
+	-10, -1000, 2, -10, -1000, 4, 0, -1000,
 }
 var yyPgo = [...]int{
 
-	0, 28, 27, 6, 17, 26, 0,
+	0, 29, 28, 9, 18, 27, 0,
 }
 var yyR1 = [...]int{
 
@@ -140,20 +143,20 @@ var yyR1 = [...]int{
 }
 var yyR2 = [...]int{
 
-	0, 5, 2, 3, 1, 2, 1, 2, 4, 6,
+	0, 6, 2, 3, 1, 2, 1, 2, 4, 6,
 	1, 1,
 }
 var yyChk = [...]int{
 
-	-1000, -1, -2, 4, 6, -4, 5, 11, 8, -4,
-	-4, -3, -5, -6, 8, 11, 12, 9, -3, -6,
-	-6, -6, -6, 10, -6, 9, 10,
+	-1000, -1, -2, 4, 6, -4, 5, 12, 8, -4,
+	-4, -3, -5, -6, 8, 12, 13, 9, -3, -6,
+	-6, 11, -6, -6, 10, -6, 9, 10,
 }
 var yyDef = [...]int{
 
 	0, -2, 0, 0, 0, 2, 0, 4, 0, 3,
-	5, 0, 6, 0, 0, 10, 11, 1, 7, 0,
-	0, 0, 0, 8, 0, 0, 9,
+	5, 0, 6, 0, 0, 10, 11, 0, 7, 0,
+	0, 1, 0, 0, 8, 0, 0, 9,
 }
 var yyTok1 = [...]int{
 
@@ -162,7 +165,7 @@ var yyTok1 = [...]int{
 var yyTok2 = [...]int{
 
 	2, 3, 4, 5, 6, 7, 8, 9, 10, 11,
-	12,
+	12, 13,
 }
 var yyTok3 = [...]int{
 	0,
@@ -506,7 +509,7 @@ yydefault:
 	switch yynt {
 
 	case 1:
-		yyDollar = yyS[yypt-5 : yypt+1]
+		yyDollar = yyS[yypt-6 : yypt+1]
 		//line lang.y:29
 		{
 			yylex.(*lexer).varlist = yyDollar[1].varlist

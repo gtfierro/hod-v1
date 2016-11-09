@@ -24,9 +24,12 @@ type PathPattern struct {
 	Predicate turtle.URI
 }
 
-func Parse(r io.Reader) Query {
+func Parse(r io.Reader) (Query, error) {
 	l := newlexer(r)
 	yyParse(l)
+	if l.error != nil {
+		return Query{}, l.error
+	}
 	q := Query{}
 	q.Select = SelectClause{Variables: l.varlist}
 	q.Where = []Filter{}
@@ -37,5 +40,5 @@ func Parse(r io.Reader) Query {
 		q.Where = append(q.Where, t)
 	}
 
-	return q
+	return q, nil
 }
