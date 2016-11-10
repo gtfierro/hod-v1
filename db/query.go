@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"time"
 
 	"github.com/google/btree"
 	query "github.com/gtfierro/hod/query"
@@ -276,11 +277,15 @@ func (db *DB) RunQuery(q query.Query) {
 	}
 
 	fmt.Println("-------------- start query plan -------------")
+	planStart := time.Now()
 	qp := db.formExecutionPlan(q)
+	log.Infof("Formed execution plan in %s", time.Since(planStart))
 	fmt.Println("-------------- end query plan -------------")
 
+	runStart := time.Now()
 	run := makeQueryRun(qp)
 	db.executeQuery(run)
+	log.Infof("Ran query in %s", time.Since(runStart))
 
 	for _, varName := range q.Select.Variables {
 		resultTree := run.variables[varName.String()]
