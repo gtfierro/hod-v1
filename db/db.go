@@ -280,7 +280,6 @@ func (db *DB) LoadDataset(dataset turtle.DataSet) error {
 	}
 	log.Infof("Built lookup tables in %s", time.Since(start))
 
-	// TODO: build graph
 	start = time.Now()
 	if err := db.buildGraph(dataset); err != nil {
 		return errors.Wrap(err, "Could not build graph")

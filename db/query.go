@@ -430,6 +430,7 @@ func (db *DB) runFilterTerm(run *queryRun, term *queryTerm) error {
 				if err != nil {
 					log.Error(err)
 				}
+				//TODO: change this to use compound paths
 				predHash := db.predIndex[term.Path[0].Predicate]
 				for _, s := range object.InEdges[string(predHash.PK[:])] {
 					subTree.ReplaceOrInsert(Item(s))
@@ -445,6 +446,7 @@ func (db *DB) runFilterTerm(run *queryRun, term *queryTerm) error {
 				if err != nil {
 					log.Error(err)
 				}
+				// TODO: change to use compound predicates
 				predHash := db.predIndex[term.Path[0].Predicate]
 				for _, s := range subject.OutEdges[string(predHash.PK[:])] {
 					subTree.ReplaceOrInsert(Item(s))
@@ -461,6 +463,7 @@ func (db *DB) runFilterTerm(run *queryRun, term *queryTerm) error {
 	return nil
 }
 
+// TODO: change to use compound predicates
 // takes the inverse of every relationship. If no inverse exists, returns nil
 func (db *DB) reversePathPattern(path []query.PathPattern) []query.PathPattern {
 	var reverse = make([]query.PathPattern, len(path))
@@ -475,6 +478,7 @@ func (db *DB) reversePathPattern(path []query.PathPattern) []query.PathPattern {
 	return reverse
 }
 
+// TODO: change to use compound predicates
 // Given object and predicate, get all subjects
 func (db *DB) getSubjectFromPredObject(objectHash [4]byte, pattern query.PathPattern) [][4]byte {
 	// get the object, look in its "in" edges for the path pattern
@@ -490,6 +494,7 @@ func (db *DB) getSubjectFromPredObject(objectHash [4]byte, pattern query.PathPat
 	return objEntity.InEdges[string(predHash[:])]
 }
 
+// TODO: change to use compound predicates
 // Given object and predicate, get all subjects
 func (db *DB) getObjectFromSubjectPred(subjectHash [4]byte, pattern query.PathPattern) [][4]byte {
 	// get the object, look in its "out" edges for the path pattern
@@ -505,6 +510,7 @@ func (db *DB) getObjectFromSubjectPred(subjectHash [4]byte, pattern query.PathPa
 	return subEntity.InEdges[string(predHash[:])]
 }
 
+// TODO: change to use compound predicates
 // Given a predicate, it returns pairs of (subject, object) that are connected by that relationship
 func (db *DB) getSubjectObjectFromPred(pattern query.PathPattern) (soPair [][][4]byte) {
 	pe, found := db.predIndex[pattern.Predicate]
