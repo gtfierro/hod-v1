@@ -55,7 +55,7 @@ func load(c *cli.Context) error {
 	fmt.Println("Successfully loaded dataset!")
 	bufQuery := ""
 	rl, err := readline.NewEx(&readline.Config{
-		Prompt:                 "> ",
+		Prompt:                 "(hod)> ",
 		HistoryFile:            currentUser.HomeDir + "/.hod-query-history",
 		DisableAutoSaveHistory: true,
 	})
@@ -69,10 +69,10 @@ func load(c *cli.Context) error {
 		}
 		bufQuery += line + " "
 		if !strings.HasSuffix(line, ";") {
-			rl.SetPrompt(">>> ")
+			rl.SetPrompt(">>> ...")
 			continue
 		}
-		rl.SetPrompt("> ")
+		rl.SetPrompt("(hod)> ")
 		rl.SaveHistory(bufQuery)
 		q, err := query.Parse(strings.NewReader(bufQuery))
 		if err != nil {
