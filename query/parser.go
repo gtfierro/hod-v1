@@ -22,7 +22,17 @@ type Filter struct {
 
 type PathPattern struct {
 	Predicate turtle.URI
+	Pattern   Pattern
 }
+
+type Pattern uint
+
+const (
+	PATTERN_SINGLE = iota + 1
+	PATTERN_ZERO_ONE
+	PATTERN_ONE_PLUS
+	PATTERN_ZERO_PLUS
+)
 
 func Parse(r io.Reader) (Query, error) {
 	l := newlexer(r)
@@ -33,11 +43,8 @@ func Parse(r io.Reader) (Query, error) {
 	q := Query{}
 	q.Select = SelectClause{Variables: l.varlist}
 	q.Where = []Filter{}
-	for _, triple := range l.triples {
-		t := Filter{Subject: triple.Subject, Object: triple.Object}
-		pattern := PathPattern{Predicate: triple.Predicate}
-		t.Path = []PathPattern{pattern}
-		q.Where = append(q.Where, t)
+	for _, filter := range l.triples {
+		q.Where = append(q.Where, filter)
 	}
 
 	return q, nil

@@ -17,33 +17,40 @@ func TestQueryParse(t *testing.T) {
 		{
 			"SELECT ?x WHERE { ?x rdf:type brick:Room . } ;",
 			SelectClause{Variables: []turtle.URI{turtle.ParseURI("?x")}},
-			[]Filter{{Subject: turtle.ParseURI("?x"), Path: []PathPattern{PathPattern{turtle.ParseURI("rdf:type")}}, Object: turtle.ParseURI("brick:Room")}},
+			[]Filter{{Subject: turtle.ParseURI("?x"), Path: []PathPattern{PathPattern{turtle.ParseURI("rdf:type"), PATTERN_SINGLE}}, Object: turtle.ParseURI("brick:Room")}},
 		},
 		{
 			"SELECT ?x ?y WHERE { ?x ?y brick:Room . } ;",
 			SelectClause{Variables: []turtle.URI{turtle.ParseURI("?x"), turtle.ParseURI("?y")}},
-			[]Filter{{Subject: turtle.ParseURI("?x"), Path: []PathPattern{PathPattern{turtle.ParseURI("?y")}}, Object: turtle.ParseURI("brick:Room")}},
+			[]Filter{{Subject: turtle.ParseURI("?x"), Path: []PathPattern{PathPattern{turtle.ParseURI("?y"), PATTERN_SINGLE}}, Object: turtle.ParseURI("brick:Room")}},
 		},
 		{
 			"SELECT ?x ?y WHERE { ?y rdf:type rdf:type . ?x ?y brick:Room . } ;",
 			SelectClause{Variables: []turtle.URI{turtle.ParseURI("?x"), turtle.ParseURI("?y")}},
 			[]Filter{
-				{Subject: turtle.ParseURI("?x"), Path: []PathPattern{PathPattern{turtle.ParseURI("?y")}}, Object: turtle.ParseURI("brick:Room")},
-				{Subject: turtle.ParseURI("?y"), Path: []PathPattern{PathPattern{turtle.ParseURI("rdf:type")}}, Object: turtle.ParseURI("rdf:type")},
+				{Subject: turtle.ParseURI("?x"), Path: []PathPattern{PathPattern{turtle.ParseURI("?y"), PATTERN_SINGLE}}, Object: turtle.ParseURI("brick:Room")},
+				{Subject: turtle.ParseURI("?y"), Path: []PathPattern{PathPattern{turtle.ParseURI("rdf:type"), PATTERN_SINGLE}}, Object: turtle.ParseURI("rdf:type")},
 			},
+		},
+		{
+			"SELECT ?x WHERE { ?x rdf:type+ brick:Room . } ;",
+			SelectClause{Variables: []turtle.URI{turtle.ParseURI("?x")}},
+			[]Filter{{Subject: turtle.ParseURI("?x"), Path: []PathPattern{PathPattern{turtle.ParseURI("rdf:type"), PATTERN_ONE_PLUS}}, Object: turtle.ParseURI("brick:Room")}},
 		},
 	} {
 		r := strings.NewReader(test.str)
 		q, e := Parse(r)
 		if e != nil {
-			t.Error(e)
+			t.Errorf("Error on query: %s", test.str, e)
 			continue
 		}
 		if !reflect.DeepEqual(q.Select, test.selectClause) {
-			t.Errorf("Query %s got select\n %s\n, expected %s", test.str, q.Select, test.selectClause)
+			t.Errorf("Query %s got select\n %v\nexpected\n %v", test.str, q.Select, test.selectClause)
+			return
 		}
 		if !reflect.DeepEqual(q.Where, test.whereClause) {
-			t.Errorf("Query %s got where\n %s\n, expected %s", test.str, q.Where, test.whereClause)
+			t.Errorf("Query %s got where\n %v\nexpected\n %v", test.str, q.Where, test.whereClause)
+			return
 		}
 	}
 }

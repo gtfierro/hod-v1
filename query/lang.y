@@ -13,14 +13,15 @@ import (
 %union{
     str string
     val turtle.URI
-    triple turtle.Triple
-    triples []turtle.Triple
+    pred []PathPattern
+    triple Filter
+    triples []Filter
     varlist []turtle.URI
     distinct bool
 }
 
 %token SELECT DISTINCT WHERE
-%token COMMA LBRACE RBRACE DOT SEMICOLON
+%token COMMA LBRACE RBRACE DOT SEMICOLON SLASH PLUS QUESTION ASTERISK
 %token VAR URI
 
 %%
@@ -57,7 +58,7 @@ varList      : VAR
 
 whereTriples : triple
              {
-                $$.triples = []turtle.Triple{$1.triple}
+                $$.triples = []Filter{$1.triple}
              }
              | triple whereTriples
              {
@@ -65,13 +66,45 @@ whereTriples : triple
              }
              ;
 
-triple       : term term term DOT
+triple       : term path term DOT
              {
-                $$.triple = turtle.Triple{$1.val, $2.val, $3.val}
+                $$.triple = Filter{$1.val, $2.pred, $3.val}
              }
-             | LBRACE term term term RBRACE DOT
+             | LBRACE term path term RBRACE DOT
              {
-                $$.triple = turtle.Triple{$1.val, $2.val, $3.val}
+                $$.triple = Filter{$2.val, $3.pred, $4.val}
+             }
+             ;
+
+path         : pathpart
+             {
+                $$.pred = $1.pred
+             }
+             | pathpart SLASH path
+             {
+                $$.pred = append($1.pred, $3.pred...)
+             }
+             ;
+
+pathpart     : URI
+             {
+                $$.pred = []PathPattern{{Predicate: turtle.ParseURI($1.str), Pattern: PATTERN_SINGLE}}
+             }
+             | VAR
+             {
+                $$.pred = []PathPattern{{Predicate: turtle.ParseURI($1.str), Pattern: PATTERN_SINGLE}}
+             }
+             | URI PLUS
+             {
+                $$.pred = []PathPattern{{Predicate: turtle.ParseURI($1.str), Pattern: PATTERN_ONE_PLUS}}
+             }
+             | URI QUESTION
+             {
+                $$.pred = []PathPattern{{Predicate: turtle.ParseURI($1.str), Pattern: PATTERN_ZERO_ONE}}
+             }
+             | URI ASTERISK
+             {
+                $$.pred = []PathPattern{{Predicate: turtle.ParseURI($1.str), Pattern: PATTERN_ZERO_PLUS}}
              }
              ;
 
@@ -92,8 +125,9 @@ type lexer struct {
     scanner *Scanner
     error   error
     varlist []turtle.URI
-    triples []turtle.Triple
+    triples []Filter
     distinct bool
+    pos int
 }
 
 func newlexer(r io.Reader) *lexer {
@@ -107,12 +141,17 @@ func newlexer(r io.Reader) *lexer {
             {Token: SELECT,  Pattern: "SELECT"},
             {Token: DISTINCT,  Pattern: "DISTINCT"},
             {Token: WHERE,  Pattern: "WHERE"},
-            {Token: URI,  Pattern: "[a-zA-Z]+:[a-zA-Z0-9_\\-+%$#@]+"},
+            {Token: URI,  Pattern: "[a-zA-Z]+:[a-zA-Z0-9_\\-#%$@]+"},
             {Token: VAR,  Pattern: "\\?[a-zA-Z0-9_]+"},
+            {Token: QUESTION,  Pattern: "\\?"},
+            {Token: SLASH,  Pattern: "/"},
+            {Token: PLUS,  Pattern: "\\+"},
+            {Token: ASTERISK,  Pattern: "\\*"},
         })
 	scanner.SetInput(r)
     return &lexer{
         scanner: scanner,
+        pos: 0,
     }
 }
 
@@ -125,11 +164,12 @@ func (l *lexer) Lex(lval *yySymType) int {
         return eof
     }
     lval.str = string(r.Value)
+    l.pos += len(r.Value)
     return int(r.Token)
 }
 
 func (l *lexer) Error(s string) {
-    l.error = fmt.Errorf("Error parsing: %s. Current line %d. Recent token '%s'", s, l.scanner.lineNumber, l.scanner.tokenizer.Text())
+    l.error = fmt.Errorf("Error parsing: %s. Current line %d:%d. Recent token '%s'", s, l.scanner.lineNumber, l.pos, l.scanner.tokenizer.Text())
 }
 
 func TokenName(t Token) string {
