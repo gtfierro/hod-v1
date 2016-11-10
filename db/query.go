@@ -407,10 +407,14 @@ func (db *DB) runFilterTerm(run *queryRun, term *queryTerm) error {
 		// 4. we do NOT have results for either S or O
 		// If scenario 4, then the query is not solveable, because if we are at this point,
 		// then we should have filled at least one of the variables
-		subTree := run.variables[term.Subject.String()]
-		objTree := run.variables[term.Object.String()]
-		have_sub := subTree.Len() > 0
-		have_obj := objTree.Len() > 0
+		subTree, have_sub := run.variables[term.Subject.String()]
+		objTree, have_obj := run.variables[term.Object.String()]
+		if have_sub {
+			have_sub = subTree.Len() > 0
+		}
+		if have_obj {
+			have_obj = objTree.Len() > 0
+		}
 		log.Debug("have s?", have_sub, "have o?", have_obj)
 		if have_sub && have_obj {
 			log.Warning("NOT DONE YET")
