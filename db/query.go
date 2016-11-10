@@ -456,32 +456,6 @@ func (db *DB) runFilterTerm(run *queryRun, term *queryTerm) error {
 	return nil
 }
 
-func (db *DB) runFilter(f query.Filter) error {
-	var (
-		subjectIsVariable = strings.HasPrefix(f.Subject.Value, "?")
-		objectIsVariable  = strings.HasPrefix(f.Object.Value, "?")
-	)
-	// right now this only handles the first path predicate
-	if !subjectIsVariable && !objectIsVariable {
-		log.Noticef("S/O anchored: S: %s, O: %s", f.Subject.String(), f.Object.String())
-		results := db.getSubjectObjectFromPred(f.Path[0])
-		log.Infof("Got %d results", len(results))
-	} else if !subjectIsVariable {
-		log.Noticef("S anchored: S: %s, O: %s", f.Subject.String(), f.Object.String())
-	} else if !objectIsVariable {
-		log.Noticef("O anchored: S: %s, O: %s", f.Subject.String(), f.Object.String())
-		entity, err := db.GetEntity(f.Object)
-		if err != nil {
-			return err
-		}
-		results := db.getSubjectFromPredObject(entity.PK, f.Path[0])
-		log.Infof("Got %d results", len(results))
-	} else {
-		log.Noticef("not anchored!: S: %s, O: %s", f.Subject.String(), f.Object.String())
-	}
-	return nil
-}
-
 // takes the inverse of every relationship. If no inverse exists, returns nil
 func (db *DB) reversePathPattern(path []query.PathPattern) []query.PathPattern {
 	var reverse = make([]query.PathPattern, len(path))
@@ -542,5 +516,3 @@ func (db *DB) getSubjectObjectFromPred(pattern query.PathPattern) (soPair [][][4
 	}
 	return soPair
 }
-
-// Given subject and predicate, get all objects
