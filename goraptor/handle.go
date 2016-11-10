@@ -53,7 +53,6 @@ func ParseURI(uri string) URI {
 		if len(parts) > 1 {
 			return URI{Namespace: parts[0], Value: parts[1]}
 		}
-		uri = strings.TrimPrefix(uri, "?") // parse variable
 		return URI{Value: uri}
 	}
 	return URI{Namespace: parts[0], Value: parts[1]}
