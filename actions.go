@@ -1,14 +1,14 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
 	hod "github.com/gtfierro/hod/db"
 	"github.com/gtfierro/hod/goraptor"
 	query "github.com/gtfierro/hod/query"
-	"os"
+	"os/user"
 	"strings"
 
+	"github.com/chzyer/readline"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli"
 )
@@ -48,22 +48,39 @@ func load(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
+	currentUser, err := user.Current()
+	if err != nil {
+		return err
+	}
 	fmt.Println("Successfully loaded dataset!")
-
-	scanner := bufio.NewScanner(os.Stdin)
 	bufQuery := ""
-	for scanner.Scan() {
-		line := scanner.Text()
-		bufQuery += line
-		if strings.HasSuffix(line, ";") {
-			q, err := query.Parse(strings.NewReader(bufQuery))
-			if err != nil {
-				log.Error(err)
-			} else {
-				db.RunQuery(q)
-			}
-			bufQuery = ""
+	rl, err := readline.NewEx(&readline.Config{
+		Prompt:                 "> ",
+		HistoryFile:            currentUser.HomeDir + "/.hod-query-history",
+		DisableAutoSaveHistory: true,
+	})
+	for {
+		line, err := rl.Readline()
+		if err != nil {
+			break
 		}
+		if len(line) == 0 {
+			continue
+		}
+		bufQuery += line + " "
+		if !strings.HasSuffix(line, ";") {
+			rl.SetPrompt(">>> ")
+			continue
+		}
+		rl.SetPrompt("> ")
+		rl.SaveHistory(bufQuery)
+		q, err := query.Parse(strings.NewReader(bufQuery))
+		if err != nil {
+			log.Error(err)
+		} else {
+			db.RunQuery(q)
+		}
+		bufQuery = ""
 	}
 
 	return nil
