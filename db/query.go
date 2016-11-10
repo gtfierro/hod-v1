@@ -271,9 +271,16 @@ func (db *DB) RunQuery(q query.Query) {
 
 	run := makeQueryRun(qp)
 	db.executeQuery(run)
-	//for _, filter := range q.Where {
-	//	db.runFilter(filter)
-	//}
+
+	for _, varName := range q.Select.Variables {
+		resultTree := run.variables[varName.String()]
+		iter := func(i btree.Item) bool {
+			uri := db.MustGetURI(i.(Item))
+			fmt.Println(varName, uri.String())
+			return i != resultTree.Max()
+		}
+		resultTree.Ascend(iter)
+	}
 }
 
 // We need an execution plan for the list of filters contained in a query. How do we do this?
@@ -284,7 +291,6 @@ func (db *DB) formExecutionPlan(filters []query.Filter) *queryPlan {
 		terms[i] = qp.makeQueryTerm(f)
 	}
 
-	// TODO: remember to put this in the loop
 	for len(terms) > 0 {
 		// first find all the terms with 0 or 1 unresolved variable terms
 		var added = []*queryTerm{}
@@ -331,7 +337,6 @@ func (db *DB) executeQuery(run *queryRun) {
 
 }
 
-//TODO: this doesn't use predicates?!
 func (db *DB) runFilterTerm(run *queryRun, term *queryTerm) error {
 	var (
 		subjectIsVariable = strings.HasPrefix(term.Subject.Value, "?")
@@ -395,6 +400,7 @@ func (db *DB) runFilterTerm(run *queryRun, term *queryTerm) error {
 		objTree, have_obj := run.variables[term.Object.String()]
 		log.Debug("have s?", have_sub, "have o?", have_obj)
 		if have_sub && have_obj {
+			log.Warning("NOT DONE YET")
 		} else if have_obj {
 			subTree = btree.New(3)
 			iter := func(i btree.Item) bool {
