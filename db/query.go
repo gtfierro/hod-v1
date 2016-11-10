@@ -34,25 +34,35 @@ type queryRun struct {
 }
 
 func makeQueryRun(plan *queryPlan) *queryRun {
-	return &queryRun{
+	qr := &queryRun{
 		plan:      plan,
 		variables: make(map[string]*btree.BTree),
 	}
+	for _, v := range plan.selectVars {
+		qr.variables[v] = btree.New(3)
+	}
+	return qr
 }
 
 // struct to hold the graph of the query plan
 type queryPlan struct {
-	roots []*queryTerm
+	selectVars []string
+	roots      []*queryTerm
 	// map of variable name -> resolved?
 	variables map[string]bool
 }
 
 // initializes the query plan struct
-func makeQueryPlan() *queryPlan {
-	return &queryPlan{
-		roots:     []*queryTerm{},
-		variables: make(map[string]bool),
+func makeQueryPlan(q query.Query) *queryPlan {
+	qp := &queryPlan{
+		selectVars: []string{},
+		roots:      []*queryTerm{},
+		variables:  make(map[string]bool),
 	}
+	for _, v := range q.Select.Variables {
+		qp.selectVars = append(qp.selectVars, v.String())
+	}
+	return qp
 }
 
 // returns true of the query plan or any of its children
@@ -266,7 +276,7 @@ func (db *DB) RunQuery(q query.Query) {
 	}
 
 	fmt.Println("-------------- start query plan -------------")
-	qp := db.formExecutionPlan(q.Where)
+	qp := db.formExecutionPlan(q)
 	fmt.Println("-------------- end query plan -------------")
 
 	run := makeQueryRun(qp)
@@ -274,20 +284,21 @@ func (db *DB) RunQuery(q query.Query) {
 
 	for _, varName := range q.Select.Variables {
 		resultTree := run.variables[varName.String()]
-		iter := func(i btree.Item) bool {
-			uri := db.MustGetURI(i.(Item))
-			fmt.Println(varName, uri.String())
-			return i != resultTree.Max()
-		}
-		resultTree.Ascend(iter)
+		fmt.Println(varName, resultTree.Len())
+		//iter := func(i btree.Item) bool {
+		//	uri := db.MustGetURI(i.(Item))
+		//	fmt.Println(varName, uri.String())
+		//	return i != resultTree.Max()
+		//}
+		//resultTree.Ascend(iter)
 	}
 }
 
 // We need an execution plan for the list of filters contained in a query. How do we do this?
-func (db *DB) formExecutionPlan(filters []query.Filter) *queryPlan {
-	qp := makeQueryPlan()
-	terms := make([]*queryTerm, len(filters))
-	for i, f := range filters {
+func (db *DB) formExecutionPlan(q query.Query) *queryPlan {
+	qp := makeQueryPlan(q)
+	terms := make([]*queryTerm, len(q.Where))
+	for i, f := range q.Where {
 		terms[i] = qp.makeQueryTerm(f)
 	}
 
@@ -396,8 +407,10 @@ func (db *DB) runFilterTerm(run *queryRun, term *queryTerm) error {
 		// 4. we do NOT have results for either S or O
 		// If scenario 4, then the query is not solveable, because if we are at this point,
 		// then we should have filled at least one of the variables
-		subTree, have_sub := run.variables[term.Subject.String()]
-		objTree, have_obj := run.variables[term.Object.String()]
+		subTree := run.variables[term.Subject.String()]
+		objTree := run.variables[term.Object.String()]
+		have_sub := subTree.Len() > 0
+		have_obj := objTree.Len() > 0
 		log.Debug("have s?", have_sub, "have o?", have_obj)
 		if have_sub && have_obj {
 			log.Warning("NOT DONE YET")
