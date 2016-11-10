@@ -409,7 +409,7 @@ func (db *DB) runFilterTerm(run *queryRun, term *queryTerm) error {
 					log.Error(err)
 				}
 				predHash := db.predIndex[term.Path[0].Predicate]
-				for _, s := range object.OutEdges[string(predHash.PK[:])] {
+				for _, s := range object.InEdges[string(predHash.PK[:])] {
 					subTree.ReplaceOrInsert(Item(s))
 				}
 				return i != objTree.Max()
@@ -424,7 +424,7 @@ func (db *DB) runFilterTerm(run *queryRun, term *queryTerm) error {
 					log.Error(err)
 				}
 				predHash := db.predIndex[term.Path[0].Predicate]
-				for _, s := range subject.InEdges[string(predHash.PK[:])] {
+				for _, s := range subject.OutEdges[string(predHash.PK[:])] {
 					subTree.ReplaceOrInsert(Item(s))
 				}
 				return i != subTree.Max()
