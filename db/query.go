@@ -52,6 +52,13 @@ func (qp *queryPlan) hasChild(qt *queryTerm) bool {
 // not already there
 func (qp *queryPlan) addRootTerm(qt *queryTerm) {
 	if !qp.hasChild(qt) {
+		// loop through and append to a node if we share a variable with it
+		for _, root := range qp.roots {
+			if root.bubbleDownDepends(qt) {
+				return
+			}
+		}
+		// otherwise, add it to the roots
 		qp.roots = append(qp.roots, qt)
 	}
 }
@@ -174,6 +181,22 @@ func (qt *queryTerm) dependsOn(other *queryTerm) bool {
 		}
 	}
 	return false
+}
+
+// adds "other" as a child of the furthest node down the children tree
+// that the node depends on. Returns true if "other" was added to the tree,
+// and false otherwise
+func (qt *queryTerm) bubbleDownDepends(other *queryTerm) bool {
+	if !other.dependsOn(qt) {
+		return false
+	}
+	for _, child := range qt.children {
+		if other.bubbleDownDepends(child) {
+			return true
+		}
+	}
+	qt.children = append(qt.children, other)
+	return true
 }
 
 // removes all terms in the removeList from removeFrom and returns
