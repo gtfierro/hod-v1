@@ -2,10 +2,12 @@ package db
 
 import (
 	"container/list"
+	"encoding/binary"
 	"fmt"
 	"reflect"
 	"strings"
 
+	"github.com/google/btree"
 	query "github.com/gtfierro/hod/query"
 )
 
@@ -18,6 +20,25 @@ import (
 //
 // First we "clean" these by making sure that they have their full
 // namespaces rather than the prefix
+
+type Item [4]byte
+
+func (i Item) Less(than btree.Item) bool {
+	t := than.(Item)
+	return binary.LittleEndian.Uint32(i[:]) < binary.LittleEndian.Uint32(t[:])
+}
+
+type queryRun struct {
+	plan      *queryPlan
+	variables map[string]*btree.BTree
+}
+
+func makeQueryRun(plan *queryPlan) *queryRun {
+	return &queryRun{
+		plan:      plan,
+		variables: make(map[string]*btree.BTree),
+	}
+}
 
 // struct to hold the graph of the query plan
 type queryPlan struct {
@@ -248,7 +269,8 @@ func (db *DB) RunQuery(q query.Query) {
 	qp := db.formExecutionPlan(q.Where)
 	fmt.Println("-------------- end query plan -------------")
 
-	db.runExecutionPlan(qp)
+	run := makeQueryRun(qp)
+	db.executeQuery(run)
 	//for _, filter := range q.Where {
 	//	db.runFilter(filter)
 	//}
@@ -287,18 +309,128 @@ func (db *DB) formExecutionPlan(filters []query.Filter) *queryPlan {
 }
 
 // okay how do we run the execution plan?
-func (db *DB) runExecutionPlan(qp *queryPlan) {
-	stack := list.New()
+func (db *DB) executeQuery(run *queryRun) {
 	// first, resolve all the roots and store the intermediate results
-	for _, r := range qp.roots {
+
+	stack := list.New()
+	for _, r := range run.plan.roots {
 		stack.PushFront(r)
 	}
 	for stack.Len() > 0 {
 		node := stack.Remove(stack.Front()).(*queryTerm)
-		fmt.Println(node)
-		db.runFilter(node.Filter)
+		fmt.Println("pop", node)
+		db.runFilterTerm(run, node)
+		// add node children to back of stack
+		for _, c := range node.children {
+			stack.PushBack(c)
+		}
+	}
+	for variable, res := range run.variables {
+		fmt.Printf("var %s has count %d\n", variable, res.Len())
 	}
 
+}
+
+//TODO: this doesn't use predicates?!
+func (db *DB) runFilterTerm(run *queryRun, term *queryTerm) error {
+	var (
+		subjectIsVariable = strings.HasPrefix(term.Subject.Value, "?")
+		objectIsVariable  = strings.HasPrefix(term.Object.Value, "?")
+	)
+	if !subjectIsVariable && !objectIsVariable {
+		log.Warningf("THIS IS WEIRD")
+		return nil
+		//log.Noticef("S/O anchored: S: %s, O: %s", term.Subject.String(), term.Object.String())
+		//results := db.getSubjectObjectFromPred(term.Path[0])
+		//log.Infof("Got %d results", len(results))
+	} else if !subjectIsVariable {
+		log.Noticef("S anchored: S: %s, O: %s", term.Subject.String(), term.Object.String())
+		entity, err := db.GetEntity(term.Subject)
+		if err != nil {
+			return err
+		}
+		results := db.getObjectFromSubjectPred(entity.PK, term.Path[0])
+		if tree, found := run.variables[term.Object.String()]; found {
+			for _, res := range results {
+				if !tree.Has(Item(res)) {
+					tree.ReplaceOrInsert(Item(res))
+				}
+			}
+		} else {
+			tree := btree.New(3)
+			for _, res := range results {
+				tree.ReplaceOrInsert(Item(res))
+			}
+			run.variables[term.Object.String()] = tree
+		}
+	} else if !objectIsVariable {
+		log.Noticef("O anchored: S: %s, O: %s", term.Subject.String(), term.Object.String())
+		entity, err := db.GetEntity(term.Object)
+		if err != nil {
+			return err
+		}
+		results := db.getSubjectFromPredObject(entity.PK, term.Path[0])
+		if tree, found := run.variables[term.Subject.String()]; found {
+			for _, res := range results {
+				if !tree.Has(Item(res)) {
+					tree.ReplaceOrInsert(Item(res))
+				}
+			}
+		} else {
+			tree := btree.New(3)
+			for _, res := range results {
+				tree.ReplaceOrInsert(Item(res))
+			}
+			run.variables[term.Subject.String()] = tree
+		}
+	} else {
+		// if both the subject and object are variables, then there are 4 scenarios:
+		// 1: we have results for S but not O (e.g. S was a variable that we already have some results for)
+		// 2. we have results for O but not S
+		// 3. we have results for BOTH S and O
+		// 4. we do NOT have results for either S or O
+		// If scenario 4, then the query is not solveable, because if we are at this point,
+		// then we should have filled at least one of the variables
+		subTree, have_sub := run.variables[term.Subject.String()]
+		objTree, have_obj := run.variables[term.Object.String()]
+		log.Debug("have s?", have_sub, "have o?", have_obj)
+		if have_sub && have_obj {
+		} else if have_obj {
+			subTree = btree.New(3)
+			iter := func(i btree.Item) bool {
+				object, err := db.GetEntityFromHash(i.(Item))
+				if err != nil {
+					log.Error(err)
+				}
+				predHash := db.predIndex[term.Path[0].Predicate]
+				for _, s := range object.OutEdges[string(predHash.PK[:])] {
+					subTree.ReplaceOrInsert(Item(s))
+				}
+				return i != objTree.Max()
+			}
+			objTree.Ascend(iter)
+			run.variables[term.Subject.String()] = subTree
+		} else if have_sub {
+			objTree = btree.New(3)
+			iter := func(i btree.Item) bool {
+				subject, err := db.GetEntityFromHash(i.(Item))
+				if err != nil {
+					log.Error(err)
+				}
+				predHash := db.predIndex[term.Path[0].Predicate]
+				for _, s := range subject.InEdges[string(predHash.PK[:])] {
+					subTree.ReplaceOrInsert(Item(s))
+				}
+				return i != subTree.Max()
+			}
+			subTree.Ascend(iter)
+			run.variables[term.Subject.String()] = objTree
+		} else {
+			log.Warning("WHY ARE WE HERE")
+		}
+		log.Noticef("not anchored!: S: %s, O: %s", term.Subject.String(), term.Object.String())
+	}
+	return nil
 }
 
 func (db *DB) runFilter(f query.Filter) error {
@@ -339,26 +471,6 @@ func (db *DB) reversePathPattern(path []query.PathPattern) []query.PathPattern {
 		}
 	}
 	return reverse
-}
-
-// retrieve set of entities reachable starting from the given entity as the 'object'
-// what if entity is a variable?
-func (db *DB) followPredicateChainFromEnd(entityHash [4]byte, path []query.PathPattern) [][4]byte {
-	// we first check if we have a reversible path
-	reversePath := db.reversePathPattern(path)
-	if reversePath != nil {
-		// begin traversal
-		log.Debug("found reverse path", reversePath)
-	}
-	log.Debug("no reverse path found!")
-	// now we consult the predicate index
-	var subjectHashes [][4]byte
-	// TODO: this is wrong because it doesn't traverse from the last results of subjects
-	// TODO NEXT: follow a path of predicates
-	for _, pattern := range path {
-		subjectHashes = append(subjectHashes, db.getSubjectFromPredObject(entityHash, pattern)...)
-	}
-	return subjectHashes
 }
 
 // Given object and predicate, get all subjects
