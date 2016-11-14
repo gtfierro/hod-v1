@@ -12,6 +12,8 @@ type Query struct {
 
 type SelectClause struct {
 	Variables []turtle.URI
+	Distinct  bool
+	Count     bool
 }
 
 type Filter struct {
@@ -41,7 +43,7 @@ func Parse(r io.Reader) (Query, error) {
 		return Query{}, l.error
 	}
 	q := Query{}
-	q.Select = SelectClause{Variables: l.varlist}
+	q.Select = SelectClause{Variables: l.varlist, Distinct: l.distinct, Count: l.count}
 	q.Where = []Filter{}
 	for _, filter := range l.triples {
 		q.Where = append(q.Where, filter)

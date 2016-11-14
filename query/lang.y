@@ -18,9 +18,10 @@ import (
     triples []Filter
     varlist []turtle.URI
     distinct bool
+    count bool
 }
 
-%token SELECT DISTINCT WHERE
+%token SELECT COUNT DISTINCT WHERE
 %token COMMA LBRACE RBRACE DOT SEMICOLON SLASH PLUS QUESTION ASTERISK
 %token VAR URI
 
@@ -38,11 +39,19 @@ selectClause : SELECT varList
              {
                 $$.varlist = $2.varlist
                 $$.distinct = false
+                $$.count = false
              }
              | SELECT DISTINCT varList
              {
                 $$.varlist = $3.varlist
                 $$.distinct = true
+                $$.count = false
+             }
+             | COUNT varList
+             {
+                $$.varlist = $2.varlist
+                $$.distinct = false
+                $$.count = true
              }
              ;
 
@@ -127,6 +136,7 @@ type lexer struct {
     varlist []turtle.URI
     triples []Filter
     distinct bool
+    count bool
     pos int
 }
 
@@ -139,6 +149,7 @@ func newlexer(r io.Reader) *lexer {
             {Token: SEMICOLON,  Pattern: ";"},
             {Token: DOT,  Pattern: "\\."},
             {Token: SELECT,  Pattern: "SELECT"},
+            {Token: COUNT,  Pattern: "COUNT"},
             {Token: DISTINCT,  Pattern: "DISTINCT"},
             {Token: WHERE,  Pattern: "WHERE"},
             {Token: URI,  Pattern: "[a-zA-Z]+:[a-zA-Z0-9_\\-#%$@]+"},
