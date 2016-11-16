@@ -289,13 +289,16 @@ func (db *DB) RunQuery(q query.Query) {
 
 	for _, varName := range q.Select.Variables {
 		resultTree := run.variables[varName.String()]
-		fmt.Println(varName, resultTree.Len())
-		//iter := func(i btree.Item) bool {
-		//	uri := db.MustGetURI(i.(Item))
-		//	fmt.Println(varName, uri.String())
-		//	return i != resultTree.Max()
-		//}
-		//resultTree.Ascend(iter)
+		if q.Select.Count {
+			fmt.Println(varName, resultTree.Len())
+		} else {
+			iter := func(i btree.Item) bool {
+				uri := db.MustGetURI(i.(Item))
+				fmt.Println(varName, uri.String())
+				return i != resultTree.Max()
+			}
+			resultTree.Ascend(iter)
+		}
 	}
 }
 
@@ -370,18 +373,12 @@ func (db *DB) runFilterTerm(run *queryRun, term *queryTerm) error {
 		if err != nil {
 			return err
 		}
-		results := db.getObjectFromSubjectPred(entity.PK, term.Path[0])
+		results := db.getObjectFromSubjectPred(entity.PK, term.Path)
 		if tree, found := run.variables[term.Object.String()]; found {
-			for _, res := range results {
-				if !tree.Has(Item(res)) {
-					tree.ReplaceOrInsert(Item(res))
-				}
-			}
+			mergeTrees(tree, results)
 		} else {
 			tree := btree.New(3)
-			for _, res := range results {
-				tree.ReplaceOrInsert(Item(res))
-			}
+			mergeTrees(tree, results)
 			run.variables[term.Object.String()] = tree
 		}
 	} else if !objectIsVariable {
@@ -390,18 +387,13 @@ func (db *DB) runFilterTerm(run *queryRun, term *queryTerm) error {
 		if err != nil {
 			return err
 		}
-		results := db.getSubjectFromPredObject(entity.PK, term.Path[0])
+
+		results := db.getSubjectFromPredObject(entity.PK, term.Path)
 		if tree, found := run.variables[term.Subject.String()]; found {
-			for _, res := range results {
-				if !tree.Has(Item(res)) {
-					tree.ReplaceOrInsert(Item(res))
-				}
-			}
+			mergeTrees(tree, results)
 		} else {
 			tree := btree.New(3)
-			for _, res := range results {
-				tree.ReplaceOrInsert(Item(res))
-			}
+			mergeTrees(tree, results)
 			run.variables[term.Subject.String()] = tree
 		}
 	} else {
@@ -478,36 +470,188 @@ func (db *DB) reversePathPattern(path []query.PathPattern) []query.PathPattern {
 	return reverse
 }
 
-// TODO: change to use compound predicates
-// Given object and predicate, get all subjects
-func (db *DB) getSubjectFromPredObject(objectHash [4]byte, pattern query.PathPattern) [][4]byte {
+// follow the pattern from the given object's InEdges, placing the results in the btree
+func (db *DB) followPathFromObject(object *Entity, results *btree.BTree, searchstack *list.List, pattern query.PathPattern) {
+	stack := list.New()
+	stack.PushFront(object)
+
+	predHash, err := db.GetHash(pattern.Predicate)
+	if err != nil {
+		panic(fmt.Errorf("Not found: %v (%s)", pattern.Predicate, err))
+	}
+
+	for stack.Len() > 0 {
+		entity := stack.Remove(stack.Front()).(*Entity)
+		switch pattern.Pattern {
+		case query.PATTERN_SINGLE:
+			// [found] indicates whether or not we have any edges with the given pattern
+			edges, found := entity.InEdges[string(predHash[:])]
+			// this requires the pattern to exist, so we skip if we have no edges of that name
+			if !found {
+				continue
+			}
+			// here, these entities are all connected by the required predicate
+			for _, entityHash := range edges {
+				nextEntity := db.MustGetEntityFromHash(entityHash)
+				results.ReplaceOrInsert(Item(nextEntity.PK))
+				searchstack.PushBack(nextEntity)
+			}
+			// because this is one hop, we don't add any new entities to the stack
+		case query.PATTERN_ZERO_ONE:
+			log.Notice("PATH ?", pattern)
+			// this does not require the pattern to exist, so we add ALL entities connected
+			// by ALL edges
+			for _, endpointHashList := range entity.InEdges {
+				for _, entityHash := range endpointHashList {
+					nextEntity := db.MustGetEntityFromHash(entityHash)
+					results.ReplaceOrInsert(Item(nextEntity.PK))
+					searchstack.PushBack(nextEntity)
+				}
+			}
+			// because this is one hop, we don't add any new entities to the stack
+		case query.PATTERN_ZERO_PLUS:
+			log.Notice("PATH *", pattern)
+		case query.PATTERN_ONE_PLUS:
+			edges, found := entity.InEdges[string(predHash[:])]
+			// this requires the pattern to exist, so we skip if we have no edges of that name
+			if !found {
+				continue
+			}
+			// here, these entities are all connected by the required predicate
+			for _, entityHash := range edges {
+				nextEntity := db.MustGetEntityFromHash(entityHash)
+				results.ReplaceOrInsert(Item(nextEntity.PK))
+				searchstack.PushBack(nextEntity)
+				// also make sure to add this to the stack so we can search
+				stack.PushBack(nextEntity)
+			}
+		}
+	}
+}
+
+// follow the pattern from the given subject's OutEdges, placing the results in the btree
+func (db *DB) followPathFromSubject(subject *Entity, results *btree.BTree, searchstack *list.List, pattern query.PathPattern) {
+	stack := list.New()
+	stack.PushFront(subject)
+
+	predHash, err := db.GetHash(pattern.Predicate)
+	if err != nil {
+		panic(err)
+	}
+
+	for stack.Len() > 0 {
+		entity := stack.Remove(stack.Front()).(*Entity)
+		switch pattern.Pattern {
+		case query.PATTERN_SINGLE:
+			// [found] indicates whether or not we have any edges with the given pattern
+			edges, found := entity.OutEdges[string(predHash[:])]
+			// this requires the pattern to exist, so we skip if we have no edges of that name
+			if !found {
+				continue
+			}
+			// here, these entities are all connected by the required predicate
+			for _, entityHash := range edges {
+				nextEntity := db.MustGetEntityFromHash(entityHash)
+				results.ReplaceOrInsert(Item(nextEntity.PK))
+				searchstack.PushBack(nextEntity)
+			}
+			// because this is one hop, we don't add any new entities to the stack
+		case query.PATTERN_ZERO_ONE:
+			// this does not require the pattern to exist, so we add ALL entities connected
+			// by ALL edges
+			for _, endpointHashList := range entity.OutEdges {
+				for _, entityHash := range endpointHashList {
+					nextEntity := db.MustGetEntityFromHash(entityHash)
+					results.ReplaceOrInsert(Item(nextEntity.PK))
+					searchstack.PushBack(nextEntity)
+				}
+			}
+			// because this is one hop, we don't add any new entities to the stack
+		case query.PATTERN_ZERO_PLUS:
+		case query.PATTERN_ONE_PLUS:
+			edges, found := entity.OutEdges[string(predHash[:])]
+			// this requires the pattern to exist, so we skip if we have no edges of that name
+			if !found {
+				continue
+			}
+			// here, these entities are all connected by the required predicate
+			for _, entityHash := range edges {
+				nextEntity := db.MustGetEntityFromHash(entityHash)
+				results.ReplaceOrInsert(Item(nextEntity.PK))
+				searchstack.PushBack(nextEntity)
+				// also make sure to add this to the stack so we can search
+				stack.PushBack(nextEntity)
+			}
+		}
+	}
+}
+
+func (db *DB) getSubjectFromPredObject(objectHash [4]byte, path []query.PathPattern) *btree.BTree {
+	// first get the initial object entity from the db
+	// then we're going to conduct a BFS search starting from this entity looking for all entities
+	// that have the required path sequence. We place the results in a BTree to maintain uniqueness
+
+	// So how does this traversal actually work?
+	// At each 'step', we are looking at an entity and some offset into the path.
+
 	// get the object, look in its "in" edges for the path pattern
 	objEntity, err := db.GetEntityFromHash(objectHash)
 	if err != nil {
 		panic(err)
 	}
-	// get predicate hash
-	predHash, err := db.GetHash(pattern.Predicate)
-	if err != nil {
-		panic(err)
+
+	results := btree.New(2)
+
+	stack := list.New()
+	stack.PushFront(objEntity)
+
+	for stack.Len() > 0 {
+		entity := stack.Remove(stack.Front()).(*Entity)
+		for _, pat := range path {
+			db.followPathFromObject(entity, results, stack, pat)
+		}
 	}
-	return objEntity.InEdges[string(predHash[:])]
+
+	return results
 }
 
 // TODO: change to use compound predicates
 // Given object and predicate, get all subjects
-func (db *DB) getObjectFromSubjectPred(subjectHash [4]byte, pattern query.PathPattern) [][4]byte {
-	// get the object, look in its "out" edges for the path pattern
+//func (db *DB) getSubjectFromPredObject(objectHash [4]byte, pattern query.PathPattern) [][4]byte {
+//	// get the object, look in its "in" edges for the path pattern
+//	objEntity, err := db.GetEntityFromHash(objectHash)
+//	if err != nil {
+//		panic(err)
+//	}
+//	// get predicate hash
+//	predHash, err := db.GetHash(pattern.Predicate)
+//	if err != nil {
+//		panic(err)
+//	}
+//	return objEntity.InEdges[string(predHash[:])]
+//}
+
+// TODO: change to use compound predicates
+// Given object and predicate, get all subjects
+func (db *DB) getObjectFromSubjectPred(subjectHash [4]byte, path []query.PathPattern) *btree.BTree {
 	subEntity, err := db.GetEntityFromHash(subjectHash)
 	if err != nil {
 		panic(err)
 	}
-	// get predicate hash
-	predHash, err := db.GetHash(pattern.Predicate)
-	if err != nil {
-		panic(err)
+
+	results := btree.New(2)
+
+	stack := list.New()
+	stack.PushFront(subEntity)
+
+	for stack.Len() > 0 {
+		entity := stack.Remove(stack.Front()).(*Entity)
+		for _, pat := range path {
+			db.followPathFromSubject(entity, results, stack, pat)
+		}
 	}
-	return subEntity.InEdges[string(predHash[:])]
+
+	return results
 }
 
 // TODO: change to use compound predicates

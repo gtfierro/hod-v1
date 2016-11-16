@@ -32,6 +32,8 @@ query        : selectClause WHERE LBRACE whereTriples RBRACE SEMICOLON
                yylex.(*lexer).varlist = $1.varlist
                yylex.(*lexer).distinct = $1.distinct
                yylex.(*lexer).triples = $4.triples
+               yylex.(*lexer).distinct = $1.distinct
+               yylex.(*lexer).count = $1.count
              }
              ;
 

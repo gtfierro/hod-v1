@@ -65,7 +65,7 @@ const yyEofCode = 1
 const yyErrCode = 2
 const yyInitialStackSize = 16
 
-//line lang.y:129
+//line lang.y:131
 
 const eof = 0
 
@@ -540,10 +540,12 @@ yydefault:
 			yylex.(*lexer).varlist = yyDollar[1].varlist
 			yylex.(*lexer).distinct = yyDollar[1].distinct
 			yylex.(*lexer).triples = yyDollar[4].triples
+			yylex.(*lexer).distinct = yyDollar[1].distinct
+			yylex.(*lexer).count = yyDollar[1].count
 		}
 	case 2:
 		yyDollar = yyS[yypt-2 : yypt+1]
-		//line lang.y:39
+		//line lang.y:41
 		{
 			yyVAL.varlist = yyDollar[2].varlist
 			yyVAL.distinct = false
@@ -551,7 +553,7 @@ yydefault:
 		}
 	case 3:
 		yyDollar = yyS[yypt-3 : yypt+1]
-		//line lang.y:45
+		//line lang.y:47
 		{
 			yyVAL.varlist = yyDollar[3].varlist
 			yyVAL.distinct = true
@@ -559,7 +561,7 @@ yydefault:
 		}
 	case 4:
 		yyDollar = yyS[yypt-2 : yypt+1]
-		//line lang.y:51
+		//line lang.y:53
 		{
 			yyVAL.varlist = yyDollar[2].varlist
 			yyVAL.distinct = false
@@ -567,91 +569,91 @@ yydefault:
 		}
 	case 5:
 		yyDollar = yyS[yypt-1 : yypt+1]
-		//line lang.y:59
+		//line lang.y:61
 		{
 			yyVAL.varlist = []turtle.URI{turtle.ParseURI(yyDollar[1].str)}
 		}
 	case 6:
 		yyDollar = yyS[yypt-2 : yypt+1]
-		//line lang.y:63
+		//line lang.y:65
 		{
 			yyVAL.varlist = append([]turtle.URI{turtle.ParseURI(yyDollar[1].str)}, yyDollar[2].varlist...)
 		}
 	case 7:
 		yyDollar = yyS[yypt-1 : yypt+1]
-		//line lang.y:69
+		//line lang.y:71
 		{
 			yyVAL.triples = []Filter{yyDollar[1].triple}
 		}
 	case 8:
 		yyDollar = yyS[yypt-2 : yypt+1]
-		//line lang.y:73
+		//line lang.y:75
 		{
 			yyVAL.triples = append(yyDollar[2].triples, yyDollar[1].triple)
 		}
 	case 9:
 		yyDollar = yyS[yypt-4 : yypt+1]
-		//line lang.y:79
+		//line lang.y:81
 		{
 			yyVAL.triple = Filter{yyDollar[1].val, yyDollar[2].pred, yyDollar[3].val}
 		}
 	case 10:
 		yyDollar = yyS[yypt-6 : yypt+1]
-		//line lang.y:83
+		//line lang.y:85
 		{
 			yyVAL.triple = Filter{yyDollar[2].val, yyDollar[3].pred, yyDollar[4].val}
 		}
 	case 11:
 		yyDollar = yyS[yypt-1 : yypt+1]
-		//line lang.y:89
+		//line lang.y:91
 		{
 			yyVAL.pred = yyDollar[1].pred
 		}
 	case 12:
 		yyDollar = yyS[yypt-3 : yypt+1]
-		//line lang.y:93
+		//line lang.y:95
 		{
 			yyVAL.pred = append(yyDollar[1].pred, yyDollar[3].pred...)
 		}
 	case 13:
 		yyDollar = yyS[yypt-1 : yypt+1]
-		//line lang.y:99
+		//line lang.y:101
 		{
 			yyVAL.pred = []PathPattern{{Predicate: turtle.ParseURI(yyDollar[1].str), Pattern: PATTERN_SINGLE}}
 		}
 	case 14:
 		yyDollar = yyS[yypt-1 : yypt+1]
-		//line lang.y:103
+		//line lang.y:105
 		{
 			yyVAL.pred = []PathPattern{{Predicate: turtle.ParseURI(yyDollar[1].str), Pattern: PATTERN_SINGLE}}
 		}
 	case 15:
 		yyDollar = yyS[yypt-2 : yypt+1]
-		//line lang.y:107
+		//line lang.y:109
 		{
 			yyVAL.pred = []PathPattern{{Predicate: turtle.ParseURI(yyDollar[1].str), Pattern: PATTERN_ONE_PLUS}}
 		}
 	case 16:
 		yyDollar = yyS[yypt-2 : yypt+1]
-		//line lang.y:111
+		//line lang.y:113
 		{
 			yyVAL.pred = []PathPattern{{Predicate: turtle.ParseURI(yyDollar[1].str), Pattern: PATTERN_ZERO_ONE}}
 		}
 	case 17:
 		yyDollar = yyS[yypt-2 : yypt+1]
-		//line lang.y:115
+		//line lang.y:117
 		{
 			yyVAL.pred = []PathPattern{{Predicate: turtle.ParseURI(yyDollar[1].str), Pattern: PATTERN_ZERO_PLUS}}
 		}
 	case 18:
 		yyDollar = yyS[yypt-1 : yypt+1]
-		//line lang.y:121
+		//line lang.y:123
 		{
 			yyVAL.val = turtle.ParseURI(yyDollar[1].str)
 		}
 	case 19:
 		yyDollar = yyS[yypt-1 : yypt+1]
-		//line lang.y:125
+		//line lang.y:127
 		{
 			yyVAL.val = turtle.ParseURI(yyDollar[1].str)
 		}
