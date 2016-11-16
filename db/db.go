@@ -16,6 +16,7 @@ import (
 
 // logger
 var log *logging.Logger
+var emptyHash = [4]byte{0, 0, 0, 0}
 
 func init() {
 	log = logging.MustGetLogger("hod")
@@ -118,6 +119,7 @@ func (db *DB) insertEntity(entity turtle.URI, hashdest []byte, enttx, pktx *leve
 	db.hashURI(entity, hashdest, salt)
 	for {
 		if exists, err := pktx.Has(hashdest, nil); err == nil && exists {
+			log.Warning("hash exists")
 			salt += 1
 			db.hashURI(entity, hashdest, salt)
 		} else if err != nil {
@@ -157,38 +159,9 @@ func (db *DB) loadPredicateEntity(predicate turtle.URI, _predicateHash, _subject
 
 	pred.AddSubjectObject(subjectHash, objectHash)
 	db.predIndex[predicate] = pred
-	//log.Debugf("adding %x %x", _subjectHash, _objectHash)
-	//log.Debugf("new index %s => %+v", predicate, pred)
-
-	//predtx.Put
+	//TODO: save predicate index
 
 	return nil
-
-	//// check if we have a copy already
-	//if exists, err := predtx.Has(predicateHash[:], nil); err == nil && exists {
-	//	// if we have it, fetch and unmarshal
-	//	bytes, err := predtx.Get(predicateHash[:], nil)
-	//	if err != nil {
-	//		return err
-	//	}
-	//	_, err = pred.UnmarshalMsg(bytes)
-	//	if err != nil {
-	//		return err
-	//	}
-	//} else if err != nil {
-	//	return err
-	//}
-
-	//// add our subject and object to the predicate and save
-	//pred.AddSubjectObject(subjectHash, objectHash)
-	//bytes, err := pred.MarshalMsg(nil)
-	//if err != nil {
-	//	return err
-	//}
-	//if err := predtx.Put(predicateHash[:], bytes, nil); err != nil {
-	//	return err
-	//}
-	//return nil
 }
 
 func (db *DB) LoadRelationships(dataset turtle.DataSet) error {
@@ -293,32 +266,26 @@ func (db *DB) LoadDataset(dataset turtle.DataSet) error {
 	return nil
 }
 
-//func (db *DB) BuildPredicateIndex(dataset turtle.DataSet) {
-//	stat := time.Now()
-//
-//	// loop through db.relationships, which is the set of all relship/inverse-relship
-//	// loaded in the database. For each of these, we loop through ALL triples that have
-//	// us as a predicate, and we add to the PredicateEntity. When done, save this to the
-//	// predicate index
-//	// TODO: saving to the predicate index can either use these large data structures
-//	// for each predicate, or it can do prefix scans on the database (the prefix is
-//	// the predicate+"subject" or predicate+"object" and that will return the list
-//	// of subjects/objects.
-//	// For now, we do the large objects and just keep in memory
-//
-//	log.Infof("Built predicate index in %s", time.Since(start))
-//
-//}
-
 // returns the uint32 hash of the given URI (this is adjusted for uniqueness)
 func (db *DB) GetHash(entity turtle.URI) ([4]byte, error) {
 	var hash [4]byte
 	val, err := db.entityDB.Get(entity.Bytes(), nil)
 	if err != nil {
-		return [4]byte{}, err
+		return emptyHash, err
 	}
 	copy(hash[:], val)
+	if hash == emptyHash {
+		return emptyHash, errors.New("Got bad hash")
+	}
 	return hash, nil
+}
+
+func (db *DB) MustGetHash(entity turtle.URI) [4]byte {
+	val, err := db.GetHash(entity)
+	if err != nil {
+		panic(err)
+	}
+	return val
 }
 
 func (db *DB) GetURI(hash [4]byte) (turtle.URI, error) {
@@ -356,6 +323,41 @@ func (db *DB) GetEntity(uri turtle.URI) (*Entity, error) {
 
 func (db *DB) GetEntityFromHash(hash [4]byte) (*Entity, error) {
 	bytes, err := db.graphDB.Get(hash[:], nil)
+	if err != nil {
+		return nil, err
+	}
+	ent := NewEntity()
+	_, err = ent.UnmarshalMsg(bytes)
+	return ent, err
+}
+
+func (db *DB) MustGetEntityFromHash(hash [4]byte) *Entity {
+	e, err := db.GetEntityFromHash(hash)
+	if err != nil {
+		panic(err)
+	}
+	return e
+}
+
+func (db *DB) GetEntityTx(graphtx *leveldb.Transaction, uri turtle.URI) (*Entity, error) {
+	var entity = NewEntity()
+	hash, err := db.GetHash(uri)
+	if err != nil {
+		return nil, err
+	}
+	bytes, err := graphtx.Get(hash[:], nil)
+	if err != nil {
+		return nil, err
+	}
+	_, err = entity.UnmarshalMsg(bytes)
+	if err != nil {
+		return nil, err
+	}
+	return entity, nil
+}
+
+func (db *DB) GetEntityFromHashTx(graphtx *leveldb.Transaction, hash [4]byte) (*Entity, error) {
+	bytes, err := graphtx.Get(hash[:], nil)
 	if err != nil {
 		return nil, err
 	}

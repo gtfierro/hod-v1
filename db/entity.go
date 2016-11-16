@@ -19,7 +19,8 @@ func NewEntity() *Entity {
 	}
 }
 
-func (e *Entity) AddInEdge(predicate, endpoint [4]byte) {
+// returns true if we added an endpoint; false if it was already there
+func (e *Entity) AddInEdge(predicate, endpoint [4]byte) bool {
 	var (
 		edgeList [][4]byte
 		found    bool
@@ -29,22 +30,23 @@ func (e *Entity) AddInEdge(predicate, endpoint [4]byte) {
 		// if we don't, then create a new one and put the endpoint in it
 		edgeList = [][4]byte{endpoint}
 		e.InEdges[string(predicate[:])] = edgeList
-		return
+		return true
 	}
 	// else, we check if our endpoint is already in the edge list
 	for _, edge := range edgeList {
 		// if it is, return
 		if edge == endpoint {
-			return
+			return false
 		}
 	}
 	// else, we add it into the edge list and return
 	edgeList = append(edgeList, endpoint)
 	e.InEdges[string(predicate[:])] = edgeList
-	return
+	return true
 }
 
-func (e *Entity) AddOutEdge(predicate, endpoint [4]byte) {
+// returns true if we added an endpoint; false if it was already there
+func (e *Entity) AddOutEdge(predicate, endpoint [4]byte) bool {
 	var (
 		edgeList [][4]byte
 		found    bool
@@ -54,19 +56,19 @@ func (e *Entity) AddOutEdge(predicate, endpoint [4]byte) {
 		// if we don't, then create a new one and put the endpoint in it
 		edgeList = [][4]byte{endpoint}
 		e.OutEdges[string(predicate[:])] = edgeList
-		return
+		return true
 	}
 	// else, we check if our endpoint is already in the edge list
 	for _, edge := range edgeList {
 		// if it is, return
 		if edge == endpoint {
-			return
+			return false
 		}
 	}
 	// else, we add it into the edge list and return
 	edgeList = append(edgeList, endpoint)
 	e.OutEdges[string(predicate[:])] = edgeList
-	return
+	return true
 }
 
 type PredicateEntity struct {

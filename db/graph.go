@@ -2,6 +2,7 @@ package db
 
 import (
 	turtle "github.com/gtfierro/hod/goraptor"
+	"github.com/pkg/errors"
 )
 
 // make sure to call this after we've populated the entity and publickey databases
@@ -20,6 +21,12 @@ import (
 //  - fill in all of the edges in the graph
 func (db *DB) buildGraph(dataset turtle.DataSet) error {
 	var predicates = make(map[string][4]byte)
+	var subjAdded = 0
+	var objAdded = 0
+	graphtx, err := db.graphDB.OpenTransaction()
+	if err != nil {
+		return errors.Wrap(err, "Could not open transaction on graph dataset")
+	}
 	// first pass
 	for _, triple := range dataset.Triples {
 		// populate predicate cache
@@ -37,15 +44,16 @@ func (db *DB) buildGraph(dataset turtle.DataSet) error {
 			return err
 		}
 		// check if entity exists
-		if exists, err := db.graphDB.Has(subjHash[:], nil); err == nil && !exists {
+		if exists, err := graphtx.Has(subjHash[:], nil); err == nil && !exists {
 			// if not exists, create a new entity and insert it
+			subjAdded += 1
 			subEnt := NewEntity()
 			subEnt.PK = subjHash
 			bytes, err := subEnt.MarshalMsg(nil)
 			if err != nil {
 				return err
 			}
-			if err := db.graphDB.Put(subjHash[:], bytes, nil); err != nil {
+			if err := graphtx.Put(subjHash[:], bytes, nil); err != nil {
 				return err
 			}
 		} else if err != nil {
@@ -58,64 +66,85 @@ func (db *DB) buildGraph(dataset turtle.DataSet) error {
 			return err
 		}
 		// check if entity exists
-		if exists, err := db.graphDB.Has(objHash[:], nil); err == nil && !exists {
+		if exists, err := graphtx.Has(objHash[:], nil); err == nil && !exists {
 			// if not exists, create a new entity and insert it
+			objAdded += 1
 			objEnt := NewEntity()
 			objEnt.PK = objHash
 			bytes, err := objEnt.MarshalMsg(nil)
 			if err != nil {
 				return err
 			}
-			if err := db.graphDB.Put(objHash[:], bytes, nil); err != nil {
+			if err := graphtx.Put(objHash[:], bytes, nil); err != nil {
 				return err
 			}
 		} else if err != nil {
 			return err
 		}
 	}
+	if err := graphtx.Commit(); err != nil {
+		return errors.Wrap(err, "Could not commit transaction")
+	}
+
+	log.Errorf("subjects %d, objects %d", subjAdded, objAdded)
+
+	graphtx, err = db.graphDB.OpenTransaction()
+	if err != nil {
+		return errors.Wrap(err, "Could not open transaction on graph dataset")
+	}
 
 	// second pass
 	for _, triple := range dataset.Triples {
-		subject, err := db.GetEntity(triple.Subject)
+		var (
+			reAddSubject = false
+			reAddObject  = false
+		)
+		subject, err := db.GetEntityTx(graphtx, triple.Subject)
 		if err != nil {
 			return err
 		}
-		object, err := db.GetEntity(triple.Object)
+		object, err := db.GetEntityTx(graphtx, triple.Object)
 		if err != nil {
 			return err
 		}
 
 		// add the forward edge
 		predHash := predicates[triple.Predicate.String()]
-		subject.AddOutEdge(predHash, object.PK)
-		object.AddInEdge(predHash, subject.PK)
+		reAddSubject = reAddSubject || subject.AddOutEdge(predHash, object.PK)
+		reAddObject = reAddObject || object.AddInEdge(predHash, subject.PK)
 
 		// find the inverse edge
 		reverseEdge, found := db.relationships[triple.Predicate]
 		// if an inverse edge exists, then we add it to the object
 		if found {
 			reverseEdgeHash := predicates[reverseEdge.String()]
-			object.AddOutEdge(reverseEdgeHash, subject.PK)
-			subject.AddInEdge(reverseEdgeHash, object.PK)
+			reAddObject = reAddObject || object.AddOutEdge(reverseEdgeHash, subject.PK)
+			reAddSubject = reAddSubject || subject.AddInEdge(reverseEdgeHash, object.PK)
 		}
 
-		// re-put in graph
-		bytes, err := subject.MarshalMsg(nil)
-		if err != nil {
-			return err
-		}
-		if err := db.graphDB.Put(subject.PK[:], bytes, nil); err != nil {
-			return err
-		}
-
-		bytes, err = object.MarshalMsg(nil)
-		if err != nil {
-			return err
-		}
-		if err := db.graphDB.Put(object.PK[:], bytes, nil); err != nil {
-			return err
+		if reAddSubject {
+			// re-put in graph
+			bytes, err := subject.MarshalMsg(nil)
+			if err != nil {
+				return err
+			}
+			if err := graphtx.Put(subject.PK[:], bytes, nil); err != nil {
+				return err
+			}
 		}
 
+		if reAddObject {
+			bytes, err := object.MarshalMsg(nil)
+			if err != nil {
+				return err
+			}
+			if err := graphtx.Put(object.PK[:], bytes, nil); err != nil {
+				return err
+			}
+		}
+	}
+	if err = graphtx.Commit(); err != nil {
+		return errors.Wrap(err, "Could not commit transaction")
 	}
 
 	return nil
