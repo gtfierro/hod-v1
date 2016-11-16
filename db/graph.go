@@ -114,9 +114,9 @@ func (db *DB) buildGraph(dataset turtle.DataSet) error {
 		reAddObject = reAddObject || object.AddInEdge(predHash, subject.PK)
 
 		// find the inverse edge
-		reverseEdge, found := db.relationships[triple.Predicate]
+		reverseEdge, hasReverseEdge := db.relationships[triple.Predicate]
 		// if an inverse edge exists, then we add it to the object
-		if found {
+		if hasReverseEdge {
 			reverseEdgeHash := predicates[reverseEdge.String()]
 			reAddObject = reAddObject || object.AddOutEdge(reverseEdgeHash, subject.PK)
 			reAddSubject = reAddSubject || subject.AddInEdge(reverseEdgeHash, object.PK)

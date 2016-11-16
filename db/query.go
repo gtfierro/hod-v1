@@ -416,17 +416,16 @@ func (db *DB) runFilterTerm(run *queryRun, term *queryTerm) error {
 		if have_sub && have_obj {
 			log.Warning("NOT DONE YET")
 		} else if have_obj {
+			// in this scenario, we have a set of object entities, and we want to find the set of subject entities
+			// that map to them using the given path
 			subTree = btree.New(3)
 			iter := func(i btree.Item) bool {
 				object, err := db.GetEntityFromHash(i.(Item))
 				if err != nil {
 					log.Error(err)
 				}
-				//TODO: change this to use compound paths
-				predHash := db.predIndex[term.Path[0].Predicate]
-				for _, s := range object.InEdges[string(predHash.PK[:])] {
-					subTree.ReplaceOrInsert(Item(s))
-				}
+				results := db.getSubjectFromPredObject(object.PK, term.Path)
+				mergeTrees(subTree, results)
 				return i != objTree.Max()
 			}
 			objTree.Ascend(iter)
@@ -438,11 +437,8 @@ func (db *DB) runFilterTerm(run *queryRun, term *queryTerm) error {
 				if err != nil {
 					log.Error(err)
 				}
-				// TODO: change to use compound predicates
-				predHash := db.predIndex[term.Path[0].Predicate]
-				for _, s := range subject.OutEdges[string(predHash.PK[:])] {
-					subTree.ReplaceOrInsert(Item(s))
-				}
+				results := db.getObjectFromSubjectPred(subject.PK, term.Path)
+				mergeTrees(objTree, results)
 				return i != subTree.Max()
 			}
 			subTree.Ascend(iter)
