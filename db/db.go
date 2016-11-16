@@ -241,6 +241,13 @@ func (db *DB) LoadDataset(dataset turtle.DataSet) error {
 		}
 	}
 
+	for pred, _ := range db.relationships {
+		log.Error(pred)
+		if err := db.insertEntity(pred, predicateHash, enttx, pktx); err != nil {
+			return err
+		}
+	}
+
 	// finish those transactions
 	if err := enttx.Commit(); err != nil {
 		return errors.Wrap(err, "Could not commit transaction")
@@ -261,6 +268,10 @@ func (db *DB) LoadDataset(dataset turtle.DataSet) error {
 
 	for pfx, uri := range db.namespaces {
 		fmt.Printf("%s => %s\n", pfx, uri)
+	}
+	fmt.Println("Relationships")
+	for rel, invrel := range db.relationships {
+		fmt.Printf("%s => %s\n", rel.String(), invrel.String())
 	}
 
 	return nil
