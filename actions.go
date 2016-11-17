@@ -44,6 +44,9 @@ func load(c *cli.Context) error {
 		return err
 	}
 	err = db.LoadRelationships(relships)
+	if err != nil {
+		return err
+	}
 	err = db.LoadDataset(ds)
 	if err != nil {
 		return err
@@ -68,7 +71,7 @@ func load(c *cli.Context) error {
 			continue
 		}
 		bufQuery += line + " "
-		if !strings.HasSuffix(line, ";") {
+		if !strings.HasSuffix(strings.TrimSpace(line), ";") {
 			rl.SetPrompt(">>> ...")
 			continue
 		}
