@@ -129,6 +129,21 @@ func (db *DB) formExecutionPlan(q query.Query) *queryPlan {
 }
 
 // okay how do we run the execution plan?
+// There's actually some ambiguity here: originally, the plan was to throw all of the matched
+// variables into Btrees, and then recover what the returned tuples are; however, this isn't straightforward
+// because you only want to create the tuples that were found as a result of the query, which is going to be
+// a subset of the full connectivity between tuples in the graph. So, what's the approach?
+// Proposal 1: first run the query to get 'pools' of valid entities, then 're-run' the query, restricting results
+//             by the sets of entities that exist in the pools
+// Proposal 2: when we execute the query by following the query plan, rather than running on the full graph, we
+//             make sure to associate our result sets with the chain of terms and variables and entities we have
+//             traversed so far. The challenge here is how do we do this kind of associated store.
+// I like proposal 2 better, because it re-does less work. So, how do we do it?
+// When we resolve a variable (lets start with one of the root terms), we get a set of 'proposal' entities. Right now
+// we just throw these into a big tree and treat it as a 'set'. Rather, instead of just storing the entity, we need to store
+// a structure that has the entity along with the set of paths of relationships to other variables that come from that entity.
+// The end result is we get a list of tuples of all variables in the query, and then we can take the subset of variables
+// mentioned in the select clause and uniquify the results
 func (db *DB) executeQuery(run *queryRun) {
 	// first, resolve all the roots and store the intermediate results
 
@@ -138,7 +153,6 @@ func (db *DB) executeQuery(run *queryRun) {
 	}
 	for stack.Len() > 0 {
 		node := stack.Remove(stack.Front()).(*queryTerm)
-		fmt.Println("pop", node)
 		db.runFilterTerm(run, node)
 		// add node children to back of stack
 		for _, c := range node.children {
@@ -209,7 +223,52 @@ func (db *DB) runFilterTerm(run *queryRun, term *queryTerm) error {
 		}
 		log.Debug("have s?", have_sub, "have o?", have_obj)
 		if have_sub && have_obj {
-			log.Warning("NOT DONE YET")
+			// what do we do here? We restrict the sets to those pairs of subject/object that are connected
+			// by the provided predicate path
+			// How do we do this? We iterate through the SHORTER of the two variable trees. For example, lets say
+			// this is the subject variable tree
+			// for sub in subjectTree:
+			//   foundObjects = sub.findPath(path)
+			//   if len(foundObjects) > 0:
+			//      keepSubs.appenD(sub)
+			//      keepObjects.append(foundobjects...)
+			//TODO: DOES THIS EVEN WORK. Check counts before/after
+			keepSubjects := btree.New(3)
+			keepObjects := btree.New(3)
+			log.Warningf("subject len %d, object len %d", subTree.Len(), objTree.Len())
+			if subTree.Len() <= objTree.Len() {
+				iter := func(i btree.Item) bool {
+					subject, err := db.GetEntityFromHash(i.(Item))
+					if err != nil {
+						log.Error(err)
+					}
+					results := db.getObjectFromSubjectPred(subject.PK, term.Path)
+					if results.Len() > 0 {
+						keepSubjects.ReplaceOrInsert(i)
+						mergeTrees(keepObjects, results)
+					}
+					return i != subTree.Max()
+				}
+				subTree.Ascend(iter)
+			} else {
+				iter := func(i btree.Item) bool {
+					object, err := db.GetEntityFromHash(i.(Item))
+					if err != nil {
+						log.Error(err)
+					}
+					results := db.getSubjectFromPredObject(object.PK, term.Path)
+					if results.Len() > 0 {
+						keepObjects.ReplaceOrInsert(i)
+						mergeTrees(keepSubjects, results)
+					}
+					return i != objTree.Max()
+				}
+				objTree.Ascend(iter)
+			}
+			log.Warningf("subject len %d, object len %d", keepSubjects.Len(), keepObjects.Len())
+			//TODO: the other way, traversing object tree
+			run.variables[term.Subject.String()] = keepSubjects
+			run.variables[term.Object.String()] = keepObjects
 		} else if have_obj {
 			// in this scenario, we have a set of object entities, and we want to find the set of subject entities
 			// that map to them using the given path
