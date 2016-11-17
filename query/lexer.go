@@ -61,7 +61,9 @@ func (s *Scanner) matchBytesToToken(bytes []byte) *Result {
 	for _, def := range s.defs {
 		if result := def.regexp.Find(bytes); result != nil {
 			if len(result) != len(bytes) { // stuff leftover!
-				s.leftover = append(s.leftover, bytes[len(result):]...)
+				if len(s.leftover) == 0 {
+					s.leftover = append(s.leftover, bytes[len(result):]...)
+				}
 			}
 			return &Result{Token: def.Token, Value: result, Line: s.lineNumber}
 		}
@@ -73,7 +75,7 @@ func (s *Scanner) Next() *Result {
 	if len(s.leftover) > 0 {
 		res := s.matchBytesToToken(s.leftover)
 		if res.Token != Error {
-			s.leftover = []byte{}
+			s.leftover = s.leftover[len(res.Value):]
 			return res
 		}
 	}
