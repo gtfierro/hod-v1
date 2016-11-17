@@ -10,6 +10,7 @@ import (
 
 	"github.com/google/btree"
 	query "github.com/gtfierro/hod/query"
+	"github.com/syndtr/goleveldb/leveldb"
 )
 
 // make a set of structs that capture what these queries want to do
@@ -472,7 +473,13 @@ func (db *DB) followPathFromObject(object *Entity, results *btree.BTree, searchs
 	stack.PushFront(object)
 
 	predHash, err := db.GetHash(pattern.Predicate)
-	if err != nil {
+	if err != nil && err == leveldb.ErrNotFound {
+		log.Infof("Adding unseen predicate %s", pattern.Predicate)
+		var hashdest [4]byte
+		if err := db.insertEntity(pattern.Predicate, hashdest[:]); err != nil {
+			panic(fmt.Errorf("Could not insert entity %s (%v)", pattern.Predicate, err))
+		}
+	} else if err != nil {
 		panic(fmt.Errorf("Not found: %v (%s)", pattern.Predicate, err))
 	}
 

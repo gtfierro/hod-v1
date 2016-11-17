@@ -98,13 +98,48 @@ func (db *DB) hashURI(u turtle.URI, dest []byte, salt uint32) {
 	binary.LittleEndian.PutUint32(dest, hash)
 }
 
+func (db *DB) insertEntity(entity turtle.URI, hashdest []byte) error {
+	// check if we've inserted Subject already
+	if exists, err := db.entityDB.Has(entity.Bytes(), nil); err == nil && exists {
+		// populate hash anyway
+		hash, err := db.entityDB.Get(entity.Bytes(), nil)
+		copy(hashdest, hash[:])
+		return err
+	} else if err != nil {
+		return errors.Wrapf(err, "Error checking db membership for %s", entity.String())
+	}
+	// generate the hash
+	var salt = uint32(0)
+	db.hashURI(entity, hashdest, salt)
+	for {
+		if exists, err := db.pkDB.Has(hashdest, nil); err == nil && exists {
+			log.Warning("hash exists")
+			salt += 1
+			db.hashURI(entity, hashdest, salt)
+		} else if err != nil {
+			return errors.Wrapf(err, "Error checking db membership for %v", hashdest)
+		} else {
+			break
+		}
+	}
+
+	// insert the hash into the entity and prefix dbs
+	if err := db.entityDB.Put(entity.Bytes(), hashdest, nil); err != nil {
+		return errors.Wrapf(err, "Error inserting entity %s", entity.String())
+	}
+	if err := db.pkDB.Put(hashdest, entity.Bytes(), nil); err != nil {
+		return errors.Wrapf(err, "Error inserting pk %s", hashdest)
+	}
+	return nil
+}
+
 // for each part of the triple (subject, predicate, object), we check if its already in the entity database.
 // If it is, we can skip it. If not, we generate a murmur3 hash for the entity, and then
 // 0. check if we've already inserted the entity (skip if we already have)
 // 1. check if the hash is unique (check membership in pk db) - if it isn't then we add a salt and check again
 // 2. insert hash => []byte(entity) into pk db
 // 3. insert []byte(entity) => hash into entity db
-func (db *DB) insertEntity(entity turtle.URI, hashdest []byte, enttx, pktx *leveldb.Transaction) error {
+func (db *DB) insertEntityTx(entity turtle.URI, hashdest []byte, enttx, pktx *leveldb.Transaction) error {
 	// check if we've inserted Subject already
 	if exists, err := enttx.Has(entity.Bytes(), nil); err == nil && exists {
 		// populate hash anyway
@@ -227,13 +262,13 @@ func (db *DB) LoadDataset(dataset turtle.DataSet) error {
 		objectHash    = make([]byte, 4)
 	)
 	for _, triple := range dataset.Triples {
-		if err := db.insertEntity(triple.Subject, subjectHash, enttx, pktx); err != nil {
+		if err := db.insertEntityTx(triple.Subject, subjectHash, enttx, pktx); err != nil {
 			return err
 		}
-		if err := db.insertEntity(triple.Predicate, predicateHash, enttx, pktx); err != nil {
+		if err := db.insertEntityTx(triple.Predicate, predicateHash, enttx, pktx); err != nil {
 			return err
 		}
-		if err := db.insertEntity(triple.Object, objectHash, enttx, pktx); err != nil {
+		if err := db.insertEntityTx(triple.Object, objectHash, enttx, pktx); err != nil {
 			return err
 		}
 		if err := db.loadPredicateEntity(triple.Predicate, predicateHash, subjectHash, objectHash, predtx); err != nil {
@@ -243,7 +278,7 @@ func (db *DB) LoadDataset(dataset turtle.DataSet) error {
 
 	for pred, _ := range db.relationships {
 		log.Error(pred)
-		if err := db.insertEntity(pred, predicateHash, enttx, pktx); err != nil {
+		if err := db.insertEntityTx(pred, predicateHash, enttx, pktx); err != nil {
 			return err
 		}
 	}
