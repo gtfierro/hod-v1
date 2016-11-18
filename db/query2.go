@@ -36,7 +36,7 @@ func (db *DB) executeQuery2(run *queryRun) {
 			stack.PushBack(c)
 		}
 	}
-	for variable, res := range run.variables {
+	for variable, res := range run.vars {
 		fmt.Printf("var %s has count %d\n", variable, res.Len())
 	}
 }
@@ -44,6 +44,7 @@ func (db *DB) executeQuery2(run *queryRun) {
 func (db *DB) runFilterTerm2(run *queryRun, term *queryTerm) error {
 	// first determine if we have any variables in the term. This determines
 	// what actions we take
+	fmt.Println("run filter", term)
 	var (
 		subjectIsVariable = strings.HasPrefix(term.Subject.Value, "?")
 		objectIsVariable  = strings.HasPrefix(term.Object.Value, "?")
@@ -96,7 +97,7 @@ func (db *DB) runFilterTerm2(run *queryRun, term *queryTerm) error {
 			return err
 		}
 		reachableSubjects := db.getSubjectFromPredObject(object.PK, term.Path)
-		fmt.Println(reachableSubjects.Len())
+		fmt.Println("reachable subject", reachableSubjects.Len())
 		keepProposals := btree.New(3)
 		if proposals, found := run.vars[term.Object.String()]; found {
 			iter := func(i btree.Item) bool {
@@ -113,6 +114,7 @@ func (db *DB) runFilterTerm2(run *queryRun, term *queryTerm) error {
 			// here, we don't have a set of proposal objects, so we add ALL reachable
 			// objects as proposal VariableEntities
 			keepProposals = hashTreeToEntityTree(reachableSubjects)
+			fmt.Println("proposals", keepProposals.Len())
 		}
 		run.vars[term.Subject.String()] = keepProposals
 	} else {
@@ -123,30 +125,83 @@ func (db *DB) runFilterTerm2(run *queryRun, term *queryTerm) error {
 		// 4. we do NOT have results for either S or O
 		// If scenario 4, then the query is not solveable, because if we are at this point,
 		// then we should have filled at least one of the variables
-		subTree, have_sub := run.variables[term.Subject.String()]
-		objTree, have_obj := run.variables[term.Object.String()]
+		subTree, have_sub := run.vars[term.Subject.String()]
+		objTree, have_obj := run.vars[term.Object.String()]
 		if have_sub {
 			have_sub = subTree.Len() > 0
 		}
 		if have_obj {
 			have_obj = objTree.Len() > 0
 		}
+		fmt.Println("sub, obj", have_sub, have_obj)
 		if have_obj && have_sub {
+			// if we have results for both S and O, then we have a scenario something like:
+			//   ?room rdf:type brick:Room
+			//   ?zone rdf:type brick:HVAC_Zone
+			//   ?room bf:hasPart ?zone
+			// Here, we have pulled in the types for both of ?room and ?zone, and we need to restrict
+			// the result sets by pairs that are connected by hasPart.
+			// We loop through the smaller of the two result sets (say S is smaller than O). For each
+			// subject in S, we find all objects in O that have the desired relationship and connect those
+			// with that subject. When finished, we "delete" O.
+			keepSubjects := btree.New(3)
+			keepObjects := btree.New(3)
+			if subTree.Len() <= objTree.Len() {
+				iter := func(i btree.Item) bool {
+					subject := i.(*VariableEntity)
+					// get all of the objects appropriately connected to our subject
+					results := db.getObjectFromSubjectPred(subject.PK, term.Path)
+					// terminate early if we have no results. Make sure we don't add this subject to any result set
+					if results.Len() == 0 {
+						return i != subTree.Max()
+					}
+					// filter 'results' by the objects we have in objTree
+					subject.Links[term.Object.String()] = intersectTrees(objTree, hashTreeToEntityTree(results))
+					keepSubjects.ReplaceOrInsert(subject)
+					return i != subTree.Max()
+				}
+				subTree.Ascend(iter)
+				run.vars[term.Subject.String()] = keepSubjects
+				delete(run.vars, term.Object.String())
+			} else {
+				iter := func(i btree.Item) bool {
+					object := i.(*VariableEntity)
+					// get all of the subjects appropriately connected to our object
+					results := db.getSubjectFromPredObject(object.PK, term.Path)
+					// terminate early if we have no results. Make sure we don't add this object to any result set
+					if results.Len() == 0 {
+						return i != subTree.Max()
+					}
+					// filter 'results' by the subjects we have in objTree
+					object.Links[term.Subject.String()] = intersectTrees(subTree, hashTreeToEntityTree(results))
+					keepObjects.ReplaceOrInsert(object)
+					return i != objTree.Max()
+				}
+				objTree.Ascend(iter)
+				run.vars[term.Object.String()] = keepObjects
+				delete(run.vars, term.Subject.String())
+			}
 		} else if have_obj {
 			// we have a set of object proposals. For each of them, we find all matching
 			// subjects with the requisite path that terminate at the given object, and
 			// attach those subjects to that variable
 			objectProposals := run.vars[term.Object.String()]
-			//subjectVariables := btree.New(3)
 			iter := func(i btree.Item) bool {
 				object := i.(*VariableEntity)
 				subjects := db.getSubjectFromPredObject(object.PK, term.Path)
 				object.Links[term.Subject.String()] = hashTreeToEntityTree(subjects)
-				//mergeTrees(subjectVariables, subjects)
 				return i != objectProposals.Max()
 			}
 			objectProposals.Ascend(iter)
 		} else if have_sub {
+			subjectProposals := run.vars[term.Subject.String()]
+			iter := func(i btree.Item) bool {
+				subject := i.(*VariableEntity)
+				objects := db.getObjectFromSubjectPred(subject.PK, term.Path)
+				subject.Links[term.Object.String()] = hashTreeToEntityTree(objects)
+				return i != subjectProposals.Max()
+			}
+			subjectProposals.Ascend(iter)
 		}
 	}
 	return nil

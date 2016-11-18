@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/google/btree"
+	turtle "github.com/gtfierro/hod/goraptor"
 	query "github.com/gtfierro/hod/query"
 	"github.com/syndtr/goleveldb/leveldb"
 )
@@ -33,23 +34,6 @@ type queryRun struct {
 	plan      *queryPlan
 	variables map[string]*btree.BTree
 	vars      map[string]*btree.BTree
-}
-
-// retrieves for each of the variables in the vars, get each of its Links, etc etc
-func (qr *queryRun) getTuples() {
-	for varname, tree := range qr.vars {
-		stack := list.New()
-		iter := func(i btree.Item) bool {
-			entity := i.(*VariableEntity)
-			stack.PushFront(entity)
-			return i != tree.Max()
-		}
-		tree.Ascend(iter)
-		for stack.Len() > 0 {
-			entity := stack.Remove(stack.Front()).(*VariableEntity)
-
-		}
-	}
 }
 
 func makeQueryRun(plan *queryPlan) *queryRun {
@@ -99,24 +83,87 @@ func (db *DB) RunQuery(q query.Query) {
 
 	runStart := time.Now()
 	run := makeQueryRun(qp)
-	db.executeQuery(run)
+	//db.executeQuery(run)
 	db.executeQuery2(run)
 	log.Infof("Ran query in %s", time.Since(runStart))
 
-	for _, varName := range q.Select.Variables {
-		resultTree := run.variables[varName.String()]
-		if q.Select.Count {
-			fmt.Println(varName, resultTree.Len())
-			fmt.Println("new method =>", varName, run.vars[varName.String()].Len())
-		} else {
-			iter := func(i btree.Item) bool {
-				uri := db.MustGetURI(i.(Item))
-				fmt.Println(varName, uri.String())
-				return i != resultTree.Max()
-			}
-			resultTree.Ascend(iter)
+	//for _, varName := range q.Select.Variables {
+	//	resultTree := run.variables[varName.String()]
+	//	if q.Select.Count {
+	//		fmt.Println(varName, resultTree.Len())
+	//	} else {
+	//		iter := func(i btree.Item) bool {
+	//			uri := db.MustGetURI(i.(Item))
+	//			fmt.Println(varName, uri.String())
+	//			return i != resultTree.Max()
+	//		}
+	//		resultTree.Ascend(iter)
+	//	}
+	//}
+	results := db.getTuples(run)
+	if q.Select.Count {
+		fmt.Println(len(results))
+	} else {
+		for _, row := range results {
+			fmt.Println(row)
 		}
 	}
+}
+
+// retrieves for each of the variables in the vars, get each of its Links, etc etc
+func (db *DB) getTuples(qr *queryRun) [][]turtle.URI {
+	var tuples []map[string]turtle.URI
+	for varname, tree := range qr.vars {
+		fmt.Println("varname", varname, "has", tree.Len(), "entries")
+		iter := func(i btree.Item) bool {
+			entity := i.(*VariableEntity)
+			tuples = append(tuples, db._getTuplesFromLinks(varname, entity)...)
+			return i != tree.Max()
+		}
+		tree.Ascend(iter)
+		//for stack.Len() > 0 {
+		//	row := make(map[string]turtle.URI)
+		//	entity := stack.Remove(stack.Front()).(*VariableEntity)
+		//	row[varname] = db.MustGetURI(entity.PK)
+		//	for linkname, tree := range entity.Links {
+		//		fmt.Println("=>", "var", varname, "link", linkname, "num", tree.Len())
+		//	}
+		//}
+	}
+	var results [][]turtle.URI
+	for _, tup := range tuples {
+		var row []turtle.URI
+		for _, varname := range qr.plan.selectVars {
+			row = append(row, tup[varname])
+		}
+		results = append(results, row)
+	}
+	return results
+}
+
+func (db *DB) _getTuplesFromLinks(name string, ve *VariableEntity) []map[string]turtle.URI {
+	uri := db.MustGetURI(ve.PK)
+	var ret []map[string]turtle.URI
+	if len(ve.Links) == 0 {
+		ret = append(ret, map[string]turtle.URI{name: uri})
+	} else {
+		for lname, etree := range ve.Links {
+			vars := make(map[string]turtle.URI)
+			vars[name] = uri
+			iter := func(i btree.Item) bool {
+				entity := i.(*VariableEntity)
+				for _, m := range db._getTuplesFromLinks(lname, entity) {
+					for k, v := range m {
+						vars[k] = v
+					}
+				}
+				return i != etree.Max()
+			}
+			etree.Ascend(iter)
+			ret = append(ret, vars)
+		}
+	}
+	return ret
 }
 
 // We need an execution plan for the list of filters contained in a query. How do we do this?
