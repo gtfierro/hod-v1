@@ -32,15 +32,35 @@ func (i Item) Less(than btree.Item) bool {
 type queryRun struct {
 	plan      *queryPlan
 	variables map[string]*btree.BTree
+	vars      map[string]*btree.BTree
+}
+
+// retrieves for each of the variables in the vars, get each of its Links, etc etc
+func (qr *queryRun) getTuples() {
+	for varname, tree := range qr.vars {
+		stack := list.New()
+		iter := func(i btree.Item) bool {
+			entity := i.(*VariableEntity)
+			stack.PushFront(entity)
+			return i != tree.Max()
+		}
+		tree.Ascend(iter)
+		for stack.Len() > 0 {
+			entity := stack.Remove(stack.Front()).(*VariableEntity)
+
+		}
+	}
 }
 
 func makeQueryRun(plan *queryPlan) *queryRun {
 	qr := &queryRun{
 		plan:      plan,
 		variables: make(map[string]*btree.BTree),
+		vars:      make(map[string]*btree.BTree),
 	}
 	for _, v := range plan.selectVars {
 		qr.variables[v] = btree.New(3)
+		qr.vars[v] = btree.New(3)
 	}
 	return qr
 }
@@ -80,12 +100,14 @@ func (db *DB) RunQuery(q query.Query) {
 	runStart := time.Now()
 	run := makeQueryRun(qp)
 	db.executeQuery(run)
+	db.executeQuery2(run)
 	log.Infof("Ran query in %s", time.Since(runStart))
 
 	for _, varName := range q.Select.Variables {
 		resultTree := run.variables[varName.String()]
 		if q.Select.Count {
 			fmt.Println(varName, resultTree.Len())
+			fmt.Println("new method =>", varName, run.vars[varName.String()].Len())
 		} else {
 			iter := func(i btree.Item) bool {
 				uri := db.MustGetURI(i.(Item))
