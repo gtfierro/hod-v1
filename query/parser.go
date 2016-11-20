@@ -36,6 +36,20 @@ const (
 	PATTERN_ZERO_PLUS
 )
 
+func (p Pattern) String() string {
+	switch p {
+	case PATTERN_SINGLE:
+		return ""
+	case PATTERN_ZERO_ONE:
+		return "?"
+	case PATTERN_ONE_PLUS:
+		return "+"
+	case PATTERN_ZERO_PLUS:
+		return "*"
+	}
+	return "unknown"
+}
+
 func Parse(r io.Reader) (Query, error) {
 	l := newlexer(r)
 	yyParse(l)
