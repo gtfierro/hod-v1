@@ -277,7 +277,6 @@ func (db *DB) LoadDataset(dataset turtle.DataSet) error {
 	}
 
 	for pred, _ := range db.relationships {
-		log.Error(pred)
 		if err := db.insertEntityTx(pred, predicateHash, enttx, pktx); err != nil {
 			return err
 		}
@@ -304,10 +303,10 @@ func (db *DB) LoadDataset(dataset turtle.DataSet) error {
 	for pfx, uri := range db.namespaces {
 		fmt.Printf("%s => %s\n", pfx, uri)
 	}
-	fmt.Println("Relationships")
-	for rel, invrel := range db.relationships {
-		fmt.Printf("%s => %s\n", rel.String(), invrel.String())
-	}
+	//fmt.Println("Relationships")
+	//for rel, invrel := range db.relationships {
+	//	fmt.Printf("%s => %s\n", rel.String(), invrel.String())
+	//}
 
 	return nil
 }

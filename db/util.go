@@ -19,8 +19,7 @@ func hashTreeToEntityTree(src *btree.BTree) *btree.BTree {
 	newTree := btree.New(3)
 	iter := func(i btree.Item) bool {
 		ve := &VariableEntity{
-			PK:    i.(Item),
-			Links: make(map[string]*btree.BTree),
+			PK: i.(Item),
 		}
 		newTree.ReplaceOrInsert(ve)
 		return i != src.Max()

@@ -9,7 +9,7 @@ import (
 )
 
 // struct to hold the graph of the query plan
-type queryPlan struct {
+type dependencyGraph struct {
 	selectVars []string
 	roots      []*queryTerm
 	// map of variable name -> resolved?
@@ -17,22 +17,43 @@ type queryPlan struct {
 }
 
 // initializes the query plan struct
-func makeQueryPlan(q query.Query) *queryPlan {
-	qp := &queryPlan{
+func makeDependencyGraph(q query.Query) *dependencyGraph {
+	dg := &dependencyGraph{
 		selectVars: []string{},
 		roots:      []*queryTerm{},
 		variables:  make(map[string]bool),
 	}
 	for _, v := range q.Select.Variables {
-		qp.selectVars = append(qp.selectVars, v.String())
+		dg.selectVars = append(dg.selectVars, v.String())
 	}
-	return qp
+	return dg
+}
+
+func (dg *dependencyGraph) iter() chan *queryTerm {
+	iter := make(chan *queryTerm)
+
+	go func() {
+		stack := list.New()
+		for _, r := range dg.roots {
+			stack.PushFront(r)
+		}
+		for stack.Len() > 0 {
+			node := stack.Remove(stack.Front()).(*queryTerm)
+			iter <- node
+			for _, c := range node.children {
+				stack.PushBack(c)
+			}
+		}
+		close(iter)
+	}()
+
+	return iter
 }
 
 // returns true of the query plan or any of its children
 // already includes the given query term
-func (qp *queryPlan) hasChild(qt *queryTerm) bool {
-	for _, r := range qp.roots {
+func (dg *dependencyGraph) hasChild(qt *queryTerm) bool {
+	for _, r := range dg.roots {
 		if r.equals(qt) {
 			return true
 		}
@@ -45,21 +66,21 @@ func (qp *queryPlan) hasChild(qt *queryTerm) bool {
 
 // adds the query term to the root set if it is
 // not already there
-func (qp *queryPlan) addRootTerm(qt *queryTerm) {
-	if !qp.hasChild(qt) {
+func (dg *dependencyGraph) addRootTerm(qt *queryTerm) {
+	if !dg.hasChild(qt) {
 		// loop through and append to a node if we share a variable with it
-		for _, root := range qp.roots {
+		for _, root := range dg.roots {
 			if root.bubbleDownDepends(qt) {
 				return
 			}
 		}
 		// otherwise, add it to the roots
-		qp.roots = append(qp.roots, qt)
+		dg.roots = append(dg.roots, qt)
 	}
 }
 
-func (qp *queryPlan) dump() {
-	for _, r := range qp.roots {
+func (dg *dependencyGraph) dump() {
+	for _, r := range dg.roots {
 		r.dump(0)
 	}
 }
@@ -69,14 +90,14 @@ func (qp *queryPlan) dump() {
 // [qt] shares a variable with. We attach qt as a child of that
 // term
 // Returns true if the node was added
-func (qp *queryPlan) addChild(qt *queryTerm) bool {
-	if qp.hasChild(qt) {
-		fmt.Println("qp already has", qt.String())
+func (dg *dependencyGraph) addChild(qt *queryTerm) bool {
+	if dg.hasChild(qt) {
+		fmt.Println("dg already has", qt.String())
 		return false
 	}
 	stack := list.New()
 	// push the roots onto the stack
-	for _, r := range qp.roots {
+	for _, r := range dg.roots {
 		stack.PushFront(r)
 	}
 	for stack.Len() > 0 {
@@ -100,39 +121,26 @@ func (qp *queryPlan) addChild(qt *queryTerm) bool {
 type queryTerm struct {
 	query.Filter
 	children  []*queryTerm
-	qp        *queryPlan
 	variables []string
 }
 
 // initializes a queryTerm from a given Filter
-func (qp *queryPlan) makeQueryTerm(f query.Filter) *queryTerm {
+func (dg *dependencyGraph) makeQueryTerm(f query.Filter) *queryTerm {
 	qt := &queryTerm{
 		f,
 		[]*queryTerm{},
-		qp,
 		[]string{},
 	}
 	// TODO: handle the predicates
 	if qt.Subject.IsVariable() {
-		qt.qp.variables[qt.Subject.String()] = false
+		dg.variables[qt.Subject.String()] = false
 		qt.variables = append(qt.variables, qt.Subject.String())
 	}
 	if qt.Object.IsVariable() {
-		qt.qp.variables[qt.Object.String()] = false
+		dg.variables[qt.Object.String()] = false
 		qt.variables = append(qt.variables, qt.Object.String())
 	}
 	return qt
-}
-
-// returns the number of unresolved variables in the term
-func (qt *queryTerm) numUnresolved() int {
-	num := 0
-	for _, v := range qt.variables {
-		if !qt.qp.variables[v] {
-			num++
-		}
-	}
-	return num
 }
 
 // returns true if the term or any of its children has

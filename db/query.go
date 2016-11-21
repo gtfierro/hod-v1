@@ -31,21 +31,21 @@ func (i Item) Less(than btree.Item) bool {
 }
 
 type queryRun struct {
-	plan      *queryPlan
+	plan      *dependencyGraph
 	variables map[string]*btree.BTree
 	vars      map[string]*btree.BTree
 }
 
 func makeQueryRun(plan *queryPlan) *queryRun {
 	qr := &queryRun{
-		plan:      plan,
+		//plan:      plan,
 		variables: make(map[string]*btree.BTree),
 		vars:      make(map[string]*btree.BTree),
 	}
-	for _, v := range plan.selectVars {
-		qr.variables[v] = btree.New(3)
-		qr.vars[v] = btree.New(3)
-	}
+	//for _, v := range plan.selectVars {
+	//	qr.variables[v] = btree.New(3)
+	//	qr.vars[v] = btree.New(3)
+	//}
 	return qr
 }
 
@@ -77,37 +77,47 @@ func (db *DB) RunQuery(q query.Query) {
 
 	fmt.Println("-------------- start query plan -------------")
 	planStart := time.Now()
-	qp := db.formExecutionPlan(q)
+	dg := db.formDependencyGraph(q)
+	qp := db.formQueryPlan(dg)
+	for _, op := range qp.operations {
+		log.Debug("op", op)
+	}
 	log.Infof("Formed execution plan in %s", time.Since(planStart))
 	fmt.Println("-------------- end query plan -------------")
 
 	runStart := time.Now()
-	run := makeQueryRun(qp)
-	//db.executeQuery(run)
-	db.executeQuery2(run)
+	db.executeQueryPlan(qp)
 	log.Infof("Ran query in %s", time.Since(runStart))
 
-	//for _, varName := range q.Select.Variables {
-	//	resultTree := run.variables[varName.String()]
-	//	if q.Select.Count {
-	//		fmt.Println(varName, resultTree.Len())
-	//	} else {
-	//		iter := func(i btree.Item) bool {
-	//			uri := db.MustGetURI(i.(Item))
-	//			fmt.Println(varName, uri.String())
-	//			return i != resultTree.Max()
-	//		}
-	//		resultTree.Ascend(iter)
+	//TODO: remove this. Right now working on query plan
+	return
+
+	//runStart := time.Now()
+	//run := makeQueryRun(qp)
+	//db.executeQuery2(run)
+	//log.Infof("Ran query in %s", time.Since(runStart))
+
+	////for _, varName := range q.Select.Variables {
+	////	resultTree := run.variables[varName.String()]
+	////	if q.Select.Count {
+	////		fmt.Println(varName, resultTree.Len())
+	////	} else {
+	////		iter := func(i btree.Item) bool {
+	////			uri := db.MustGetURI(i.(Item))
+	////			fmt.Println(varName, uri.String())
+	////			return i != resultTree.Max()
+	////		}
+	////		resultTree.Ascend(iter)
+	////	}
+	////}
+	//results := db.getTuples(run)
+	//if q.Select.Count {
+	//	fmt.Println(len(results))
+	//} else {
+	//	for _, row := range results {
+	//		fmt.Println(row)
 	//	}
 	//}
-	results := db.getTuples(run)
-	if q.Select.Count {
-		fmt.Println(len(results))
-	} else {
-		for _, row := range results {
-			fmt.Println(row)
-		}
-	}
 }
 
 // retrieves for each of the variables in the vars, get each of its Links, etc etc
@@ -117,7 +127,8 @@ func (db *DB) getTuples(qr *queryRun) [][]turtle.URI {
 		fmt.Println("varname", varname, "has", tree.Len(), "entries")
 		iter := func(i btree.Item) bool {
 			entity := i.(*VariableEntity)
-			tuples = append(tuples, db._getTuplesFromLinks(varname, entity)...)
+			newtups := db._getTuplesFromLinks(varname, entity)
+			tuples = append(tuples, newtups...)
 			return i != tree.Max()
 		}
 		tree.Ascend(iter)
@@ -131,9 +142,13 @@ func (db *DB) getTuples(qr *queryRun) [][]turtle.URI {
 		//}
 	}
 	var results [][]turtle.URI
+tupleLoop:
 	for _, tup := range tuples {
 		var row []turtle.URI
 		for _, varname := range qr.plan.selectVars {
+			if _, found := tup[varname]; !found {
+				continue tupleLoop
+			}
 			row = append(row, tup[varname])
 		}
 		results = append(results, row)
@@ -167,19 +182,29 @@ func (db *DB) _getTuplesFromLinks(name string, ve *VariableEntity) []map[string]
 }
 
 // We need an execution plan for the list of filters contained in a query. How do we do this?
-func (db *DB) formExecutionPlan(q query.Query) *queryPlan {
-	qp := makeQueryPlan(q)
+func (db *DB) formDependencyGraph(q query.Query) *dependencyGraph {
+	dg := makeDependencyGraph(q)
 	terms := make([]*queryTerm, len(q.Where))
 	for i, f := range q.Where {
-		terms[i] = qp.makeQueryTerm(f)
+		terms[i] = dg.makeQueryTerm(f)
+	}
+
+	numUnresolved := func(qt *queryTerm) int {
+		num := 0
+		for _, v := range qt.variables {
+			if !dg.variables[v] {
+				num++
+			}
+		}
+		return num
 	}
 
 	for len(terms) > 0 {
 		// first find all the terms with 0 or 1 unresolved variable terms
 		var added = []*queryTerm{}
 		for _, term := range terms {
-			if term.numUnresolved() < 2 {
-				qp.addRootTerm(term)
+			if numUnresolved(term) < 2 {
+				dg.addRootTerm(term)
 				added = append(added, term)
 			}
 		}
@@ -187,51 +212,29 @@ func (db *DB) formExecutionPlan(q query.Query) *queryPlan {
 		terms = filterTermList(terms, added)
 		added = []*queryTerm{}
 		for _, term := range terms {
-			if qp.addChild(term) {
+			if dg.addChild(term) {
 				added = append(added, term)
 			}
 		}
 		terms = filterTermList(terms, added)
 	}
-	qp.dump()
-	return qp
+	dg.dump()
+	return dg
 }
 
-// okay how do we run the execution plan?
-// There's actually some ambiguity here: originally, the plan was to throw all of the matched
-// variables into Btrees, and then recover what the returned tuples are; however, this isn't straightforward
-// because you only want to create the tuples that were found as a result of the query, which is going to be
-// a subset of the full connectivity between tuples in the graph. So, what's the approach?
-// Proposal 1: first run the query to get 'pools' of valid entities, then 're-run' the query, restricting results
-//             by the sets of entities that exist in the pools
-// Proposal 2: when we execute the query by following the query plan, rather than running on the full graph, we
-//             make sure to associate our result sets with the chain of terms and variables and entities we have
-//             traversed so far. The challenge here is how do we do this kind of associated store.
-// I like proposal 2 better, because it re-does less work. So, how do we do it?
-// When we resolve a variable (lets start with one of the root terms), we get a set of 'proposal' entities. Right now
-// we just throw these into a big tree and treat it as a 'set'. Rather, instead of just storing the entity, we need to store
-// a structure that has the entity along with the set of paths of relationships to other variables that come from that entity.
-// The end result is we get a list of tuples of all variables in the query, and then we can take the subset of variables
-// mentioned in the select clause and uniquify the results
-func (db *DB) executeQuery(run *queryRun) {
-	// first, resolve all the roots and store the intermediate results
-
-	stack := list.New()
-	for _, r := range run.plan.roots {
-		stack.PushFront(r)
-	}
-	for stack.Len() > 0 {
-		node := stack.Remove(stack.Front()).(*queryTerm)
-		db.runFilterTerm(run, node)
-		// add node children to back of stack
-		for _, c := range node.children {
-			stack.PushBack(c)
+func (db *DB) executeQueryPlan(qp *queryPlan) {
+	rm := newResultMap()
+	rm.varOrder = qp.varOrder
+	var err error
+	for _, op := range qp.operations {
+		rm, err = op.run(db, qp.varOrder, rm)
+		if err != nil {
+			log.Fatal(err)
 		}
 	}
-	for variable, res := range run.variables {
-		fmt.Printf("var %s has count %d\n", variable, res.Len())
+	for vname, tree := range rm.vars {
+		fmt.Println(vname, tree.Len())
 	}
-
 }
 
 func (db *DB) runFilterTerm(run *queryRun, term *queryTerm) error {
