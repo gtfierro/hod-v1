@@ -86,38 +86,20 @@ func (db *DB) RunQuery(q query.Query) {
 	fmt.Println("-------------- end query plan -------------")
 
 	runStart := time.Now()
-	db.executeQueryPlan(qp)
+	rm := db.executeQueryPlan(qp)
 	log.Infof("Ran query in %s", time.Since(runStart))
 
-	//TODO: remove this. Right now working on query plan
+	runStart = time.Now()
+	results := db.expandTuples(rm, qp.selectVars)
+	log.Infof("Expanded tuples in %s", time.Since(runStart))
+	if q.Select.Count {
+		fmt.Println(len(results))
+	} else {
+		for _, r := range results {
+			fmt.Println(r)
+		}
+	}
 	return
-
-	//runStart := time.Now()
-	//run := makeQueryRun(qp)
-	//db.executeQuery2(run)
-	//log.Infof("Ran query in %s", time.Since(runStart))
-
-	////for _, varName := range q.Select.Variables {
-	////	resultTree := run.variables[varName.String()]
-	////	if q.Select.Count {
-	////		fmt.Println(varName, resultTree.Len())
-	////	} else {
-	////		iter := func(i btree.Item) bool {
-	////			uri := db.MustGetURI(i.(Item))
-	////			fmt.Println(varName, uri.String())
-	////			return i != resultTree.Max()
-	////		}
-	////		resultTree.Ascend(iter)
-	////	}
-	////}
-	//results := db.getTuples(run)
-	//if q.Select.Count {
-	//	fmt.Println(len(results))
-	//} else {
-	//	for _, row := range results {
-	//		fmt.Println(row)
-	//	}
-	//}
 }
 
 // retrieves for each of the variables in the vars, get each of its Links, etc etc
@@ -222,7 +204,7 @@ func (db *DB) formDependencyGraph(q query.Query) *dependencyGraph {
 	return dg
 }
 
-func (db *DB) executeQueryPlan(qp *queryPlan) {
+func (db *DB) executeQueryPlan(qp *queryPlan) *resultMap {
 	rm := newResultMap()
 	rm.varOrder = qp.varOrder
 	var err error
@@ -232,9 +214,16 @@ func (db *DB) executeQueryPlan(qp *queryPlan) {
 			log.Fatal(err)
 		}
 	}
+	//for vname := range qp.varOrder.vars {
+	//	fmt.Println(vname, rm.getVariableChain(vname))
+	//	for re := range rm.iterVariable(vname) {
+	//		fmt.Println(vname, re)
+	//	}
+	//}
 	for vname, tree := range rm.vars {
 		fmt.Println(vname, tree.Len())
 	}
+	return rm
 }
 
 func (db *DB) runFilterTerm(run *queryRun, term *queryTerm) error {

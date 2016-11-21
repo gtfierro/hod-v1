@@ -16,11 +16,13 @@ import (
 
 type queryPlan struct {
 	operations []operation
+	selectVars []string
 	varOrder   *variableStateMap
 }
 
 func (db *DB) formQueryPlan(dg *dependencyGraph) *queryPlan {
 	qp := new(queryPlan)
+	qp.selectVars = dg.selectVars
 	statemap := newVariableStateMap()
 	for term := range dg.iter() {
 		var (
@@ -111,12 +113,7 @@ func (rs *resolveSubject) run(db *DB, varOrder *variableStateMap, rm *resultMap)
 	subjectVar := rs.term.Subject.String()
 	// get all subjects reachable from the given object along the path
 	subjects := db.getSubjectFromPredObject(object.PK, rs.term.Path)
-	// if there is already an entry for the variable in the resultMap, then
-	// we intersect the trees
-	rm.filterByTree(subjectVar, subjects)
-	if varOrder.varIsTop(subjectVar) {
-		rm.tuples = subjects
-	}
+	rm.addVariable(subjectVar, subjects)
 	return rm, nil
 }
 
@@ -138,12 +135,7 @@ func (ro *resolveObject) run(db *DB, varOrder *variableStateMap, rm *resultMap) 
 	objectVar := ro.term.Object.String()
 	// get all objects reachable from the given subject along the path
 	objects := db.getObjectFromSubjectPred(subject.PK, ro.term.Path)
-	// if there is already an entry for the variable in the resultMap, then
-	// we intersect the trees
-	rm.filterByTree(objectVar, objects)
-	if varOrder.varIsTop(objectVar) {
-		rm.tuples = objects
-	}
+	rm.addVariable(objectVar, objects)
 	return rm, nil
 }
 
@@ -166,34 +158,51 @@ func (rso *restrictSubjectObjectByPredicate) String() string {
 //  - resolved, connected (we have proposal values for the variable, and they are linked
 //      to another variable)
 func (rso *restrictSubjectObjectByPredicate) run(db *DB, varOrder *variableStateMap, rm *resultMap) (*resultMap, error) {
-	//var (
-	//	subjectVar = rso.term.Subject.String()
-	//	objectVar  = rso.term.Object.String()
-	//	subTree    = rm.getVar(subjectVar)
-	//	objTree    = rm.getVar(objectVar)
-	//)
+	var (
+		subjectVar = rso.term.Subject.String()
+		objectVar  = rso.term.Object.String()
+		subTree    = rm.getVar(objectVar)
+		objTree    = rm.getVar(objectVar)
+	)
 
-	//// we add the objects on to each subject
-	//if rso.parentVar == subjectVar {
-	//}
+	// we add the objects on to each subject
+	if rso.parentVar == subjectVar {
+		// iterate through current subjects
+		for subject := range rm.iterVariable(subjectVar) {
+			subject.NextVarname = objectVar
+			objects := hashTreeToEntityTree(db.getObjectFromSubjectPred(subject.PK, rso.term.Path))
+			if objects.Len() > 0 {
+				if objTree == nil {
+					subject.Next = objects
+				} else {
+					subject.Next = intersectTrees(objects, objTree)
+				}
+			}
+			if subject.Next.Len() > 0 {
+				log.Warning(subjectVar, subject, subject.Next.Len())
+				rm.replaceEntity(subject)
+			}
+		}
+	} else if rso.parentVar == objectVar {
+		for object := range rm.iterVariable(objectVar) {
+			object.NextVarname = subjectVar
+			subjects := hashTreeToEntityTree(db.getSubjectFromPredObject(object.PK, rso.term.Path))
+			if subjects.Len() > 0 {
+				if subTree == nil {
+					object.Next = subjects
+				} else {
+					object.Next = intersectTrees(subjects, subTree)
+				}
+			}
+			if object.Next.Len() > 0 {
+				log.Warning(objectVar, object, object.Next.Len())
+				rm.replaceEntity(object)
+			}
+		}
+	} else {
+		log.Warning("unfamiliar situation")
+	}
 
-	//keepSubjects := btree.New(3)
-	//keepObjects := btree.New(3)
-
-	//// we iterate through the subjectVar tree
-	//iter := func(i btree.Item) bool {
-	//	subject, err := db.GetEntityFromHash(i.(Item))
-	//	if err != nil {
-	//		log.Error(err)
-	//	}
-	//	results := db.getObjectFromSubjectPred(subject.PK, rso.term.Path)
-	//	if results.Len() > 0 {
-	//		keepSubjects.ReplaceOrInsert(i)
-	//		mergeTrees(keepObjects, results)
-	//	}
-	//	return i != subTree.Max()
-	//}
-	//subTree.Ascend(iter)
 	return rm, nil
 }
 

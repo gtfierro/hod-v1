@@ -18,8 +18,9 @@ func mergeTrees(dest, src *btree.BTree) {
 func hashTreeToEntityTree(src *btree.BTree) *btree.BTree {
 	newTree := btree.New(3)
 	iter := func(i btree.Item) bool {
-		ve := &VariableEntity{
-			PK: i.(Item),
+		ve := &ResultEntity{
+			PK:   i.(Item),
+			Next: btree.New(3),
 		}
 		newTree.ReplaceOrInsert(ve)
 		return i != src.Max()
