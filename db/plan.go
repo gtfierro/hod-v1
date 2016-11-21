@@ -200,7 +200,7 @@ func (rso *restrictSubjectObjectByPredicate) run(db *DB, varOrder *variableState
 			}
 		}
 	} else {
-		log.Warning("unfamiliar situation")
+		log.Fatal("unfamiliar situation")
 	}
 
 	return rm, nil
