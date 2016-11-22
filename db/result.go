@@ -14,9 +14,8 @@ the results of the query.
 */
 
 type ResultEntity struct {
-	PK          [4]byte
-	Next        *btree.BTree
-	NextVarname string
+	PK   [4]byte
+	Next map[string]*btree.BTree
 }
 
 func (re ResultEntity) Less(than btree.Item) bool {
@@ -67,65 +66,78 @@ func (rm *resultMap) getVariableChain(variable string) []string {
 	return chain
 }
 
-func (rm *resultMap) replaceEntity(entity *ResultEntity) {
-	var replaceInTree func(*btree.BTree, *ResultEntity) bool
-	replaceInTree = func(tree *btree.BTree, entity *ResultEntity) bool {
+func (rm *resultMap) replaceEntity(varname string, entity *ResultEntity) bool {
+	var replaceInTree func(*btree.BTree, []string, *ResultEntity) bool
+	chain := rm.getVariableChain(varname)
+	replaceInTree = func(tree *btree.BTree, varorder []string, entity *ResultEntity) bool {
 		if tree.Has(entity) {
 			tree.ReplaceOrInsert(entity)
 			return true
 		}
-		found := false
+		finishedReplace := false
 		iter := func(i btree.Item) bool {
 			ent := i.(*ResultEntity)
-			if replaceInTree(ent.Next, entity) {
-				found = true
-				return false // stop iteration
+			if ntree, found := ent.Next[varname]; found {
+				if replaceInTree(ntree, varorder[1:], entity) {
+					finishedReplace = true
+					return false // stop iteration
+				}
+			}
+			if len(varorder) == 0 {
+				return i != tree.Max()
+			}
+			if ntree, found := ent.Next[varorder[0]]; found {
+				if replaceInTree(ntree, varorder[1:], entity) {
+					finishedReplace = true
+					return false // stop iteration
+				}
 			}
 			return i != tree.Max()
 		}
 		tree.Ascend(iter)
-		return found
+		return finishedReplace
 	}
+	return replaceInTree(rm.vars[chain[0]], chain[1:], entity)
 }
 
 // iterates through all the entries we have for variable
-func (rm *resultMap) iterVariable(variable string) chan *ResultEntity {
+func (rm *resultMap) iterVariable(variable string) []*ResultEntity {
 	var _iterbtree func(btree *btree.BTree, itervars []string)
-	results := make(chan *ResultEntity)
+	var results []*ResultEntity
 	iterorder := rm.getVariableChain(variable)
 	if len(iterorder) == 0 {
 		panic("no order for variable " + variable)
 	}
-	go func() {
-		if rm.varOrder.vars[variable] == RESOLVED { // top level
-			tree := rm.vars[variable]
-			iter := func(i btree.Item) bool {
-				results <- i.(*ResultEntity)
+	if rm.varOrder.vars[variable] == RESOLVED { // top level
+		tree := rm.vars[variable]
+		log.Warning(variable, tree.Len())
+		iter := func(i btree.Item) bool {
+			results = append(results, i.(*ResultEntity))
+			return i != tree.Max()
+		}
+		tree.Ascend(iter)
+		return results
+	}
+	_iterbtree = func(tree *btree.BTree, itervars []string) {
+		iter := func(i btree.Item) bool {
+			entity := i.(*ResultEntity)
+			if len(itervars) == 0 {
+				results = append(results, entity)
 				return i != tree.Max()
 			}
-			tree.Ascend(iter)
-			close(results)
-			return
-		}
-		_iterbtree = func(tree *btree.BTree, itervars []string) {
-			iter := func(i btree.Item) bool {
-				entity := i.(*ResultEntity)
-				if len(itervars) == 1 {
-					if itervars[0] != variable {
-						panic("this should not happen")
-					}
-					results <- entity
-					return i != tree.Max()
-				}
-				_iterbtree(entity.Next, itervars[1:])
-				return i != tree.Max()
+			if subtree, found := entity.Next[variable]; found {
+				_iterbtree(subtree, itervars[1:])
+			} else {
+				_iterbtree(entity.Next[itervars[0]], itervars[1:])
 			}
-			tree.Ascend(iter)
+			return i != tree.Max()
 		}
-		tree := rm.vars[iterorder[0]]
-		_iterbtree(tree, iterorder[1:])
-		close(results)
-	}()
+		tree.Ascend(iter)
+	}
+	log.Error("iterate over", iterorder[0], "lookingfor", iterorder[1])
+	tree := rm.vars[iterorder[0]]
+	log.Warning(variable, tree.Len())
+	_iterbtree(tree, iterorder[1:])
 	return results
 }
 
@@ -182,26 +194,25 @@ tupleLoop:
 func (db *DB) _getTuplesFromTree(name string, ve *ResultEntity) []map[string]turtle.URI {
 	uri := db.MustGetURI(ve.PK)
 	var ret []map[string]turtle.URI
-	iter := func(i btree.Item) bool {
-		entity := i.(*ResultEntity)
-		if entity.Next.Len() == 0 {
+	if len(ve.Next) == 0 {
+		ret = append(ret, map[string]turtle.URI{name: uri})
+	} else {
+		for lname, etree := range ve.Next {
 			vars := make(map[string]turtle.URI)
 			vars[name] = uri
-			vars[ve.NextVarname] = db.MustGetURI(entity.PK)
-			ret = append(ret, vars)
-			return i != ve.Next.Max()
-		}
-		for _, m := range db._getTuplesFromTree(ve.NextVarname, entity) {
-			vars := make(map[string]turtle.URI)
-			vars[name] = uri
-			for k, v := range m {
-				vars[k] = v
+			iter := func(i btree.Item) bool {
+				entity := i.(*ResultEntity)
+				for _, m := range db._getTuplesFromTree(lname, entity) {
+					for k, v := range m {
+						vars[k] = v
+					}
+				}
+				return i != etree.Max()
 			}
+			etree.Ascend(iter)
 			ret = append(ret, vars)
 		}
-		return i != ve.Next.Max()
 	}
-	ve.Next.Ascend(iter)
 	return ret
 }
 

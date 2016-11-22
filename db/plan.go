@@ -161,42 +161,42 @@ func (rso *restrictSubjectObjectByPredicate) run(db *DB, varOrder *variableState
 	var (
 		subjectVar = rso.term.Subject.String()
 		objectVar  = rso.term.Object.String()
-		subTree    = rm.getVar(objectVar)
+		subTree    = rm.getVar(subjectVar)
 		objTree    = rm.getVar(objectVar)
 	)
-
+	log.Warning("subject", subjectVar, "object", objectVar, "parentvar", rso.parentVar)
 	// we add the objects on to each subject
 	if rso.parentVar == subjectVar {
 		// iterate through current subjects
-		for subject := range rm.iterVariable(subjectVar) {
-			subject.NextVarname = objectVar
+		for _, subject := range rm.iterVariable(subjectVar) {
 			objects := hashTreeToEntityTree(db.getObjectFromSubjectPred(subject.PK, rso.term.Path))
 			if objects.Len() > 0 {
 				if objTree == nil {
-					subject.Next = objects
+					subject.Next[objectVar] = objects
 				} else {
-					subject.Next = intersectTrees(objects, objTree)
+					subject.Next[objectVar] = intersectTrees(objects, objTree)
 				}
 			}
-			if subject.Next.Len() > 0 {
-				log.Warning(subjectVar, subject, subject.Next.Len())
-				rm.replaceEntity(subject)
+			if len(subject.Next) > 0 {
+				log.Debug(subjectVar, objectVar, subject)
+				rm.replaceEntity(subjectVar, subject)
 			}
 		}
 	} else if rso.parentVar == objectVar {
-		for object := range rm.iterVariable(objectVar) {
-			object.NextVarname = subjectVar
+		for _, object := range rm.iterVariable(objectVar) {
 			subjects := hashTreeToEntityTree(db.getSubjectFromPredObject(object.PK, rso.term.Path))
+			log.Debug("got subjects", subjects.Len())
 			if subjects.Len() > 0 {
 				if subTree == nil {
-					object.Next = subjects
+					object.Next[subjectVar] = subjects
 				} else {
-					object.Next = intersectTrees(subjects, subTree)
+					log.Debug(subTree.Len())
+					object.Next[subjectVar] = intersectTrees(subjects, subTree)
 				}
 			}
-			if object.Next.Len() > 0 {
-				log.Warning(objectVar, object, object.Next.Len())
-				rm.replaceEntity(object)
+			if len(object.Next) > 0 {
+				log.Debug(objectVar, object, subjects.Len(), object.Next[subjectVar].Len())
+				rm.replaceEntity(objectVar, object)
 			}
 		}
 	} else {
