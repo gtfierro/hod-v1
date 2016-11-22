@@ -100,6 +100,7 @@ func (db *DB) formDependencyGraph(q query.Query) *dependencyGraph {
 		return num
 	}
 
+	originalLength := len(terms)
 	for len(terms) > 0 {
 		// first find all the terms with 0 or 1 unresolved variable terms
 		var added = []*queryTerm{}
@@ -118,6 +119,18 @@ func (db *DB) formDependencyGraph(q query.Query) *dependencyGraph {
 			}
 		}
 		terms = filterTermList(terms, added)
+		if len(terms) == originalLength {
+			// we don't have any root elements. Need to consider 2-variable terms
+			added = []*queryTerm{}
+			for _, term := range terms {
+				if numUnresolved(term) == 2 {
+					dg.addRootTerm(term)
+					added = append(added, term)
+					break
+				}
+			}
+			terms = filterTermList(terms, added)
+		}
 	}
 	dg.dump()
 	return dg
