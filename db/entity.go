@@ -10,8 +10,6 @@ type Entity struct {
 	OutEdges map[string][][4]byte `msg:"eout"`
 }
 
-// TODO: distinguish between "in" edges (edges for which I am object)
-// and "out" edges (edges for which I am subject)
 func NewEntity() *Entity {
 	return &Entity{
 		InEdges:  make(map[string][][4]byte),

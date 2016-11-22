@@ -14,7 +14,7 @@ func mergeTrees(dest, src *btree.BTree) {
 }
 
 // takes a btree of [4]byte hashes, and turns those into
-// a tree of VariableEntity
+// a tree of ResultEntity
 func hashTreeToEntityTree(src *btree.BTree) *btree.BTree {
 	newTree := btree.New(3)
 	iter := func(i btree.Item) bool {

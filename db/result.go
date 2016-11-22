@@ -210,14 +210,3 @@ func (db *DB) _getTuplesFromTree(name string, ve *ResultEntity) []map[string]tur
 	}
 	return ret
 }
-
-type VariableEntity struct {
-	PK [4]byte
-	// a link has key: variable name, values: set of VariableEntities
-	Links map[string]*btree.BTree
-}
-
-func (ve VariableEntity) Less(than btree.Item) bool {
-	t := than.(*VariableEntity)
-	return binary.LittleEndian.Uint32(ve.PK[:]) < binary.LittleEndian.Uint32(t.PK[:])
-}
