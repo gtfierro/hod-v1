@@ -141,7 +141,9 @@ func (db *DB) executeQueryPlan(qp *queryPlan) *resultMap {
 	rm.varOrder = qp.varOrder
 	var err error
 	for _, op := range qp.operations {
+		now := time.Now()
 		rm, err = op.run(db, qp.varOrder, rm)
+		fmt.Println(op, time.Since(now))
 		if err != nil {
 			log.Fatal(err)
 		}

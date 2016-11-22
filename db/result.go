@@ -130,6 +130,9 @@ func (rm *resultMap) iterVariable(variable string) []*ResultEntity {
 			}
 			return i != tree.Max()
 		}
+		if tree == nil {
+			return
+		}
 		tree.Ascend(iter)
 	}
 	tree := rm.vars[iterorder[0]]
