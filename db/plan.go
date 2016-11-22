@@ -2,6 +2,7 @@ package db
 
 import (
 	"fmt"
+	"github.com/google/btree"
 	"strings"
 )
 
@@ -67,6 +68,8 @@ func (db *DB) formQueryPlan(dg *dependencyGraph) *queryPlan {
 			case hasResolvedSubject:
 				newop = &resolveObjectFromVarSubject{term: term}
 				statemap.addLink(subjectVar, objectVar)
+			default:
+				panic("HERE")
 			}
 		case subjectIsVariable:
 			newop = &resolveSubject{term: term}
@@ -222,6 +225,25 @@ func (rov *resolveObjectFromVarSubject) String() string {
 }
 
 func (rov *resolveObjectFromVarSubject) run(db *DB, varOrder *variableStateMap, rm *resultMap) (*resultMap, error) {
+	return rm, nil
+}
+
+type resolveSubjectObjectFromPred struct {
+	term *queryTerm
+}
+
+func (rso *resolveSubjectObjectFromPred) run(db *DB, varOrder *variableStateMap, rm *resultMap) (*resultMap, error) {
+	subsobjs := db.getSubjectObjectFromPred(rso.term.Path)
+	subjectVar := rso.term.Subject.String()
+	objectVar := rso.term.Object.String()
+	subjects := btree.New(3)
+	objects := btree.New(3)
+	for _, sopair := range subsobjs {
+		subjects.ReplaceOrInsert(Item(sopair[0]))
+		objects.ReplaceOrInsert(Item(sopair[1]))
+	}
+	rm.addVariable(subjectVar, subjects)
+	rm.addVariable(objectVar, objects)
 	return rm, nil
 }
 
