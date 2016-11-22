@@ -35,18 +35,6 @@ func (rm *resultMap) has(variable string) bool {
 	return found
 }
 
-func (rm *resultMap) filterByTree(variable string, tree *btree.BTree) {
-	if rm.varOrder.varIsTop(variable) {
-		if curTree, found := rm.vars[variable]; found {
-			rm.vars[variable] = intersectTrees(curTree, tree)
-		} else {
-			rm.vars[variable] = tree
-		}
-	} else {
-		// if variable is not at the top scope, then
-	}
-}
-
 func (rm *resultMap) addVariable(variable string, tree *btree.BTree) {
 	rm.vars[variable] = hashTreeToEntityTree(tree)
 }
