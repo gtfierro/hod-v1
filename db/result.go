@@ -36,7 +36,6 @@ func (rm *resultMap) has(variable string) bool {
 }
 
 func (rm *resultMap) filterByTree(variable string, tree *btree.BTree) {
-	log.Warning("variable", variable, rm.varOrder.vars[variable])
 	if rm.varOrder.varIsTop(variable) {
 		if curTree, found := rm.vars[variable]; found {
 			rm.vars[variable] = intersectTrees(curTree, tree)
@@ -110,7 +109,6 @@ func (rm *resultMap) iterVariable(variable string) []*ResultEntity {
 	}
 	if rm.varOrder.vars[variable] == RESOLVED { // top level
 		tree := rm.vars[variable]
-		log.Warning(variable, tree.Len())
 		iter := func(i btree.Item) bool {
 			results = append(results, i.(*ResultEntity))
 			return i != tree.Max()
@@ -134,9 +132,7 @@ func (rm *resultMap) iterVariable(variable string) []*ResultEntity {
 		}
 		tree.Ascend(iter)
 	}
-	log.Error("iterate over", iterorder[0], "lookingfor", iterorder[1])
 	tree := rm.vars[iterorder[0]]
-	log.Warning(variable, tree.Len())
 	_iterbtree(tree, iterorder[1:])
 	return results
 }
@@ -166,7 +162,6 @@ func (db *DB) expandTuples(rm *resultMap, selectVars []string) [][]turtle.URI {
 			break
 		}
 	}
-	log.Debug("start with", startvar)
 	tree := rm.vars[startvar]
 	iter := func(i btree.Item) bool {
 		entity := i.(*ResultEntity)

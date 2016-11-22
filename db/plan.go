@@ -164,7 +164,6 @@ func (rso *restrictSubjectObjectByPredicate) run(db *DB, varOrder *variableState
 		subTree    = rm.getVar(subjectVar)
 		objTree    = rm.getVar(objectVar)
 	)
-	log.Warning("subject", subjectVar, "object", objectVar, "parentvar", rso.parentVar)
 	// we add the objects on to each subject
 	if rso.parentVar == subjectVar {
 		// iterate through current subjects
@@ -178,24 +177,20 @@ func (rso *restrictSubjectObjectByPredicate) run(db *DB, varOrder *variableState
 				}
 			}
 			if len(subject.Next) > 0 {
-				log.Debug(subjectVar, objectVar, subject)
 				rm.replaceEntity(subjectVar, subject)
 			}
 		}
 	} else if rso.parentVar == objectVar {
 		for _, object := range rm.iterVariable(objectVar) {
 			subjects := hashTreeToEntityTree(db.getSubjectFromPredObject(object.PK, rso.term.Path))
-			log.Debug("got subjects", subjects.Len())
 			if subjects.Len() > 0 {
 				if subTree == nil {
 					object.Next[subjectVar] = subjects
 				} else {
-					log.Debug(subTree.Len())
 					object.Next[subjectVar] = intersectTrees(subjects, subTree)
 				}
 			}
 			if len(object.Next) > 0 {
-				log.Debug(objectVar, object, subjects.Len(), object.Next[subjectVar].Len())
 				rm.replaceEntity(objectVar, object)
 			}
 		}
