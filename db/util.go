@@ -1,6 +1,7 @@
 package db
 
 import (
+	"fmt"
 	"github.com/google/btree"
 )
 
@@ -43,4 +44,30 @@ func intersectTrees(a, b *btree.BTree) *btree.BTree {
 	}
 	a.Ascend(iter)
 	return res
+}
+
+func dumpHashTree(tree *btree.BTree, db *DB, limit int) {
+	iter := func(i btree.Item) bool {
+		if limit == 0 {
+			return false // stop iteration
+		} else if limit > 0 {
+			limit -= 1 //
+		}
+		fmt.Println(db.MustGetURI(i.(Item)))
+		return i != tree.Max()
+	}
+	tree.Ascend(iter)
+}
+
+func dumpEntityTree(tree *btree.BTree, db *DB, limit int) {
+	iter := func(i btree.Item) bool {
+		if limit == 0 {
+			return false // stop iteration
+		} else if limit > 0 {
+			limit -= 1 //
+		}
+		fmt.Println(db.MustGetURI(i.(*ResultEntity).PK))
+		return i != tree.Max()
+	}
+	tree.Ascend(iter)
 }
