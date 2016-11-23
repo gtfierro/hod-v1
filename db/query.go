@@ -214,13 +214,29 @@ func (db *DB) followPathFromObject(object *Entity, results *btree.BTree, searchs
 			for _, endpointHashList := range entity.InEdges {
 				for _, entityHash := range endpointHashList {
 					nextEntity := db.MustGetEntityFromHash(entityHash)
+					if !results.Has(Item(nextEntity.PK)) {
+						searchstack.PushBack(nextEntity)
+					}
 					results.ReplaceOrInsert(Item(nextEntity.PK))
-					searchstack.PushBack(nextEntity)
 				}
 			}
 			// because this is one hop, we don't add any new entities to the stack
 		case query.PATTERN_ZERO_PLUS:
 			log.Notice("PATH *", pattern)
+			// we add ALL edges to the stack, but continue searching only on those that
+			// have the required edge
+			for edgeName, endpointHashList := range entity.InEdges {
+				for _, entityHash := range endpointHashList {
+					nextEntity := db.MustGetEntityFromHash(entityHash)
+					if !results.Has(Item(nextEntity.PK)) {
+						searchstack.PushBack(nextEntity)
+					}
+					results.ReplaceOrInsert(Item(nextEntity.PK))
+					if edgeName == string(predHash[:]) {
+						stack.PushBack(nextEntity)
+					}
+				}
+			}
 		case query.PATTERN_ONE_PLUS:
 			edges, found := entity.InEdges[string(predHash[:])]
 			// this requires the pattern to exist, so we skip if we have no edges of that name
@@ -272,13 +288,28 @@ func (db *DB) followPathFromSubject(subject *Entity, results *btree.BTree, searc
 			for _, endpointHashList := range entity.OutEdges {
 				for _, entityHash := range endpointHashList {
 					nextEntity := db.MustGetEntityFromHash(entityHash)
+					if !results.Has(Item(nextEntity.PK)) {
+						searchstack.PushBack(nextEntity)
+					}
 					results.ReplaceOrInsert(Item(nextEntity.PK))
-					searchstack.PushBack(nextEntity)
 				}
 			}
 			// because this is one hop, we don't add any new entities to the stack
 		case query.PATTERN_ZERO_PLUS:
-			panic("TODO TODO TODO")
+			// we add ALL edges to the stack, but continue searching only on those that
+			// have the required edge
+			for edgeName, endpointHashList := range entity.OutEdges {
+				for _, entityHash := range endpointHashList {
+					nextEntity := db.MustGetEntityFromHash(entityHash)
+					if !results.Has(Item(nextEntity.PK)) {
+						searchstack.PushBack(nextEntity)
+					}
+					results.ReplaceOrInsert(Item(nextEntity.PK))
+					if edgeName == string(predHash[:]) {
+						stack.PushBack(nextEntity)
+					}
+				}
+			}
 		case query.PATTERN_ONE_PLUS:
 			edges, found := entity.OutEdges[string(predHash[:])]
 			// this requires the pattern to exist, so we skip if we have no edges of that name
@@ -310,7 +341,6 @@ func (db *DB) getSubjectFromPredObject(objectHash [4]byte, path []query.PathPatt
 	if err != nil {
 		panic(err)
 	}
-
 	results := btree.New(2)
 
 	stack := list.New()
