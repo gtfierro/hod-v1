@@ -212,7 +212,20 @@ func (rsv *resolveSubjectFromVarObject) String() string {
 	return fmt.Sprintf("[resolveSubFromVarObj %s]", rsv.term)
 }
 
+// Use this when we have subject and object variables, but only object has been filled in
 func (rsv *resolveSubjectFromVarObject) run(db *DB, varOrder *variableStateMap, rm *resultMap) (*resultMap, error) {
+	var (
+		objectVar  = rsv.term.Object.String()
+		subjectVar = rsv.term.Subject.String()
+	)
+	for _, object := range rm.iterVariable(objectVar) {
+		subjects := hashTreeToEntityTree(db.getSubjectFromPredObject(object.PK, rsv.term.Path))
+		if _, found := object.Next[subjectVar]; found {
+			mergeTrees(object.Next[subjectVar], subjects)
+		} else {
+			object.Next[subjectVar] = subjects
+		}
+	}
 	return rm, nil
 }
 
@@ -225,6 +238,18 @@ func (rov *resolveObjectFromVarSubject) String() string {
 }
 
 func (rov *resolveObjectFromVarSubject) run(db *DB, varOrder *variableStateMap, rm *resultMap) (*resultMap, error) {
+	var (
+		objectVar  = rov.term.Object.String()
+		subjectVar = rov.term.Subject.String()
+	)
+	for _, subject := range rm.iterVariable(subjectVar) {
+		objects := hashTreeToEntityTree(db.getObjectFromSubjectPred(subject.PK, rov.term.Path))
+		if _, found := subject.Next[objectVar]; found {
+			mergeTrees(subject.Next[objectVar], objects)
+		} else {
+			subject.Next[objectVar] = objects
+		}
+	}
 	return rm, nil
 }
 
