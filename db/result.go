@@ -189,14 +189,16 @@ func (db *DB) _getTuplesFromTree(name string, ve *ResultEntity) []map[string]tur
 			iter := func(i btree.Item) bool {
 				entity := i.(*ResultEntity)
 				for _, m := range db._getTuplesFromTree(lname, entity) {
+					vars := make(map[string]turtle.URI)
+					vars[name] = uri
 					for k, v := range m {
 						vars[k] = v
 					}
+					ret = append(ret, vars)
 				}
 				return i != etree.Max()
 			}
 			etree.Ascend(iter)
-			ret = append(ret, vars)
 		}
 	}
 	return ret
