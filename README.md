@@ -1,13 +1,72 @@
-#  Hod
+# HodDB
 
-## Data Inserts
+A database for [Brick](http://brickschema.org/)
 
-- uses cgo wrapper over http://librdf.org/raptor/ static library
-- currently >= 33k reads per second from a Turtle file
-- requirements:
-    - want to be able to respect the reflexive and asymmetric nature of the relationships
-    - probably want to load the relationships from the actual Brick file so we can respect changes in that without having to re-code the logic of the database
-    - for now, probably okay to hard code basic interactions:
-        - for symmetric relationships, just double everything back on itself
+## Structure
+
+## TODO Items
+
+- [ ] Write out the 10 most common queries:
+    - longitudinal study
+    - dashboard
+    - control loop
+    - etc
+
+### Infrastructure
+
+- [ ] load database from disk
+    - [ ] save the predicate index
+
+### Operators
+
+Action Operators:
+- [x] SELECT:
+    - retrieves list of the resolved tuples
+    - maybe add:
+        - [ ] ability to select key/value pairs on returned nodes
+- [x] COUNT
+    - counts number of resolved tuples
+- [ ] GROUPBY
+    - e.g. for this room, here's all of the VAVs and zones
 
 
+Filters:
+- path predicates:
+    - [X] `path` (matches `path`)
+    - [X] `path1/path2` (matches `path1` followed by `path2`)
+        - also extends to `path+`, etc
+    - [X] `path+` (matches 1 or more `path`)
+    - [ ] `path*` (matches 0 or more `path`)
+    - [X] `path?` (matches 0 or 1 `path`)
+    - [ ] `path1|path2` (matches `path1` OR `path2`):
+        - can be combined with other path predicates
+- [ ] `UNION`/`OR`:
+    - implicitly, all triples in a query are `AND`
+
+Features:
+- key/value pairs:
+    - [ ] plan out the structure and how these fit into database:
+        - maybe want to call these 'links'? They are really just pointers
+          to other data sources, e.g. URI or UUID
+        - can also be timestamp (date added, etc)
+    - [ ] plan out filters on these:
+        - where timestamp >/</= timestamp?
+        - maybe we can just retrieve these when we get a node; they are not part of
+          the query engine
+        - will be associated with some generation of the node
+- generations:
+    - logical timestamping of entities:
+        - should be a COW structure
+        - having more generations shouldn't impact the latency of the common
+          case (most recent generation)
+        - idea: prefix all entity IDs with the generation (another 4 bytes?). Most current
+          generation is [0 0 0 0]; atomically need to change the generation on updates
+        - remember inserts should be transactional; we should not see any intermediate forms
+          of the database
+    - latency of inserts isn't important:
+        - want to make sure that we are consistent w/n a generation
+        - don't want the control loop to get different results WITHIN an iteration. Rather,
+          we should see changes reflected in between iterations.
+        - Consider adding a type of "generation lock":
+            - query the most recent generation, and keep me querying on that generation
+              until I release the lock
