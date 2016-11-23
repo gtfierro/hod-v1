@@ -83,10 +83,6 @@ func (db *DB) formQueryPlan(dg *dependencyGraph) *queryPlan {
 			}
 		}
 		qp.operations = append(qp.operations, newop)
-		log.Debug(term)
-	}
-	for k, v := range statemap.vars {
-		log.Debug("statemap", k, "hasparent", v)
 	}
 	qp.varOrder = statemap
 	return qp
