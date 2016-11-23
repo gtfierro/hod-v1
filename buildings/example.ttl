@@ -7,13 +7,16 @@
 @prefix xml: <http://www.w3.org/XML/1998/namespace> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
+soda_hall:ahu_1 a brick:AHU ;
+    bf:feeds soda_hall:vav_1 .
+
 soda_hall:room_1 a brick:Room ;
     bf:isPartOf soda_hall:hvaczone_1 .
-
-soda_hall:vav_1 a brick:VAV ;
-    bf:feeds soda_hall:hvaczone_1 .
 
 soda_hall:hvaczone_1 a brick:HVAC_Zone ;
     bf:hasPart soda_hall:room_1 ;
     bf:isFedBy soda_hall:vav_1 .
+
+soda_hall:vav_1 a brick:VAV ;
+    bf:feeds soda_hall:hvaczone_1 .
 
