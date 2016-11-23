@@ -204,7 +204,6 @@ func (db *DB) followPathFromObject(object *Entity, results *btree.BTree, searchs
 			for _, entityHash := range edges {
 				nextEntity := db.MustGetEntityFromHash(entityHash)
 				results.ReplaceOrInsert(Item(nextEntity.PK))
-				searchstack.PushBack(nextEntity)
 			}
 			// because this is one hop, we don't add any new entities to the stack
 		case query.PATTERN_ZERO_ONE:
@@ -279,7 +278,6 @@ func (db *DB) followPathFromSubject(subject *Entity, results *btree.BTree, searc
 			for _, entityHash := range edges {
 				nextEntity := db.MustGetEntityFromHash(entityHash)
 				results.ReplaceOrInsert(Item(nextEntity.PK))
-				searchstack.PushBack(nextEntity)
 			}
 			// because this is one hop, we don't add any new entities to the stack
 		case query.PATTERN_ZERO_ONE:
