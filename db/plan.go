@@ -176,7 +176,7 @@ func (rso *restrictSubjectObjectByPredicate) run(db *DB, varOrder *variableState
 				}
 			}
 			//if len(subject.Next) > 0 {
-			//	//rm.replaceEntity(subjectVar, subject)
+			//	rm.replaceEntity(subjectVar, subject)
 			//}
 		}
 	} else if rso.parentVar == objectVar {
@@ -190,7 +190,7 @@ func (rso *restrictSubjectObjectByPredicate) run(db *DB, varOrder *variableState
 				}
 			}
 			//if len(object.Next) > 0 {
-			//	//rm.replaceEntity(objectVar, object)
+			//	rm.replaceEntity(objectVar, object)
 			//}
 		}
 	} else {
