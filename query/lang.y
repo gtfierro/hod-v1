@@ -106,6 +106,10 @@ triple       : term path term DOT
              {
                 $$.triples = []Filter{{$1.val, $2.pred, $3.val}}
              }
+             | LBRACE term path term RBRACE
+             {
+                $$.triples = []Filter{{$2.val, $3.pred, $4.val}}
+             }
              | LBRACE compound RBRACE
              {
                 if len($2.orclauses) > 0 {

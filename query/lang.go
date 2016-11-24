@@ -76,7 +76,7 @@ const yyEofCode = 1
 const yyErrCode = 2
 const yyInitialStackSize = 16
 
-//line lang.y:182
+//line lang.y:186
 
 const eof = 0
 
@@ -151,61 +151,62 @@ var yyExca = [...]int{
 	-2, 0,
 }
 
-const yyNprod = 25
+const yyNprod = 26
 const yyPrivate = 57344
 
 var yyTokenNames []string
 var yyStates []string
 
-const yyLast = 47
+const yyLast = 52
 
 var yyAct = [...]int{
 
-	17, 25, 19, 20, 28, 27, 21, 22, 7, 34,
-	35, 36, 8, 21, 22, 11, 9, 33, 31, 24,
-	40, 30, 23, 12, 9, 38, 39, 9, 32, 5,
-	37, 3, 4, 6, 26, 41, 29, 18, 10, 42,
-	43, 13, 14, 15, 2, 16, 1,
+	17, 19, 25, 20, 21, 22, 28, 27, 7, 35,
+	36, 37, 8, 21, 22, 9, 11, 34, 32, 24,
+	47, 31, 29, 42, 9, 42, 6, 33, 9, 23,
+	12, 10, 38, 5, 13, 14, 15, 43, 16, 26,
+	44, 45, 46, 40, 41, 3, 4, 30, 39, 18,
+	2, 1,
 }
 var yyPact = [...]int{
 
-	27, -1000, 22, 2, 5, 11, -1000, -6, -6, -6,
-	-1000, -6, -9, -1000, -1000, -1000, -1000, 9, -9, -18,
-	-9, -1000, -1000, 1, -1000, -16, -1, -10, -1000, 17,
-	-1000, -1000, 4, -18, -1000, -1000, -1000, -1000, -9, -9,
-	-1000, -1000, -1000, -1000,
+	41, -1000, 26, 2, 6, 18, -1000, -7, -7, -7,
+	-1000, -7, -9, -1000, -1000, -1000, -1000, 16, -9, -16,
+	-9, -1000, -1000, 1, -1000, -18, -1, -10, -1000, -16,
+	35, -1000, -1000, 9, -16, -1000, -1000, -1000, -18, -1000,
+	-9, -9, -1000, -1000, 7, -1000, -1000, -1000,
 }
 var yyPgo = [...]int{
 
-	0, 46, 44, 0, 33, 37, 2, 1, 36, 34,
+	0, 51, 50, 0, 26, 49, 1, 2, 47, 39,
 }
 var yyR1 = [...]int{
 
 	0, 1, 2, 2, 2, 2, 2, 4, 4, 3,
-	3, 5, 5, 8, 8, 8, 7, 7, 9, 9,
-	9, 9, 9, 6, 6,
+	3, 5, 5, 5, 8, 8, 8, 7, 7, 9,
+	9, 9, 9, 9, 6, 6,
 }
 var yyR2 = [...]int{
 
 	0, 6, 2, 3, 3, 2, 3, 1, 2, 1,
-	2, 4, 3, 1, 3, 3, 1, 3, 1, 1,
-	2, 2, 2, 1, 1,
+	2, 4, 5, 3, 1, 3, 3, 1, 3, 1,
+	1, 2, 2, 2, 1, 1,
 }
 var yyChk = [...]int{
 
 	-1000, -1, -2, 4, 5, 7, -4, 6, 10, 22,
 	-4, 10, 12, -4, -4, -4, -4, -3, -5, -6,
-	12, 22, 23, 13, -3, -7, -9, 23, 22, -8,
-	-3, 17, -6, 18, 19, 20, 21, 13, 8, 9,
-	16, -7, -3, -3,
+	12, 22, 23, 13, -3, -7, -9, 23, 22, -6,
+	-8, -3, 17, -6, 18, 19, 20, 21, -7, 13,
+	8, 9, 16, -7, -6, -3, -3, 13,
 }
 var yyDef = [...]int{
 
 	0, -2, 0, 0, 0, 0, 2, 0, 0, 7,
 	5, 0, 0, 3, 4, 8, 6, 0, 9, 0,
-	0, 23, 24, 0, 10, 0, 16, 18, 19, 0,
-	13, 1, 0, 0, 20, 21, 22, 12, 0, 0,
-	11, 17, 14, 15,
+	0, 24, 25, 0, 10, 0, 17, 19, 20, 0,
+	0, 14, 1, 0, 0, 21, 22, 23, 0, 13,
+	0, 0, 11, 18, 0, 15, 16, 12,
 }
 var yyTok1 = [...]int{
 
@@ -651,8 +652,14 @@ yydefault:
 			yyVAL.triples = []Filter{{yyDollar[1].val, yyDollar[2].pred, yyDollar[3].val}}
 		}
 	case 12:
-		yyDollar = yyS[yypt-3 : yypt+1]
+		yyDollar = yyS[yypt-5 : yypt+1]
 		//line lang.y:110
+		{
+			yyVAL.triples = []Filter{{yyDollar[2].val, yyDollar[3].pred, yyDollar[4].val}}
+		}
+	case 13:
+		yyDollar = yyS[yypt-3 : yypt+1]
+		//line lang.y:114
 		{
 			if len(yyDollar[2].orclauses) > 0 {
 				yyVAL.orclauses = yyDollar[2].orclauses
@@ -660,25 +667,16 @@ yydefault:
 				yyVAL.triples = yyDollar[2].triples
 			}
 		}
-	case 13:
+	case 14:
 		yyDollar = yyS[yypt-1 : yypt+1]
-		//line lang.y:120
+		//line lang.y:124
 		{
 			yyVAL.triples = yyDollar[1].triples
 			yyVAL.orclauses = yyDollar[1].orclauses
 		}
-	case 14:
-		yyDollar = yyS[yypt-3 : yypt+1]
-		//line lang.y:125
-		{
-			yyVAL.orclauses = []OrClause{{LeftOr: yyDollar[3].orclauses,
-				LeftTerms:  yyDollar[3].triples,
-				RightOr:    yyDollar[1].orclauses,
-				RightTerms: yyDollar[1].triples}}
-		}
 	case 15:
 		yyDollar = yyS[yypt-3 : yypt+1]
-		//line lang.y:132
+		//line lang.y:129
 		{
 			yyVAL.orclauses = []OrClause{{LeftOr: yyDollar[3].orclauses,
 				LeftTerms:  yyDollar[3].triples,
@@ -686,22 +684,25 @@ yydefault:
 				RightTerms: yyDollar[1].triples}}
 		}
 	case 16:
+		yyDollar = yyS[yypt-3 : yypt+1]
+		//line lang.y:136
+		{
+			yyVAL.orclauses = []OrClause{{LeftOr: yyDollar[3].orclauses,
+				LeftTerms:  yyDollar[3].triples,
+				RightOr:    yyDollar[1].orclauses,
+				RightTerms: yyDollar[1].triples}}
+		}
+	case 17:
 		yyDollar = yyS[yypt-1 : yypt+1]
-		//line lang.y:142
+		//line lang.y:146
 		{
 			yyVAL.pred = yyDollar[1].pred
 		}
-	case 17:
+	case 18:
 		yyDollar = yyS[yypt-3 : yypt+1]
-		//line lang.y:146
+		//line lang.y:150
 		{
 			yyVAL.pred = append(yyDollar[1].pred, yyDollar[3].pred...)
-		}
-	case 18:
-		yyDollar = yyS[yypt-1 : yypt+1]
-		//line lang.y:152
-		{
-			yyVAL.pred = []PathPattern{{Predicate: turtle.ParseURI(yyDollar[1].str), Pattern: PATTERN_SINGLE}}
 		}
 	case 19:
 		yyDollar = yyS[yypt-1 : yypt+1]
@@ -710,32 +711,38 @@ yydefault:
 			yyVAL.pred = []PathPattern{{Predicate: turtle.ParseURI(yyDollar[1].str), Pattern: PATTERN_SINGLE}}
 		}
 	case 20:
-		yyDollar = yyS[yypt-2 : yypt+1]
+		yyDollar = yyS[yypt-1 : yypt+1]
 		//line lang.y:160
 		{
-			yyVAL.pred = []PathPattern{{Predicate: turtle.ParseURI(yyDollar[1].str), Pattern: PATTERN_ONE_PLUS}}
+			yyVAL.pred = []PathPattern{{Predicate: turtle.ParseURI(yyDollar[1].str), Pattern: PATTERN_SINGLE}}
 		}
 	case 21:
 		yyDollar = yyS[yypt-2 : yypt+1]
 		//line lang.y:164
 		{
-			yyVAL.pred = []PathPattern{{Predicate: turtle.ParseURI(yyDollar[1].str), Pattern: PATTERN_ZERO_ONE}}
+			yyVAL.pred = []PathPattern{{Predicate: turtle.ParseURI(yyDollar[1].str), Pattern: PATTERN_ONE_PLUS}}
 		}
 	case 22:
 		yyDollar = yyS[yypt-2 : yypt+1]
 		//line lang.y:168
 		{
-			yyVAL.pred = []PathPattern{{Predicate: turtle.ParseURI(yyDollar[1].str), Pattern: PATTERN_ZERO_PLUS}}
+			yyVAL.pred = []PathPattern{{Predicate: turtle.ParseURI(yyDollar[1].str), Pattern: PATTERN_ZERO_ONE}}
 		}
 	case 23:
-		yyDollar = yyS[yypt-1 : yypt+1]
-		//line lang.y:174
+		yyDollar = yyS[yypt-2 : yypt+1]
+		//line lang.y:172
 		{
-			yyVAL.val = turtle.ParseURI(yyDollar[1].str)
+			yyVAL.pred = []PathPattern{{Predicate: turtle.ParseURI(yyDollar[1].str), Pattern: PATTERN_ZERO_PLUS}}
 		}
 	case 24:
 		yyDollar = yyS[yypt-1 : yypt+1]
 		//line lang.y:178
+		{
+			yyVAL.val = turtle.ParseURI(yyDollar[1].str)
+		}
+	case 25:
+		yyDollar = yyS[yypt-1 : yypt+1]
+		//line lang.y:182
 		{
 			yyVAL.val = turtle.ParseURI(yyDollar[1].str)
 		}
