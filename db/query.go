@@ -190,8 +190,14 @@ func (db *DB) followPathFromObject(object *Entity, results *btree.BTree, searchs
 		panic(fmt.Errorf("Not found: %v (%s)", pattern.Predicate, err))
 	}
 
+	var traversed = btree.New(2)
+
 	for stack.Len() > 0 {
 		entity := stack.Remove(stack.Front()).(*Entity)
+		if traversed.Has(Item(entity.PK)) {
+			continue
+		}
+		traversed.ReplaceOrInsert(Item(entity.PK))
 		switch pattern.Pattern {
 		case query.PATTERN_SINGLE:
 			// [found] indicates whether or not we have any edges with the given pattern
@@ -264,8 +270,13 @@ func (db *DB) followPathFromSubject(subject *Entity, results *btree.BTree, searc
 		panic(err)
 	}
 
+	var traversed = btree.New(2)
 	for stack.Len() > 0 {
 		entity := stack.Remove(stack.Front()).(*Entity)
+		if traversed.Has(Item(entity.PK)) {
+			continue
+		}
+		traversed.ReplaceOrInsert(Item(entity.PK))
 		switch pattern.Pattern {
 		case query.PATTERN_SINGLE:
 			// [found] indicates whether or not we have any edges with the given pattern
@@ -344,8 +355,13 @@ func (db *DB) getSubjectFromPredObject(objectHash [4]byte, path []query.PathPatt
 	stack := list.New()
 	stack.PushFront(objEntity)
 
+	var traversed = btree.New(2)
 	for stack.Len() > 0 {
 		entity := stack.Remove(stack.Front()).(*Entity)
+		if traversed.Has(Item(entity.PK)) {
+			continue
+		}
+		traversed.ReplaceOrInsert(Item(entity.PK))
 		for _, pat := range path {
 			db.followPathFromObject(entity, results, stack, pat)
 		}
@@ -366,8 +382,13 @@ func (db *DB) getObjectFromSubjectPred(subjectHash [4]byte, path []query.PathPat
 	stack := list.New()
 	stack.PushFront(subEntity)
 
+	var traversed = btree.New(2)
 	for stack.Len() > 0 {
 		entity := stack.Remove(stack.Front()).(*Entity)
+		if traversed.Has(Item(entity.PK)) {
+			continue
+		}
+		traversed.ReplaceOrInsert(Item(entity.PK))
 		for _, pat := range path {
 			db.followPathFromSubject(entity, results, stack, pat)
 		}
