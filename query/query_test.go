@@ -8,6 +8,35 @@ import (
 	turtle "github.com/gtfierro/hod/goraptor"
 )
 
+func TestOrClauseFlatten(t *testing.T) {
+	for _, test := range []struct {
+		orclause  OrClause
+		flattened [][]Filter
+	}{
+		{
+			OrClause{
+				LeftTerms:  []Filter{{Subject: turtle.ParseURI("?x"), Path: []PathPattern{PathPattern{turtle.ParseURI("rdf:type"), PATTERN_SINGLE}}, Object: turtle.ParseURI("brick:Room")}},
+				RightTerms: []Filter{{Subject: turtle.ParseURI("?x"), Path: []PathPattern{PathPattern{turtle.ParseURI("rdf:type"), PATTERN_SINGLE}}, Object: turtle.ParseURI("brick:Floor")}},
+			},
+			[][]Filter{
+				{{Subject: turtle.ParseURI("?x"), Path: []PathPattern{PathPattern{turtle.ParseURI("rdf:type"), PATTERN_SINGLE}}, Object: turtle.ParseURI("brick:Room")}},
+				{{Subject: turtle.ParseURI("?x"), Path: []PathPattern{PathPattern{turtle.ParseURI("rdf:type"), PATTERN_SINGLE}}, Object: turtle.ParseURI("brick:Floor")}},
+			},
+		},
+	} {
+		flattened := test.orclause.Flatten()
+		if len(flattened) != len(test.flattened) {
+			t.Errorf("Flatten() failed. Wanted\n%v\nbut got\n%v", test.flattened, flattened)
+		}
+		for idx := 0; idx < len(flattened); idx++ {
+			if !compareFilterSliceAsSet(flattened[idx], test.flattened[idx]) {
+				t.Errorf("Flatten() failed. Wanted\n%v\nbut got\n%v", test.flattened, flattened)
+			}
+		}
+
+	}
+}
+
 func TestQueryParse(t *testing.T) {
 	for _, test := range []struct {
 		str          string

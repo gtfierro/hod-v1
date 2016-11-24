@@ -28,6 +28,12 @@ type Filter struct {
 	Object  turtle.URI
 }
 
+func (f Filter) Equals(f2 Filter) bool {
+	return f.Subject == f2.Subject &&
+		f.Object == f2.Object &&
+		comparePathSliceAsSet(f.Path, f2.Path)
+}
+
 type OrClause struct {
 	// a component of an OR clause
 	Terms []Filter
@@ -37,6 +43,51 @@ type OrClause struct {
 	LeftTerms  []Filter
 	RightOr    []OrClause
 	RightTerms []Filter
+}
+
+// returns a flat list of triples that comes from expanding out the OrClause tree
+func (oc OrClause) Flatten() [][]Filter {
+	var res [][]Filter
+	// we split on left/right
+	leftbase := append(oc.Terms, oc.LeftTerms...)
+	if len(oc.LeftOr) == 0 {
+		res = append(res, leftbase)
+	} else {
+		for _, loc := range oc.LeftOr {
+			for _, termBlock := range loc.Flatten() {
+				res = append(res, append(leftbase, termBlock...))
+			}
+		}
+	}
+	rightbase := append(oc.Terms, oc.RightTerms...)
+	if len(oc.RightOr) == 0 {
+		res = append(res, rightbase)
+	} else {
+		for _, roc := range oc.RightOr {
+			for _, termBlock := range roc.Flatten() {
+				res = append(res, append(rightbase, termBlock...))
+			}
+		}
+	}
+	return res
+}
+
+func FlattenOrClauseList(oclist []OrClause) [][]Filter {
+	var allOrTerms [][]Filter
+	for _, orclause := range oclist {
+		if len(allOrTerms) == 0 {
+			allOrTerms = append(allOrTerms, orclause.Flatten()...)
+		} else {
+			var newAllOrTerms [][]Filter
+			for _, termblock := range orclause.Flatten() {
+				for _, prefixTerm := range allOrTerms {
+					newAllOrTerms = append(newAllOrTerms, append(termblock, prefixTerm...))
+				}
+			}
+			allOrTerms = newAllOrTerms
+		}
+	}
+	return allOrTerms
 }
 
 type PathPattern struct {
