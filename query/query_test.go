@@ -12,30 +12,70 @@ func TestQueryParse(t *testing.T) {
 	for _, test := range []struct {
 		str          string
 		selectClause SelectClause
-		whereClause  []Filter
+		whereClause  WhereClause
 	}{
 		{
 			"SELECT ?x WHERE { ?x rdf:type brick:Room . } ;",
 			SelectClause{Variables: []turtle.URI{turtle.ParseURI("?x")}},
-			[]Filter{{Subject: turtle.ParseURI("?x"), Path: []PathPattern{PathPattern{turtle.ParseURI("rdf:type"), PATTERN_SINGLE}}, Object: turtle.ParseURI("brick:Room")}},
+			WhereClause{
+				[]Filter{{Subject: turtle.ParseURI("?x"), Path: []PathPattern{PathPattern{turtle.ParseURI("rdf:type"), PATTERN_SINGLE}}, Object: turtle.ParseURI("brick:Room")}},
+				[]OrClause{},
+			},
 		},
 		{
 			"SELECT ?x ?y WHERE { ?x ?y brick:Room . } ;",
 			SelectClause{Variables: []turtle.URI{turtle.ParseURI("?x"), turtle.ParseURI("?y")}},
-			[]Filter{{Subject: turtle.ParseURI("?x"), Path: []PathPattern{PathPattern{turtle.ParseURI("?y"), PATTERN_SINGLE}}, Object: turtle.ParseURI("brick:Room")}},
+			WhereClause{
+				[]Filter{{Subject: turtle.ParseURI("?x"), Path: []PathPattern{PathPattern{turtle.ParseURI("?y"), PATTERN_SINGLE}}, Object: turtle.ParseURI("brick:Room")}},
+				[]OrClause{},
+			},
 		},
 		{
 			"SELECT ?x ?y WHERE { ?y rdf:type rdf:type . ?x ?y brick:Room . } ;",
 			SelectClause{Variables: []turtle.URI{turtle.ParseURI("?x"), turtle.ParseURI("?y")}},
-			[]Filter{
-				{Subject: turtle.ParseURI("?x"), Path: []PathPattern{PathPattern{turtle.ParseURI("?y"), PATTERN_SINGLE}}, Object: turtle.ParseURI("brick:Room")},
-				{Subject: turtle.ParseURI("?y"), Path: []PathPattern{PathPattern{turtle.ParseURI("rdf:type"), PATTERN_SINGLE}}, Object: turtle.ParseURI("rdf:type")},
+			WhereClause{
+				[]Filter{
+					{Subject: turtle.ParseURI("?x"), Path: []PathPattern{PathPattern{turtle.ParseURI("?y"), PATTERN_SINGLE}}, Object: turtle.ParseURI("brick:Room")},
+					{Subject: turtle.ParseURI("?y"), Path: []PathPattern{PathPattern{turtle.ParseURI("rdf:type"), PATTERN_SINGLE}}, Object: turtle.ParseURI("rdf:type")},
+				},
+				[]OrClause{},
 			},
 		},
 		{
 			"SELECT ?x WHERE { ?x rdf:type+ brick:Room . } ;",
 			SelectClause{Variables: []turtle.URI{turtle.ParseURI("?x")}},
-			[]Filter{{Subject: turtle.ParseURI("?x"), Path: []PathPattern{PathPattern{turtle.ParseURI("rdf:type"), PATTERN_ONE_PLUS}}, Object: turtle.ParseURI("brick:Room")}},
+			WhereClause{
+				[]Filter{{Subject: turtle.ParseURI("?x"), Path: []PathPattern{PathPattern{turtle.ParseURI("rdf:type"), PATTERN_ONE_PLUS}}, Object: turtle.ParseURI("brick:Room")}},
+				[]OrClause{},
+			},
+		},
+		{
+			"SELECT ?x WHERE { {?x rdf:type brick:Room . OR ?x rdf:type brick:Floor .} };",
+			SelectClause{Variables: []turtle.URI{turtle.ParseURI("?x")}},
+			WhereClause{
+				[]Filter{},
+				[]OrClause{{
+					LeftTerms:  []Filter{{Subject: turtle.ParseURI("?x"), Path: []PathPattern{PathPattern{turtle.ParseURI("rdf:type"), PATTERN_SINGLE}}, Object: turtle.ParseURI("brick:Room")}},
+					RightTerms: []Filter{{Subject: turtle.ParseURI("?x"), Path: []PathPattern{PathPattern{turtle.ParseURI("rdf:type"), PATTERN_SINGLE}}, Object: turtle.ParseURI("brick:Floor")}},
+				}},
+			},
+		},
+		{
+			"SELECT ?x WHERE { ?y rdf:type brick:Building . { { ?x rdf:type brick:Room . ?x bf:isPartOf+ ?y .} OR { ?x rdf:type brick:Floor . ?x bf:isPartOf+ ?y .} } };",
+			SelectClause{Variables: []turtle.URI{turtle.ParseURI("?x")}},
+			WhereClause{
+				[]Filter{{Subject: turtle.ParseURI("?y"), Path: []PathPattern{PathPattern{turtle.ParseURI("rdf:type"), PATTERN_SINGLE}}, Object: turtle.ParseURI("brick:Building")}},
+				[]OrClause{{
+					LeftTerms: []Filter{
+						{Subject: turtle.ParseURI("?x"), Path: []PathPattern{PathPattern{turtle.ParseURI("rdf:type"), PATTERN_SINGLE}}, Object: turtle.ParseURI("brick:Room")},
+						{Subject: turtle.ParseURI("?x"), Path: []PathPattern{PathPattern{turtle.ParseURI("bf:isPartOf"), PATTERN_ONE_PLUS}}, Object: turtle.ParseURI("?y")},
+					},
+					RightTerms: []Filter{
+						{Subject: turtle.ParseURI("?x"), Path: []PathPattern{PathPattern{turtle.ParseURI("rdf:type"), PATTERN_SINGLE}}, Object: turtle.ParseURI("brick:Floor")},
+						{Subject: turtle.ParseURI("?x"), Path: []PathPattern{PathPattern{turtle.ParseURI("bf:isPartOf"), PATTERN_ONE_PLUS}}, Object: turtle.ParseURI("?y")},
+					},
+				}},
+			},
 		},
 	} {
 		r := strings.NewReader(test.str)
@@ -48,8 +88,12 @@ func TestQueryParse(t *testing.T) {
 			t.Errorf("Query %s got select\n %v\nexpected\n %v", test.str, q.Select, test.selectClause)
 			return
 		}
-		if !reflect.DeepEqual(q.Where, test.whereClause) {
-			t.Errorf("Query %s got where\n %v\nexpected\n %v", test.str, q.Where, test.whereClause)
+		if !reflect.DeepEqual(q.Where.Filters, test.whereClause.Filters) {
+			t.Errorf("Query %s got where Filters\n %v\nexpected\n %v", test.str, q.Where.Filters, test.whereClause.Filters)
+			return
+		}
+		if !reflect.DeepEqual(q.Where.Ors, test.whereClause.Ors) {
+			t.Errorf("Query %s got where Ors\n %v\nexpected\n %v", test.str, q.Where.Ors, test.whereClause.Ors)
 			return
 		}
 	}

@@ -31,18 +31,18 @@ func (i Item) Less(than btree.Item) bool {
 
 func (db *DB) RunQuery(q query.Query) {
 	// "clean" the query by expanding out the prefixes
-	for idx, filter := range q.Where {
+	for idx, filter := range q.Where.Filters {
 		if !strings.HasPrefix(filter.Subject.Value, "?") {
 			if full, found := db.namespaces[filter.Subject.Namespace]; found {
 				filter.Subject.Namespace = full
 			}
-			q.Where[idx] = filter
+			q.Where.Filters[idx] = filter
 		}
 		if !strings.HasPrefix(filter.Object.Value, "?") {
 			if full, found := db.namespaces[filter.Object.Namespace]; found {
 				filter.Object.Namespace = full
 			}
-			q.Where[idx] = filter
+			q.Where.Filters[idx] = filter
 		}
 		for idx2, pred := range filter.Path {
 			if !strings.HasPrefix(pred.Predicate.Value, "?") {
@@ -52,7 +52,7 @@ func (db *DB) RunQuery(q query.Query) {
 				filter.Path[idx2] = pred
 			}
 		}
-		q.Where[idx] = filter
+		q.Where.Filters[idx] = filter
 	}
 
 	fmt.Println("-------------- start query plan -------------")
@@ -85,8 +85,8 @@ func (db *DB) RunQuery(q query.Query) {
 // We need an execution plan for the list of filters contained in a query. How do we do this?
 func (db *DB) formDependencyGraph(q query.Query) *dependencyGraph {
 	dg := makeDependencyGraph(q)
-	terms := make([]*queryTerm, len(q.Where))
-	for i, f := range q.Where {
+	terms := make([]*queryTerm, len(q.Where.Filters))
+	for i, f := range q.Where.Filters {
 		terms[i] = dg.makeQueryTerm(f)
 	}
 

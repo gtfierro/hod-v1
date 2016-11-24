@@ -14,15 +14,15 @@ import (
     str string
     val turtle.URI
     pred []PathPattern
-    triple Filter
     triples []Filter
+    orclauses []OrClause
     varlist []turtle.URI
     distinct bool
     count bool
 }
 
-%token SELECT COUNT DISTINCT WHERE
-%token COMMA LBRACE RBRACE DOT SEMICOLON SLASH PLUS QUESTION ASTERISK
+%token SELECT COUNT DISTINCT WHERE OR
+%token COMMA LBRACE RBRACE LPAREN RPAREN DOT SEMICOLON SLASH PLUS QUESTION ASTERISK
 %token VAR URI
 
 %%
@@ -34,6 +34,7 @@ query        : selectClause WHERE LBRACE whereTriples RBRACE SEMICOLON
                yylex.(*lexer).triples = $4.triples
                yylex.(*lexer).distinct = $1.distinct
                yylex.(*lexer).count = $1.count
+               yylex.(*lexer).orclauses = $4.orclauses
              }
              ;
 
@@ -69,35 +70,59 @@ varList      : VAR
 
 whereTriples : triple
              {
-                $$.triples = []Filter{$1.triple}
+                if len($1.orclauses) > 0 {
+                  $$.orclauses = $1.orclauses
+                } else {
+                  $$.triples = $1.triples
+                }
              }
              | triple whereTriples
              {
-                $$.triples = append($2.triples, $1.triple)
+                $$.triples = append($2.triples, $1.triples...)
+                $$.orclauses = append($2.orclauses, $1.orclauses...)
              }
              ;
 
 triple       : term path term DOT
              {
-                $$.triple = Filter{$1.val, $2.pred, $3.val}
+                $$.triples = []Filter{{$1.val, $2.pred, $3.val}}
              }
-             | LBRACE term path term RBRACE DOT
+             | LBRACE compound RBRACE
              {
-                $$.triple = Filter{$2.val, $3.pred, $4.val}
+                if len($2.orclauses) > 0 {
+                  $$.orclauses = $2.orclauses
+                } else {
+                  $$.triples = $2.triples
+                }
              }
              ;
 
-path         : pathpart
+compound     : whereTriples
+             {
+                $$.triples = $1.triples
+                $$.orclauses = $1.orclauses
+             }
+             | compound OR whereTriples
+             {
+                $$.orclauses = []OrClause{{LeftOr: $3.orclauses, 
+                                            LeftTerms: $3.triples, 
+                                            RightOr: $1.orclauses,
+                                            RightTerms: $1.triples}}
+             }
+             ;
+
+
+path         : pathatom
              {
                 $$.pred = $1.pred
              }
-             | pathpart SLASH path
+             | pathatom SLASH path
              {
                 $$.pred = append($1.pred, $3.pred...)
              }
              ;
 
-pathpart     : URI
+pathatom     : URI
              {
                 $$.pred = []PathPattern{{Predicate: turtle.ParseURI($1.str), Pattern: PATTERN_SINGLE}}
              }
@@ -137,6 +162,7 @@ type lexer struct {
     error   error
     varlist []turtle.URI
     triples []Filter
+    orclauses []OrClause
     distinct bool
     count bool
     pos int
@@ -147,6 +173,8 @@ func newlexer(r io.Reader) *lexer {
 		[]Definition{
             {Token: LBRACE,  Pattern: "\\{"},
             {Token: RBRACE,  Pattern: "\\}"},
+            {Token: LPAREN,  Pattern: "\\("},
+            {Token: RPAREN,  Pattern: "\\)"},
             {Token: COMMA,  Pattern: "\\,"},
             {Token: SEMICOLON,  Pattern: ";"},
             {Token: DOT,  Pattern: "\\."},
@@ -154,6 +182,7 @@ func newlexer(r io.Reader) *lexer {
             {Token: COUNT,  Pattern: "COUNT"},
             {Token: DISTINCT,  Pattern: "DISTINCT"},
             {Token: WHERE,  Pattern: "WHERE"},
+            {Token: OR,  Pattern: "OR"},
             {Token: URI,  Pattern: "[a-zA-Z]+:[a-zA-Z0-9_\\-#%$@]+"},
             {Token: VAR,  Pattern: "\\?[a-zA-Z0-9_]+"},
             {Token: QUESTION,  Pattern: "\\?"},

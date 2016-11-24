@@ -7,7 +7,7 @@ import (
 
 type Query struct {
 	Select SelectClause
-	Where  []Filter
+	Where  WhereClause
 }
 
 type SelectClause struct {
@@ -16,10 +16,26 @@ type SelectClause struct {
 	Count     bool
 }
 
+type WhereClause struct {
+	Filters []Filter
+	Ors     []OrClause
+}
+
 type Filter struct {
 	Subject turtle.URI
 	Path    []PathPattern
 	Object  turtle.URI
+}
+
+type OrClause struct {
+	// a component of an OR clause
+	Terms []Filter
+	// pointer to the left/right of OR clause
+	// These are nestable
+	LeftOr     []OrClause
+	LeftTerms  []Filter
+	RightOr    []OrClause
+	RightTerms []Filter
 }
 
 type PathPattern struct {
@@ -58,9 +74,15 @@ func Parse(r io.Reader) (Query, error) {
 	}
 	q := Query{}
 	q.Select = SelectClause{Variables: l.varlist, Distinct: l.distinct, Count: l.count}
-	q.Where = []Filter{}
-	for _, filter := range l.triples {
-		q.Where = append(q.Where, filter)
+	q.Where = WhereClause{
+		Filters: []Filter{},
+		Ors:     []OrClause{},
+	}
+	if len(l.triples) > 0 {
+		q.Where.Filters = l.triples
+	}
+	if len(l.orclauses) > 0 {
+		q.Where.Ors = l.orclauses
 	}
 
 	return q, nil
