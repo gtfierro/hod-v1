@@ -13,6 +13,22 @@ the results of the query.
     addVariable(varname, tree), where 'tree' is a btree of ResultEntity
 */
 
+type ResultRow []turtle.URI
+
+func (rr ResultRow) Less(than btree.Item) bool {
+	row := than.(ResultRow)
+	if len(rr) < len(row) {
+		return true
+	} else if len(row) < len(rr) {
+		return false
+	}
+	before := false
+	for idx, item := range rr {
+		before = before || item.String() < row[idx].String()
+	}
+	return before
+}
+
 type ResultEntity struct {
 	PK   [4]byte
 	Next map[string]*btree.BTree

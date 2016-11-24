@@ -4,6 +4,7 @@ import (
 	"container/list"
 	"encoding/binary"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/google/btree"
@@ -43,34 +44,53 @@ func (db *DB) RunQuery(q query.Query) {
 	orTerms := query.FlattenOrClauseList(q.Where.Ors)
 	oldFilters := q.Where.Filters
 
+	unionedRows := btree.New(3)
+	var rowLock sync.Mutex
+	var wg sync.WaitGroup
+	wg.Add(len(orTerms))
+	fullQueryStart := time.Now()
 	for _, orTerm := range orTerms {
-		fmt.Println("-------------- start query plan -------------")
-		// augment with the filters
-		q.Where.Filters = append(oldFilters, orTerm...)
+		orTerm := orTerm
+		q := q
+		go func(orTerm []query.Filter) {
+			fmt.Println("-------------- start query plan -------------")
+			// augment with the filters
+			q.Where.Filters = append(oldFilters, orTerm...)
 
-		planStart := time.Now()
-		dg := db.formDependencyGraph(q)
-		qp := db.formQueryPlan(dg)
-		for _, op := range qp.operations {
-			log.Debug("op", op)
-		}
-		log.Infof("Formed execution plan in %s", time.Since(planStart))
-		fmt.Println("-------------- end query plan -------------")
-
-		runStart := time.Now()
-		rm := db.executeQueryPlan(qp)
-		log.Infof("Ran query in %s", time.Since(runStart))
-
-		runStart = time.Now()
-		results := db.expandTuples(rm, qp.selectVars, q.Select.Partial)
-		log.Infof("Expanded tuples in %s", time.Since(runStart))
-		if q.Select.Count {
-			fmt.Println(len(results))
-		} else {
-			for _, r := range results {
-				fmt.Println(r)
+			planStart := time.Now()
+			dg := db.formDependencyGraph(q)
+			qp := db.formQueryPlan(dg)
+			for _, op := range qp.operations {
+				log.Debug("op", op)
 			}
+			log.Infof("Formed execution plan in %s", time.Since(planStart))
+			fmt.Println("-------------- end query plan -------------")
+
+			runStart := time.Now()
+			rm := db.executeQueryPlan(qp)
+			log.Infof("Ran query in %s", time.Since(runStart))
+
+			runStart = time.Now()
+			results := db.expandTuples(rm, qp.selectVars, q.Select.Partial)
+			rowLock.Lock()
+			for _, row := range results {
+				unionedRows.ReplaceOrInsert(ResultRow(row))
+			}
+			rowLock.Unlock()
+			wg.Done()
+		}(orTerm)
+	}
+	wg.Wait()
+	log.Infof("Full Query took %s", time.Since(fullQueryStart))
+	if q.Select.Count {
+		fmt.Println(unionedRows.Len())
+	} else {
+		iter := func(i btree.Item) bool {
+			row := i.(ResultRow)
+			fmt.Println(row)
+			return row.Less(unionedRows.Max())
 		}
+		unionedRows.Ascend(iter)
 	}
 	return
 }
@@ -140,15 +160,6 @@ func (db *DB) executeQueryPlan(qp *queryPlan) *resultMap {
 		if err != nil {
 			log.Fatal(err)
 		}
-	}
-	//for vname := range qp.varOrder.vars {
-	//	fmt.Println(vname, rm.getVariableChain(vname))
-	//	for re := range rm.iterVariable(vname) {
-	//		fmt.Println(vname, re)
-	//	}
-	//}
-	for vname, tree := range rm.vars {
-		fmt.Println(vname, tree.Len())
 	}
 	return rm
 }
