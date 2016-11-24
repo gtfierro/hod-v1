@@ -2,8 +2,11 @@ package db
 
 import (
 	"fmt"
-	"github.com/google/btree"
 	"strings"
+
+	"github.com/google/btree"
+	"github.com/pkg/errors"
+	"github.com/syndtr/goleveldb/leveldb"
 )
 
 // need operator types that go into the query plan
@@ -106,8 +109,10 @@ func (rs *resolveSubject) String() string {
 func (rs *resolveSubject) run(db *DB, varOrder *variableStateMap, rm *resultMap) (*resultMap, error) {
 	// fetch the object from the graph
 	object, err := db.GetEntity(rs.term.Object)
-	if err != nil {
-		return rm, err
+	if err != nil && err != leveldb.ErrNotFound {
+		return rm, errors.Wrap(err, fmt.Sprintf("%+v", rs.term))
+	} else if err == leveldb.ErrNotFound {
+		return rm, nil
 	}
 	subjectVar := rs.term.Subject.String()
 	// get all subjects reachable from the given object along the path
@@ -128,8 +133,10 @@ func (ro *resolveObject) String() string {
 func (ro *resolveObject) run(db *DB, varOrder *variableStateMap, rm *resultMap) (*resultMap, error) {
 	// fetch the subject from the graph
 	subject, err := db.GetEntity(ro.term.Subject)
-	if err != nil {
-		return rm, err
+	if err != nil && err != leveldb.ErrNotFound {
+		return rm, errors.Wrap(err, fmt.Sprintf("%+v", ro.term))
+	} else if err == leveldb.ErrNotFound {
+		return rm, nil
 	}
 	objectVar := ro.term.Object.String()
 	// get all objects reachable from the given subject along the path
