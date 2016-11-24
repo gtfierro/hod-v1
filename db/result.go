@@ -144,7 +144,7 @@ func newResultMap() *resultMap {
 	}
 }
 
-func (db *DB) expandTuples(rm *resultMap, selectVars []string) [][]turtle.URI {
+func (db *DB) expandTuples(rm *resultMap, selectVars []string, matchPartial bool) [][]turtle.URI {
 	var tuples []map[string]turtle.URI
 	var startvar string
 	for v, state := range rm.varOrder.vars {
@@ -168,7 +168,11 @@ tupleLoop:
 		var row []turtle.URI
 		for _, varname := range selectVars {
 			if _, found := tup[varname]; !found {
-				continue tupleLoop
+				if matchPartial {
+					continue
+				} else {
+					continue tupleLoop
+				}
 			}
 			row = append(row, tup[varname])
 		}
