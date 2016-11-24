@@ -19,9 +19,10 @@ import (
     varlist []turtle.URI
     distinct bool
     count bool
+    partial bool
 }
 
-%token SELECT COUNT DISTINCT WHERE OR
+%token SELECT COUNT DISTINCT WHERE OR UNION PARTIAL
 %token COMMA LBRACE RBRACE LPAREN RPAREN DOT SEMICOLON SLASH PLUS QUESTION ASTERISK
 %token VAR URI
 
@@ -33,6 +34,7 @@ query        : selectClause WHERE LBRACE whereTriples RBRACE SEMICOLON
                yylex.(*lexer).distinct = $1.distinct
                yylex.(*lexer).triples = $4.triples
                yylex.(*lexer).distinct = $1.distinct
+               yylex.(*lexer).partial = $1.partial
                yylex.(*lexer).count = $1.count
                yylex.(*lexer).orclauses = $4.orclauses
              }
@@ -43,18 +45,35 @@ selectClause : SELECT varList
                 $$.varlist = $2.varlist
                 $$.distinct = false
                 $$.count = false
+                $$.partial = false
              }
              | SELECT DISTINCT varList
              {
                 $$.varlist = $3.varlist
                 $$.distinct = true
                 $$.count = false
+                $$.partial = false
+             }
+             | SELECT PARTIAL varList
+             {
+                $$.varlist = $3.varlist
+                $$.distinct = false
+                $$.count = false
+                $$.partial = true
              }
              | COUNT varList
              {
                 $$.varlist = $2.varlist
                 $$.distinct = false
                 $$.count = true
+                $$.partial = false
+             }
+             | COUNT PARTIAL varList
+             {
+                $$.varlist = $3.varlist
+                $$.distinct = false
+                $$.count = true
+                $$.partial = true
              }
              ;
 
@@ -103,6 +122,13 @@ compound     : whereTriples
                 $$.orclauses = $1.orclauses
              }
              | compound OR whereTriples
+             {
+                $$.orclauses = []OrClause{{LeftOr: $3.orclauses, 
+                                            LeftTerms: $3.triples, 
+                                            RightOr: $1.orclauses,
+                                            RightTerms: $1.triples}}
+             }
+             | compound UNION whereTriples
              {
                 $$.orclauses = []OrClause{{LeftOr: $3.orclauses, 
                                             LeftTerms: $3.triples, 
@@ -165,6 +191,7 @@ type lexer struct {
     orclauses []OrClause
     distinct bool
     count bool
+    partial bool
     pos int
 }
 
@@ -183,6 +210,8 @@ func newlexer(r io.Reader) *lexer {
             {Token: DISTINCT,  Pattern: "DISTINCT"},
             {Token: WHERE,  Pattern: "WHERE"},
             {Token: OR,  Pattern: "OR"},
+            {Token: UNION,  Pattern: "UNION"},
+            {Token: PARTIAL,  Pattern: "PARTIAL"},
             {Token: URI,  Pattern: "[a-zA-Z]+:[a-zA-Z0-9_\\-#%$@]+"},
             {Token: VAR,  Pattern: "\\?[a-zA-Z0-9_]+"},
             {Token: QUESTION,  Pattern: "\\?"},

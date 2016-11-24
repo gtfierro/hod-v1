@@ -14,6 +14,7 @@ type SelectClause struct {
 	Variables []turtle.URI
 	Distinct  bool
 	Count     bool
+	Partial   bool
 }
 
 type WhereClause struct {
@@ -73,7 +74,7 @@ func Parse(r io.Reader) (Query, error) {
 		return Query{}, l.error
 	}
 	q := Query{}
-	q.Select = SelectClause{Variables: l.varlist, Distinct: l.distinct, Count: l.count}
+	q.Select = SelectClause{Variables: l.varlist, Distinct: l.distinct, Count: l.count, Partial: l.partial}
 	q.Where = WhereClause{
 		Filters: []Filter{},
 		Ors:     []OrClause{},
