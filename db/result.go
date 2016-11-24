@@ -180,17 +180,15 @@ tupleLoop:
 func (db *DB) _getTuplesFromTree(name string, ve *ResultEntity) []map[string]turtle.URI {
 	uri := db.MustGetURI(ve.PK)
 	var ret []map[string]turtle.URI
+	vars := make(map[string]turtle.URI)
+	vars[name] = uri
 	if len(ve.Next) == 0 {
 		ret = append(ret, map[string]turtle.URI{name: uri})
 	} else {
 		for lname, etree := range ve.Next {
-			vars := make(map[string]turtle.URI)
-			vars[name] = uri
 			iter := func(i btree.Item) bool {
 				entity := i.(*ResultEntity)
 				for _, m := range db._getTuplesFromTree(lname, entity) {
-					vars := make(map[string]turtle.URI)
-					vars[name] = uri
 					for k, v := range m {
 						vars[k] = v
 					}
