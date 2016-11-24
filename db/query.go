@@ -4,7 +4,6 @@ import (
 	"container/list"
 	"encoding/binary"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/google/btree"
@@ -39,28 +38,38 @@ func (db *DB) RunQuery(q query.Query) {
 		q.Where.Ors[idx] = db.expandOrClauseFilters(orclause)
 	}
 
-	fmt.Println("-------------- start query plan -------------")
-	planStart := time.Now()
-	dg := db.formDependencyGraph(q)
-	qp := db.formQueryPlan(dg)
-	for _, op := range qp.operations {
-		log.Debug("op", op)
-	}
-	log.Infof("Formed execution plan in %s", time.Since(planStart))
-	fmt.Println("-------------- end query plan -------------")
+	// we flatten the OR clauses to get the array of queries we are going
+	// to run and then merge
+	orTerms := query.FlattenOrClauseList(q.Where.Ors)
+	oldFilters := q.Where.Filters
 
-	runStart := time.Now()
-	rm := db.executeQueryPlan(qp)
-	log.Infof("Ran query in %s", time.Since(runStart))
+	for _, orTerm := range orTerms {
+		fmt.Println("-------------- start query plan -------------")
+		// augment with the filters
+		q.Where.Filters = append(oldFilters, orTerm...)
 
-	runStart = time.Now()
-	results := db.expandTuples(rm, qp.selectVars)
-	log.Infof("Expanded tuples in %s", time.Since(runStart))
-	if q.Select.Count {
-		fmt.Println(len(results))
-	} else {
-		for _, r := range results {
-			fmt.Println(r)
+		planStart := time.Now()
+		dg := db.formDependencyGraph(q)
+		qp := db.formQueryPlan(dg)
+		for _, op := range qp.operations {
+			log.Debug("op", op)
+		}
+		log.Infof("Formed execution plan in %s", time.Since(planStart))
+		fmt.Println("-------------- end query plan -------------")
+
+		runStart := time.Now()
+		rm := db.executeQueryPlan(qp)
+		log.Infof("Ran query in %s", time.Since(runStart))
+
+		runStart = time.Now()
+		results := db.expandTuples(rm, qp.selectVars, q.Select.Partial)
+		log.Infof("Expanded tuples in %s", time.Since(runStart))
+		if q.Select.Count {
+			fmt.Println(len(results))
+		} else {
+			for _, r := range results {
+				fmt.Println(r)
+			}
 		}
 	}
 	return

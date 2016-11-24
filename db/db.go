@@ -8,6 +8,8 @@ import (
 	"time"
 
 	turtle "github.com/gtfierro/hod/goraptor"
+	query "github.com/gtfierro/hod/query"
+
 	"github.com/op/go-logging"
 	"github.com/pkg/errors"
 	"github.com/syndtr/goleveldb/leveldb"
