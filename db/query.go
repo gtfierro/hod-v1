@@ -31,28 +31,12 @@ func (i Item) Less(than btree.Item) bool {
 
 func (db *DB) RunQuery(q query.Query) {
 	// "clean" the query by expanding out the prefixes
+	// make sure to first do the Filters, then the Or clauses
 	for idx, filter := range q.Where.Filters {
-		if !strings.HasPrefix(filter.Subject.Value, "?") {
-			if full, found := db.namespaces[filter.Subject.Namespace]; found {
-				filter.Subject.Namespace = full
-			}
-			q.Where.Filters[idx] = filter
-		}
-		if !strings.HasPrefix(filter.Object.Value, "?") {
-			if full, found := db.namespaces[filter.Object.Namespace]; found {
-				filter.Object.Namespace = full
-			}
-			q.Where.Filters[idx] = filter
-		}
-		for idx2, pred := range filter.Path {
-			if !strings.HasPrefix(pred.Predicate.Value, "?") {
-				if full, found := db.namespaces[pred.Predicate.Namespace]; found {
-					pred.Predicate.Namespace = full
-				}
-				filter.Path[idx2] = pred
-			}
-		}
-		q.Where.Filters[idx] = filter
+		q.Where.Filters[idx] = db.expandFilter(filter)
+	}
+	for idx, orclause := range q.Where.Ors {
+		q.Where.Ors[idx] = db.expandOrClauseFilters(orclause)
 	}
 
 	fmt.Println("-------------- start query plan -------------")
