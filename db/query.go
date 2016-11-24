@@ -217,7 +217,6 @@ func (db *DB) followPathFromObject(object *Entity, results *btree.BTree, searchs
 			}
 			// because this is one hop, we don't add any new entities to the stack
 		case query.PATTERN_ZERO_ONE:
-			log.Notice("PATH ?", pattern)
 			// this does not require the pattern to exist, so we add ALL entities connected
 			// by ALL edges
 			for _, endpointHashList := range entity.InEdges {
@@ -231,7 +230,6 @@ func (db *DB) followPathFromObject(object *Entity, results *btree.BTree, searchs
 			}
 			// because this is one hop, we don't add any new entities to the stack
 		case query.PATTERN_ZERO_PLUS:
-			log.Notice("PATH *", pattern)
 			// we add ALL edges to the stack, but continue searching only on those that
 			// have the required edge
 			for edgeName, endpointHashList := range entity.InEdges {

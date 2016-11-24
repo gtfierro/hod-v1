@@ -40,7 +40,7 @@ Filters:
     - [X] `path?` (matches 0 or 1 `path`)
     - [ ] `path1|path2` (matches `path1` OR `path2`):
         - can be combined with other path predicates
-- [ ] `UNION`/`OR`:
+- [X] `UNION`/`OR`:
     - implicitly, all triples in a query are `AND`
 
 Features:
