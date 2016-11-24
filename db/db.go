@@ -186,7 +186,6 @@ func (db *DB) loadPredicateEntity(predicate turtle.URI, _predicateHash, _subject
 	copy(subjectHash[:], _subjectHash)
 	copy(objectHash[:], _objectHash)
 
-	//log.Debug(predicate)
 	if pred, found = db.predIndex[predicate]; !found {
 		pred = NewPredicateEntity()
 		pred.PK = predicateHash

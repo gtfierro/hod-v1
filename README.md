@@ -36,7 +36,7 @@ Filters:
     - [X] `path1/path2` (matches `path1` followed by `path2`)
         - also extends to `path+`, etc
     - [X] `path+` (matches 1 or more `path`)
-    - [ ] `path*` (matches 0 or more `path`)
+    - [X] `path*` (matches 0 or more `path`)
     - [X] `path?` (matches 0 or 1 `path`)
     - [ ] `path1|path2` (matches `path1` OR `path2`):
         - can be combined with other path predicates
