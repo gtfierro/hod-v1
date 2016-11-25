@@ -237,7 +237,7 @@ type resolveObjectFromVarSubject struct {
 }
 
 func (rov *resolveObjectFromVarSubject) String() string {
-	return fmt.Sprintf("[resolveSubFromVarObj %s]", rov.term)
+	return fmt.Sprintf("[resolveObjFromVarSub %s]", rov.term)
 }
 
 func (rov *resolveObjectFromVarSubject) run(db *DB, varOrder *variableStateMap, rm *resultMap) (*resultMap, error) {

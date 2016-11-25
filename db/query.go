@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/google/btree"
+	turtle "github.com/gtfierro/hod/goraptor"
 	query "github.com/gtfierro/hod/query"
 	"github.com/syndtr/goleveldb/leveldb"
 )
@@ -45,43 +46,34 @@ func (db *DB) RunQuery(q query.Query) {
 	oldFilters := q.Where.Filters
 
 	unionedRows := btree.New(3)
-	var rowLock sync.Mutex
-	var wg sync.WaitGroup
-	wg.Add(len(orTerms))
 	fullQueryStart := time.Now()
-	for _, orTerm := range orTerms {
-		orTerm := orTerm
-		q := q
-		go func(orTerm []query.Filter) {
-			fmt.Println("-------------- start query plan -------------")
-			// augment with the filters
-			q.Where.Filters = append(oldFilters, orTerm...)
-
-			planStart := time.Now()
-			dg := db.formDependencyGraph(q)
-			qp := db.formQueryPlan(dg)
-			for _, op := range qp.operations {
-				log.Debug("op", op)
-			}
-			log.Infof("Formed execution plan in %s", time.Since(planStart))
-			fmt.Println("-------------- end query plan -------------")
-
-			runStart := time.Now()
-			rm := db.executeQueryPlan(qp)
-			log.Infof("Ran query in %s", time.Since(runStart))
-
-			runStart = time.Now()
-			results := db.expandTuples(rm, qp.selectVars, q.Select.Partial)
-			rowLock.Lock()
-			for _, row := range results {
-				unionedRows.ReplaceOrInsert(ResultRow(row))
-			}
-			rowLock.Unlock()
-			wg.Done()
-		}(orTerm)
+	if len(orTerms) > 0 {
+		var rowLock sync.Mutex
+		var wg sync.WaitGroup
+		wg.Add(len(orTerms))
+		for _, orTerm := range orTerms {
+			orTerm := orTerm
+			q := q
+			go func(orTerm []query.Filter) {
+				// augment with the filters
+				q.Where.Filters = append(oldFilters, orTerm...)
+				results := db.getQueryResults(q)
+				rowLock.Lock()
+				for _, row := range results {
+					unionedRows.ReplaceOrInsert(ResultRow(row))
+				}
+				rowLock.Unlock()
+				wg.Done()
+			}(orTerm)
+		}
+		wg.Wait()
+	} else {
+		results := db.getQueryResults(q)
+		for _, row := range results {
+			unionedRows.ReplaceOrInsert(ResultRow(row))
+		}
 	}
-	wg.Wait()
-	log.Infof("Full Query took %s", time.Since(fullQueryStart))
+	log.Noticef("Full Query took %s", time.Since(fullQueryStart))
 	if q.Select.Count {
 		fmt.Println(unionedRows.Len())
 	} else {
@@ -93,6 +85,27 @@ func (db *DB) RunQuery(q query.Query) {
 		unionedRows.Ascend(iter)
 	}
 	return
+}
+
+func (db *DB) getQueryResults(q query.Query) [][]turtle.URI {
+	fmt.Println("-------------- start query plan -------------")
+	planStart := time.Now()
+	dg := db.formDependencyGraph(q)
+	qp := db.formQueryPlan(dg)
+	for _, op := range qp.operations {
+		log.Debug("op", op)
+	}
+	log.Infof("Formed execution plan in %s", time.Since(planStart))
+	fmt.Println("-------------- end query plan -------------")
+
+	runStart := time.Now()
+	rm := db.executeQueryPlan(qp)
+	log.Infof("Ran query in %s", time.Since(runStart))
+
+	runStart = time.Now()
+	results := db.expandTuples(rm, qp.selectVars, q.Select.Partial)
+	log.Infof("Expanded tuples in %s", time.Since(runStart))
+	return results
 }
 
 // We need an execution plan for the list of filters contained in a query. How do we do this?
