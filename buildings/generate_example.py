@@ -19,11 +19,18 @@ g.add((EX.room_1, RDF.type, BRICK.Room))
 g.add((EX.vav_1, RDF.type, BRICK.VAV))
 g.add((EX.hvaczone_1, RDF.type, BRICK.HVAC_Zone))
 g.add((EX.ahu_1, RDF.type, BRICK.AHU))
+g.add((EX.ztemp_1, RDF.type, BRICK.Zone_Temperature_Sensor))
+
+g.add((EX.ztemp_1, BRICKFRAME.isPointOf, EX.vav_1))
+
 g.add((EX.hvaczone_1, BRICKFRAME.hasPart, EX.room_1))
+
 g.add((EX.ahu_1, BRICKFRAME.feeds, EX.vav_1))
 g.add((EX.vav_1, BRICKFRAME.feeds, EX.hvaczone_1))
+g.add((EX.hvaczone_1, BRICKFRAME.isFedBy, EX.vav_1))
+
 g.add((EX.room_1, BRICKFRAME.isPartOf, EX.hvaczone_1))
 g.add((EX.room_1, BRICKFRAME.isPartOf, EX.floor_1))
-g.add((EX.hvaczone_1, BRICKFRAME.isFedBy, EX.vav_1))
+
 g.serialize(destination='example.ttl',format='turtle')
 print len(g)
