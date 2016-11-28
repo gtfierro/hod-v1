@@ -95,7 +95,7 @@ func (db *DB) buildGraph(dataset turtle.DataSet) error {
 		return errors.Wrap(err, "Could not commit transaction")
 	}
 
-	log.Errorf("subjects %d, objects %d", subjAdded, objAdded)
+	log.Errorf("ADDED subjects %d, objects %d", subjAdded, objAdded)
 
 	graphtx, err = db.graphDB.OpenTransaction()
 	if err != nil {
