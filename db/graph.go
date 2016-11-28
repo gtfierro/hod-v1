@@ -39,7 +39,7 @@ func (db *DB) buildGraph(dataset turtle.DataSet) error {
 		}
 		if reversePredicate, hasReverse := db.relationships[triple.Predicate]; hasReverse {
 			if _, found := predicates[reversePredicate.String()]; !found {
-				predHash, err := db.GetHash(triple.Predicate)
+				predHash, err := db.GetHash(reversePredicate)
 				if err != nil {
 					return err
 				}

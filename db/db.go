@@ -195,6 +195,15 @@ func (db *DB) loadPredicateEntity(predicate turtle.URI, _predicateHash, _subject
 
 	pred.AddSubjectObject(subjectHash, objectHash)
 	db.predIndex[predicate] = pred
+
+	if reverse, found := db.relationships[predicate]; found {
+		if pred, found = db.predIndex[reverse]; !found {
+			pred = NewPredicateEntity()
+			pred.PK = predicateHash
+		}
+		pred.AddSubjectObject(objectHash, subjectHash)
+		db.predIndex[predicate] = pred
+	}
 	//TODO: save predicate index
 
 	return nil
@@ -266,6 +275,9 @@ func (db *DB) LoadDataset(dataset turtle.DataSet) error {
 		if err := db.insertEntityTx(triple.Subject, subjectHash, enttx, pktx); err != nil {
 			return err
 		}
+		if err := db.insertEntityTx(db.relationships[triple.Predicate], predicateHash, enttx, pktx); err != nil {
+			return err
+		}
 		if err := db.insertEntityTx(triple.Predicate, predicateHash, enttx, pktx); err != nil {
 			return err
 		}
@@ -304,11 +316,6 @@ func (db *DB) LoadDataset(dataset turtle.DataSet) error {
 	for pfx, uri := range db.namespaces {
 		fmt.Printf("%s => %s\n", pfx, uri)
 	}
-	//fmt.Println("Relationships")
-	//for rel, invrel := range db.relationships {
-	//	fmt.Printf("%s => %s\n", rel.String(), invrel.String())
-	//}
-
 	return nil
 }
 
