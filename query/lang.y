@@ -14,6 +14,7 @@ import (
     str string
     val turtle.URI
     pred []PathPattern
+    multipred [][]PathPattern
     triples []Filter
     orclauses []OrClause
     varlist []turtle.URI
@@ -23,7 +24,7 @@ import (
 }
 
 %token SELECT COUNT DISTINCT WHERE OR UNION PARTIAL
-%token COMMA LBRACE RBRACE LPAREN RPAREN DOT SEMICOLON SLASH PLUS QUESTION ASTERISK
+%token COMMA LBRACE RBRACE LPAREN RPAREN DOT SEMICOLON SLASH PLUS QUESTION ASTERISK BAR
 %token VAR URI
 
 %%
@@ -104,11 +105,33 @@ whereTriples : triple
 
 triple       : term path term DOT
              {
-                $$.triples = []Filter{{$1.val, $2.pred, $3.val}}
+                triple := Filter{Subject: $1.val, Object: $3.val}
+                if len($2.multipred) > 0 {
+                    var orclauses []OrClause
+                    for _, pred := range $2.multipred {
+                        triple.Path = pred
+                        orclauses = append(orclauses, OrClause{Terms: []Filter{triple}})
+                    }
+                    $$.orclauses = orclauses
+                } else {
+                    triple.Path = $2.pred
+                    $$.triples = []Filter{triple}
+                }
              }
              | LBRACE term path term RBRACE
              {
-                $$.triples = []Filter{{$2.val, $3.pred, $4.val}}
+                triple := Filter{Subject: $1.val, Object: $3.val}
+                if len($2.multipred) > 0 {
+                    var orclauses []OrClause
+                    for _, pred := range $2.multipred {
+                        triple.Path = pred
+                        orclauses = append(orclauses, OrClause{Terms: []Filter{triple}})
+                    }
+                    $$.orclauses = orclauses
+                } else {
+                    triple.Path = $2.pred
+                    $$.triples = []Filter{triple}
+                }
              }
              | LBRACE compound RBRACE
              {
@@ -150,6 +173,19 @@ path         : pathatom
              {
                 $$.pred = append($1.pred, $3.pred...)
              }
+             | pathatom BAR path
+             {
+                if len($1.multipred) > 0 {
+                  $$.multipred = append($$.multipred, $1.multipred...)
+                } else {
+                  $$.multipred = append($$.multipred, $1.pred)
+                }
+                if len($3.multipred) > 0 {
+                  $$.multipred = append($$.multipred, $3.multipred...)
+                } else {
+                  $$.multipred = append($$.multipred, $3.pred)
+                }
+             }
              ;
 
 pathatom     : URI
@@ -171,6 +207,10 @@ pathatom     : URI
              | URI ASTERISK
              {
                 $$.pred = []PathPattern{{Predicate: turtle.ParseURI($1.str), Pattern: PATTERN_ZERO_PLUS}}
+             }
+             | LPAREN path RPAREN
+             {
+                $$.pred = $2.pred
              }
              ;
 
@@ -209,6 +249,7 @@ func newlexer(r io.Reader) *lexer {
             {Token: COMMA,  Pattern: "\\,"},
             {Token: SEMICOLON,  Pattern: ";"},
             {Token: DOT,  Pattern: "\\."},
+            {Token: BAR,  Pattern: "\\|"},
             {Token: SELECT,  Pattern: "SELECT"},
             {Token: COUNT,  Pattern: "COUNT"},
             {Token: DISTINCT,  Pattern: "DISTINCT"},

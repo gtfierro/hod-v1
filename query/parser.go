@@ -90,6 +90,17 @@ func FlattenOrClauseList(oclist []OrClause) [][]Filter {
 	return allOrTerms
 }
 
+func FilterListToOrClause(filters []Filter) OrClause {
+	orc := OrClause{}
+	if len(filters) == 1 {
+		orc.Terms = filters
+		return orc
+	}
+	orc.LeftTerms = []Filter{filters[0]}
+	orc.RightOr = []OrClause{FilterListToOrClause(filters[1:])}
+	return orc
+}
+
 type PathPattern struct {
 	Predicate turtle.URI
 	Pattern   Pattern

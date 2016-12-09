@@ -79,13 +79,46 @@ func TestQueryParse(t *testing.T) {
 			},
 		},
 		{
+			"SELECT ?x ?y WHERE { ?y rdf:type|rdfs:subClassOf ?x .} ;",
+			SelectClause{Variables: []turtle.URI{turtle.ParseURI("?x"), turtle.ParseURI("?y")}},
+			WhereClause{
+				[]Filter{},
+				[]OrClause{
+					{
+						Terms: []Filter{{Subject: turtle.ParseURI("?y"), Path: []PathPattern{PathPattern{turtle.ParseURI("rdf:type"), PATTERN_SINGLE}}, Object: turtle.ParseURI("?x")}},
+					},
+					{
+						Terms: []Filter{{Subject: turtle.ParseURI("?y"), Path: []PathPattern{PathPattern{turtle.ParseURI("rdfs:subClassOf"), PATTERN_SINGLE}}, Object: turtle.ParseURI("?x")}},
+					},
+				},
+			},
+		},
+		{
+			"SELECT ?x ?y WHERE { ?y rdf:type|rdfs:subClassOf|rdf:isa ?x .} ;",
+			SelectClause{Variables: []turtle.URI{turtle.ParseURI("?x"), turtle.ParseURI("?y")}},
+			WhereClause{
+				[]Filter{},
+				[]OrClause{
+					{
+						Terms: []Filter{{Subject: turtle.ParseURI("?y"), Path: []PathPattern{PathPattern{turtle.ParseURI("rdf:type"), PATTERN_SINGLE}}, Object: turtle.ParseURI("?x")}},
+					},
+					{
+						Terms: []Filter{{Subject: turtle.ParseURI("?y"), Path: []PathPattern{PathPattern{turtle.ParseURI("rdfs:subClassOf"), PATTERN_SINGLE}}, Object: turtle.ParseURI("?x")}},
+					},
+					{
+						Terms: []Filter{{Subject: turtle.ParseURI("?y"), Path: []PathPattern{PathPattern{turtle.ParseURI("rdf:isa"), PATTERN_SINGLE}}, Object: turtle.ParseURI("?x")}},
+					},
+				},
+			},
+		},
+		{
 			"SELECT ?x WHERE { {?x rdf:type brick:Room . OR ?x rdf:type brick:Floor .} };",
 			SelectClause{Variables: []turtle.URI{turtle.ParseURI("?x")}},
 			WhereClause{
 				[]Filter{},
 				[]OrClause{{
-					LeftTerms:  []Filter{{Subject: turtle.ParseURI("?x"), Path: []PathPattern{PathPattern{turtle.ParseURI("rdf:type"), PATTERN_SINGLE}}, Object: turtle.ParseURI("brick:Room")}},
-					RightTerms: []Filter{{Subject: turtle.ParseURI("?x"), Path: []PathPattern{PathPattern{turtle.ParseURI("rdf:type"), PATTERN_SINGLE}}, Object: turtle.ParseURI("brick:Floor")}},
+					LeftTerms:  []Filter{{Subject: turtle.ParseURI("?x"), Path: []PathPattern{PathPattern{turtle.ParseURI("rdf:type"), PATTERN_SINGLE}}, Object: turtle.ParseURI("brick:Floor")}},
+					RightTerms: []Filter{{Subject: turtle.ParseURI("?x"), Path: []PathPattern{PathPattern{turtle.ParseURI("rdf:type"), PATTERN_SINGLE}}, Object: turtle.ParseURI("brick:Room")}},
 				}},
 			},
 		},
@@ -96,11 +129,11 @@ func TestQueryParse(t *testing.T) {
 				[]Filter{{Subject: turtle.ParseURI("?y"), Path: []PathPattern{PathPattern{turtle.ParseURI("rdf:type"), PATTERN_SINGLE}}, Object: turtle.ParseURI("brick:Building")}},
 				[]OrClause{{
 					LeftTerms: []Filter{
-						{Subject: turtle.ParseURI("?x"), Path: []PathPattern{PathPattern{turtle.ParseURI("rdf:type"), PATTERN_SINGLE}}, Object: turtle.ParseURI("brick:Room")},
+						{Subject: turtle.ParseURI("?x"), Path: []PathPattern{PathPattern{turtle.ParseURI("rdf:type"), PATTERN_SINGLE}}, Object: turtle.ParseURI("brick:Floor")},
 						{Subject: turtle.ParseURI("?x"), Path: []PathPattern{PathPattern{turtle.ParseURI("bf:isPartOf"), PATTERN_ONE_PLUS}}, Object: turtle.ParseURI("?y")},
 					},
 					RightTerms: []Filter{
-						{Subject: turtle.ParseURI("?x"), Path: []PathPattern{PathPattern{turtle.ParseURI("rdf:type"), PATTERN_SINGLE}}, Object: turtle.ParseURI("brick:Floor")},
+						{Subject: turtle.ParseURI("?x"), Path: []PathPattern{PathPattern{turtle.ParseURI("rdf:type"), PATTERN_SINGLE}}, Object: turtle.ParseURI("brick:Room")},
 						{Subject: turtle.ParseURI("?x"), Path: []PathPattern{PathPattern{turtle.ParseURI("bf:isPartOf"), PATTERN_ONE_PLUS}}, Object: turtle.ParseURI("?y")},
 					},
 				}},
@@ -117,12 +150,12 @@ func TestQueryParse(t *testing.T) {
 			t.Errorf("Query %s got select\n %v\nexpected\n %v", test.str, q.Select, test.selectClause)
 			return
 		}
-		if !reflect.DeepEqual(q.Where.Filters, test.whereClause.Filters) {
+		if !compareFilterSliceAsSet(q.Where.Filters, test.whereClause.Filters) {
 			t.Errorf("Query %s got where Filters\n %v\nexpected\n %v", test.str, q.Where.Filters, test.whereClause.Filters)
 			return
 		}
-		if !reflect.DeepEqual(q.Where.Ors, test.whereClause.Ors) {
-			t.Errorf("Query %s got where Ors\n %v\nexpected\n %v", test.str, q.Where.Ors, test.whereClause.Ors)
+		if !compareOrClauseLists(q.Where.Ors, test.whereClause.Ors) {
+			t.Errorf("Query %s got where Ors\n %+v\nexpected\n %+v", test.str, q.Where.Ors, test.whereClause.Ors)
 			return
 		}
 	}
