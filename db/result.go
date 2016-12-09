@@ -113,6 +113,9 @@ func (rm *resultMap) iterVariable(variable string) []*ResultEntity {
 	}
 	if rm.varOrder.vars[variable] == RESOLVED { // top level
 		tree := rm.vars[variable]
+		if tree == nil {
+			return results
+		}
 		iter := func(i btree.Item) bool {
 			results = append(results, i.(*ResultEntity))
 			return i != tree.Max()
@@ -170,13 +173,15 @@ func (db *DB) expandTuples(rm *resultMap, selectVars []string, matchPartial bool
 		}
 	}
 	tree := rm.vars[startvar]
-	iter := func(i btree.Item) bool {
-		entity := i.(*ResultEntity)
-		newtups := db._getTuplesFromTree(startvar, entity)
-		tuples = append(tuples, newtups...)
-		return i != tree.Max()
+	if tree != nil {
+		iter := func(i btree.Item) bool {
+			entity := i.(*ResultEntity)
+			newtups := db._getTuplesFromTree(startvar, entity)
+			tuples = append(tuples, newtups...)
+			return i != tree.Max()
+		}
+		tree.Ascend(iter)
 	}
-	tree.Ascend(iter)
 
 	var results [][]turtle.URI
 tupleLoop:
