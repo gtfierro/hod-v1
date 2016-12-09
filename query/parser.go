@@ -87,6 +87,20 @@ func FlattenOrClauseList(oclist []OrClause) [][]Filter {
 			allOrTerms = newAllOrTerms
 		}
 	}
+	// eliminate duplicates
+	if len(allOrTerms) > 0 {
+		var keepTerms [][]Filter
+	orterm:
+		for _, flist := range allOrTerms {
+			for _, kt := range keepTerms {
+				if compareFilterSliceAsSet(flist, kt) {
+					continue orterm
+				}
+			}
+			keepTerms = append(keepTerms, flist)
+		}
+		allOrTerms = keepTerms
+	}
 	return allOrTerms
 }
 
