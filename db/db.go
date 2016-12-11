@@ -357,6 +357,16 @@ func (db *DB) MustGetURI(hash [4]byte) turtle.URI {
 	return turtle.ParseURI(string(val))
 }
 
+func (db *DB) MustGetURIStringHash(hash string) turtle.URI {
+	var c [4]byte
+	copy(c[:], []byte(hash))
+	val, err := db.pkDB.Get(c[:], nil)
+	if err != nil {
+		panic(err)
+	}
+	return turtle.ParseURI(string(val))
+}
+
 func (db *DB) GetEntity(uri turtle.URI) (*Entity, error) {
 	var entity = NewEntity()
 	hash, err := db.GetHash(uri)
@@ -390,6 +400,22 @@ func (db *DB) MustGetEntityFromHash(hash [4]byte) *Entity {
 		panic(err)
 	}
 	return e
+}
+
+func (db *DB) DumpEntity(ent *Entity) {
+	fmt.Println("DUMPING", db.MustGetURI(ent.PK))
+	for edge, list := range ent.OutEdges {
+		fmt.Printf(" OUT: %s \n", db.MustGetURIStringHash(edge).Value)
+		for _, l := range list {
+			fmt.Printf("     -> %s\n", db.MustGetURI(l).Value)
+		}
+	}
+	for edge, list := range ent.InEdges {
+		fmt.Printf(" In: %s \n", db.MustGetURIStringHash(edge).Value)
+		for _, l := range list {
+			fmt.Printf("     <- %s\n", db.MustGetURI(l).Value)
+		}
+	}
 }
 
 func (db *DB) GetEntityTx(graphtx *leveldb.Transaction, uri turtle.URI) (*Entity, error) {
