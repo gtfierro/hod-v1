@@ -39,11 +39,18 @@ func load(c *cli.Context) error {
 	frame := c.String("frame")
 	relships, _ := p.Parse(frame)
 
+	class := c.String("class")
+	classships, _ := p.Parse(class)
+
 	db, err := hod.NewDB(path)
 	if err != nil {
 		return err
 	}
 	err = db.LoadRelationships(relships)
+	if err != nil {
+		return err
+	}
+	err = db.LoadDataset(classships)
 	if err != nil {
 		return err
 	}

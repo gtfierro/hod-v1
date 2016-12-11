@@ -51,6 +51,11 @@ func main() {
 					Value: "BrickFrame.ttl",
 					Usage: "turtle file of brick relationships",
 				},
+				cli.StringFlag{
+					Name:  "class, c",
+					Value: "Brick.ttl",
+					Usage: "turtle file of brick relationships",
+				},
 			},
 		},
 	}
