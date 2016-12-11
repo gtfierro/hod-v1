@@ -104,10 +104,6 @@ func (db *DB) buildGraph(dataset turtle.DataSet) error {
 
 	// second pass
 	for _, triple := range dataset.Triples {
-		var (
-			reAddSubject = false
-			reAddObject  = false
-		)
 		subject, err := db.GetEntityTx(graphtx, triple.Subject)
 		if err != nil {
 			return err
@@ -119,37 +115,33 @@ func (db *DB) buildGraph(dataset turtle.DataSet) error {
 
 		// add the forward edge
 		predHash := predicates[triple.Predicate.String()]
-		reAddSubject = reAddSubject || subject.AddOutEdge(predHash, object.PK)
-		reAddObject = reAddObject || object.AddInEdge(predHash, subject.PK)
+		subject.AddOutEdge(predHash, object.PK)
+		object.AddInEdge(predHash, subject.PK)
 
 		// find the inverse edge
 		reverseEdge, hasReverseEdge := db.relationships[triple.Predicate]
 		// if an inverse edge exists, then we add it to the object
 		if hasReverseEdge {
 			reverseEdgeHash := predicates[reverseEdge.String()]
-			reAddObject = reAddObject || object.AddOutEdge(reverseEdgeHash, subject.PK)
-			reAddSubject = reAddSubject || subject.AddInEdge(reverseEdgeHash, object.PK)
+			object.AddOutEdge(reverseEdgeHash, subject.PK)
+			subject.AddInEdge(reverseEdgeHash, object.PK)
 		}
 
-		if reAddSubject {
-			// re-put in graph
-			bytes, err := subject.MarshalMsg(nil)
-			if err != nil {
-				return err
-			}
-			if err := graphtx.Put(subject.PK[:], bytes, nil); err != nil {
-				return err
-			}
+		// re-put in graph
+		bytes, err := subject.MarshalMsg(nil)
+		if err != nil {
+			return err
+		}
+		if err := graphtx.Put(subject.PK[:], bytes, nil); err != nil {
+			return err
 		}
 
-		if reAddObject {
-			bytes, err := object.MarshalMsg(nil)
-			if err != nil {
-				return err
-			}
-			if err := graphtx.Put(object.PK[:], bytes, nil); err != nil {
-				return err
-			}
+		bytes, err = object.MarshalMsg(nil)
+		if err != nil {
+			return err
+		}
+		if err := graphtx.Put(object.PK[:], bytes, nil); err != nil {
+			return err
 		}
 	}
 	if err = graphtx.Commit(); err != nil {
