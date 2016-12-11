@@ -58,6 +58,9 @@ func (rm *resultMap) addVariable(variable string, tree *btree.BTree) {
 func (rm *resultMap) getVariableChain(variable string) []string {
 	var _getchain func(rm *resultMap, variable string)
 	chain := []string{variable}
+	if len(rm.vars) == 0 {
+		return chain // don't recurse if we can't find it
+	}
 	_getchain = func(rm *resultMap, variable string) {
 		next := rm.varOrder.vars[variable]
 		if next != RESOLVED {
@@ -166,6 +169,7 @@ func newResultMap() *resultMap {
 func (db *DB) expandTuples(rm *resultMap, selectVars []string, matchPartial bool) [][]turtle.URI {
 	var tuples []map[string]turtle.URI
 	var startvar string
+	var results [][]turtle.URI
 	for v, state := range rm.varOrder.vars {
 		if state == RESOLVED {
 			startvar = v
@@ -181,9 +185,10 @@ func (db *DB) expandTuples(rm *resultMap, selectVars []string, matchPartial bool
 			return i != tree.Max()
 		}
 		tree.Ascend(iter)
+	} else {
+		return results
 	}
 
-	var results [][]turtle.URI
 tupleLoop:
 	for _, tup := range tuples {
 		var row []turtle.URI
