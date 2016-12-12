@@ -16,6 +16,7 @@ A database for [Brick](http://brickschema.org/)
 
 - [ ] load database from disk
     - [ ] save the predicate index
+- [ ] make sure to load in `Brick.ttl` as well
 
 ### Operators
 
@@ -28,6 +29,7 @@ Action Operators:
     - counts number of resolved tuples
 - [ ] GROUPBY
     - e.g. for this room, here's all of the VAVs and zones
+    - only if really *really* needed -- can do this after a query anyway
 
 
 Filters:
@@ -42,6 +44,7 @@ Filters:
         - can be combined with other path predicates
 - [X] `UNION`/`OR`:
     - implicitly, all triples in a query are `AND`
+- [ ] Specify URLs in the query
 
 Features:
 - key/value pairs:
