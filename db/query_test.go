@@ -27,7 +27,7 @@ func TestQueryPlan(t *testing.T) {
 			"SELECT ?a WHERE { ?a bf:feeds ?b . ?b bf:feeds ?c . ?c bf:feeds ?d . ?d bf:feeds ?e . ?e bf:feeds ?loc . ?loc bf:hasPoint brick:Power_Meter . };",
 		},
 		{
-			" SELECT ?meter WHERE { ?meter rdf:type brick:Power_Meter . ?room rdf:type brick:Room . ?meter bf:isPointOf ?equipment . ?equipment rdf:type ?class . ?class rdfs:subClassOf+ brick:Heating_Ventilation_Air_Conditioning_System . ?zone rdf:type/rdfs:subClassOf* brick:HVAC_Zone . ?equipment bf:feeds+ ?zone . ?zone bf:hasPart ?room . } ;",
+			"SELECT ?meter WHERE { ?meter rdf:type brick:Power_Meter . ?room rdf:type brick:Room . ?meter bf:isPointOf ?equipment . ?equipment rdf:type ?class . ?class rdfs:subClassOf+ brick:Heating_Ventilation_Air_Conditioning_System . ?zone rdf:type/rdfs:subClassOf* brick:HVAC_Zone . ?equipment bf:feeds+ ?zone . ?zone bf:hasPart ?room . } ;",
 		},
 	} {
 		ll.Println(test.query)
@@ -36,7 +36,7 @@ func TestQueryPlan(t *testing.T) {
 			t.Error(e)
 			continue
 		}
-		db := &DB{}
-		db.formExecutionPlan(q.Where)
+		//db := &DB{}
+		makeDependencyGraph(q)
 	}
 }
