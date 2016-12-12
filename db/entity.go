@@ -3,6 +3,10 @@ package db
 
 import ()
 
+type PredIndex map[string]*PredicateEntity
+type RelshipIndex map[string]string
+type NamespaceIndex map[string]string
+
 type Entity struct {
 	PK [4]byte `msg:"p"`
 	// note: we have to use string keys to get msgp to work

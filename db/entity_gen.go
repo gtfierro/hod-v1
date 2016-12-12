@@ -12,13 +12,13 @@ import (
 func (z *Entity) DecodeMsg(dc *msgp.Reader) (err error) {
 	var field []byte
 	_ = field
-	var lqf uint32
-	lqf, err = dc.ReadMapHeader()
+	var isz uint32
+	isz, err = dc.ReadMapHeader()
 	if err != nil {
 		return
 	}
-	for lqf > 0 {
-		lqf--
+	for isz > 0 {
+		isz--
 		field, err = dc.ReadMapKeyPtr()
 		if err != nil {
 			return
@@ -30,35 +30,35 @@ func (z *Entity) DecodeMsg(dc *msgp.Reader) (err error) {
 				return
 			}
 		case "ein":
-			var daf uint32
-			daf, err = dc.ReadMapHeader()
+			var msz uint32
+			msz, err = dc.ReadMapHeader()
 			if err != nil {
 				return
 			}
-			if z.InEdges == nil && daf > 0 {
-				z.InEdges = make(map[string][][4]byte, daf)
+			if z.InEdges == nil && msz > 0 {
+				z.InEdges = make(map[string][][4]byte, msz)
 			} else if len(z.InEdges) > 0 {
 				for key, _ := range z.InEdges {
 					delete(z.InEdges, key)
 				}
 			}
-			for daf > 0 {
-				daf--
+			for msz > 0 {
+				msz--
 				var bzg string
 				var bai [][4]byte
 				bzg, err = dc.ReadString()
 				if err != nil {
 					return
 				}
-				var pks uint32
-				pks, err = dc.ReadArrayHeader()
+				var xsz uint32
+				xsz, err = dc.ReadArrayHeader()
 				if err != nil {
 					return
 				}
-				if cap(bai) >= int(pks) {
-					bai = bai[:pks]
+				if cap(bai) >= int(xsz) {
+					bai = bai[:xsz]
 				} else {
-					bai = make([][4]byte, pks)
+					bai = make([][4]byte, xsz)
 				}
 				for cmr := range bai {
 					err = dc.ReadExactBytes(bai[cmr][:])
@@ -69,35 +69,35 @@ func (z *Entity) DecodeMsg(dc *msgp.Reader) (err error) {
 				z.InEdges[bzg] = bai
 			}
 		case "eout":
-			var jfb uint32
-			jfb, err = dc.ReadMapHeader()
+			var msz uint32
+			msz, err = dc.ReadMapHeader()
 			if err != nil {
 				return
 			}
-			if z.OutEdges == nil && jfb > 0 {
-				z.OutEdges = make(map[string][][4]byte, jfb)
+			if z.OutEdges == nil && msz > 0 {
+				z.OutEdges = make(map[string][][4]byte, msz)
 			} else if len(z.OutEdges) > 0 {
 				for key, _ := range z.OutEdges {
 					delete(z.OutEdges, key)
 				}
 			}
-			for jfb > 0 {
-				jfb--
+			for msz > 0 {
+				msz--
 				var wht string
 				var hct [][4]byte
 				wht, err = dc.ReadString()
 				if err != nil {
 					return
 				}
-				var cxo uint32
-				cxo, err = dc.ReadArrayHeader()
+				var xsz uint32
+				xsz, err = dc.ReadArrayHeader()
 				if err != nil {
 					return
 				}
-				if cap(hct) >= int(cxo) {
-					hct = hct[:cxo]
+				if cap(hct) >= int(xsz) {
+					hct = hct[:xsz]
 				} else {
-					hct = make([][4]byte, cxo)
+					hct = make([][4]byte, xsz)
 				}
 				for cua := range hct {
 					err = dc.ReadExactBytes(hct[cua][:])
@@ -216,13 +216,13 @@ func (z *Entity) MarshalMsg(b []byte) (o []byte, err error) {
 func (z *Entity) UnmarshalMsg(bts []byte) (o []byte, err error) {
 	var field []byte
 	_ = field
-	var eff uint32
-	eff, bts, err = msgp.ReadMapHeaderBytes(bts)
+	var isz uint32
+	isz, bts, err = msgp.ReadMapHeaderBytes(bts)
 	if err != nil {
 		return
 	}
-	for eff > 0 {
-		eff--
+	for isz > 0 {
+		isz--
 		field, bts, err = msgp.ReadMapKeyZC(bts)
 		if err != nil {
 			return
@@ -234,35 +234,35 @@ func (z *Entity) UnmarshalMsg(bts []byte) (o []byte, err error) {
 				return
 			}
 		case "ein":
-			var rsw uint32
-			rsw, bts, err = msgp.ReadMapHeaderBytes(bts)
+			var msz uint32
+			msz, bts, err = msgp.ReadMapHeaderBytes(bts)
 			if err != nil {
 				return
 			}
-			if z.InEdges == nil && rsw > 0 {
-				z.InEdges = make(map[string][][4]byte, rsw)
+			if z.InEdges == nil && msz > 0 {
+				z.InEdges = make(map[string][][4]byte, msz)
 			} else if len(z.InEdges) > 0 {
 				for key, _ := range z.InEdges {
 					delete(z.InEdges, key)
 				}
 			}
-			for rsw > 0 {
+			for msz > 0 {
 				var bzg string
 				var bai [][4]byte
-				rsw--
+				msz--
 				bzg, bts, err = msgp.ReadStringBytes(bts)
 				if err != nil {
 					return
 				}
-				var xpk uint32
-				xpk, bts, err = msgp.ReadArrayHeaderBytes(bts)
+				var xsz uint32
+				xsz, bts, err = msgp.ReadArrayHeaderBytes(bts)
 				if err != nil {
 					return
 				}
-				if cap(bai) >= int(xpk) {
-					bai = bai[:xpk]
+				if cap(bai) >= int(xsz) {
+					bai = bai[:xsz]
 				} else {
-					bai = make([][4]byte, xpk)
+					bai = make([][4]byte, xsz)
 				}
 				for cmr := range bai {
 					bts, err = msgp.ReadExactBytes(bts, bai[cmr][:])
@@ -273,35 +273,35 @@ func (z *Entity) UnmarshalMsg(bts []byte) (o []byte, err error) {
 				z.InEdges[bzg] = bai
 			}
 		case "eout":
-			var dnj uint32
-			dnj, bts, err = msgp.ReadMapHeaderBytes(bts)
+			var msz uint32
+			msz, bts, err = msgp.ReadMapHeaderBytes(bts)
 			if err != nil {
 				return
 			}
-			if z.OutEdges == nil && dnj > 0 {
-				z.OutEdges = make(map[string][][4]byte, dnj)
+			if z.OutEdges == nil && msz > 0 {
+				z.OutEdges = make(map[string][][4]byte, msz)
 			} else if len(z.OutEdges) > 0 {
 				for key, _ := range z.OutEdges {
 					delete(z.OutEdges, key)
 				}
 			}
-			for dnj > 0 {
+			for msz > 0 {
 				var wht string
 				var hct [][4]byte
-				dnj--
+				msz--
 				wht, bts, err = msgp.ReadStringBytes(bts)
 				if err != nil {
 					return
 				}
-				var obc uint32
-				obc, bts, err = msgp.ReadArrayHeaderBytes(bts)
+				var xsz uint32
+				xsz, bts, err = msgp.ReadArrayHeaderBytes(bts)
 				if err != nil {
 					return
 				}
-				if cap(hct) >= int(obc) {
-					hct = hct[:obc]
+				if cap(hct) >= int(xsz) {
+					hct = hct[:xsz]
 				} else {
-					hct = make([][4]byte, obc)
+					hct = make([][4]byte, xsz)
 				}
 				for cua := range hct {
 					bts, err = msgp.ReadExactBytes(bts, hct[cua][:])
@@ -341,16 +341,265 @@ func (z *Entity) Msgsize() (s int) {
 }
 
 // DecodeMsg implements msgp.Decodable
-func (z *PredicateEntity) DecodeMsg(dc *msgp.Reader) (err error) {
-	var field []byte
-	_ = field
-	var zpf uint32
-	zpf, err = dc.ReadMapHeader()
+func (z *NamespaceIndex) DecodeMsg(dc *msgp.Reader) (err error) {
+	var msz uint32
+	msz, err = dc.ReadMapHeader()
 	if err != nil {
 		return
 	}
-	for zpf > 0 {
-		zpf--
+	if (*z) == nil && msz > 0 {
+		(*z) = make(NamespaceIndex, msz)
+	} else if len((*z)) > 0 {
+		for key, _ := range *z {
+			delete((*z), key)
+		}
+	}
+	for msz > 0 {
+		msz--
+		var pks string
+		var jfb string
+		pks, err = dc.ReadString()
+		if err != nil {
+			return
+		}
+		jfb, err = dc.ReadString()
+		if err != nil {
+			return
+		}
+		(*z)[pks] = jfb
+	}
+	return
+}
+
+// EncodeMsg implements msgp.Encodable
+func (z NamespaceIndex) EncodeMsg(en *msgp.Writer) (err error) {
+	err = en.WriteMapHeader(uint32(len(z)))
+	if err != nil {
+		return
+	}
+	for cxo, eff := range z {
+		err = en.WriteString(cxo)
+		if err != nil {
+			return
+		}
+		err = en.WriteString(eff)
+		if err != nil {
+			return
+		}
+	}
+	return
+}
+
+// MarshalMsg implements msgp.Marshaler
+func (z NamespaceIndex) MarshalMsg(b []byte) (o []byte, err error) {
+	o = msgp.Require(b, z.Msgsize())
+	o = msgp.AppendMapHeader(o, uint32(len(z)))
+	for cxo, eff := range z {
+		o = msgp.AppendString(o, cxo)
+		o = msgp.AppendString(o, eff)
+	}
+	return
+}
+
+// UnmarshalMsg implements msgp.Unmarshaler
+func (z *NamespaceIndex) UnmarshalMsg(bts []byte) (o []byte, err error) {
+	var msz uint32
+	msz, bts, err = msgp.ReadMapHeaderBytes(bts)
+	if err != nil {
+		return
+	}
+	if (*z) == nil && msz > 0 {
+		(*z) = make(NamespaceIndex, msz)
+	} else if len((*z)) > 0 {
+		for key, _ := range *z {
+			delete((*z), key)
+		}
+	}
+	for msz > 0 {
+		var rsw string
+		var xpk string
+		msz--
+		rsw, bts, err = msgp.ReadStringBytes(bts)
+		if err != nil {
+			return
+		}
+		xpk, bts, err = msgp.ReadStringBytes(bts)
+		if err != nil {
+			return
+		}
+		(*z)[rsw] = xpk
+	}
+	o = bts
+	return
+}
+
+func (z NamespaceIndex) Msgsize() (s int) {
+	s = msgp.MapHeaderSize
+	if z != nil {
+		for dnj, obc := range z {
+			_ = obc
+			s += msgp.StringPrefixSize + len(dnj) + msgp.StringPrefixSize + len(obc)
+		}
+	}
+	return
+}
+
+// DecodeMsg implements msgp.Decodable
+func (z *PredIndex) DecodeMsg(dc *msgp.Reader) (err error) {
+	var msz uint32
+	msz, err = dc.ReadMapHeader()
+	if err != nil {
+		return
+	}
+	if (*z) == nil && msz > 0 {
+		(*z) = make(PredIndex, msz)
+	} else if len((*z)) > 0 {
+		for key, _ := range *z {
+			delete((*z), key)
+		}
+	}
+	for msz > 0 {
+		msz--
+		var ema string
+		var pez *PredicateEntity
+		ema, err = dc.ReadString()
+		if err != nil {
+			return
+		}
+		if dc.IsNil() {
+			err = dc.ReadNil()
+			if err != nil {
+				return
+			}
+			pez = nil
+		} else {
+			if pez == nil {
+				pez = new(PredicateEntity)
+			}
+			err = pez.DecodeMsg(dc)
+			if err != nil {
+				return
+			}
+		}
+		(*z)[ema] = pez
+	}
+	return
+}
+
+// EncodeMsg implements msgp.Encodable
+func (z PredIndex) EncodeMsg(en *msgp.Writer) (err error) {
+	err = en.WriteMapHeader(uint32(len(z)))
+	if err != nil {
+		return
+	}
+	for qke, qyh := range z {
+		err = en.WriteString(qke)
+		if err != nil {
+			return
+		}
+		if qyh == nil {
+			err = en.WriteNil()
+			if err != nil {
+				return
+			}
+		} else {
+			err = qyh.EncodeMsg(en)
+			if err != nil {
+				return
+			}
+		}
+	}
+	return
+}
+
+// MarshalMsg implements msgp.Marshaler
+func (z PredIndex) MarshalMsg(b []byte) (o []byte, err error) {
+	o = msgp.Require(b, z.Msgsize())
+	o = msgp.AppendMapHeader(o, uint32(len(z)))
+	for qke, qyh := range z {
+		o = msgp.AppendString(o, qke)
+		if qyh == nil {
+			o = msgp.AppendNil(o)
+		} else {
+			o, err = qyh.MarshalMsg(o)
+			if err != nil {
+				return
+			}
+		}
+	}
+	return
+}
+
+// UnmarshalMsg implements msgp.Unmarshaler
+func (z *PredIndex) UnmarshalMsg(bts []byte) (o []byte, err error) {
+	var msz uint32
+	msz, bts, err = msgp.ReadMapHeaderBytes(bts)
+	if err != nil {
+		return
+	}
+	if (*z) == nil && msz > 0 {
+		(*z) = make(PredIndex, msz)
+	} else if len((*z)) > 0 {
+		for key, _ := range *z {
+			delete((*z), key)
+		}
+	}
+	for msz > 0 {
+		var yzr string
+		var ywj *PredicateEntity
+		msz--
+		yzr, bts, err = msgp.ReadStringBytes(bts)
+		if err != nil {
+			return
+		}
+		if msgp.IsNil(bts) {
+			bts, err = msgp.ReadNilBytes(bts)
+			if err != nil {
+				return
+			}
+			ywj = nil
+		} else {
+			if ywj == nil {
+				ywj = new(PredicateEntity)
+			}
+			bts, err = ywj.UnmarshalMsg(bts)
+			if err != nil {
+				return
+			}
+		}
+		(*z)[yzr] = ywj
+	}
+	o = bts
+	return
+}
+
+func (z PredIndex) Msgsize() (s int) {
+	s = msgp.MapHeaderSize
+	if z != nil {
+		for jpj, zpf := range z {
+			_ = zpf
+			s += msgp.StringPrefixSize + len(jpj)
+			if zpf == nil {
+				s += msgp.NilSize
+			} else {
+				s += zpf.Msgsize()
+			}
+		}
+	}
+	return
+}
+
+// DecodeMsg implements msgp.Decodable
+func (z *PredicateEntity) DecodeMsg(dc *msgp.Reader) (err error) {
+	var field []byte
+	_ = field
+	var isz uint32
+	isz, err = dc.ReadMapHeader()
+	if err != nil {
+		return
+	}
+	for isz > 0 {
+		isz--
 		field, err = dc.ReadMapKeyPtr()
 		if err != nil {
 			return
@@ -362,102 +611,102 @@ func (z *PredicateEntity) DecodeMsg(dc *msgp.Reader) (err error) {
 				return
 			}
 		case "s":
-			var rfe uint32
-			rfe, err = dc.ReadMapHeader()
+			var msz uint32
+			msz, err = dc.ReadMapHeader()
 			if err != nil {
 				return
 			}
-			if z.Subjects == nil && rfe > 0 {
-				z.Subjects = make(map[string]map[string]uint32, rfe)
+			if z.Subjects == nil && msz > 0 {
+				z.Subjects = make(map[string]map[string]uint32, msz)
 			} else if len(z.Subjects) > 0 {
 				for key, _ := range z.Subjects {
 					delete(z.Subjects, key)
 				}
 			}
-			for rfe > 0 {
-				rfe--
-				var kgt string
-				var ema map[string]uint32
-				kgt, err = dc.ReadString()
+			for msz > 0 {
+				msz--
+				var gmo string
+				var taf map[string]uint32
+				gmo, err = dc.ReadString()
 				if err != nil {
 					return
 				}
-				var gmo uint32
-				gmo, err = dc.ReadMapHeader()
+				var msz uint32
+				msz, err = dc.ReadMapHeader()
 				if err != nil {
 					return
 				}
-				if ema == nil && gmo > 0 {
-					ema = make(map[string]uint32, gmo)
-				} else if len(ema) > 0 {
-					for key, _ := range ema {
-						delete(ema, key)
+				if taf == nil && msz > 0 {
+					taf = make(map[string]uint32, msz)
+				} else if len(taf) > 0 {
+					for key, _ := range taf {
+						delete(taf, key)
 					}
 				}
-				for gmo > 0 {
-					gmo--
-					var pez string
-					var qke uint32
-					pez, err = dc.ReadString()
+				for msz > 0 {
+					msz--
+					var eth string
+					var sbz uint32
+					eth, err = dc.ReadString()
 					if err != nil {
 						return
 					}
-					qke, err = dc.ReadUint32()
+					sbz, err = dc.ReadUint32()
 					if err != nil {
 						return
 					}
-					ema[pez] = qke
+					taf[eth] = sbz
 				}
-				z.Subjects[kgt] = ema
+				z.Subjects[gmo] = taf
 			}
 		case "o":
-			var taf uint32
-			taf, err = dc.ReadMapHeader()
+			var msz uint32
+			msz, err = dc.ReadMapHeader()
 			if err != nil {
 				return
 			}
-			if z.Objects == nil && taf > 0 {
-				z.Objects = make(map[string]map[string]uint32, taf)
+			if z.Objects == nil && msz > 0 {
+				z.Objects = make(map[string]map[string]uint32, msz)
 			} else if len(z.Objects) > 0 {
 				for key, _ := range z.Objects {
 					delete(z.Objects, key)
 				}
 			}
-			for taf > 0 {
-				taf--
-				var qyh string
-				var yzr map[string]uint32
-				qyh, err = dc.ReadString()
+			for msz > 0 {
+				msz--
+				var rjx string
+				var awn map[string]uint32
+				rjx, err = dc.ReadString()
 				if err != nil {
 					return
 				}
-				var eth uint32
-				eth, err = dc.ReadMapHeader()
+				var msz uint32
+				msz, err = dc.ReadMapHeader()
 				if err != nil {
 					return
 				}
-				if yzr == nil && eth > 0 {
-					yzr = make(map[string]uint32, eth)
-				} else if len(yzr) > 0 {
-					for key, _ := range yzr {
-						delete(yzr, key)
+				if awn == nil && msz > 0 {
+					awn = make(map[string]uint32, msz)
+				} else if len(awn) > 0 {
+					for key, _ := range awn {
+						delete(awn, key)
 					}
 				}
-				for eth > 0 {
-					eth--
-					var ywj string
-					var jpj uint32
-					ywj, err = dc.ReadString()
+				for msz > 0 {
+					msz--
+					var wel string
+					var rbe uint32
+					wel, err = dc.ReadString()
 					if err != nil {
 						return
 					}
-					jpj, err = dc.ReadUint32()
+					rbe, err = dc.ReadUint32()
 					if err != nil {
 						return
 					}
-					yzr[ywj] = jpj
+					awn[wel] = rbe
 				}
-				z.Objects[qyh] = yzr
+				z.Objects[rjx] = awn
 			}
 		default:
 			err = dc.Skip()
@@ -490,21 +739,21 @@ func (z *PredicateEntity) EncodeMsg(en *msgp.Writer) (err error) {
 	if err != nil {
 		return
 	}
-	for kgt, ema := range z.Subjects {
-		err = en.WriteString(kgt)
+	for gmo, taf := range z.Subjects {
+		err = en.WriteString(gmo)
 		if err != nil {
 			return
 		}
-		err = en.WriteMapHeader(uint32(len(ema)))
+		err = en.WriteMapHeader(uint32(len(taf)))
 		if err != nil {
 			return
 		}
-		for pez, qke := range ema {
-			err = en.WriteString(pez)
+		for eth, sbz := range taf {
+			err = en.WriteString(eth)
 			if err != nil {
 				return
 			}
-			err = en.WriteUint32(qke)
+			err = en.WriteUint32(sbz)
 			if err != nil {
 				return
 			}
@@ -519,21 +768,21 @@ func (z *PredicateEntity) EncodeMsg(en *msgp.Writer) (err error) {
 	if err != nil {
 		return
 	}
-	for qyh, yzr := range z.Objects {
-		err = en.WriteString(qyh)
+	for rjx, awn := range z.Objects {
+		err = en.WriteString(rjx)
 		if err != nil {
 			return
 		}
-		err = en.WriteMapHeader(uint32(len(yzr)))
+		err = en.WriteMapHeader(uint32(len(awn)))
 		if err != nil {
 			return
 		}
-		for ywj, jpj := range yzr {
-			err = en.WriteString(ywj)
+		for wel, rbe := range awn {
+			err = en.WriteString(wel)
 			if err != nil {
 				return
 			}
-			err = en.WriteUint32(jpj)
+			err = en.WriteUint32(rbe)
 			if err != nil {
 				return
 			}
@@ -552,23 +801,23 @@ func (z *PredicateEntity) MarshalMsg(b []byte) (o []byte, err error) {
 	// string "s"
 	o = append(o, 0xa1, 0x73)
 	o = msgp.AppendMapHeader(o, uint32(len(z.Subjects)))
-	for kgt, ema := range z.Subjects {
-		o = msgp.AppendString(o, kgt)
-		o = msgp.AppendMapHeader(o, uint32(len(ema)))
-		for pez, qke := range ema {
-			o = msgp.AppendString(o, pez)
-			o = msgp.AppendUint32(o, qke)
+	for gmo, taf := range z.Subjects {
+		o = msgp.AppendString(o, gmo)
+		o = msgp.AppendMapHeader(o, uint32(len(taf)))
+		for eth, sbz := range taf {
+			o = msgp.AppendString(o, eth)
+			o = msgp.AppendUint32(o, sbz)
 		}
 	}
 	// string "o"
 	o = append(o, 0xa1, 0x6f)
 	o = msgp.AppendMapHeader(o, uint32(len(z.Objects)))
-	for qyh, yzr := range z.Objects {
-		o = msgp.AppendString(o, qyh)
-		o = msgp.AppendMapHeader(o, uint32(len(yzr)))
-		for ywj, jpj := range yzr {
-			o = msgp.AppendString(o, ywj)
-			o = msgp.AppendUint32(o, jpj)
+	for rjx, awn := range z.Objects {
+		o = msgp.AppendString(o, rjx)
+		o = msgp.AppendMapHeader(o, uint32(len(awn)))
+		for wel, rbe := range awn {
+			o = msgp.AppendString(o, wel)
+			o = msgp.AppendUint32(o, rbe)
 		}
 	}
 	return
@@ -578,13 +827,13 @@ func (z *PredicateEntity) MarshalMsg(b []byte) (o []byte, err error) {
 func (z *PredicateEntity) UnmarshalMsg(bts []byte) (o []byte, err error) {
 	var field []byte
 	_ = field
-	var sbz uint32
-	sbz, bts, err = msgp.ReadMapHeaderBytes(bts)
+	var isz uint32
+	isz, bts, err = msgp.ReadMapHeaderBytes(bts)
 	if err != nil {
 		return
 	}
-	for sbz > 0 {
-		sbz--
+	for isz > 0 {
+		isz--
 		field, bts, err = msgp.ReadMapKeyZC(bts)
 		if err != nil {
 			return
@@ -596,102 +845,102 @@ func (z *PredicateEntity) UnmarshalMsg(bts []byte) (o []byte, err error) {
 				return
 			}
 		case "s":
-			var rjx uint32
-			rjx, bts, err = msgp.ReadMapHeaderBytes(bts)
+			var msz uint32
+			msz, bts, err = msgp.ReadMapHeaderBytes(bts)
 			if err != nil {
 				return
 			}
-			if z.Subjects == nil && rjx > 0 {
-				z.Subjects = make(map[string]map[string]uint32, rjx)
+			if z.Subjects == nil && msz > 0 {
+				z.Subjects = make(map[string]map[string]uint32, msz)
 			} else if len(z.Subjects) > 0 {
 				for key, _ := range z.Subjects {
 					delete(z.Subjects, key)
 				}
 			}
-			for rjx > 0 {
-				var kgt string
-				var ema map[string]uint32
-				rjx--
-				kgt, bts, err = msgp.ReadStringBytes(bts)
+			for msz > 0 {
+				var gmo string
+				var taf map[string]uint32
+				msz--
+				gmo, bts, err = msgp.ReadStringBytes(bts)
 				if err != nil {
 					return
 				}
-				var awn uint32
-				awn, bts, err = msgp.ReadMapHeaderBytes(bts)
+				var msz uint32
+				msz, bts, err = msgp.ReadMapHeaderBytes(bts)
 				if err != nil {
 					return
 				}
-				if ema == nil && awn > 0 {
-					ema = make(map[string]uint32, awn)
-				} else if len(ema) > 0 {
-					for key, _ := range ema {
-						delete(ema, key)
+				if taf == nil && msz > 0 {
+					taf = make(map[string]uint32, msz)
+				} else if len(taf) > 0 {
+					for key, _ := range taf {
+						delete(taf, key)
 					}
 				}
-				for awn > 0 {
-					var pez string
-					var qke uint32
-					awn--
-					pez, bts, err = msgp.ReadStringBytes(bts)
+				for msz > 0 {
+					var eth string
+					var sbz uint32
+					msz--
+					eth, bts, err = msgp.ReadStringBytes(bts)
 					if err != nil {
 						return
 					}
-					qke, bts, err = msgp.ReadUint32Bytes(bts)
+					sbz, bts, err = msgp.ReadUint32Bytes(bts)
 					if err != nil {
 						return
 					}
-					ema[pez] = qke
+					taf[eth] = sbz
 				}
-				z.Subjects[kgt] = ema
+				z.Subjects[gmo] = taf
 			}
 		case "o":
-			var wel uint32
-			wel, bts, err = msgp.ReadMapHeaderBytes(bts)
+			var msz uint32
+			msz, bts, err = msgp.ReadMapHeaderBytes(bts)
 			if err != nil {
 				return
 			}
-			if z.Objects == nil && wel > 0 {
-				z.Objects = make(map[string]map[string]uint32, wel)
+			if z.Objects == nil && msz > 0 {
+				z.Objects = make(map[string]map[string]uint32, msz)
 			} else if len(z.Objects) > 0 {
 				for key, _ := range z.Objects {
 					delete(z.Objects, key)
 				}
 			}
-			for wel > 0 {
-				var qyh string
-				var yzr map[string]uint32
-				wel--
-				qyh, bts, err = msgp.ReadStringBytes(bts)
+			for msz > 0 {
+				var rjx string
+				var awn map[string]uint32
+				msz--
+				rjx, bts, err = msgp.ReadStringBytes(bts)
 				if err != nil {
 					return
 				}
-				var rbe uint32
-				rbe, bts, err = msgp.ReadMapHeaderBytes(bts)
+				var msz uint32
+				msz, bts, err = msgp.ReadMapHeaderBytes(bts)
 				if err != nil {
 					return
 				}
-				if yzr == nil && rbe > 0 {
-					yzr = make(map[string]uint32, rbe)
-				} else if len(yzr) > 0 {
-					for key, _ := range yzr {
-						delete(yzr, key)
+				if awn == nil && msz > 0 {
+					awn = make(map[string]uint32, msz)
+				} else if len(awn) > 0 {
+					for key, _ := range awn {
+						delete(awn, key)
 					}
 				}
-				for rbe > 0 {
-					var ywj string
-					var jpj uint32
-					rbe--
-					ywj, bts, err = msgp.ReadStringBytes(bts)
+				for msz > 0 {
+					var wel string
+					var rbe uint32
+					msz--
+					wel, bts, err = msgp.ReadStringBytes(bts)
 					if err != nil {
 						return
 					}
-					jpj, bts, err = msgp.ReadUint32Bytes(bts)
+					rbe, bts, err = msgp.ReadUint32Bytes(bts)
 					if err != nil {
 						return
 					}
-					yzr[ywj] = jpj
+					awn[wel] = rbe
 				}
-				z.Objects[qyh] = yzr
+				z.Objects[rjx] = awn
 			}
 		default:
 			bts, err = msgp.Skip(bts)
@@ -707,28 +956,132 @@ func (z *PredicateEntity) UnmarshalMsg(bts []byte) (o []byte, err error) {
 func (z *PredicateEntity) Msgsize() (s int) {
 	s = 1 + 2 + msgp.ArrayHeaderSize + (4 * (msgp.ByteSize)) + 2 + msgp.MapHeaderSize
 	if z.Subjects != nil {
-		for kgt, ema := range z.Subjects {
-			_ = ema
-			s += msgp.StringPrefixSize + len(kgt) + msgp.MapHeaderSize
-			if ema != nil {
-				for pez, qke := range ema {
-					_ = qke
-					s += msgp.StringPrefixSize + len(pez) + msgp.Uint32Size
+		for gmo, taf := range z.Subjects {
+			_ = taf
+			s += msgp.StringPrefixSize + len(gmo) + msgp.MapHeaderSize
+			if taf != nil {
+				for eth, sbz := range taf {
+					_ = sbz
+					s += msgp.StringPrefixSize + len(eth) + msgp.Uint32Size
 				}
 			}
 		}
 	}
 	s += 2 + msgp.MapHeaderSize
 	if z.Objects != nil {
-		for qyh, yzr := range z.Objects {
-			_ = yzr
-			s += msgp.StringPrefixSize + len(qyh) + msgp.MapHeaderSize
-			if yzr != nil {
-				for ywj, jpj := range yzr {
-					_ = jpj
-					s += msgp.StringPrefixSize + len(ywj) + msgp.Uint32Size
+		for rjx, awn := range z.Objects {
+			_ = awn
+			s += msgp.StringPrefixSize + len(rjx) + msgp.MapHeaderSize
+			if awn != nil {
+				for wel, rbe := range awn {
+					_ = rbe
+					s += msgp.StringPrefixSize + len(wel) + msgp.Uint32Size
 				}
 			}
+		}
+	}
+	return
+}
+
+// DecodeMsg implements msgp.Decodable
+func (z *RelshipIndex) DecodeMsg(dc *msgp.Reader) (err error) {
+	var msz uint32
+	msz, err = dc.ReadMapHeader()
+	if err != nil {
+		return
+	}
+	if (*z) == nil && msz > 0 {
+		(*z) = make(RelshipIndex, msz)
+	} else if len((*z)) > 0 {
+		for key, _ := range *z {
+			delete((*z), key)
+		}
+	}
+	for msz > 0 {
+		msz--
+		var elx string
+		var bal string
+		elx, err = dc.ReadString()
+		if err != nil {
+			return
+		}
+		bal, err = dc.ReadString()
+		if err != nil {
+			return
+		}
+		(*z)[elx] = bal
+	}
+	return
+}
+
+// EncodeMsg implements msgp.Encodable
+func (z RelshipIndex) EncodeMsg(en *msgp.Writer) (err error) {
+	err = en.WriteMapHeader(uint32(len(z)))
+	if err != nil {
+		return
+	}
+	for jqz, kct := range z {
+		err = en.WriteString(jqz)
+		if err != nil {
+			return
+		}
+		err = en.WriteString(kct)
+		if err != nil {
+			return
+		}
+	}
+	return
+}
+
+// MarshalMsg implements msgp.Marshaler
+func (z RelshipIndex) MarshalMsg(b []byte) (o []byte, err error) {
+	o = msgp.Require(b, z.Msgsize())
+	o = msgp.AppendMapHeader(o, uint32(len(z)))
+	for jqz, kct := range z {
+		o = msgp.AppendString(o, jqz)
+		o = msgp.AppendString(o, kct)
+	}
+	return
+}
+
+// UnmarshalMsg implements msgp.Unmarshaler
+func (z *RelshipIndex) UnmarshalMsg(bts []byte) (o []byte, err error) {
+	var msz uint32
+	msz, bts, err = msgp.ReadMapHeaderBytes(bts)
+	if err != nil {
+		return
+	}
+	if (*z) == nil && msz > 0 {
+		(*z) = make(RelshipIndex, msz)
+	} else if len((*z)) > 0 {
+		for key, _ := range *z {
+			delete((*z), key)
+		}
+	}
+	for msz > 0 {
+		var tmt string
+		var tco string
+		msz--
+		tmt, bts, err = msgp.ReadStringBytes(bts)
+		if err != nil {
+			return
+		}
+		tco, bts, err = msgp.ReadStringBytes(bts)
+		if err != nil {
+			return
+		}
+		(*z)[tmt] = tco
+	}
+	o = bts
+	return
+}
+
+func (z RelshipIndex) Msgsize() (s int) {
+	s = msgp.MapHeaderSize
+	if z != nil {
+		for ana, tyy := range z {
+			_ = tyy
+			s += msgp.StringPrefixSize + len(ana) + msgp.StringPrefixSize + len(tyy)
 		}
 	}
 	return

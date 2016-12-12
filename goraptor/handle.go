@@ -1,3 +1,5 @@
+//go:generate msgp
+//msgp:ignore Parser
 package turtle
 
 // #cgo CFLAGS: -I ../raptor/src
@@ -59,9 +61,9 @@ func ParseURI(uri string) URI {
 }
 
 type Triple struct {
-	Subject   URI
-	Predicate URI
-	Object    URI
+	Subject   URI `msg:"s"`
+	Predicate URI `msg:"p"`
+	Object    URI `msg:"o"`
 }
 
 func MakeTriple(sub, pred, obj string) Triple {
