@@ -63,6 +63,18 @@ func main() {
 				},
 			},
 		},
+		{
+			Name:   "start",
+			Usage:  "Start hoddb from existing database",
+			Action: start,
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:  "path, p",
+					Value: ".",
+					Usage: "Path where the database files will be placed",
+				},
+			},
+		},
 	}
 	app.Run(os.Args)
 }

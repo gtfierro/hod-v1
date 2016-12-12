@@ -69,38 +69,16 @@ func load(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println("Successfully loaded dataset!")
-	bufQuery := ""
-	rl, err := readline.NewEx(&readline.Config{
-		Prompt:                 "(hod)> ",
-		HistoryFile:            currentUser.HomeDir + "/.hod-query-history",
-		DisableAutoSaveHistory: true,
-	})
-	for {
-		line, err := rl.Readline()
-		if err != nil {
-			break
-		}
-		if len(line) == 0 {
-			continue
-		}
-		bufQuery += line + " "
-		if !strings.HasSuffix(strings.TrimSpace(line), ";") {
-			rl.SetPrompt(">>> ...")
-			continue
-		}
-		rl.SetPrompt("(hod)> ")
-		rl.SaveHistory(bufQuery)
-		q, err := query.Parse(strings.NewReader(bufQuery))
-		if err != nil {
-			log.Error(err)
-		} else {
-			db.RunQuery(q)
-		}
-		bufQuery = ""
-	}
+	return runInteractiveQuery(db)
+}
 
-	return nil
+func start(c *cli.Context) error {
+	path := c.String("path")
+	db, err := hod.NewDB(path)
+	if err != nil {
+		return err
+	}
+	return runInteractiveQuery(db)
 }
 
 func dump(c *cli.Context) error {
@@ -195,4 +173,42 @@ func gethash() string {
 	binary.PutVarint(seed, time.Now().UnixNano())
 	h.Write(seed)
 	return fmt.Sprintf("%x", h.Sum(nil))
+}
+
+func runInteractiveQuery(db *hod.DB) error {
+	currentUser, err := user.Current()
+	if err != nil {
+		return err
+	}
+	fmt.Println("Successfully loaded dataset!")
+	bufQuery := ""
+	rl, err := readline.NewEx(&readline.Config{
+		Prompt:                 "(hod)> ",
+		HistoryFile:            currentUser.HomeDir + "/.hod-query-history",
+		DisableAutoSaveHistory: true,
+	})
+	for {
+		line, err := rl.Readline()
+		if err != nil {
+			break
+		}
+		if len(line) == 0 {
+			continue
+		}
+		bufQuery += line + " "
+		if !strings.HasSuffix(strings.TrimSpace(line), ";") {
+			rl.SetPrompt(">>> ...")
+			continue
+		}
+		rl.SetPrompt("(hod)> ")
+		rl.SaveHistory(bufQuery)
+		q, err := query.Parse(strings.NewReader(bufQuery))
+		if err != nil {
+			log.Error(err)
+		} else {
+			db.RunQuery(q)
+		}
+		bufQuery = ""
+	}
+	return nil
 }
