@@ -164,7 +164,60 @@ func classGraph(c *cli.Context) error {
 	}
 
 	// remove DOT file
-	//os.Remove(name)
+	os.Remove(name)
+	return nil
+}
+
+func dumpGraph(c *cli.Context) error {
+	if c.NArg() == 0 {
+		return errors.New("Need to specify a turtle file to load")
+	}
+	filename := c.Args().Get(0)
+	p := turtle.GetParser()
+	ds, _ := p.Parse(filename)
+
+	name := gethash() + ".gv"
+	f, err := os.Create(name)
+	if err != nil {
+		return err
+	}
+
+	nodes := make(map[string]struct{})
+	edges := make(map[string]struct{})
+	for _, triple := range ds.Triples {
+		x := fmt.Sprintf("%s;\n", triple.Subject.Value)
+		nodes[x] = struct{}{}
+		x = fmt.Sprintf("%s -> %s [label=\"%s\"];\n", triple.Subject.Value, triple.Object.Value, triple.Predicate.Value)
+		edges[x] = struct{}{}
+	}
+
+	fmt.Fprintln(f, "digraph G {")
+	fmt.Fprintln(f, "ratio=\"auto\"")
+	fmt.Fprintln(f, "rankdir=\"LR\"")
+	fmt.Fprintln(f, "size=\"7.5,10\"")
+	for node := range nodes {
+		fmt.Fprintf(f, node)
+	}
+	for edge := range edges {
+		fmt.Fprintf(f, edge)
+	}
+	fmt.Fprintln(f, "}")
+	cmd := exec.Command("dot", "-Tpdf", name)
+	pdf, err := cmd.Output()
+	if err != nil {
+		return err
+	}
+	f2, err := os.Create(filename + ".pdf")
+	if err != nil {
+		return err
+	}
+	_, err = f2.Write(pdf)
+	if err != nil {
+		return err
+	}
+
+	// remove DOT file
+	os.Remove(name)
 	return nil
 }
 

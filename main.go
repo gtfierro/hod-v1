@@ -42,6 +42,11 @@ func main() {
 			Action: classGraph,
 		},
 		{
+			Name:   "dumpgraph",
+			Usage:  "PDF visualization of TTL file. WARNING this can get really big",
+			Action: dumpGraph,
+		},
+		{
 			Name:   "load",
 			Usage:  "Load dataset into hoddb",
 			Action: load,
