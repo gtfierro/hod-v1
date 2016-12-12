@@ -85,10 +85,12 @@ func TestQueryParse(t *testing.T) {
 				[]Filter{},
 				[]OrClause{
 					{
-						Terms: []Filter{{Subject: turtle.ParseURI("?y"), Path: []PathPattern{PathPattern{turtle.ParseURI("rdf:type"), PATTERN_SINGLE}}, Object: turtle.ParseURI("?x")}},
-					},
-					{
-						Terms: []Filter{{Subject: turtle.ParseURI("?y"), Path: []PathPattern{PathPattern{turtle.ParseURI("rdfs:subClassOf"), PATTERN_SINGLE}}, Object: turtle.ParseURI("?x")}},
+						RightTerms: []Filter{{Subject: turtle.ParseURI("?y"), Path: []PathPattern{PathPattern{turtle.ParseURI("rdf:type"), PATTERN_SINGLE}}, Object: turtle.ParseURI("?x")}},
+						LeftOr: []OrClause{
+							{
+								RightTerms: []Filter{{Subject: turtle.ParseURI("?y"), Path: []PathPattern{PathPattern{turtle.ParseURI("rdfs:subClassOf"), PATTERN_SINGLE}}, Object: turtle.ParseURI("?x")}},
+							},
+						},
 					},
 				},
 			},
@@ -100,13 +102,17 @@ func TestQueryParse(t *testing.T) {
 				[]Filter{},
 				[]OrClause{
 					{
-						Terms: []Filter{{Subject: turtle.ParseURI("?y"), Path: []PathPattern{PathPattern{turtle.ParseURI("rdf:type"), PATTERN_SINGLE}}, Object: turtle.ParseURI("?x")}},
-					},
-					{
-						Terms: []Filter{{Subject: turtle.ParseURI("?y"), Path: []PathPattern{PathPattern{turtle.ParseURI("rdfs:subClassOf"), PATTERN_SINGLE}}, Object: turtle.ParseURI("?x")}},
-					},
-					{
-						Terms: []Filter{{Subject: turtle.ParseURI("?y"), Path: []PathPattern{PathPattern{turtle.ParseURI("rdf:isa"), PATTERN_SINGLE}}, Object: turtle.ParseURI("?x")}},
+						RightTerms: []Filter{{Subject: turtle.ParseURI("?y"), Path: []PathPattern{PathPattern{turtle.ParseURI("rdf:type"), PATTERN_SINGLE}}, Object: turtle.ParseURI("?x")}},
+						LeftOr: []OrClause{
+							{
+								RightTerms: []Filter{{Subject: turtle.ParseURI("?y"), Path: []PathPattern{PathPattern{turtle.ParseURI("rdfs:subClassOf"), PATTERN_SINGLE}}, Object: turtle.ParseURI("?x")}},
+								LeftOr: []OrClause{
+									{
+										RightTerms: []Filter{{Subject: turtle.ParseURI("?y"), Path: []PathPattern{PathPattern{turtle.ParseURI("rdf:isa"), PATTERN_SINGLE}}, Object: turtle.ParseURI("?x")}},
+									},
+								},
+							},
+						},
 					},
 				},
 			},
