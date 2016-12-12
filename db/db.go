@@ -13,6 +13,7 @@ import (
 	"github.com/op/go-logging"
 	"github.com/pkg/errors"
 	"github.com/syndtr/goleveldb/leveldb"
+	"github.com/tinylib/msgp/msgp"
 	"github.com/zhangxinngang/murmur"
 )
 
@@ -30,6 +31,7 @@ func init() {
 }
 
 type DB struct {
+	path string
 	// store []byte(entity URI) => primary key
 	entityDB *leveldb.DB
 	// store primary key => [](entity URI)
@@ -73,12 +75,59 @@ func NewDB(path string) (*DB, error) {
 	}
 
 	db := &DB{
+		path:          path,
 		entityDB:      entityDB,
 		pkDB:          pkDB,
 		graphDB:       graphDB,
 		predDB:        predDB,
 		predIndex:     make(map[turtle.URI]*PredicateEntity),
 		relationships: make(map[turtle.URI]turtle.URI),
+		namespaces:    make(map[string]string),
+	}
+
+	// TODO: load predIndex and relationships from database
+	predIndexPath := path + "/predIndex"
+	relshipIndexPath := path + "/relshipIndex"
+	namespaceIndexPath := path + "/namespaceIndex"
+	if _, err := os.Stat(predIndexPath); !os.IsNotExist(err) {
+		f, err := os.Open(predIndexPath)
+		if err != nil {
+			return nil, errors.Wrapf(err, "Could not open predIndex file %s", predIndexPath)
+		}
+		var pi = new(PredIndex)
+		if err := msgp.Decode(f, pi); err != nil {
+			return nil, err
+		}
+		for uri, pe := range *pi {
+			db.predIndex[turtle.ParseURI(uri)] = pe
+		}
+	}
+	if _, err := os.Stat(relshipIndexPath); !os.IsNotExist(err) {
+		f, err := os.Open(relshipIndexPath)
+		if err != nil {
+			return nil, errors.Wrapf(err, "Could not open relshipIndexPath file %s", relshipIndexPath)
+		}
+		var ri = new(RelshipIndex)
+		if err := msgp.Decode(f, ri); err != nil {
+			return nil, err
+		}
+		for uri, uri2 := range *ri {
+			db.relationships[turtle.ParseURI(uri)] = turtle.ParseURI(uri2)
+		}
+	}
+	if _, err := os.Stat(namespaceIndexPath); !os.IsNotExist(err) {
+		f, err := os.Open(namespaceIndexPath)
+		if err != nil {
+			return nil, errors.Wrapf(err, "Could not open namespaceIndexPath file %s", namespaceIndexPath)
+		}
+		var ni = new(NamespaceIndex)
+		if err := msgp.Decode(f, ni); err != nil {
+			return nil, err
+		}
+		for ns, full := range *ni {
+			db.namespaces[ns] = full
+		}
+		log.Notice("loaded namespace index")
 	}
 
 	return db, nil
@@ -204,7 +253,46 @@ func (db *DB) loadPredicateEntity(predicate turtle.URI, _predicateHash, _subject
 		pred.AddSubjectObject(objectHash, subjectHash)
 		db.predIndex[predicate] = pred
 	}
-	//TODO: save predicate index
+
+	return nil
+}
+
+func (db *DB) SaveIndexes() error {
+	f, err := os.Create(db.path + "/predIndex")
+	if err != nil {
+		return err
+	}
+
+	pi := make(PredIndex)
+	for uri, pe := range db.predIndex {
+		pi[uri.String()] = pe
+	}
+
+	if err := msgp.Encode(f, pi); err != nil {
+		return err
+	}
+
+	f, err = os.Create(db.path + "/relshipIndex")
+	if err != nil {
+		return err
+	}
+
+	ri := make(RelshipIndex)
+	for uri, uri2 := range db.relationships {
+		ri[uri.String()] = uri2.String()
+	}
+
+	if err := msgp.Encode(f, ri); err != nil {
+		return err
+	}
+
+	f, err = os.Create(db.path + "/namespaceIndex")
+	if err != nil {
+		return err
+	}
+	if err := msgp.Encode(f, NamespaceIndex(db.namespaces)); err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -251,7 +339,10 @@ func (db *DB) LoadRelationships(dataset turtle.DataSet) error {
 
 func (db *DB) LoadDataset(dataset turtle.DataSet) error {
 	start := time.Now()
-	db.namespaces = dataset.Namespaces
+	// merge, don't set outright
+	for abbr, full := range dataset.Namespaces {
+		db.namespaces[abbr] = full
+	}
 	// start transactions
 	enttx, err := db.entityDB.OpenTransaction()
 	if err != nil {

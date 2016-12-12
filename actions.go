@@ -64,7 +64,8 @@ func load(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	currentUser, err := user.Current()
+
+	err = db.SaveIndexes()
 	if err != nil {
 		return err
 	}
