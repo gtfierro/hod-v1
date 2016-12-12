@@ -14,8 +14,8 @@ A database for [Brick](http://brickschema.org/)
 
 ### Infrastructure
 
-- [ ] load database from disk
-    - [ ] save the predicate index
+- [x] load database from disk
+    - [x] save the predicate index
 - [x] make sure to load in `Brick.ttl` as well
 
 ### Operators
@@ -31,6 +31,8 @@ Action Operators:
     - e.g. for this room, here's all of the VAVs and zones
     - only if really *really* needed -- can do this after a query anyway
 
+Tests:
+- [ ] full query tests on known dataset
 
 Filters:
 - path predicates:
@@ -40,7 +42,7 @@ Filters:
     - [X] `path+` (matches 1 or more `path`)
     - [X] `path*` (matches 0 or more `path`)
     - [X] `path?` (matches 0 or 1 `path`)
-    - [ ] `path1|path2` (matches `path1` OR `path2`):
+    - [x] `path1|path2` (matches `path1` OR `path2`):
         - can be combined with other path predicates
 - [X] `UNION`/`OR`:
     - implicitly, all triples in a query are `AND`
