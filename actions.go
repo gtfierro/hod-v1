@@ -1,12 +1,18 @@
 package main
 
 import (
+	"crypto/md5"
+	"encoding/binary"
 	"fmt"
+	"os"
+	"os/exec"
+	"os/user"
+	"strings"
+	"time"
+
 	hod "github.com/gtfierro/hod/db"
 	"github.com/gtfierro/hod/goraptor"
 	query "github.com/gtfierro/hod/query"
-	"os/user"
-	"strings"
 
 	"github.com/chzyer/readline"
 	"github.com/pkg/errors"
@@ -121,4 +127,71 @@ func dump(c *cli.Context) error {
 		fmt.Printf("%s\t%s\t%s\n", s, p, o)
 	}
 	return nil
+}
+
+func classGraph(c *cli.Context) error {
+	if c.NArg() == 0 {
+		return errors.New("Need to specify a turtle file to load")
+	}
+	filename := c.Args().Get(0)
+	p := turtle.GetParser()
+	ds, _ := p.Parse(filename)
+
+	name := gethash() + ".gv"
+	f, err := os.Create(name)
+	if err != nil {
+		return err
+	}
+
+	nodes := make(map[string]struct{})
+	edges := make(map[string]struct{})
+	for _, triple := range ds.Triples {
+		if triple.Predicate.String() == "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" && triple.Object.String() == "http://www.w3.org/2002/07/owl#Class" {
+			x := fmt.Sprintf("%s;\n", triple.Subject.Value)
+			nodes[x] = struct{}{}
+		} else if triple.Predicate.String() == "http://www.w3.org/2000/01/rdf-schema#subClassOf" {
+			if strings.HasPrefix(triple.Object.Value, "genid") || strings.HasPrefix(triple.Subject.Value, "genid") {
+				continue
+			}
+			x := fmt.Sprintf("%s -> %s [label=\"%s\"];\n", triple.Object.Value, triple.Subject.Value, "hasSubclass")
+			edges[x] = struct{}{}
+		}
+	}
+
+	fmt.Fprintln(f, "digraph G {")
+	fmt.Fprintln(f, "ratio=\"auto\"")
+	fmt.Fprintln(f, "rankdir=\"LR\"")
+	fmt.Fprintln(f, "size=\"7.5,10\"")
+	for node := range nodes {
+		fmt.Fprintf(f, node)
+	}
+	for edge := range edges {
+		fmt.Fprintf(f, edge)
+	}
+	fmt.Fprintln(f, "}")
+	cmd := exec.Command("dot", "-Tpdf", name)
+	pdf, err := cmd.Output()
+	if err != nil {
+		return err
+	}
+	f2, err := os.Create(filename + ".pdf")
+	if err != nil {
+		return err
+	}
+	_, err = f2.Write(pdf)
+	if err != nil {
+		return err
+	}
+
+	// remove DOT file
+	//os.Remove(name)
+	return nil
+}
+
+func gethash() string {
+	h := md5.New()
+	seed := make([]byte, 16)
+	binary.PutVarint(seed, time.Now().UnixNano())
+	h.Write(seed)
+	return fmt.Sprintf("%x", h.Sum(nil))
 }

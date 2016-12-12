@@ -37,6 +37,11 @@ func main() {
 			Action: dump,
 		},
 		{
+			Name:   "viewclass",
+			Usage:  "PDF visualization of class structure of file",
+			Action: classGraph,
+		},
+		{
 			Name:   "load",
 			Usage:  "Load dataset into hoddb",
 			Action: load,
