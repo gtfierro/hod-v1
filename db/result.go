@@ -224,7 +224,12 @@ func (db *DB) _getTuplesFromTree(name string, ve *ResultEntity) []map[string]tur
 					for k, v := range m {
 						vars[k] = v
 					}
-					ret = append(ret, vars)
+					// when we want to append, make sure to allocate a new map
+					newvar := make(map[string]turtle.URI)
+					for k, v := range vars {
+						newvar[k] = v
+					}
+					ret = append(ret, newvar)
 				}
 				return i != etree.Max()
 			}
