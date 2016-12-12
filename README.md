@@ -16,7 +16,7 @@ A database for [Brick](http://brickschema.org/)
 
 - [ ] load database from disk
     - [ ] save the predicate index
-- [ ] make sure to load in `Brick.ttl` as well
+- [x] make sure to load in `Brick.ttl` as well
 
 ### Operators
 
