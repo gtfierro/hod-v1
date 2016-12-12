@@ -13,6 +13,8 @@ the results of the query.
     addVariable(varname, tree), where 'tree' is a btree of ResultEntity
 */
 
+type ResultMap map[string]turtle.URI
+
 type ResultRow []turtle.URI
 
 func (rr ResultRow) Less(than btree.Item) bool {

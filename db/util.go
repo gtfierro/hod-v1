@@ -71,3 +71,42 @@ func dumpEntityTree(tree *btree.BTree, db *DB, limit int) {
 	}
 	tree.Ascend(iter)
 }
+
+func compareResultMapList(rml1, rml2 []ResultMap) bool {
+	var (
+		found bool
+	)
+
+	if len(rml1) != len(rml2) {
+		return false
+	}
+
+	for _, val1 := range rml1 {
+		found = false
+		for _, val2 := range rml2 {
+			if compareResultMap(val1, val2) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return false
+		}
+	}
+
+	return true
+}
+
+func compareResultMap(rm1, rm2 ResultMap) bool {
+	if len(rm1) != len(rm2) {
+		return false
+	}
+	for k, v := range rm1 {
+		if v2, found := rm2[k]; !found {
+			return false
+		} else if v2 != v {
+			return false
+		}
+	}
+	return true
+}
