@@ -1,0 +1,15 @@
+=============== Dec 12, 2016 (PST) ===============
+10:49:29.048257 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+10:49:29.048390 db@open opening
+10:49:29.049115 version@stat F·[] S·0B[] Sc·[]
+10:49:29.050922 db@janitor F·2 G·0
+10:49:29.050940 db@open done T·2.545259ms
+=============== Dec 12, 2016 (PST) ===============
+10:49:46.162334 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+10:49:46.162422 version@stat F·[] S·0B[] Sc·[]
+10:49:46.162438 db@open opening
+10:49:46.162466 journal@recovery F·1
+10:49:46.162542 journal@recovery recovering @1
+10:49:46.163091 version@stat F·[] S·0B[] Sc·[]
+10:49:46.163277 db@janitor F·2 G·0
+10:49:46.163288 db@open done T·846.645µs
