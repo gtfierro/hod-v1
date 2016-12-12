@@ -107,12 +107,17 @@ triple       : term path term DOT
              {
                 triple := Filter{Subject: $1.val, Object: $3.val}
                 if len($2.multipred) > 0 {
-                    var orclauses []OrClause
-                    for _, pred := range $2.multipred {
-                        triple.Path = pred
-                        orclauses = append(orclauses, OrClause{Terms: []Filter{triple}})
+                    var recurse func(preds [][]PathPattern) OrClause
+                    recurse = func(preds [][]PathPattern) OrClause {
+                        triple.Path = preds[0]
+                        first := OrClause{RightTerms: []Filter{triple}}
+                        if len(preds) > 1 {
+                          first.LeftOr = []OrClause{recurse(preds[1:])}
+                        }
+                        return first
                     }
-                    $$.orclauses = orclauses
+                    var cur = recurse($2.multipred)
+                    $$.orclauses = []OrClause{cur}
                 } else {
                     triple.Path = $2.pred
                     $$.triples = []Filter{triple}
@@ -120,16 +125,21 @@ triple       : term path term DOT
              }
              | LBRACE term path term RBRACE
              {
-                triple := Filter{Subject: $1.val, Object: $3.val}
-                if len($2.multipred) > 0 {
-                    var orclauses []OrClause
-                    for _, pred := range $2.multipred {
-                        triple.Path = pred
-                        orclauses = append(orclauses, OrClause{Terms: []Filter{triple}})
+                triple := Filter{Subject: $2.val, Object: $4.val}
+                if len($3.multipred) > 0 {
+                    var recurse func(preds [][]PathPattern) OrClause
+                    recurse = func(preds [][]PathPattern) OrClause {
+                        triple.Path = preds[0]
+                        first := OrClause{RightTerms: []Filter{triple}}
+                        if len(preds) > 1 {
+                          first.LeftOr = []OrClause{recurse(preds[1:])}
+                        }
+                        return first
                     }
-                    $$.orclauses = orclauses
+                    var cur = recurse($3.multipred)
+                    $$.orclauses = []OrClause{cur}
                 } else {
-                    triple.Path = $2.pred
+                    triple.Path = $3.pred
                     $$.triples = []Filter{triple}
                 }
              }
@@ -150,15 +160,15 @@ compound     : whereTriples
              }
              | compound OR whereTriples
              {
-                $$.orclauses = []OrClause{{LeftOr: $3.orclauses, 
-                                            LeftTerms: $3.triples, 
+                $$.orclauses = []OrClause{{LeftOr: $3.orclauses,
+                                            LeftTerms: $3.triples,
                                             RightOr: $1.orclauses,
                                             RightTerms: $1.triples}}
              }
              | compound UNION whereTriples
              {
-                $$.orclauses = []OrClause{{LeftOr: $3.orclauses, 
-                                            LeftTerms: $3.triples, 
+                $$.orclauses = []OrClause{{LeftOr: $3.orclauses,
+                                            LeftTerms: $3.triples,
                                             RightOr: $1.orclauses,
                                             RightTerms: $1.triples}}
              }

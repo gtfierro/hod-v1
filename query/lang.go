@@ -79,7 +79,7 @@ const yyEofCode = 1
 const yyErrCode = 2
 const yyInitialStackSize = 16
 
-//line lang.y:226
+//line lang.y:236
 
 const eof = 0
 
@@ -658,12 +658,17 @@ yydefault:
 		{
 			triple := Filter{Subject: yyDollar[1].val, Object: yyDollar[3].val}
 			if len(yyDollar[2].multipred) > 0 {
-				var orclauses []OrClause
-				for _, pred := range yyDollar[2].multipred {
-					triple.Path = pred
-					orclauses = append(orclauses, OrClause{Terms: []Filter{triple}})
+				var recurse func(preds [][]PathPattern) OrClause
+				recurse = func(preds [][]PathPattern) OrClause {
+					triple.Path = preds[0]
+					first := OrClause{RightTerms: []Filter{triple}}
+					if len(preds) > 1 {
+						first.LeftOr = []OrClause{recurse(preds[1:])}
+					}
+					return first
 				}
-				yyVAL.orclauses = orclauses
+				var cur = recurse(yyDollar[2].multipred)
+				yyVAL.orclauses = []OrClause{cur}
 			} else {
 				triple.Path = yyDollar[2].pred
 				yyVAL.triples = []Filter{triple}
@@ -671,24 +676,29 @@ yydefault:
 		}
 	case 12:
 		yyDollar = yyS[yypt-5 : yypt+1]
-		//line lang.y:122
+		//line lang.y:127
 		{
-			triple := Filter{Subject: yyDollar[1].val, Object: yyDollar[3].val}
-			if len(yyDollar[2].multipred) > 0 {
-				var orclauses []OrClause
-				for _, pred := range yyDollar[2].multipred {
-					triple.Path = pred
-					orclauses = append(orclauses, OrClause{Terms: []Filter{triple}})
+			triple := Filter{Subject: yyDollar[2].val, Object: yyDollar[4].val}
+			if len(yyDollar[3].multipred) > 0 {
+				var recurse func(preds [][]PathPattern) OrClause
+				recurse = func(preds [][]PathPattern) OrClause {
+					triple.Path = preds[0]
+					first := OrClause{RightTerms: []Filter{triple}}
+					if len(preds) > 1 {
+						first.LeftOr = []OrClause{recurse(preds[1:])}
+					}
+					return first
 				}
-				yyVAL.orclauses = orclauses
+				var cur = recurse(yyDollar[3].multipred)
+				yyVAL.orclauses = []OrClause{cur}
 			} else {
-				triple.Path = yyDollar[2].pred
+				triple.Path = yyDollar[3].pred
 				yyVAL.triples = []Filter{triple}
 			}
 		}
 	case 13:
 		yyDollar = yyS[yypt-3 : yypt+1]
-		//line lang.y:137
+		//line lang.y:147
 		{
 			if len(yyDollar[2].orclauses) > 0 {
 				yyVAL.orclauses = yyDollar[2].orclauses
@@ -698,14 +708,14 @@ yydefault:
 		}
 	case 14:
 		yyDollar = yyS[yypt-1 : yypt+1]
-		//line lang.y:147
+		//line lang.y:157
 		{
 			yyVAL.triples = yyDollar[1].triples
 			yyVAL.orclauses = yyDollar[1].orclauses
 		}
 	case 15:
 		yyDollar = yyS[yypt-3 : yypt+1]
-		//line lang.y:152
+		//line lang.y:162
 		{
 			yyVAL.orclauses = []OrClause{{LeftOr: yyDollar[3].orclauses,
 				LeftTerms:  yyDollar[3].triples,
@@ -714,7 +724,7 @@ yydefault:
 		}
 	case 16:
 		yyDollar = yyS[yypt-3 : yypt+1]
-		//line lang.y:159
+		//line lang.y:169
 		{
 			yyVAL.orclauses = []OrClause{{LeftOr: yyDollar[3].orclauses,
 				LeftTerms:  yyDollar[3].triples,
@@ -723,19 +733,19 @@ yydefault:
 		}
 	case 17:
 		yyDollar = yyS[yypt-1 : yypt+1]
-		//line lang.y:169
+		//line lang.y:179
 		{
 			yyVAL.pred = yyDollar[1].pred
 		}
 	case 18:
 		yyDollar = yyS[yypt-3 : yypt+1]
-		//line lang.y:173
+		//line lang.y:183
 		{
 			yyVAL.pred = append(yyDollar[1].pred, yyDollar[3].pred...)
 		}
 	case 19:
 		yyDollar = yyS[yypt-3 : yypt+1]
-		//line lang.y:177
+		//line lang.y:187
 		{
 			if len(yyDollar[1].multipred) > 0 {
 				yyVAL.multipred = append(yyVAL.multipred, yyDollar[1].multipred...)
@@ -750,49 +760,49 @@ yydefault:
 		}
 	case 20:
 		yyDollar = yyS[yypt-1 : yypt+1]
-		//line lang.y:192
+		//line lang.y:202
 		{
 			yyVAL.pred = []PathPattern{{Predicate: turtle.ParseURI(yyDollar[1].str), Pattern: PATTERN_SINGLE}}
 		}
 	case 21:
 		yyDollar = yyS[yypt-1 : yypt+1]
-		//line lang.y:196
+		//line lang.y:206
 		{
 			yyVAL.pred = []PathPattern{{Predicate: turtle.ParseURI(yyDollar[1].str), Pattern: PATTERN_SINGLE}}
 		}
 	case 22:
 		yyDollar = yyS[yypt-2 : yypt+1]
-		//line lang.y:200
+		//line lang.y:210
 		{
 			yyVAL.pred = []PathPattern{{Predicate: turtle.ParseURI(yyDollar[1].str), Pattern: PATTERN_ONE_PLUS}}
 		}
 	case 23:
 		yyDollar = yyS[yypt-2 : yypt+1]
-		//line lang.y:204
+		//line lang.y:214
 		{
 			yyVAL.pred = []PathPattern{{Predicate: turtle.ParseURI(yyDollar[1].str), Pattern: PATTERN_ZERO_ONE}}
 		}
 	case 24:
 		yyDollar = yyS[yypt-2 : yypt+1]
-		//line lang.y:208
+		//line lang.y:218
 		{
 			yyVAL.pred = []PathPattern{{Predicate: turtle.ParseURI(yyDollar[1].str), Pattern: PATTERN_ZERO_PLUS}}
 		}
 	case 25:
 		yyDollar = yyS[yypt-3 : yypt+1]
-		//line lang.y:212
+		//line lang.y:222
 		{
 			yyVAL.pred = yyDollar[2].pred
 		}
 	case 26:
 		yyDollar = yyS[yypt-1 : yypt+1]
-		//line lang.y:218
+		//line lang.y:228
 		{
 			yyVAL.val = turtle.ParseURI(yyDollar[1].str)
 		}
 	case 27:
 		yyDollar = yyS[yypt-1 : yypt+1]
-		//line lang.y:222
+		//line lang.y:232
 		{
 			yyVAL.val = turtle.ParseURI(yyDollar[1].str)
 		}
