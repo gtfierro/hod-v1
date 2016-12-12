@@ -47,6 +47,10 @@ func (db *DB) RunQuery(q query.Query) []ResultMap {
 
 	unionedRows := btree.New(3)
 	fullQueryStart := time.Now()
+
+	// if we have terms that are part of a set of OR statements, then we run
+	// parallel queries for each fully-elaborated "branch" or the OR statement,
+	// and then merge the results together at the end
 	if len(orTerms) > 0 {
 		var rowLock sync.Mutex
 		var wg sync.WaitGroup
