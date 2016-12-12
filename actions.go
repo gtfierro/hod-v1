@@ -15,6 +15,7 @@ import (
 	query "github.com/gtfierro/hod/query"
 
 	"github.com/chzyer/readline"
+	"github.com/fatih/color"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli"
 )
@@ -182,8 +183,14 @@ func runInteractiveQuery(db *hod.DB) error {
 	}
 	fmt.Println("Successfully loaded dataset!")
 	bufQuery := ""
+
+	//setup color for prompt
+	c := color.New(color.FgCyan)
+	c.Add(color.Bold)
+	cyan := c.SprintFunc()
+
 	rl, err := readline.NewEx(&readline.Config{
-		Prompt:                 "(hod)> ",
+		Prompt:                 cyan("(hod)> "),
 		HistoryFile:            currentUser.HomeDir + "/.hod-query-history",
 		DisableAutoSaveHistory: true,
 	})
@@ -200,7 +207,7 @@ func runInteractiveQuery(db *hod.DB) error {
 			rl.SetPrompt(">>> ...")
 			continue
 		}
-		rl.SetPrompt("(hod)> ")
+		rl.SetPrompt(cyan("(hod)> "))
 		rl.SaveHistory(bufQuery)
 		q, err := query.Parse(strings.NewReader(bufQuery))
 		if err != nil {
