@@ -1,0 +1,32 @@
+# HodDB Configuration
+
+####
+# Location and structure of database
+####
+
+# the location of the database files
+#DBPath = _hoddb
+
+# the path to the TTL file containing Brick relationships
+#BrickFrameTTL = "BrickFrame.ttl"
+
+# the path to the TTL file containing Brick classes
+#BrickClassTTL = "Brick.ttl"
+
+####
+# configuration for verbosity during operation
+####
+# Show the built dependency graph of query terms
+#ShowDependencyGraph: false
+
+# Show the set of operations in the query plan
+#ShowQueryPlan: false
+
+# Show the latencies of creating the query plan
+#ShowQueryPlanLatencies: false
+
+# Show the latencies of each operation in the query plan
+#ShowOperationLatencies: false
+
+# Show the full latency of the query (and its larger components)
+#ShowQueryLatencies: true
