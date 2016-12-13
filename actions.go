@@ -202,10 +202,15 @@ func dumpGraph(c *cli.Context) error {
 		fmt.Fprintf(f, edge)
 	}
 	fmt.Fprintln(f, "}")
-	cmd := exec.Command("dot", "-Tpdf", name)
+	cmd := exec.Command("sfdp", "-Tpdf", name)
 	pdf, err := cmd.Output()
 	if err != nil {
-		return err
+		// try graphviz dot then
+		cmd = exec.Command("dot", "-Tpdf", name)
+		pdf, err = cmd.Output()
+		if err != nil {
+			return err
+		}
 	}
 	f2, err := os.Create(filename + ".pdf")
 	if err != nil {
