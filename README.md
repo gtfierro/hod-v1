@@ -32,7 +32,8 @@ Action Operators:
     - only if really *really* needed -- can do this after a query anyway
 
 Tests:
-- [ ] full query tests on known dataset
+- [x] full query tests on known dataset
+    - in progress
 
 Filters:
 - path predicates:
