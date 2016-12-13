@@ -1,5 +1,5 @@
 %{
-package lang
+package query
 
 import (
     "io"
