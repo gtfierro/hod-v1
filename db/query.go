@@ -241,8 +241,6 @@ func (db *DB) followPathFromObject(object *Entity, results *btree.BTree, searchs
 			}
 			// because this is one hop, we don't add any new entities to the stack
 		case query.PATTERN_ZERO_ONE:
-			// this does not require the pattern to exist, so we add ALL entities connected
-			// by ALL edges
 			results.ReplaceOrInsert(Item(entity.PK))
 			endpoints, found := entity.InEdges[string(predHash[:])]
 			// this requires the pattern to exist, so we skip if we have no edges of that name
@@ -255,19 +253,20 @@ func (db *DB) followPathFromObject(object *Entity, results *btree.BTree, searchs
 			}
 			// because this is one hop, we don't add any new entities to the stack
 		case query.PATTERN_ZERO_PLUS:
-			// we add ALL edges to the stack, but continue searching only on those that
-			// have the required edge
-			for edgeName, endpointHashList := range entity.InEdges {
-				for _, entityHash := range endpointHashList {
-					nextEntity := db.MustGetEntityFromHash(entityHash)
-					if !results.Has(Item(nextEntity.PK)) {
-						searchstack.PushBack(nextEntity)
-					}
-					results.ReplaceOrInsert(Item(nextEntity.PK))
-					if edgeName == string(predHash[:]) {
-						stack.PushBack(nextEntity)
-					}
+			results.ReplaceOrInsert(Item(entity.PK))
+			endpoints, found := entity.InEdges[string(predHash[:])]
+			// this requires the pattern to exist, so we skip if we have no edges of that name
+			if !found {
+				continue
+			}
+			// here, these entities are all connected by the required predicate
+			for _, entityHash := range endpoints {
+				nextEntity := db.MustGetEntityFromHash(entityHash)
+				if !results.Has(Item(nextEntity.PK)) {
+					searchstack.PushBack(nextEntity)
 				}
+				results.ReplaceOrInsert(Item(entityHash))
+				stack.PushBack(nextEntity)
 			}
 		case query.PATTERN_ONE_PLUS:
 			edges, found := entity.InEdges[string(predHash[:])]
@@ -332,19 +331,20 @@ func (db *DB) followPathFromSubject(subject *Entity, results *btree.BTree, searc
 			}
 			// because this is one hop, we don't add any new entities to the stack
 		case query.PATTERN_ZERO_PLUS:
-			// we add ALL edges to the stack, but continue searching only on those that
-			// have the required edge
-			for edgeName, endpointHashList := range entity.OutEdges {
-				for _, entityHash := range endpointHashList {
-					nextEntity := db.MustGetEntityFromHash(entityHash)
-					if !results.Has(Item(nextEntity.PK)) {
-						searchstack.PushBack(nextEntity)
-					}
-					results.ReplaceOrInsert(Item(nextEntity.PK))
-					if edgeName == string(predHash[:]) {
-						stack.PushBack(nextEntity)
-					}
+			results.ReplaceOrInsert(Item(entity.PK))
+			endpoints, found := entity.OutEdges[string(predHash[:])]
+			// this requires the pattern to exist, so we skip if we have no edges of that name
+			if !found {
+				continue
+			}
+			// here, these entities are all connected by the required predicate
+			for _, entityHash := range endpoints {
+				nextEntity := db.MustGetEntityFromHash(entityHash)
+				if !results.Has(Item(nextEntity.PK)) {
+					searchstack.PushBack(nextEntity)
 				}
+				results.ReplaceOrInsert(Item(entityHash))
+				stack.PushBack(nextEntity)
 			}
 		case query.PATTERN_ONE_PLUS:
 			edges, found := entity.OutEdges[string(predHash[:])]
