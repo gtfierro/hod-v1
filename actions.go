@@ -13,7 +13,7 @@ import (
 	"github.com/gtfierro/hod/config"
 	hod "github.com/gtfierro/hod/db"
 	"github.com/gtfierro/hod/goraptor"
-	query "github.com/gtfierro/hod/query"
+	"github.com/gtfierro/hod/query"
 
 	"github.com/chzyer/readline"
 	"github.com/fatih/color"

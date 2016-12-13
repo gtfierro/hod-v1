@@ -9,7 +9,7 @@ import (
 
 	"github.com/google/btree"
 	turtle "github.com/gtfierro/hod/goraptor"
-	query "github.com/gtfierro/hod/query"
+	"github.com/gtfierro/hod/query"
 	"github.com/syndtr/goleveldb/leveldb"
 )
 

@@ -1,4 +1,4 @@
-package lang
+package query
 
 func compareFilterSliceAsSet(s1, s2 []Filter) bool {
 	var (

@@ -1,5 +1,5 @@
 //line lang.y:2
-package lang
+package query
 
 import __yyfmt__ "fmt"
 

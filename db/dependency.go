@@ -3,7 +3,7 @@ package db
 import (
 	"container/list"
 	"fmt"
-	query "github.com/gtfierro/hod/query"
+	"github.com/gtfierro/hod/query"
 	"reflect"
 	"strings"
 )

@@ -1,4 +1,4 @@
-package lang
+package query
 
 import (
 	turtle "github.com/gtfierro/hod/goraptor"

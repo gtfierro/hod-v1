@@ -9,7 +9,7 @@ import (
 
 	"github.com/gtfierro/hod/config"
 	turtle "github.com/gtfierro/hod/goraptor"
-	query "github.com/gtfierro/hod/query"
+	"github.com/gtfierro/hod/query"
 
 	"github.com/op/go-logging"
 	"github.com/pkg/errors"

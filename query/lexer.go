@@ -1,5 +1,5 @@
 //go:generate go tool yacc -o lang.go lang.y
-package lang
+package query
 
 import (
 	"bufio"

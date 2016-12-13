@@ -1,7 +1,7 @@
 package db
 
 import (
-	query "github.com/gtfierro/hod/query"
+	"github.com/gtfierro/hod/query"
 	ll "log"
 	"strings"
 	"testing"
