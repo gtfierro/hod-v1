@@ -377,24 +377,41 @@ func (db *DB) getSubjectFromPredObject(objectHash [4]byte, path []query.PathPatt
 	if err != nil {
 		panic(err)
 	}
-	results := btree.New(2)
 
 	stack := list.New()
 	stack.PushFront(objEntity)
 
 	var traversed = btree.New(2)
-	for stack.Len() > 0 {
-		entity := stack.Remove(stack.Front()).(*Entity)
-		if traversed.Has(Item(entity.PK)) {
-			continue
+	for idx, segment := range path {
+		reachable := btree.New(2)
+		for stack.Len() > 0 {
+			entity := stack.Remove(stack.Front()).(*Entity)
+			// if we have already traversed this entity, skip it
+			if traversed.Has(Item(entity.PK)) {
+				continue
+			}
+			// mark this entity as traversed
+			traversed.ReplaceOrInsert(Item(entity.PK))
+			db.followPathFromObject(entity, reachable, stack, segment)
 		}
-		traversed.ReplaceOrInsert(Item(entity.PK))
-		for _, pat := range path {
-			db.followPathFromObject(entity, results, stack, pat)
+
+		// if we aren't done, then we push these items onto the stack
+		if idx < len(path)-1 {
+			iter := func(i btree.Item) bool {
+				ent, err := db.GetEntityFromHash(i.(Item))
+				if err != nil {
+					log.Error(err)
+					return false
+				}
+				stack.PushBack(ent)
+				return i != reachable.Max()
+			}
+			reachable.Ascend(iter)
+		} else {
+			return reachable
 		}
 	}
-
-	return results
+	return btree.New(2)
 }
 
 // Given object and predicate, get all subjects
@@ -404,24 +421,43 @@ func (db *DB) getObjectFromSubjectPred(subjectHash [4]byte, path []query.PathPat
 		panic(err)
 	}
 
-	results := btree.New(2)
-
+	// stack of entities to search
 	stack := list.New()
 	stack.PushFront(subEntity)
-
 	var traversed = btree.New(2)
-	for stack.Len() > 0 {
-		entity := stack.Remove(stack.Front()).(*Entity)
-		if traversed.Has(Item(entity.PK)) {
-			continue
+
+	// we have our starting entity; follow the first segment of the path and save everything we can reach from there.
+	// Then, from that set, search the second segment of the path, etc. We save the last reachable set
+	for idx, segment := range path {
+		reachable := btree.New(2)
+		for stack.Len() > 0 {
+			entity := stack.Remove(stack.Front()).(*Entity)
+			// if we have already traversed this entity, skip it
+			if traversed.Has(Item(entity.PK)) {
+				continue
+			}
+			// mark this entity as traversed
+			traversed.ReplaceOrInsert(Item(entity.PK))
+			db.followPathFromSubject(entity, reachable, stack, segment)
 		}
-		traversed.ReplaceOrInsert(Item(entity.PK))
-		for _, pat := range path {
-			db.followPathFromSubject(entity, results, stack, pat)
+
+		// if we aren't done, then we push these items onto the stack
+		if idx < len(path)-1 {
+			iter := func(i btree.Item) bool {
+				ent, err := db.GetEntityFromHash(i.(Item))
+				if err != nil {
+					log.Error(err)
+					return false
+				}
+				stack.PushBack(ent)
+				return i != reachable.Max()
+			}
+			reachable.Ascend(iter)
+		} else {
+			return reachable
 		}
 	}
-
-	return results
+	return btree.New(2)
 }
 
 // Given a predicate, it returns pairs of (subject, object) that are connected by that relationship
