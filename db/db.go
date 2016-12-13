@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gtfierro/hod/config"
 	turtle "github.com/gtfierro/hod/goraptor"
 	query "github.com/gtfierro/hod/query"
 
@@ -45,10 +46,16 @@ type DB struct {
 	relationships map[turtle.URI]turtle.URI
 	// store the namespace prefixes as strings
 	namespaces map[string]string
+	// config options for output
+	showDependencyGraph    bool
+	showQueryPlan          bool
+	showQueryPlanLatencies bool
+	showOperationLatencies bool
+	showQueryLatencies     bool
 }
 
-func NewDB(path string) (*DB, error) {
-	path = strings.TrimSuffix(path, "/")
+func NewDB(cfg *config.Config) (*DB, error) {
+	path := strings.TrimSuffix(cfg.DBPath, "/")
 
 	// set up entity, pk databases
 	entityDBPath := path + "/db-entities"
@@ -75,17 +82,22 @@ func NewDB(path string) (*DB, error) {
 	}
 
 	db := &DB{
-		path:          path,
-		entityDB:      entityDB,
-		pkDB:          pkDB,
-		graphDB:       graphDB,
-		predDB:        predDB,
-		predIndex:     make(map[turtle.URI]*PredicateEntity),
-		relationships: make(map[turtle.URI]turtle.URI),
-		namespaces:    make(map[string]string),
+		path:                   path,
+		entityDB:               entityDB,
+		pkDB:                   pkDB,
+		graphDB:                graphDB,
+		predDB:                 predDB,
+		predIndex:              make(map[turtle.URI]*PredicateEntity),
+		relationships:          make(map[turtle.URI]turtle.URI),
+		namespaces:             make(map[string]string),
+		showDependencyGraph:    cfg.ShowDependencyGraph,
+		showQueryPlan:          cfg.ShowQueryPlan,
+		showQueryPlanLatencies: cfg.ShowQueryPlanLatencies,
+		showOperationLatencies: cfg.ShowOperationLatencies,
+		showQueryLatencies:     cfg.ShowQueryLatencies,
 	}
 
-	// TODO: load predIndex and relationships from database
+	// load predIndex and relationships from database
 	predIndexPath := path + "/predIndex"
 	relshipIndexPath := path + "/relshipIndex"
 	namespaceIndexPath := path + "/namespaceIndex"
@@ -128,6 +140,25 @@ func NewDB(path string) (*DB, error) {
 			db.namespaces[ns] = full
 		}
 		log.Notice("loaded namespace index")
+	}
+
+	// load in Brick
+	if cfg.ReloadBrick {
+		p := turtle.GetParser()
+		relships, _ := p.Parse(cfg.BrickFrameTTL)
+		classships, _ := p.Parse(cfg.BrickClassTTL)
+		err = db.LoadRelationships(relships)
+		if err != nil {
+			return nil, err
+		}
+		err = db.LoadDataset(classships)
+		if err != nil {
+			return nil, err
+		}
+		err = db.SaveIndexes()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return db, nil
@@ -406,6 +437,11 @@ func (db *DB) LoadDataset(dataset turtle.DataSet) error {
 
 	for pfx, uri := range db.namespaces {
 		fmt.Printf("%s => %s\n", pfx, uri)
+	}
+	// save indexes after loading database
+	err = db.SaveIndexes()
+	if err != nil {
+		return err
 	}
 	return nil
 }

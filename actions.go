@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gtfierro/hod/config"
 	hod "github.com/gtfierro/hod/db"
 	"github.com/gtfierro/hod/goraptor"
 	query "github.com/gtfierro/hod/query"
@@ -37,27 +38,18 @@ func load(c *cli.Context) error {
 		return errors.New("Need to specify a turtle file to load")
 	}
 	filename := c.Args().Get(0)
-	path := c.String("path")
+	cfg, err := config.ReadConfig(c.String("config"))
+	if err != nil {
+		return err
+	}
 	p := turtle.GetParser()
 	ds, duration := p.Parse(filename)
 	rate := float64((float64(ds.NumTriples()) / float64(duration.Nanoseconds())) * 1e9)
 	log.Infof("Loaded %d triples, %d namespaces in %s (%.0f/sec)", ds.NumTriples(), ds.NumNamespaces(), duration, rate)
 
-	frame := c.String("frame")
-	relships, _ := p.Parse(frame)
+	cfg.ReloadBrick = true
 
-	class := c.String("class")
-	classships, _ := p.Parse(class)
-
-	db, err := hod.NewDB(path)
-	if err != nil {
-		return err
-	}
-	err = db.LoadRelationships(relships)
-	if err != nil {
-		return err
-	}
-	err = db.LoadDataset(classships)
+	db, err := hod.NewDB(cfg)
 	if err != nil {
 		return err
 	}
@@ -66,16 +58,16 @@ func load(c *cli.Context) error {
 		return err
 	}
 
-	err = db.SaveIndexes()
-	if err != nil {
-		return err
-	}
 	return runInteractiveQuery(db)
 }
 
 func start(c *cli.Context) error {
-	path := c.String("path")
-	db, err := hod.NewDB(path)
+	cfg, err := config.ReadConfig(c.String("config"))
+	if err != nil {
+		return err
+	}
+	cfg.ReloadBrick = false
+	db, err := hod.NewDB(cfg)
 	if err != nil {
 		return err
 	}

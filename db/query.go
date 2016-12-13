@@ -77,7 +77,9 @@ func (db *DB) RunQuery(q query.Query) QueryResult {
 			unionedRows.ReplaceOrInsert(ResultRow(row))
 		}
 	}
-	log.Noticef("Full Query took %s", time.Since(fullQueryStart))
+	if db.showQueryLatencies {
+		log.Noticef("Full Query took %s", time.Since(fullQueryStart))
+	}
 
 	var result QueryResult
 
@@ -99,23 +101,39 @@ func (db *DB) RunQuery(q query.Query) QueryResult {
 }
 
 func (db *DB) getQueryResults(q query.Query) [][]turtle.URI {
-	fmt.Println("-------------- start query plan -------------")
+	if db.showQueryPlan {
+		fmt.Println("-------------- start query plan -------------")
+	}
+	// start timer
 	planStart := time.Now()
+
+	// form dependency graph and build query plan out of it
 	dg := db.formDependencyGraph(q)
 	qp := db.formQueryPlan(dg)
-	for _, op := range qp.operations {
-		log.Debug("op", op)
+
+	if db.showQueryPlan {
+		for _, op := range qp.operations {
+			log.Debug("op", op)
+		}
 	}
-	log.Infof("Formed execution plan in %s", time.Since(planStart))
-	fmt.Println("-------------- end query plan -------------")
+	if db.showQueryPlanLatencies {
+		log.Infof("Formed execution plan in %s", time.Since(planStart))
+	}
+	if db.showQueryPlan {
+		fmt.Println("-------------- end query plan -------------")
+	}
 
 	runStart := time.Now()
 	rm := db.executeQueryPlan(qp)
-	log.Infof("Ran query in %s", time.Since(runStart))
+	if db.showQueryLatencies {
+		log.Infof("Ran query in %s", time.Since(runStart))
+	}
 
 	runStart = time.Now()
 	results := db.expandTuples(rm, qp.selectVars, q.Select.Partial)
-	log.Infof("Expanded tuples in %s", time.Since(runStart))
+	if db.showQueryLatencies {
+		log.Infof("Expanded tuples in %s", time.Since(runStart))
+	}
 	return results
 }
 
@@ -169,7 +187,9 @@ func (db *DB) formDependencyGraph(q query.Query) *dependencyGraph {
 			terms = filterTermList(terms, added)
 		}
 	}
-	dg.dump()
+	if db.showDependencyGraph {
+		dg.dump()
+	}
 	return dg
 }
 
@@ -180,7 +200,9 @@ func (db *DB) executeQueryPlan(qp *queryPlan) *resultMap {
 	for _, op := range qp.operations {
 		now := time.Now()
 		rm, err = op.run(db, qp.varOrder, rm)
-		fmt.Println(op, time.Since(now))
+		if db.showQueryPlanLatencies {
+			fmt.Println(op, time.Since(now))
+		}
 		if err != nil {
 			log.Fatal(err)
 		}

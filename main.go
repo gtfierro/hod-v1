@@ -52,19 +52,8 @@ func main() {
 			Action: load,
 			Flags: []cli.Flag{
 				cli.StringFlag{
-					Name:  "path, p",
-					Value: ".",
-					Usage: "Path where the database files will be placed",
-				},
-				cli.StringFlag{
-					Name:  "frame, f",
-					Value: "BrickFrame.ttl",
-					Usage: "turtle file of brick relationships",
-				},
-				cli.StringFlag{
-					Name:  "class, c",
-					Value: "Brick.ttl",
-					Usage: "turtle file of brick relationships",
+					Name:  "config, c",
+					Usage: "Path to hoddb config file",
 				},
 			},
 		},
@@ -74,9 +63,8 @@ func main() {
 			Action: start,
 			Flags: []cli.Flag{
 				cli.StringFlag{
-					Name:  "path, p",
-					Value: ".",
-					Usage: "Path where the database files will be placed",
+					Name:  "config, c",
+					Usage: "Path to hoddb config file",
 				},
 			},
 		},
