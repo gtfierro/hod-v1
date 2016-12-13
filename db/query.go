@@ -30,7 +30,7 @@ func (i Item) Less(than btree.Item) bool {
 	return binary.LittleEndian.Uint32(i[:]) < binary.LittleEndian.Uint32(t[:])
 }
 
-func (db *DB) RunQuery(q query.Query) []ResultMap {
+func (db *DB) RunQuery(q query.Query) QueryResult {
 	// "clean" the query by expanding out the prefixes
 	// make sure to first do the Filters, then the Or clauses
 	for idx, filter := range q.Where.Filters {
@@ -79,10 +79,10 @@ func (db *DB) RunQuery(q query.Query) []ResultMap {
 	}
 	log.Noticef("Full Query took %s", time.Since(fullQueryStart))
 
-	var results []ResultMap
+	var result QueryResult
 
 	if q.Select.Count {
-		fmt.Println(unionedRows.Len())
+		result.Count = unionedRows.Len()
 	} else {
 		iter := func(i btree.Item) bool {
 			row := i.(ResultRow)
@@ -90,13 +90,12 @@ func (db *DB) RunQuery(q query.Query) []ResultMap {
 			for idx, vname := range q.Select.Variables {
 				m[vname.String()] = row[idx]
 			}
-			results = append(results, m)
-			fmt.Println(row)
+			result.Rows = append(result.Rows, m)
 			return row.Less(unionedRows.Max())
 		}
 		unionedRows.Ascend(iter)
 	}
-	return results
+	return result
 }
 
 func (db *DB) getQueryResults(q query.Query) [][]turtle.URI {

@@ -266,7 +266,8 @@ func runInteractiveQuery(db *hod.DB) error {
 		if err != nil {
 			log.Error(err)
 		} else {
-			db.RunQuery(q)
+			res := db.RunQuery(q)
+			res.Dump()
 		}
 		bufQuery = ""
 	}

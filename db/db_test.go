@@ -68,9 +68,9 @@ func TestDBQuery(t *testing.T) {
 			t.Error(test.query, e)
 			continue
 		}
-		results := db.RunQuery(q)
-		if !compareResultMapList(test.results, results) {
-			t.Errorf("Results for %s had\n %+v\nexpected\n %+v", test.query, results, test.results)
+		result := db.RunQuery(q)
+		if !compareResultMapList(test.results, result.Rows) {
+			t.Errorf("Results for %s had\n %+v\nexpected\n %+v", test.query, result.Rows, test.results)
 			return
 		}
 	}

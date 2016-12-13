@@ -2,6 +2,7 @@ package db
 
 import (
 	"encoding/binary"
+	"fmt"
 	"github.com/google/btree"
 	turtle "github.com/gtfierro/hod/goraptor"
 )
@@ -12,6 +13,21 @@ the results of the query.
 - resolve{Sub,Obj}: variable gets resolved an added to top level scope:
     addVariable(varname, tree), where 'tree' is a btree of ResultEntity
 */
+
+type QueryResult struct {
+	Rows  []ResultMap
+	Count int
+}
+
+func (qr QueryResult) Dump() {
+	if len(qr.Rows) > 0 {
+		for _, row := range qr.Rows {
+			fmt.Println(row)
+		}
+		return
+	}
+	fmt.Println(qr.Count)
+}
 
 type ResultMap map[string]turtle.URI
 
