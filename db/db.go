@@ -139,7 +139,6 @@ func NewDB(cfg *config.Config) (*DB, error) {
 		for ns, full := range *ni {
 			db.namespaces[ns] = full
 		}
-		log.Notice("loaded namespace index")
 	}
 
 	// load in Brick

@@ -4,12 +4,19 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/gtfierro/hod/config"
 	turtle "github.com/gtfierro/hod/goraptor"
 	query "github.com/gtfierro/hod/query"
 )
 
 func TestDBQuery(t *testing.T) {
-	db, err := NewDB("../testdb")
+	cfg, err := config.ReadConfig("testhodconfig.yaml")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	cfg.DBPath = "../testdb"
+	db, err := NewDB(cfg)
 	if err != nil {
 		t.Error(err)
 		return
