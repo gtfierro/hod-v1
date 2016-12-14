@@ -14,6 +14,7 @@ import (
 	hod "github.com/gtfierro/hod/db"
 	"github.com/gtfierro/hod/goraptor"
 	"github.com/gtfierro/hod/query"
+	"github.com/gtfierro/hod/server"
 
 	"github.com/chzyer/readline"
 	"github.com/fatih/color"
@@ -61,7 +62,7 @@ func load(c *cli.Context) error {
 	return runInteractiveQuery(db)
 }
 
-func start(c *cli.Context) error {
+func startCLI(c *cli.Context) error {
 	cfg, err := config.ReadConfig(c.String("config"))
 	if err != nil {
 		return err
@@ -72,6 +73,20 @@ func start(c *cli.Context) error {
 		return err
 	}
 	return runInteractiveQuery(db)
+}
+
+func startHTTP(c *cli.Context) error {
+	cfg, err := config.ReadConfig(c.String("config"))
+	if err != nil {
+		return err
+	}
+	cfg.ReloadBrick = false
+	db, err := hod.NewDB(cfg)
+	if err != nil {
+		return err
+	}
+	server.StartHodServer(db, cfg)
+	return nil
 }
 
 func dump(c *cli.Context) error {

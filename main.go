@@ -58,9 +58,20 @@ func main() {
 			},
 		},
 		{
-			Name:   "start",
+			Name:   "cli",
 			Usage:  "Start hoddb from existing database",
-			Action: start,
+			Action: startCLI,
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:  "config, c",
+					Usage: "Path to hoddb config file",
+				},
+			},
+		},
+		{
+			Name:   "http",
+			Usage:  "Start hoddb HTTP server from existing database",
+			Action: startHTTP,
 			Flags: []cli.Flag{
 				cli.StringFlag{
 					Name:  "config, c",
