@@ -1,4 +1,5 @@
-# HodDB Configuration
+### HodDB Configuration
+# commented out lines are default configuration options
 
 ####
 # Location and structure of database
@@ -12,10 +13,12 @@
 
 # the path to the TTL file containing Brick classes
 #BrickClassTTL = "Brick.ttl"
+#
 
 ####
 # configuration for verbosity during operation
 ####
+
 # Show the built dependency graph of query terms
 #ShowDependencyGraph: false
 
@@ -30,3 +33,17 @@
 
 # Show the full latency of the query (and its larger components)
 #ShowQueryLatencies: true
+
+
+####
+# HTTP Server Configuration
+####
+
+# port to run the server on
+#ServerPort: 47808
+
+# Whether or not to serve on IPv6
+#UseIPv6: false
+
+# Whether or not to serve on localhost. If false, serves on a public interface
+#Localhost: true

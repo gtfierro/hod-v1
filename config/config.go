@@ -15,6 +15,10 @@ type Config struct {
 	ShowQueryPlanLatencies bool
 	ShowOperationLatencies bool
 	ShowQueryLatencies     bool
+
+	ServerPort string
+	UseIPv6    bool
+	Localhost  bool
 }
 
 func init() {
@@ -29,6 +33,10 @@ func init() {
 	viper.SetDefault("ShowQueryPlanLatencies", false)
 	viper.SetDefault("ShowOperationLatencies", false)
 	viper.SetDefault("ShowQueryLatencies", true)
+
+	viper.SetDefault("ServerPort", "47808")
+	viper.SetDefault("UseIPv6", false)
+	viper.SetDefault("Localhost", true)
 
 	viper.SetConfigName("hodconfig")
 	// set search paths for config
@@ -53,6 +61,9 @@ func ReadConfig(file string) (*Config, error) {
 		ShowQueryPlanLatencies: viper.GetBool("ShowQueryPlanLatencies"),
 		ShowOperationLatencies: viper.GetBool("ShowOperationLatencies"),
 		ShowQueryLatencies:     viper.GetBool("ShowQueryLatencies"),
+		ServerPort:             viper.GetString("ServerPort"),
+		UseIPv6:                viper.GetBool("UseIPv6"),
+		Localhost:              viper.GetBool("Localhost"),
 	}
 	return c, nil
 }
