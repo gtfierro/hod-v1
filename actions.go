@@ -59,7 +59,7 @@ func load(c *cli.Context) error {
 		return err
 	}
 
-	return runInteractiveQuery(db)
+	return nil
 }
 
 func startCLI(c *cli.Context) error {
