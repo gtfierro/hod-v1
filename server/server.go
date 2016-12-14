@@ -75,7 +75,7 @@ func StartHodServer(db *hod.DB, cfg *config.Config) {
 	srv := &http.Server{
 		Addr: address.String(),
 	}
-	srv.ListenAndServe()
+	log.Fatal(srv.ListenAndServe())
 }
 
 func (srv *hodServer) handleQuery(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
