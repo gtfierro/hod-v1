@@ -83,6 +83,7 @@ func (srv *hodServer) handleQuery(rw http.ResponseWriter, req *http.Request, ps 
 
 	parsed, err := query.Parse(req.Body)
 	if err != nil {
+		log.Error(err)
 		rw.WriteHeader(500)
 		rw.Write([]byte(err.Error()))
 		return
@@ -95,6 +96,7 @@ func (srv *hodServer) handleQuery(rw http.ResponseWriter, req *http.Request, ps 
 	rw.Header().Set("Content-Type", "application/json; charset=utf-8")
 	err = encoder.Encode(res)
 	if err != nil {
+		log.Error(err)
 		rw.WriteHeader(500)
 		rw.Write([]byte(err.Error()))
 		return
