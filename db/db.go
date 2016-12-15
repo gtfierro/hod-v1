@@ -11,6 +11,7 @@ import (
 	turtle "github.com/gtfierro/hod/goraptor"
 	"github.com/gtfierro/hod/query"
 
+	"github.com/coocood/freecache"
 	"github.com/op/go-logging"
 	"github.com/pkg/errors"
 	"github.com/syndtr/goleveldb/leveldb"
@@ -46,6 +47,8 @@ type DB struct {
 	relationships map[turtle.URI]turtle.URI
 	// store the namespace prefixes as strings
 	namespaces map[string]string
+	// cache for entity hashes
+	entityHashCache   *freecache.Cache
 	// config options for output
 	showDependencyGraph    bool
 	showQueryPlan          bool
@@ -95,6 +98,7 @@ func NewDB(cfg *config.Config) (*DB, error) {
 		showQueryPlanLatencies: cfg.ShowQueryPlanLatencies,
 		showOperationLatencies: cfg.ShowOperationLatencies,
 		showQueryLatencies:     cfg.ShowQueryLatencies,
+		entityHashCache:        freecache.NewCache(4 * 10000),
 	}
 
 	// load predIndex and relationships from database
@@ -447,16 +451,26 @@ func (db *DB) LoadDataset(dataset turtle.DataSet) error {
 
 // returns the uint32 hash of the given URI (this is adjusted for uniqueness)
 func (db *DB) GetHash(entity turtle.URI) ([4]byte, error) {
-	var hash [4]byte
-	val, err := db.entityDB.Get(entity.Bytes(), nil)
-	if err != nil {
-		return emptyHash, err
+	var rethash [4]byte
+	if hash, err := db.entityHashCache.Get(entity.Bytes()); err != nil {
+		if err == freecache.ErrNotFound {
+			val, err := db.entityDB.Get(entity.Bytes(), nil)
+			if err != nil {
+				return emptyHash, err
+			}
+			copy(rethash[:], val)
+			if rethash == emptyHash {
+				return emptyHash, errors.New("Got bad hash")
+			}
+			db.entityHashCache.Set(entity.Bytes(), rethash[:], 3600) // expire 1 hour
+			return rethash, nil
+		} else {
+			return emptyHash, err
+		}
+	} else {
+		copy(rethash[:], hash)
 	}
-	copy(hash[:], val)
-	if hash == emptyHash {
-		return emptyHash, errors.New("Got bad hash")
-	}
-	return hash, nil
+	return rethash, nil
 }
 
 func (db *DB) MustGetHash(entity turtle.URI) [4]byte {
