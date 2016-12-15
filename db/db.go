@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gtfierro/hod/config"
@@ -49,6 +50,8 @@ type DB struct {
 	namespaces map[string]string
 	// cache for entity hashes
 	entityHashCache   *freecache.Cache
+	entityObjectCache map[[4]byte]*Entity
+	eocLock           sync.RWMutex
 	// config options for output
 	showDependencyGraph    bool
 	showQueryPlan          bool
@@ -99,6 +102,7 @@ func NewDB(cfg *config.Config) (*DB, error) {
 		showOperationLatencies: cfg.ShowOperationLatencies,
 		showQueryLatencies:     cfg.ShowQueryLatencies,
 		entityHashCache:        freecache.NewCache(4 * 10000),
+		entityObjectCache:      make(map[[4]byte]*Entity),
 	}
 
 	// load predIndex and relationships from database
@@ -525,12 +529,21 @@ func (db *DB) GetEntity(uri turtle.URI) (*Entity, error) {
 }
 
 func (db *DB) GetEntityFromHash(hash [4]byte) (*Entity, error) {
+	db.eocLock.RLock()
+	if ent, found := db.entityObjectCache[hash]; found {
+		db.eocLock.RUnlock()
+		return ent, nil
+	}
+	db.eocLock.RUnlock()
+	db.eocLock.Lock()
+	defer db.eocLock.Unlock()
 	bytes, err := db.graphDB.Get(hash[:], nil)
 	if err != nil {
 		return nil, err
 	}
 	ent := NewEntity()
 	_, err = ent.UnmarshalMsg(bytes)
+	db.entityObjectCache[hash] = ent
 	return ent, err
 }
 
