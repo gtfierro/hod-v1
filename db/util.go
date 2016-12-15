@@ -34,10 +34,14 @@ func hashTreeToEntityTree(src *btree.BTree) *btree.BTree {
 
 // takes the intersection of the two trees and returns it
 func intersectTrees(a, b *btree.BTree) *btree.BTree {
+	res := btree.New(3)
+	// early skip
+	if a.Max().Less(b.Min()) || b.Max().Less(a.Min()) {
+		return res
+	}
 	if a.Len() < b.Len() {
 		a, b = b, a
 	}
-	res := btree.New(3)
 	max := a.Max()
 	iter := func(i btree.Item) bool {
 		if b.Has(i) {
