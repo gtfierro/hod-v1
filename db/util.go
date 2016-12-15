@@ -7,9 +7,10 @@ import (
 
 // merges all the keys from 'src' into 'dst'
 func mergeTrees(dest, src *btree.BTree) {
+	max := src.Max()
 	iter := func(i btree.Item) bool {
 		dest.ReplaceOrInsert(i)
-		return i != src.Max()
+		return i != max
 	}
 	src.Ascend(iter)
 }
@@ -18,13 +19,14 @@ func mergeTrees(dest, src *btree.BTree) {
 // a tree of ResultEntity
 func hashTreeToEntityTree(src *btree.BTree) *btree.BTree {
 	newTree := btree.New(3)
+	max := src.Max()
 	iter := func(i btree.Item) bool {
 		ve := &ResultEntity{
 			PK:   i.(Item),
 			Next: make(map[string]*btree.BTree),
 		}
 		newTree.ReplaceOrInsert(ve)
-		return i != src.Max()
+		return i != max
 	}
 	src.Ascend(iter)
 	return newTree
@@ -36,17 +38,19 @@ func intersectTrees(a, b *btree.BTree) *btree.BTree {
 		a, b = b, a
 	}
 	res := btree.New(3)
+	max := a.Max()
 	iter := func(i btree.Item) bool {
 		if b.Has(i) {
 			res.ReplaceOrInsert(i)
 		}
-		return i != a.Max()
+		return i != max
 	}
 	a.Ascend(iter)
 	return res
 }
 
 func dumpHashTree(tree *btree.BTree, db *DB, limit int) {
+	max := tree.Max()
 	iter := func(i btree.Item) bool {
 		if limit == 0 {
 			return false // stop iteration
@@ -54,12 +58,13 @@ func dumpHashTree(tree *btree.BTree, db *DB, limit int) {
 			limit -= 1 //
 		}
 		fmt.Println(db.MustGetURI(i.(Item)))
-		return i != tree.Max()
+		return i != max
 	}
 	tree.Ascend(iter)
 }
 
 func dumpEntityTree(tree *btree.BTree, db *DB, limit int) {
+	max := tree.Max()
 	iter := func(i btree.Item) bool {
 		if limit == 0 {
 			return false // stop iteration
@@ -67,7 +72,7 @@ func dumpEntityTree(tree *btree.BTree, db *DB, limit int) {
 			limit -= 1 //
 		}
 		fmt.Println(db.MustGetURI(i.(*ResultEntity).PK))
-		return i != tree.Max()
+		return i != max
 	}
 	tree.Ascend(iter)
 }

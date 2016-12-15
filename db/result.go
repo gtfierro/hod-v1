@@ -99,6 +99,7 @@ func (rm *resultMap) replaceEntity(varname string, entity *ResultEntity) bool {
 			return true
 		}
 		finishedReplace := false
+		max := tree.Max()
 		iter := func(i btree.Item) bool {
 			ent := i.(*ResultEntity)
 			if ntree, found := ent.Next[varname]; found {
@@ -108,7 +109,7 @@ func (rm *resultMap) replaceEntity(varname string, entity *ResultEntity) bool {
 				}
 			}
 			if len(varorder) == 0 {
-				return i != tree.Max()
+				return i != max
 			}
 			if ntree, found := ent.Next[varorder[0]]; found {
 				if replaceInTree(ntree, varorder[1:], entity) {
@@ -116,7 +117,7 @@ func (rm *resultMap) replaceEntity(varname string, entity *ResultEntity) bool {
 					return false // stop iteration
 				}
 			}
-			return i != tree.Max()
+			return i != max
 		}
 		tree.Ascend(iter)
 		return finishedReplace
@@ -137,26 +138,28 @@ func (rm *resultMap) iterVariable(variable string) []*ResultEntity {
 		if tree == nil {
 			return results
 		}
+		max := tree.Max()
 		iter := func(i btree.Item) bool {
 			results = append(results, i.(*ResultEntity))
-			return i != tree.Max()
+			return i != max
 		}
 		tree.Ascend(iter)
 		return results
 	}
 	_iterbtree = func(tree *btree.BTree, itervars []string) {
+		max := tree.Max()
 		iter := func(i btree.Item) bool {
 			entity := i.(*ResultEntity)
 			if len(itervars) == 0 {
 				results = append(results, entity)
-				return i != tree.Max()
+				return i != max
 			}
 			if subtree, found := entity.Next[variable]; found {
 				_iterbtree(subtree, itervars[1:])
 			} else {
 				_iterbtree(entity.Next[itervars[0]], itervars[1:])
 			}
-			return i != tree.Max()
+			return i != max
 		}
 		if tree == nil {
 			return
@@ -196,11 +199,12 @@ func (db *DB) expandTuples(rm *resultMap, selectVars []string, matchPartial bool
 	}
 	tree := rm.vars[startvar]
 	if tree != nil {
+		max := tree.Max()
 		iter := func(i btree.Item) bool {
 			entity := i.(*ResultEntity)
 			newtups := db._getTuplesFromTree(startvar, entity)
 			tuples = append(tuples, newtups...)
-			return i != tree.Max()
+			return i != max
 		}
 		tree.Ascend(iter)
 	} else {
@@ -234,6 +238,7 @@ func (db *DB) _getTuplesFromTree(name string, ve *ResultEntity) []map[string]tur
 		ret = append(ret, map[string]turtle.URI{name: uri})
 	} else {
 		for lname, etree := range ve.Next {
+			max := etree.Max()
 			iter := func(i btree.Item) bool {
 				entity := i.(*ResultEntity)
 				for _, m := range db._getTuplesFromTree(lname, entity) {
@@ -247,7 +252,7 @@ func (db *DB) _getTuplesFromTree(name string, ve *ResultEntity) []map[string]tur
 					}
 					ret = append(ret, newvar)
 				}
-				return i != etree.Max()
+				return i != max
 			}
 			etree.Ascend(iter)
 		}

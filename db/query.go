@@ -86,6 +86,7 @@ func (db *DB) RunQuery(q query.Query) QueryResult {
 	if q.Select.Count {
 		result.Count = unionedRows.Len()
 	} else {
+		max := unionedRows.Max()
 		iter := func(i btree.Item) bool {
 			row := i.(ResultRow)
 			m := make(ResultMap)
@@ -93,7 +94,7 @@ func (db *DB) RunQuery(q query.Query) QueryResult {
 				m[vname.String()] = row[idx]
 			}
 			result.Rows = append(result.Rows, m)
-			return row.Less(unionedRows.Max())
+			return row.Less(max)
 		}
 		unionedRows.Ascend(iter)
 	}
@@ -418,6 +419,7 @@ func (db *DB) getSubjectFromPredObject(objectHash [4]byte, path []query.PathPatt
 
 		// if we aren't done, then we push these items onto the stack
 		if idx < len(path)-1 {
+			max := reachable.Max()
 			iter := func(i btree.Item) bool {
 				ent, err := db.GetEntityFromHash(i.(Item))
 				if err != nil {
@@ -425,7 +427,7 @@ func (db *DB) getSubjectFromPredObject(objectHash [4]byte, path []query.PathPatt
 					return false
 				}
 				stack.PushBack(ent)
-				return i != reachable.Max()
+				return i != max
 			}
 			reachable.Ascend(iter)
 		} else {
@@ -464,6 +466,7 @@ func (db *DB) getObjectFromSubjectPred(subjectHash [4]byte, path []query.PathPat
 
 		// if we aren't done, then we push these items onto the stack
 		if idx < len(path)-1 {
+			max := reachable.Max()
 			iter := func(i btree.Item) bool {
 				ent, err := db.GetEntityFromHash(i.(Item))
 				if err != nil {
@@ -471,7 +474,7 @@ func (db *DB) getObjectFromSubjectPred(subjectHash [4]byte, path []query.PathPat
 					return false
 				}
 				stack.PushBack(ent)
-				return i != reachable.Max()
+				return i != max
 			}
 			reachable.Ascend(iter)
 		} else {
