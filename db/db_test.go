@@ -86,3 +86,22 @@ func TestDBQuery(t *testing.T) {
 		}
 	}
 }
+
+func BenchmarkSingleVar(b *testing.B) {
+	cfg, err := config.ReadConfig("testhodconfig.yaml")
+	if err != nil {
+		b.Error(err)
+		return
+	}
+	cfg.DBPath = "testdb"
+	db, err := NewDB(cfg)
+	if err != nil {
+		b.Error(err)
+		return
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		q, _ := query.Parse(strings.NewReader("SELECT ?x WHERE { ?x rdf:type brick:Room . };"))
+		db.RunQuery(q)
+	}
+}
