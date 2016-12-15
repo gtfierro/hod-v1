@@ -147,6 +147,9 @@ func (rm *resultMap) iterVariable(variable string) []*ResultEntity {
 		return results
 	}
 	_iterbtree = func(tree *btree.BTree, itervars []string) {
+		if tree == nil {
+			return
+		}
 		max := tree.Max()
 		iter := func(i btree.Item) bool {
 			entity := i.(*ResultEntity)
@@ -160,9 +163,6 @@ func (rm *resultMap) iterVariable(variable string) []*ResultEntity {
 				_iterbtree(entity.Next[itervars[0]], itervars[1:])
 			}
 			return i != max
-		}
-		if tree == nil {
-			return
 		}
 		tree.Ascend(iter)
 	}
