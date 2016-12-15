@@ -19,6 +19,9 @@ type Config struct {
 	ServerPort string
 	UseIPv6    bool
 	Localhost  bool
+
+	EnableCPUProfile bool
+	EnableMEMProfile bool
 }
 
 func init() {
@@ -37,6 +40,9 @@ func init() {
 	viper.SetDefault("ServerPort", "47808")
 	viper.SetDefault("UseIPv6", false)
 	viper.SetDefault("Localhost", true)
+
+	viper.SetDefault("EnableCPUProfile", false)
+	viper.SetDefault("EnableMEMProfile", false)
 
 	viper.SetConfigName("hodconfig")
 	// set search paths for config
@@ -64,6 +70,8 @@ func ReadConfig(file string) (*Config, error) {
 		ServerPort:             viper.GetString("ServerPort"),
 		UseIPv6:                viper.GetBool("UseIPv6"),
 		Localhost:              viper.GetBool("Localhost"),
+		EnableCPUProfile:       viper.GetBool("EnableCPUProfile"),
+		EnableMEMProfile:       viper.GetBool("EnableMEMProfile"),
 	}
 	return c, nil
 }

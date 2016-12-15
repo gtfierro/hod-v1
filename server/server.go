@@ -12,6 +12,7 @@ import (
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/op/go-logging"
+	"github.com/pkg/profile"
 )
 
 // logger
@@ -75,6 +76,14 @@ func StartHodServer(db *hod.DB, cfg *config.Config) {
 	srv := &http.Server{
 		Addr: address.String(),
 	}
+
+	// enable profiling if configured
+	if cfg.EnableCPUProfile {
+		defer profile.Start(profile.CPUProfile, profile.ProfilePath(".")).Stop()
+	} else if cfg.EnableMEMProfile {
+		defer profile.Start(profile.MemProfile, profile.ProfilePath(".")).Stop()
+	}
+
 	log.Fatal(srv.ListenAndServe())
 }
 

@@ -47,3 +47,18 @@
 
 # Whether or not to serve on localhost. If false, serves on a public interface
 #Localhost: true
+
+####
+# Profiling Information for HTTP Server
+####
+# Note that best practices dictate that these be done in a mutually exclusive
+# manner, e.g. do not enable CPU and MEM profiling at the same time because
+# they will end up measuring the effect of measuring
+# Also note that if you are trying to use the net/http/profile trick for generating
+# torch graphs, you will need to keep these both at false
+
+# Enable CPU profile
+#EnableCPUProfile: false
+
+# Enable MEM profile
+#EnableMEMProfile: false
