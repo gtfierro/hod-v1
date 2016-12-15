@@ -52,6 +52,8 @@ type DB struct {
 	entityHashCache   *freecache.Cache
 	entityObjectCache map[[4]byte]*Entity
 	eocLock           sync.RWMutex
+	uriCache          map[[4]byte]turtle.URI
+	uriLock           sync.RWMutex
 	// config options for output
 	showDependencyGraph    bool
 	showQueryPlan          bool
@@ -103,6 +105,7 @@ func NewDB(cfg *config.Config) (*DB, error) {
 		showQueryLatencies:     cfg.ShowQueryLatencies,
 		entityHashCache:        freecache.NewCache(4 * 10000),
 		entityObjectCache:      make(map[[4]byte]*Entity),
+		uriCache:               make(map[[4]byte]turtle.URI),
 	}
 
 	// load predIndex and relationships from database
@@ -486,11 +489,21 @@ func (db *DB) MustGetHash(entity turtle.URI) [4]byte {
 }
 
 func (db *DB) GetURI(hash [4]byte) (turtle.URI, error) {
+	db.uriLock.RLock()
+	if uri, found := db.uriCache[hash]; found {
+		db.uriLock.RUnlock()
+		return uri, nil
+	}
+	db.uriLock.RUnlock()
+	db.uriLock.Lock()
+	defer db.uriLock.Unlock()
 	val, err := db.pkDB.Get(hash[:], nil)
 	if err != nil {
 		return turtle.URI{}, err
 	}
-	return turtle.ParseURI(string(val)), nil
+	uri := turtle.ParseURI(string(val))
+	db.uriCache[hash] = uri
+	return uri, nil
 }
 
 func (db *DB) MustGetURI(hash [4]byte) turtle.URI {
