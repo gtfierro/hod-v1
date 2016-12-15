@@ -166,3 +166,45 @@ func TestQueryParse(t *testing.T) {
 		}
 	}
 }
+
+func BenchmarkQueryParseShort(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		r := strings.NewReader("SELECT ?x WHERE { ?x rdf:type brick:Room . } ;")
+		Parse(r)
+	}
+}
+
+func BenchmarkQueryParseLong(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		r := strings.NewReader("SELECT ?x WHERE { ?y rdf:type brick:Building . { { ?x rdf:type brick:Room . ?x bf:isPartOf+ ?y .} OR { ?x rdf:type brick:Floor . ?x bf:isPartOf+ ?y .} } };")
+		Parse(r)
+	}
+}
+
+func BenchmarkOrClauseFlattenShort(b *testing.B) {
+	oc := OrClause{
+		LeftTerms:  []Filter{{Subject: turtle.ParseURI("?x"), Path: []PathPattern{PathPattern{turtle.ParseURI("rdf:type"), PATTERN_SINGLE}}, Object: turtle.ParseURI("brick:Room")}},
+		RightTerms: []Filter{{Subject: turtle.ParseURI("?x"), Path: []PathPattern{PathPattern{turtle.ParseURI("rdf:type"), PATTERN_SINGLE}}, Object: turtle.ParseURI("brick:Floor")}},
+	}
+	for i := 0; i < b.N; i++ {
+		oc.Flatten()
+	}
+}
+func BenchmarkOrClauseFlattenLong(b *testing.B) {
+	oc := OrClause{
+		RightTerms: []Filter{{Subject: turtle.ParseURI("?y"), Path: []PathPattern{PathPattern{turtle.ParseURI("rdf:type"), PATTERN_SINGLE}}, Object: turtle.ParseURI("?x")}},
+		LeftOr: []OrClause{
+			{
+				RightTerms: []Filter{{Subject: turtle.ParseURI("?y"), Path: []PathPattern{PathPattern{turtle.ParseURI("rdfs:subClassOf"), PATTERN_SINGLE}}, Object: turtle.ParseURI("?x")}},
+				LeftOr: []OrClause{
+					{
+						RightTerms: []Filter{{Subject: turtle.ParseURI("?y"), Path: []PathPattern{PathPattern{turtle.ParseURI("rdf:isa"), PATTERN_SINGLE}}, Object: turtle.ParseURI("?x")}},
+					},
+				},
+			},
+		},
+	}
+	for i := 0; i < b.N; i++ {
+		oc.Flatten()
+	}
+}
