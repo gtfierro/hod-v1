@@ -36,7 +36,7 @@ func hashTreeToEntityTree(src *btree.BTree) *btree.BTree {
 func intersectTrees(a, b *btree.BTree) *btree.BTree {
 	res := btree.New(3)
 	// early skip
-	if a.Max().Less(b.Min()) || b.Max().Less(a.Min()) {
+	if a.Len() == 0 || b.Len() == 0 || a.Max().Less(b.Min()) || b.Max().Less(a.Min()) {
 		return res
 	}
 	if a.Len() < b.Len() {
