@@ -1,6 +1,7 @@
 package db
 
 import (
+	"io"
 	"strings"
 	"testing"
 
@@ -15,7 +16,7 @@ func TestDBQuery(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	cfg.DBPath = "../testdb"
+	cfg.DBPath = "test_databases/testdb"
 	db, err := NewDB(cfg)
 	if err != nil {
 		t.Error(err)
@@ -87,21 +88,33 @@ func TestDBQuery(t *testing.T) {
 	}
 }
 
-func BenchmarkSingleVar(b *testing.B) {
+func BenchmarkQueryPerformance1(b *testing.B) {
 	cfg, err := config.ReadConfig("testhodconfig.yaml")
 	if err != nil {
 		b.Error(err)
 		return
 	}
-	cfg.DBPath = "testdb"
+	cfg.DBPath = "test_databases/berkeleytestdb"
 	db, err := NewDB(cfg)
 	if err != nil {
 		b.Error(err)
 		return
 	}
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		q, _ := query.Parse(strings.NewReader("SELECT ?x WHERE { ?x rdf:type brick:Room . };"))
-		db.RunQuery(q)
+	benchmarks := []struct {
+		name  string
+		query io.Reader
+	}{
+		{"SimpleSubjectVarTriple", strings.NewReader("SELECT ?x WHERE { ?x rdf:type brick:Room . };")},
+		{"LongerQuery1", strings.NewReader("SELECT ?vav ?room WHERE { ?vav rdf:type brick:VAV . ?room rdf:type brick:Room . ?zone rdf:type brick:HVAC_Zone . ?vav bf:feeds+ ?zone . ?room bf:isPartOf ?zone . }; ")},
+	}
+
+	for _, bm := range benchmarks {
+		b.Run(bm.name, func(b *testing.B) {
+			b.ReportAllocs()
+			for i := 0; i < b.N; i++ {
+				q, _ := query.Parse(bm.query)
+				db.RunQuery(q)
+			}
+		})
 	}
 }
