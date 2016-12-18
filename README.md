@@ -17,6 +17,9 @@ A database for [Brick](http://brickschema.org/)
 - [x] load database from disk
     - [x] save the predicate index
 - [x] make sure to load in `Brick.ttl` as well
+- [ ] need object pool to reduce allocations:
+    - [ ] btree
+    - investigate others
 
 ### Operators
 
