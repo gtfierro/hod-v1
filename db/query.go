@@ -241,7 +241,8 @@ func (db *DB) followPathFromObject(object *Entity, results *btree.BTree, searchs
 		panic(fmt.Errorf("Not found: %v (%s)", pattern.Predicate, err))
 	}
 
-	var traversed = btree.New(2)
+	var traversed = traversedBTreePool.Get()
+	defer traversedBTreePool.Put(traversed)
 
 	for stack.Len() > 0 {
 		entity := stack.Remove(stack.Front()).(*Entity)
@@ -318,7 +319,9 @@ func (db *DB) followPathFromSubject(subject *Entity, results *btree.BTree, searc
 		panic(err)
 	}
 
-	var traversed = btree.New(2)
+	var traversed = traversedBTreePool.Get()
+	defer traversedBTreePool.Put(traversed)
+
 	for stack.Len() > 0 {
 		entity := stack.Remove(stack.Front()).(*Entity)
 		if traversed.Has(Item(entity.PK)) {
@@ -403,7 +406,9 @@ func (db *DB) getSubjectFromPredObject(objectHash [4]byte, path []query.PathPatt
 	stack := list.New()
 	stack.PushFront(objEntity)
 
-	var traversed = btree.New(2)
+	var traversed = traversedBTreePool.Get()
+	defer traversedBTreePool.Put(traversed)
+
 	for idx, segment := range path {
 		reachable := btree.New(2)
 		for stack.Len() > 0 {
@@ -447,7 +452,8 @@ func (db *DB) getObjectFromSubjectPred(subjectHash [4]byte, path []query.PathPat
 	// stack of entities to search
 	stack := list.New()
 	stack.PushFront(subEntity)
-	var traversed = btree.New(2)
+	var traversed = traversedBTreePool.Get()
+	defer traversedBTreePool.Put(traversed)
 
 	// we have our starting entity; follow the first segment of the path and save everything we can reach from there.
 	// Then, from that set, search the second segment of the path, etc. We save the last reachable set
