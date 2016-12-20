@@ -91,7 +91,7 @@ func (db *DB) RunQuery(q query.Query) QueryResult {
 			row := i.(ResultRow)
 			m := make(ResultMap)
 			for idx, vname := range q.Select.Variables {
-				m[vname.String()] = row[idx]
+				m[vname.Var.String()] = row[idx]
 			}
 			result.Rows = append(result.Rows, m)
 			return row.Less(max)

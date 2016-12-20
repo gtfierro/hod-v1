@@ -24,7 +24,7 @@ func makeDependencyGraph(q query.Query) *dependencyGraph {
 		variables:  make(map[string]bool),
 	}
 	for _, v := range q.Select.Variables {
-		dg.selectVars = append(dg.selectVars, v.String())
+		dg.selectVars = append(dg.selectVars, v.Var.String())
 	}
 	return dg
 }
