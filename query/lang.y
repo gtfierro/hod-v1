@@ -13,11 +13,13 @@ import (
 %union{
     str string
     val turtle.URI
+    selectvar SelectVar
     pred []PathPattern
     multipred [][]PathPattern
     triples []Filter
     orclauses []OrClause
-    varlist []turtle.URI
+    varlist []SelectVar
+    links []Link
     distinct bool
     count bool
     partial bool
@@ -25,7 +27,7 @@ import (
 
 %token SELECT COUNT DISTINCT WHERE OR UNION PARTIAL
 %token COMMA LBRACE RBRACE LPAREN RPAREN DOT SEMICOLON SLASH PLUS QUESTION ASTERISK BAR
-%token VAR URI
+%token LINK VAR URI LBRACK RBRACK
 
 %%
 
@@ -78,13 +80,41 @@ selectClause : SELECT varList
              }
              ;
 
-varList      : VAR
+varList      : var
              {
-                $$.varlist = []turtle.URI{turtle.ParseURI($1.str)}
+                $$.varlist = []SelectVar{$1.selectvar}
              }
-             | VAR varList
+             | var varList
              {
-                $$.varlist = append([]turtle.URI{turtle.ParseURI($1.str)}, $2.varlist...)
+                $$.varlist = append([]SelectVar{$1.selectvar}, $2.varlist...)
+             }
+             ;
+
+var          : VAR LBRACK linkList RBRACK
+             {
+                $$.selectvar = SelectVar{Var: turtle.ParseURI($1.str), Links: $3.links}
+             }
+             | VAR
+             {
+                $$.selectvar = SelectVar{Var: turtle.ParseURI($1.str)}
+             }
+             ;
+
+linkList     : LINK
+             {
+                if $1.str == "*" {
+                  $$.links = []Link{{All: true}}
+                } else {
+                  $$.links = []Link{{Name: $1.str}}
+                }
+             }
+             | LINK COMMA linkList
+             {
+                if $1.str == "*" {
+                $$.links = append([]Link{{All: true}}, $3.links...)
+                } else {
+                $$.links = append([]Link{{Name: $1.str}}, $3.links...)
+                }
              }
              ;
 
@@ -240,7 +270,7 @@ const eof = 0
 type lexer struct {
     scanner *Scanner
     error   error
-    varlist []turtle.URI
+    varlist []SelectVar
     triples []Filter
     orclauses []OrClause
     distinct bool
@@ -256,6 +286,8 @@ func newlexer(r io.Reader) *lexer {
             {Token: RBRACE,  Pattern: "\\}"},
             {Token: LPAREN,  Pattern: "\\("},
             {Token: RPAREN,  Pattern: "\\)"},
+            {Token: LBRACK,  Pattern: "\\["},
+            {Token: RBRACK,  Pattern: "\\]"},
             {Token: COMMA,  Pattern: "\\,"},
             {Token: SEMICOLON,  Pattern: ";"},
             {Token: DOT,  Pattern: "\\."},
@@ -269,6 +301,7 @@ func newlexer(r io.Reader) *lexer {
             {Token: PARTIAL,  Pattern: "PARTIAL"},
             {Token: URI,  Pattern: "[a-zA-Z]+:[a-zA-Z0-9_\\-#%$@]+"},
             {Token: VAR,  Pattern: "\\?[a-zA-Z0-9_]+"},
+            {Token: LINK,  Pattern: "[a-zA-Z][a-zA-Z0-9_-]*"},
             {Token: QUESTION,  Pattern: "\\?"},
             {Token: SLASH,  Pattern: "/"},
             {Token: PLUS,  Pattern: "\\+"},

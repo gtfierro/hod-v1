@@ -15,11 +15,13 @@ type yySymType struct {
 	yys       int
 	str       string
 	val       turtle.URI
+	selectvar SelectVar
 	pred      []PathPattern
 	multipred [][]PathPattern
 	triples   []Filter
 	orclauses []OrClause
-	varlist   []turtle.URI
+	varlist   []SelectVar
+	links     []Link
 	distinct  bool
 	count     bool
 	partial   bool
@@ -44,8 +46,11 @@ const PLUS = 57361
 const QUESTION = 57362
 const ASTERISK = 57363
 const BAR = 57364
-const VAR = 57365
-const URI = 57366
+const LINK = 57365
+const VAR = 57366
+const URI = 57367
+const LBRACK = 57368
+const RBRACK = 57369
 
 var yyToknames = [...]string{
 	"$end",
@@ -70,8 +75,11 @@ var yyToknames = [...]string{
 	"QUESTION",
 	"ASTERISK",
 	"BAR",
+	"LINK",
 	"VAR",
 	"URI",
+	"LBRACK",
+	"RBRACK",
 }
 var yyStatenames = [...]string{}
 
@@ -79,14 +87,14 @@ const yyEofCode = 1
 const yyErrCode = 2
 const yyInitialStackSize = 16
 
-//line lang.y:236
+//line lang.y:266
 
 const eof = 0
 
 type lexer struct {
 	scanner   *Scanner
 	error     error
-	varlist   []turtle.URI
+	varlist   []SelectVar
 	triples   []Filter
 	orclauses []OrClause
 	distinct  bool
@@ -102,6 +110,8 @@ func newlexer(r io.Reader) *lexer {
 			{Token: RBRACE, Pattern: "\\}"},
 			{Token: LPAREN, Pattern: "\\("},
 			{Token: RPAREN, Pattern: "\\)"},
+			{Token: LBRACK, Pattern: "\\["},
+			{Token: RBRACK, Pattern: "\\]"},
 			{Token: COMMA, Pattern: "\\,"},
 			{Token: SEMICOLON, Pattern: ";"},
 			{Token: DOT, Pattern: "\\."},
@@ -115,6 +125,7 @@ func newlexer(r io.Reader) *lexer {
 			{Token: PARTIAL, Pattern: "PARTIAL"},
 			{Token: URI, Pattern: "[a-zA-Z]+:[a-zA-Z0-9_\\-#%$@]+"},
 			{Token: VAR, Pattern: "\\?[a-zA-Z0-9_]+"},
+			{Token: LINK, Pattern: "[a-zA-Z][a-zA-Z0-9_-]*"},
 			{Token: QUESTION, Pattern: "\\?"},
 			{Token: SLASH, Pattern: "/"},
 			{Token: PLUS, Pattern: "\\+"},
@@ -155,65 +166,69 @@ var yyExca = [...]int{
 	-2, 0,
 }
 
-const yyNprod = 28
+const yyNprod = 32
 const yyPrivate = 57344
 
 var yyTokenNames []string
 var yyStates []string
 
-const yyLast = 57
+const yyLast = 64
 
 var yyAct = [...]int{
 
-	17, 19, 25, 20, 21, 22, 7, 29, 35, 9,
-	8, 11, 36, 33, 21, 22, 28, 27, 45, 24,
-	48, 32, 30, 9, 9, 23, 12, 34, 37, 38,
-	39, 52, 40, 41, 45, 43, 44, 5, 46, 47,
-	42, 6, 26, 49, 50, 51, 10, 3, 4, 13,
-	14, 15, 31, 16, 18, 2, 1,
+	19, 21, 29, 25, 22, 37, 23, 24, 33, 17,
+	7, 12, 10, 26, 8, 39, 23, 24, 32, 31,
+	55, 28, 52, 36, 34, 10, 41, 27, 10, 13,
+	42, 40, 43, 44, 45, 59, 46, 47, 52, 38,
+	5, 30, 51, 35, 53, 54, 20, 6, 9, 56,
+	57, 58, 11, 49, 50, 14, 15, 16, 48, 2,
+	18, 3, 4, 1,
 }
 var yyPact = [...]int{
 
-	43, -1000, 30, 0, 1, 14, -1000, -14, -14, -14,
-	-1000, -14, -9, -1000, -1000, -1000, -1000, 12, -9, -7,
-	-9, -1000, -1000, -4, -1000, -19, -10, 9, -1000, -7,
-	-7, 27, -1000, -1000, 2, -7, -7, -1000, -1000, -1000,
-	5, -19, -1000, -9, -9, -1000, -1000, -1000, -1000, 18,
-	-1000, -1000, -1000,
+	57, -1000, 33, 4, 1, 17, -1000, -12, -12, -12,
+	-17, -1000, -12, -8, -1000, -1000, -1000, -10, -1000, 14,
+	-8, -6, -8, -1000, -1000, -22, 28, -2, -1000, -18,
+	8, 13, -1000, -6, -6, 45, -1000, -1000, -10, -1000,
+	6, -6, -6, -1000, -1000, -1000, 5, -18, -1000, -8,
+	-8, -1000, -1000, -1000, -1000, -1000, 22, -1000, -1000, -1000,
 }
 var yyPgo = [...]int{
 
-	0, 56, 55, 0, 41, 54, 1, 2, 52, 42,
+	0, 63, 59, 0, 47, 48, 3, 46, 1, 2,
+	43, 41,
 }
 var yyR1 = [...]int{
 
-	0, 1, 2, 2, 2, 2, 2, 4, 4, 3,
-	3, 5, 5, 5, 8, 8, 8, 7, 7, 7,
-	9, 9, 9, 9, 9, 9, 6, 6,
+	0, 1, 2, 2, 2, 2, 2, 4, 4, 5,
+	5, 6, 6, 3, 3, 7, 7, 7, 10, 10,
+	10, 9, 9, 9, 11, 11, 11, 11, 11, 11,
+	8, 8,
 }
 var yyR2 = [...]int{
 
-	0, 6, 2, 3, 3, 2, 3, 1, 2, 1,
-	2, 4, 5, 3, 1, 3, 3, 1, 3, 3,
-	1, 1, 2, 2, 2, 3, 1, 1,
+	0, 6, 2, 3, 3, 2, 3, 1, 2, 4,
+	1, 1, 3, 1, 2, 4, 5, 3, 1, 3,
+	3, 1, 3, 3, 1, 1, 2, 2, 2, 3,
+	1, 1,
 }
 var yyChk = [...]int{
 
-	-1000, -1, -2, 4, 5, 7, -4, 6, 10, 23,
-	-4, 10, 12, -4, -4, -4, -4, -3, -5, -6,
-	12, 23, 24, 13, -3, -7, -9, 24, 23, 14,
-	-6, -8, -3, 17, -6, 18, 22, 19, 20, 21,
-	-7, -7, 13, 8, 9, 16, -7, -7, 15, -6,
-	-3, -3, 13,
+	-1000, -1, -2, 4, 5, 7, -4, 6, 10, -5,
+	24, -4, 10, 12, -4, -4, -4, 26, -4, -3,
+	-7, -8, 12, 24, 25, -6, 23, 13, -3, -9,
+	-11, 25, 24, 14, -8, -10, -3, 27, 11, 17,
+	-8, 18, 22, 19, 20, 21, -9, -9, 13, 8,
+	9, -6, 16, -9, -9, 15, -8, -3, -3, 13,
 }
 var yyDef = [...]int{
 
 	0, -2, 0, 0, 0, 0, 2, 0, 0, 7,
-	5, 0, 0, 3, 4, 8, 6, 0, 9, 0,
-	0, 26, 27, 0, 10, 0, 17, 20, 21, 0,
-	0, 0, 14, 1, 0, 0, 0, 22, 23, 24,
-	0, 0, 13, 0, 0, 11, 18, 19, 25, 0,
-	15, 16, 12,
+	10, 5, 0, 0, 3, 4, 8, 0, 6, 0,
+	13, 0, 0, 30, 31, 0, 11, 0, 14, 0,
+	21, 24, 25, 0, 0, 0, 18, 9, 0, 1,
+	0, 0, 0, 26, 27, 28, 0, 0, 17, 0,
+	0, 12, 15, 22, 23, 29, 0, 19, 20, 16,
 }
 var yyTok1 = [...]int{
 
@@ -223,7 +238,7 @@ var yyTok2 = [...]int{
 
 	2, 3, 4, 5, 6, 7, 8, 9, 10, 11,
 	12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
-	22, 23, 24,
+	22, 23, 24, 25, 26, 27,
 }
 var yyTok3 = [...]int{
 	0,
@@ -568,7 +583,7 @@ yydefault:
 
 	case 1:
 		yyDollar = yyS[yypt-6 : yypt+1]
-		//line lang.y:33
+		//line lang.y:35
 		{
 			yylex.(*lexer).varlist = yyDollar[1].varlist
 			yylex.(*lexer).distinct = yyDollar[1].distinct
@@ -580,7 +595,7 @@ yydefault:
 		}
 	case 2:
 		yyDollar = yyS[yypt-2 : yypt+1]
-		//line lang.y:45
+		//line lang.y:47
 		{
 			yyVAL.varlist = yyDollar[2].varlist
 			yyVAL.distinct = false
@@ -589,7 +604,7 @@ yydefault:
 		}
 	case 3:
 		yyDollar = yyS[yypt-3 : yypt+1]
-		//line lang.y:52
+		//line lang.y:54
 		{
 			yyVAL.varlist = yyDollar[3].varlist
 			yyVAL.distinct = true
@@ -598,7 +613,7 @@ yydefault:
 		}
 	case 4:
 		yyDollar = yyS[yypt-3 : yypt+1]
-		//line lang.y:59
+		//line lang.y:61
 		{
 			yyVAL.varlist = yyDollar[3].varlist
 			yyVAL.distinct = false
@@ -607,7 +622,7 @@ yydefault:
 		}
 	case 5:
 		yyDollar = yyS[yypt-2 : yypt+1]
-		//line lang.y:66
+		//line lang.y:68
 		{
 			yyVAL.varlist = yyDollar[2].varlist
 			yyVAL.distinct = false
@@ -616,7 +631,7 @@ yydefault:
 		}
 	case 6:
 		yyDollar = yyS[yypt-3 : yypt+1]
-		//line lang.y:73
+		//line lang.y:75
 		{
 			yyVAL.varlist = yyDollar[3].varlist
 			yyVAL.distinct = false
@@ -625,19 +640,51 @@ yydefault:
 		}
 	case 7:
 		yyDollar = yyS[yypt-1 : yypt+1]
-		//line lang.y:82
+		//line lang.y:84
 		{
-			yyVAL.varlist = []turtle.URI{turtle.ParseURI(yyDollar[1].str)}
+			yyVAL.varlist = []SelectVar{yyDollar[1].selectvar}
 		}
 	case 8:
 		yyDollar = yyS[yypt-2 : yypt+1]
-		//line lang.y:86
+		//line lang.y:88
 		{
-			yyVAL.varlist = append([]turtle.URI{turtle.ParseURI(yyDollar[1].str)}, yyDollar[2].varlist...)
+			yyVAL.varlist = append([]SelectVar{yyDollar[1].selectvar}, yyDollar[2].varlist...)
 		}
 	case 9:
+		yyDollar = yyS[yypt-4 : yypt+1]
+		//line lang.y:94
+		{
+			yyVAL.selectvar = SelectVar{Var: turtle.ParseURI(yyDollar[1].str), Links: yyDollar[3].links}
+		}
+	case 10:
 		yyDollar = yyS[yypt-1 : yypt+1]
-		//line lang.y:92
+		//line lang.y:98
+		{
+			yyVAL.selectvar = SelectVar{Var: turtle.ParseURI(yyDollar[1].str)}
+		}
+	case 11:
+		yyDollar = yyS[yypt-1 : yypt+1]
+		//line lang.y:104
+		{
+			if yyDollar[1].str == "*" {
+				yyVAL.links = []Link{{All: true}}
+			} else {
+				yyVAL.links = []Link{{Name: yyDollar[1].str}}
+			}
+		}
+	case 12:
+		yyDollar = yyS[yypt-3 : yypt+1]
+		//line lang.y:112
+		{
+			if yyDollar[1].str == "*" {
+				yyVAL.links = append([]Link{{All: true}}, yyDollar[3].links...)
+			} else {
+				yyVAL.links = append([]Link{{Name: yyDollar[1].str}}, yyDollar[3].links...)
+			}
+		}
+	case 13:
+		yyDollar = yyS[yypt-1 : yypt+1]
+		//line lang.y:122
 		{
 			if len(yyDollar[1].orclauses) > 0 {
 				yyVAL.orclauses = yyDollar[1].orclauses
@@ -645,16 +692,16 @@ yydefault:
 				yyVAL.triples = yyDollar[1].triples
 			}
 		}
-	case 10:
+	case 14:
 		yyDollar = yyS[yypt-2 : yypt+1]
-		//line lang.y:100
+		//line lang.y:130
 		{
 			yyVAL.triples = append(yyDollar[2].triples, yyDollar[1].triples...)
 			yyVAL.orclauses = append(yyDollar[2].orclauses, yyDollar[1].orclauses...)
 		}
-	case 11:
+	case 15:
 		yyDollar = yyS[yypt-4 : yypt+1]
-		//line lang.y:107
+		//line lang.y:137
 		{
 			triple := Filter{Subject: yyDollar[1].val, Object: yyDollar[3].val}
 			if len(yyDollar[2].multipred) > 0 {
@@ -674,9 +721,9 @@ yydefault:
 				yyVAL.triples = []Filter{triple}
 			}
 		}
-	case 12:
+	case 16:
 		yyDollar = yyS[yypt-5 : yypt+1]
-		//line lang.y:127
+		//line lang.y:157
 		{
 			triple := Filter{Subject: yyDollar[2].val, Object: yyDollar[4].val}
 			if len(yyDollar[3].multipred) > 0 {
@@ -696,9 +743,9 @@ yydefault:
 				yyVAL.triples = []Filter{triple}
 			}
 		}
-	case 13:
+	case 17:
 		yyDollar = yyS[yypt-3 : yypt+1]
-		//line lang.y:147
+		//line lang.y:177
 		{
 			if len(yyDollar[2].orclauses) > 0 {
 				yyVAL.orclauses = yyDollar[2].orclauses
@@ -706,46 +753,46 @@ yydefault:
 				yyVAL.triples = yyDollar[2].triples
 			}
 		}
-	case 14:
+	case 18:
 		yyDollar = yyS[yypt-1 : yypt+1]
-		//line lang.y:157
+		//line lang.y:187
 		{
 			yyVAL.triples = yyDollar[1].triples
 			yyVAL.orclauses = yyDollar[1].orclauses
 		}
-	case 15:
+	case 19:
 		yyDollar = yyS[yypt-3 : yypt+1]
-		//line lang.y:162
+		//line lang.y:192
 		{
 			yyVAL.orclauses = []OrClause{{LeftOr: yyDollar[3].orclauses,
 				LeftTerms:  yyDollar[3].triples,
 				RightOr:    yyDollar[1].orclauses,
 				RightTerms: yyDollar[1].triples}}
 		}
-	case 16:
+	case 20:
 		yyDollar = yyS[yypt-3 : yypt+1]
-		//line lang.y:169
+		//line lang.y:199
 		{
 			yyVAL.orclauses = []OrClause{{LeftOr: yyDollar[3].orclauses,
 				LeftTerms:  yyDollar[3].triples,
 				RightOr:    yyDollar[1].orclauses,
 				RightTerms: yyDollar[1].triples}}
 		}
-	case 17:
+	case 21:
 		yyDollar = yyS[yypt-1 : yypt+1]
-		//line lang.y:179
+		//line lang.y:209
 		{
 			yyVAL.pred = yyDollar[1].pred
 		}
-	case 18:
+	case 22:
 		yyDollar = yyS[yypt-3 : yypt+1]
-		//line lang.y:183
+		//line lang.y:213
 		{
 			yyVAL.pred = append(yyDollar[1].pred, yyDollar[3].pred...)
 		}
-	case 19:
+	case 23:
 		yyDollar = yyS[yypt-3 : yypt+1]
-		//line lang.y:187
+		//line lang.y:217
 		{
 			if len(yyDollar[1].multipred) > 0 {
 				yyVAL.multipred = append(yyVAL.multipred, yyDollar[1].multipred...)
@@ -758,51 +805,51 @@ yydefault:
 				yyVAL.multipred = append(yyVAL.multipred, yyDollar[3].pred)
 			}
 		}
-	case 20:
+	case 24:
 		yyDollar = yyS[yypt-1 : yypt+1]
-		//line lang.y:202
+		//line lang.y:232
 		{
 			yyVAL.pred = []PathPattern{{Predicate: turtle.ParseURI(yyDollar[1].str), Pattern: PATTERN_SINGLE}}
 		}
-	case 21:
+	case 25:
 		yyDollar = yyS[yypt-1 : yypt+1]
-		//line lang.y:206
+		//line lang.y:236
 		{
 			yyVAL.pred = []PathPattern{{Predicate: turtle.ParseURI(yyDollar[1].str), Pattern: PATTERN_SINGLE}}
 		}
-	case 22:
+	case 26:
 		yyDollar = yyS[yypt-2 : yypt+1]
-		//line lang.y:210
+		//line lang.y:240
 		{
 			yyVAL.pred = []PathPattern{{Predicate: turtle.ParseURI(yyDollar[1].str), Pattern: PATTERN_ONE_PLUS}}
 		}
-	case 23:
+	case 27:
 		yyDollar = yyS[yypt-2 : yypt+1]
-		//line lang.y:214
+		//line lang.y:244
 		{
 			yyVAL.pred = []PathPattern{{Predicate: turtle.ParseURI(yyDollar[1].str), Pattern: PATTERN_ZERO_ONE}}
 		}
-	case 24:
+	case 28:
 		yyDollar = yyS[yypt-2 : yypt+1]
-		//line lang.y:218
+		//line lang.y:248
 		{
 			yyVAL.pred = []PathPattern{{Predicate: turtle.ParseURI(yyDollar[1].str), Pattern: PATTERN_ZERO_PLUS}}
 		}
-	case 25:
+	case 29:
 		yyDollar = yyS[yypt-3 : yypt+1]
-		//line lang.y:222
+		//line lang.y:252
 		{
 			yyVAL.pred = yyDollar[2].pred
 		}
-	case 26:
+	case 30:
 		yyDollar = yyS[yypt-1 : yypt+1]
-		//line lang.y:228
+		//line lang.y:258
 		{
 			yyVAL.val = turtle.ParseURI(yyDollar[1].str)
 		}
-	case 27:
+	case 31:
 		yyDollar = yyS[yypt-1 : yypt+1]
-		//line lang.y:232
+		//line lang.y:262
 		{
 			yyVAL.val = turtle.ParseURI(yyDollar[1].str)
 		}

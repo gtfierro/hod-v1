@@ -11,10 +11,20 @@ type Query struct {
 }
 
 type SelectClause struct {
-	Variables []turtle.URI
+	Variables []SelectVar
 	Distinct  bool
 	Count     bool
 	Partial   bool
+}
+
+type SelectVar struct {
+	Var   turtle.URI
+	Links []Link
+}
+
+type Link struct {
+	Name string
+	All  bool
 }
 
 type WhereClause struct {
