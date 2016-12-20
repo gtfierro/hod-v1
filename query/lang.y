@@ -301,7 +301,7 @@ func newlexer(r io.Reader) *lexer {
             {Token: PARTIAL,  Pattern: "PARTIAL"},
             {Token: URI,  Pattern: "[a-zA-Z]+:[a-zA-Z0-9_\\-#%$@]+"},
             {Token: VAR,  Pattern: "\\?[a-zA-Z0-9_]+"},
-            {Token: LINK,  Pattern: "[a-zA-Z][a-zA-Z0-9_-]*"},
+            {Token: LINK,  Pattern: "\\*|([a-zA-Z][a-zA-Z0-9_-]*)"},
             {Token: QUESTION,  Pattern: "\\?"},
             {Token: SLASH,  Pattern: "/"},
             {Token: PLUS,  Pattern: "\\+"},

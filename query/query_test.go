@@ -153,6 +153,22 @@ func TestQueryParse(t *testing.T) {
 				[]OrClause{},
 			},
 		},
+		{
+			"SELECT ?x[link1, link2] WHERE { ?x rdf:type brick:Room . } ;",
+			SelectClause{Variables: []SelectVar{{Var: turtle.ParseURI("?x"), Links: []Link{{Name: "link1"}, {Name: "link2"}}}}},
+			WhereClause{
+				[]Filter{{Subject: turtle.ParseURI("?x"), Path: []PathPattern{PathPattern{turtle.ParseURI("rdf:type"), PATTERN_SINGLE}}, Object: turtle.ParseURI("brick:Room")}},
+				[]OrClause{},
+			},
+		},
+		{
+			"SELECT ?x[*] WHERE { ?x rdf:type brick:Room . } ;",
+			SelectClause{Variables: []SelectVar{{Var: turtle.ParseURI("?x"), Links: []Link{{All: true}}}}},
+			WhereClause{
+				[]Filter{{Subject: turtle.ParseURI("?x"), Path: []PathPattern{PathPattern{turtle.ParseURI("rdf:type"), PATTERN_SINGLE}}, Object: turtle.ParseURI("brick:Room")}},
+				[]OrClause{},
+			},
+		},
 	} {
 		r := strings.NewReader(test.str)
 		q, e := Parse(r)
