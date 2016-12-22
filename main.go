@@ -58,6 +58,17 @@ func main() {
 			},
 		},
 		{
+			Name:   "loadLinks",
+			Usage:  "Load link json file into hoddb",
+			Action: loadLinks,
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:  "config, c",
+					Usage: "Path to hoddb config file",
+				},
+			},
+		},
+		{
 			Name:   "cli",
 			Usage:  "Start hoddb from existing database",
 			Action: startCLI,
