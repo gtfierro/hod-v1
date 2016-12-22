@@ -116,6 +116,12 @@ func NewDB(cfg *config.Config) (*DB, error) {
 		uriCache:               make(map[[4]byte]turtle.URI),
 	}
 
+	linkDB, err := newLinkDB(db, cfg)
+	if err != nil {
+		return nil, errors.Wrap(err, "Could not create linkDB")
+	}
+	db.linkDB = linkDB
+
 	// load predIndex and relationships from database
 	predIndexPath := path + "/predIndex"
 	relshipIndexPath := path + "/relshipIndex"
