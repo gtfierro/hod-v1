@@ -12,6 +12,7 @@ import (
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/filter"
 	"github.com/syndtr/goleveldb/leveldb/opt"
+	"github.com/syndtr/goleveldb/leveldb/util"
 )
 
 // TODO: integrate this in with the db. Two pars:
@@ -178,7 +179,24 @@ func (ldb *linkDB) get(link *Link) (value []byte, err error) {
 	return
 }
 
-func (ldb *linkDB) getAll(tx *leveldb.Transaction, entity [4]byte) (keys [][]byte, values [][]byte) {
+func (ldb *linkDB) getAll(entity [4]byte) (keys [][]byte, values [][]byte, err error) {
+	var start, limit [16]byte
+	copy(start[:], entity[:])
+	for i := 4; i < 16; i++ {
+		start[i] = 0
+	}
+	copy(limit[:], entity[:])
+	for i := 4; i < 16; i++ {
+		limit[i] = 0xFF
+	}
+	keyrange := &util.Range{Start: start[:], Limit: limit[:]}
+	iter := ldb.db.NewIterator(keyrange, nil)
+	for iter.Next() {
+		keys = append(keys, iter.Key())
+		values = append(values, iter.Value())
+	}
+	iter.Release()
+	err = iter.Error()
 	return
 }
 

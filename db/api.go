@@ -73,22 +73,40 @@ func (db *DB) RunQuery(q query.Query) QueryResult {
 			var links = make(LinkResultMap)
 			var hasContent = false
 			for idx, selectvar := range q.Select.Variables {
-				if len(selectvar.Links) == 0 {
+				if len(selectvar.Links) == 0 && !selectvar.AllLinks {
 					continue
 				}
-				// TODO: check for select all
-				for _, _link := range selectvar.Links {
-					link := &Link{URI: row[idx], Key: []byte(_link.Name)}
-					value, err := db.linkDB.get(link)
+				// check for select all
+				if selectvar.AllLinks {
+					hash, err := db.GetHash(row[idx])
 					if err != nil {
 						log.Fatal(err)
 					}
-					if len(links[row[idx]]) == 0 {
+					keys, values, err := db.linkDB.getAll(hash)
+					if err != nil {
+						log.Fatal(err)
+					}
+					if len(keys) > 0 {
+						hasContent = true
 						links[row[idx]] = make(map[string]string)
 					}
-					if len(value) > 0 {
-						links[row[idx]][string(link.Key)] = string(value)
-						hasContent = true
+					for i := 0; i < len(keys); i++ {
+						links[row[idx]][string(keys[i])] = string(values[i])
+					}
+				} else {
+					for _, _link := range selectvar.Links {
+						link := &Link{URI: row[idx], Key: []byte(_link.Name)}
+						value, err := db.linkDB.get(link)
+						if err != nil {
+							log.Fatal(err)
+						}
+						if len(links[row[idx]]) == 0 {
+							links[row[idx]] = make(map[string]string)
+						}
+						if len(value) > 0 {
+							links[row[idx]][string(link.Key)] = string(value)
+							hasContent = true
+						}
 					}
 				}
 			}
