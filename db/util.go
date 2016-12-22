@@ -1,6 +1,7 @@
 package db
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/google/btree"
 )
@@ -118,4 +119,48 @@ func compareResultMap(rm1, rm2 ResultMap) bool {
 		}
 	}
 	return true
+}
+
+func compareLinkUpdates(up1, up2 *LinkUpdates) bool {
+	var found bool
+	if len(up1.Adding) != len(up2.Adding) {
+		return false
+	}
+	if len(up1.Removing) != len(up2.Removing) {
+		return false
+	}
+	for _, val1 := range up1.Adding {
+		found = false
+		for _, val2 := range up2.Adding {
+			if compareLink(val1, val2) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return false
+		}
+	}
+
+	for _, val1 := range up1.Removing {
+		found = false
+		for _, val2 := range up2.Removing {
+			if compareLink(val1, val2) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return false
+		}
+	}
+
+	return true
+}
+
+func compareLink(l1, l2 *Link) bool {
+	return l1.URI == l2.URI &&
+		l1.entity == l2.entity &&
+		bytes.Equal(l1.Key, l2.Key) &&
+		bytes.Equal(l1.Value, l2.Value)
 }
