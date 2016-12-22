@@ -19,13 +19,13 @@ type SelectClause struct {
 }
 
 type SelectVar struct {
-	Var   turtle.URI
-	Links []Link
+	Var      turtle.URI
+	AllLinks bool
+	Links    []Link
 }
 
 type Link struct {
 	Name string
-	All  bool
 }
 
 type WhereClause struct {
@@ -163,7 +163,7 @@ func Parse(r io.Reader) (Query, error) {
 	q := Query{}
 	q.Select = SelectClause{Variables: l.varlist, Distinct: l.distinct, Count: l.count, Partial: l.partial}
 	for _, selectvar := range l.varlist {
-		if len(selectvar.Links) > 0 {
+		if len(selectvar.Links) > 0 || selectvar.AllLinks {
 			q.Select.HasLinks = true
 			break
 		}

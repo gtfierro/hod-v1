@@ -23,6 +23,7 @@ import (
     distinct bool
     count bool
     partial bool
+    selectAllLinks bool
 }
 
 %token SELECT COUNT DISTINCT WHERE OR UNION PARTIAL
@@ -92,18 +93,22 @@ varList      : var
 
 var          : VAR LBRACK linkList RBRACK
              {
-                $$.selectvar = SelectVar{Var: turtle.ParseURI($1.str), Links: $3.links}
+                if $3.selectAllLinks {
+                $$.selectvar = SelectVar{Var: turtle.ParseURI($1.str), AllLinks: true}
+                } else {
+                $$.selectvar = SelectVar{Var: turtle.ParseURI($1.str), AllLinks: false, Links: $3.links}
+                }
              }
              | VAR
              {
-                $$.selectvar = SelectVar{Var: turtle.ParseURI($1.str)}
+                $$.selectvar = SelectVar{Var: turtle.ParseURI($1.str), AllLinks: false}
              }
              ;
 
 linkList     : LINK
              {
                 if $1.str == "*" {
-                  $$.links = []Link{{All: true}}
+                  $$.selectAllLinks = true
                 } else {
                   $$.links = []Link{{Name: $1.str}}
                 }
@@ -111,9 +116,9 @@ linkList     : LINK
              | LINK COMMA linkList
              {
                 if $1.str == "*" {
-                $$.links = append([]Link{{All: true}}, $3.links...)
+                    $$.selectAllLinks = true
                 } else {
-                $$.links = append([]Link{{Name: $1.str}}, $3.links...)
+                    $$.links = append([]Link{{Name: $1.str}}, $3.links...)
                 }
              }
              ;
