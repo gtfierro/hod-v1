@@ -1,0 +1,116 @@
+<html>
+  <head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="lib/codemirror.css">
+    <script src="lib/codemirror.js"></script>
+    <script src="addon/edit/matchbrackets.js"></script>
+    <script src="mode/sparql/sparql.js"></script>
+    <script src="mode/python/python.js"></script>
+    <!--Import Google Icon Font-->
+    <link href="http://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <!--Import materialize.css-->
+    <link type="text/css" rel="stylesheet" href="css/materialize.min.css"  media="screen,projection"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <style>
+        body {
+            margin:40px auto;
+            line-height:1.6;
+            font-size:18px;
+            font-family: Inconsolata, monospace;
+            color:#444;
+            padding:0 10px;
+            font-weight: 400;
+            line-height: 24px;
+        }
+        h1,h2,h3 {
+            line-height:1.2;
+            color:#333;
+            text-align: left;
+        }
+        a {
+            text-decoration: none;
+        }
+        a:link {
+            color: black;
+        }
+        a:visited {
+            color: black;
+        }
+        a:active {
+            color: black;
+        }
+        a:hover {
+            color: blue;
+            border-bottom:1px dotted black;
+        }
+        .CodeMirror {
+            border-top: 1px solid black;
+            border-bottom: 1px solid black;
+        }
+    </style>
+  	<title>HodDB Query</title>
+  </head>
+  <body>
+    <!--Import jQuery before materialize.js-->
+    <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+    <script type="text/javascript" src="js/materialize.min.js"></script>
+    <div class="container">
+      <h1>HodDB Query</h1>
+      <div class="row">
+        <nav>
+          <div class="nav-wrapper blue lighten-3">
+            <!--<a href="#" class="brand-logo center">Logo</a>-->
+            <ul id="nav-mobile" class="left hide-on-med-and-down">
+              <li><a href="#">Query</a></li>
+              <li><a href="#">Visualize</a></li>
+              <li><a href="#">Documentation</a></li>
+            </ul>
+          </div>
+        </nav>
+      </div>
+      <div class="row">
+		<div class="col s3">
+            <div class="input-field col s12">
+              <button class="btn waves-effect waves-light" form="queryform" type="submit" name="action">Run Query</button>
+              <ul class="collapsible" data-collapsible="accordion">
+                <li>
+                    <div class="collapsible-header teal lighten-2">Common Queries<i class="material-icons">expand_more</i></div>
+                    <div class="collapsible-body">
+                        <ul class="collection">
+                            <a href="#" class="collection-item">Query #1</a>
+                            <a href="#" class="collection-item">Query #2</a>
+                            <a href="#" class="collection-item">Query #3</a>
+                            <a href="#" class="collection-item">Query #4</a>
+                        </ul>
+                    </div>
+                </li>
+              </ul>
+            </div>
+		</div>
+		<div class="col s9">
+          <div class="input-field col s12">
+            <form form="queryform" class="col s12">
+                <textarea id="queryarea" name="queryarea">
+SELECT ?vav WHERE {
+    ?vav rdf:type brick:VAV .
+};</textarea>
+            </form>
+          </div>
+		</div>
+      </div>
+    </div>
+    <script type="text/javascript">
+          var textarea = document.getElementById("queryarea");
+          var cm = CodeMirror.fromTextArea(textarea, {
+            mode:  "application/sparql-query",
+            matchBrackets: true,
+            lineNumbers: true
+          });
+          //cm.setSize("100%",200);
+          cm.refresh();
+
+          $('.collapsible').collapsible();
+    </script>
+  </body>
+</html>
