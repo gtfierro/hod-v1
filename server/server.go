@@ -84,6 +84,8 @@ func StartHodServer(db *hod.DB, cfg *config.Config) {
 		defer profile.Start(profile.CPUProfile, profile.ProfilePath(".")).Stop()
 	} else if cfg.EnableMEMProfile {
 		defer profile.Start(profile.MemProfile, profile.ProfilePath(".")).Stop()
+	} else if cfg.EnableBlockProfile {
+		defer profile.Start(profile.BlockProfile, profile.ProfilePath(".")).Stop()
 	}
 
 	log.Fatal(srv.ListenAndServe())

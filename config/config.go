@@ -20,8 +20,9 @@ type Config struct {
 	UseIPv6    bool
 	Localhost  bool
 
-	EnableCPUProfile bool
-	EnableMEMProfile bool
+	EnableCPUProfile   bool
+	EnableMEMProfile   bool
+	EnableBlockProfile bool
 }
 
 func init() {
@@ -43,6 +44,7 @@ func init() {
 
 	viper.SetDefault("EnableCPUProfile", false)
 	viper.SetDefault("EnableMEMProfile", false)
+	viper.SetDefault("EnableBlockProfile", false)
 
 	viper.SetConfigName("hodconfig")
 	// set search paths for config
@@ -72,6 +74,7 @@ func ReadConfig(file string) (*Config, error) {
 		Localhost:              viper.GetBool("Localhost"),
 		EnableCPUProfile:       viper.GetBool("EnableCPUProfile"),
 		EnableMEMProfile:       viper.GetBool("EnableMEMProfile"),
+		EnableBlockProfile:     viper.GetBool("EnableBlockProfile"),
 	}
 	return c, nil
 }
