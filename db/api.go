@@ -63,8 +63,43 @@ func (db *DB) RunQuery(q query.Query) QueryResult {
 	var result QueryResult
 
 	if q.Select.Count {
+		// return the count of results
 		result.Count = unionedRows.Len()
+	} else if q.Select.HasLinks {
+		// resolve the links
+		max := unionedRows.Max()
+		iter := func(i btree.Item) bool {
+			row := i.(ResultRow)
+			var links = make(LinkResultMap)
+			var hasContent = false
+			for idx, selectvar := range q.Select.Variables {
+				if len(selectvar.Links) == 0 {
+					continue
+				}
+				// TODO: check for select all
+				for _, _link := range selectvar.Links {
+					link := &Link{URI: row[idx], Key: []byte(_link.Name)}
+					value, err := db.linkDB.get(link)
+					if err != nil {
+						log.Fatal(err)
+					}
+					if len(links[row[idx]]) == 0 {
+						links[row[idx]] = make(map[string]string)
+					}
+					if len(value) > 0 {
+						links[row[idx]][string(link.Key)] = string(value)
+						hasContent = true
+					}
+				}
+			}
+			if hasContent {
+				result.Links = append(result.Links, links)
+			}
+			return row.Less(max)
+		}
+		unionedRows.Ascend(iter)
 	} else {
+		// return the rows
 		max := unionedRows.Max()
 		iter := func(i btree.Item) bool {
 			row := i.(ResultRow)

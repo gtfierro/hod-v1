@@ -161,7 +161,7 @@ func (ldb *linkDB) commitTx(tx *leveldb.Transaction) error {
 	return tx.Commit()
 }
 
-func (ldb *linkDB) get(tx *leveldb.Transaction, link *Link) (value []byte, err error) {
+func (ldb *linkDB) get(link *Link) (value []byte, err error) {
 	var fetchKey [64]byte
 	var exists bool
 	if len(link.Key) > MaxKeyLength {
@@ -169,8 +169,8 @@ func (ldb *linkDB) get(tx *leveldb.Transaction, link *Link) (value []byte, err e
 		return
 	}
 	ldb.getKey(link, &fetchKey)
-	if exists, err = tx.Has(fetchKey[:], nil); err == nil && exists {
-		value, err = tx.Get(fetchKey[:], nil)
+	if exists, err = ldb.db.Has(fetchKey[:], nil); err == nil && exists {
+		value, err = ldb.db.Get(fetchKey[:], nil)
 		return
 	} else if err != nil {
 		return

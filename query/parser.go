@@ -15,6 +15,7 @@ type SelectClause struct {
 	Distinct  bool
 	Count     bool
 	Partial   bool
+	HasLinks  bool
 }
 
 type SelectVar struct {
@@ -161,6 +162,12 @@ func Parse(r io.Reader) (Query, error) {
 	}
 	q := Query{}
 	q.Select = SelectClause{Variables: l.varlist, Distinct: l.distinct, Count: l.count, Partial: l.partial}
+	for _, selectvar := range l.varlist {
+		if len(selectvar.Links) > 0 {
+			q.Select.HasLinks = true
+			break
+		}
+	}
 	q.Where = WhereClause{
 		Filters: []Filter{},
 		Ors:     []OrClause{},

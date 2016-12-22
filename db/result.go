@@ -16,6 +16,7 @@ the results of the query.
 
 type QueryResult struct {
 	Rows  []ResultMap
+	Links []LinkResultMap
 	Count int
 }
 
@@ -26,10 +27,17 @@ func (qr QueryResult) Dump() {
 		}
 		return
 	}
+	if len(qr.Links) > 0 {
+		for _, link := range qr.Links {
+			fmt.Println(link)
+		}
+		return
+	}
 	fmt.Println(qr.Count)
 }
 
 type ResultMap map[string]turtle.URI
+type LinkResultMap map[turtle.URI]map[string]string
 
 type ResultRow []turtle.URI
 
