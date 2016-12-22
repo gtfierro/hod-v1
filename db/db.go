@@ -171,7 +171,7 @@ func NewDB(cfg *config.Config) (*DB, error) {
 		p := turtle.GetParser()
 		relships, _ := p.Parse(cfg.BrickFrameTTL)
 		classships, _ := p.Parse(cfg.BrickClassTTL)
-		err = db.LoadRelationships(relships)
+		err = db.loadRelationships(relships)
 		if err != nil {
 			return nil, err
 		}
@@ -179,7 +179,7 @@ func NewDB(cfg *config.Config) (*DB, error) {
 		if err != nil {
 			return nil, err
 		}
-		err = db.SaveIndexes()
+		err = db.saveIndexes()
 		if err != nil {
 			return nil, err
 		}
@@ -312,7 +312,7 @@ func (db *DB) loadPredicateEntity(predicate turtle.URI, _predicateHash, _subject
 	return nil
 }
 
-func (db *DB) SaveIndexes() error {
+func (db *DB) saveIndexes() error {
 	f, err := os.Create(db.path + "/predIndex")
 	if err != nil {
 		return err
@@ -352,7 +352,7 @@ func (db *DB) SaveIndexes() error {
 	return nil
 }
 
-func (db *DB) LoadRelationships(dataset turtle.DataSet) error {
+func (db *DB) loadRelationships(dataset turtle.DataSet) error {
 	// iterate through dataset, and pull out all that have a "rdf:type" of "owl:ObjectProperty"
 	// then we want to find the mapping that has "owl:inverseOf"
 	var relationships = make(map[turtle.URI]struct{})
@@ -463,7 +463,7 @@ func (db *DB) LoadDataset(dataset turtle.DataSet) error {
 		fmt.Printf("%s => %s\n", pfx, uri)
 	}
 	// save indexes after loading database
-	err = db.SaveIndexes()
+	err = db.saveIndexes()
 	if err != nil {
 		return err
 	}

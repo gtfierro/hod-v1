@@ -4,7 +4,6 @@ import (
 	"container/list"
 	"encoding/binary"
 	"fmt"
-	"sync"
 	"time"
 
 	"github.com/google/btree"
@@ -28,77 +27,6 @@ type Item [4]byte
 func (i Item) Less(than btree.Item) bool {
 	t := than.(Item)
 	return binary.LittleEndian.Uint32(i[:]) < binary.LittleEndian.Uint32(t[:])
-}
-
-func (db *DB) RunQuery(q query.Query) QueryResult {
-	// "clean" the query by expanding out the prefixes
-	// make sure to first do the Filters, then the Or clauses
-	for idx, filter := range q.Where.Filters {
-		q.Where.Filters[idx] = db.expandFilter(filter)
-	}
-	for idx, orclause := range q.Where.Ors {
-		q.Where.Ors[idx] = db.expandOrClauseFilters(orclause)
-	}
-
-	// we flatten the OR clauses to get the array of queries we are going
-	// to run and then merge
-	orTerms := query.FlattenOrClauseList(q.Where.Ors)
-	oldFilters := q.Where.Filters
-
-	unionedRows := btree.New(3)
-	fullQueryStart := time.Now()
-
-	// if we have terms that are part of a set of OR statements, then we run
-	// parallel queries for each fully-elaborated "branch" or the OR statement,
-	// and then merge the results together at the end
-	if len(orTerms) > 0 {
-		var rowLock sync.Mutex
-		var wg sync.WaitGroup
-		wg.Add(len(orTerms))
-		for _, orTerm := range orTerms {
-			orTerm := orTerm
-			q := q
-			go func(orTerm []query.Filter) {
-				// augment with the filters
-				q.Where.Filters = append(oldFilters, orTerm...)
-				results := db.getQueryResults(q)
-				rowLock.Lock()
-				for _, row := range results {
-					unionedRows.ReplaceOrInsert(ResultRow(row))
-				}
-				rowLock.Unlock()
-				wg.Done()
-			}(orTerm)
-		}
-		wg.Wait()
-	} else {
-		results := db.getQueryResults(q)
-		for _, row := range results {
-			unionedRows.ReplaceOrInsert(ResultRow(row))
-		}
-	}
-	if db.showQueryLatencies {
-		log.Noticef("Full Query took %s", time.Since(fullQueryStart))
-	}
-
-	var result QueryResult
-
-	if q.Select.Count {
-		result.Count = unionedRows.Len()
-	} else {
-		max := unionedRows.Max()
-		iter := func(i btree.Item) bool {
-			row := i.(ResultRow)
-			m := make(ResultMap)
-			for idx, vname := range q.Select.Variables {
-				m[vname.Var.String()] = row[idx]
-			}
-			result.Rows = append(result.Rows, m)
-			return row.Less(max)
-		}
-		unionedRows.Ascend(iter)
-	}
-	return result
 }
 
 func (db *DB) getQueryResults(q query.Query) [][]turtle.URI {
