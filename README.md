@@ -20,6 +20,11 @@ A database for [Brick](http://brickschema.org/)
 - [ ] need object pool to reduce allocations:
     - [ ] btree
     - investigate others
+- [ ] easy backups:
+    - periodic zips?
+    - explicit command?
+    - leveldb should make this easy
+    - periodic compact range before dumping?
 
 ### Operators
 
@@ -54,7 +59,7 @@ Filters:
 
 Features:
 - key/value pairs:
-    - [ ] plan out the structure and how these fit into database:
+    - [x] plan out the structure and how these fit into database:
         - maybe want to call these 'links'? They are really just pointers
           to other data sources, e.g. URI or UUID
         - can also be timestamp (date added, etc)
@@ -79,3 +84,69 @@ Features:
         - Consider adding a type of "generation lock":
             - query the most recent generation, and keep me querying on that generation
               until I release the lock
+
+### Key-Value Pairs on Nodes
+
+Called 'links':
+- do we 'type' these, e.g. URI, UUID, etc? or just leave as text:
+    - probably want to leave as text? But there are standard values
+    - `UUID`
+    - `BW_URI`
+    - `HTTP_URI`
+    - also support timestamp type w/ key-value
+- stored in their own database:
+    - struct is:
+        ```golang
+        type Link struct {
+            Entity [4]byte
+            Key []byte
+            Value []byte
+        }
+        ```
+    - btree key is entity + keyname, so we can easily do prefix iteration over the entity prefix to get the keys for that
+- links are not integrated into the selection clause:
+    - they are not a way to distinguish between nodes; only to retrieve extra information about the nodes
+    - links are retrieved upon the resolution of the select clause
+- select clause syntax:
+  ```
+  // select the URI for the sensor
+  SELECT ?sensor[uri] WHERE
+
+  // select the time-added for the vav and uri for the sensor
+  SELECT ?vav[added] ?sensor[uri] WHERE
+
+  // select the uri and uuid of the sensor
+  SELECT ?sensor[uri,uuid] WHERE
+
+  // get all links for the sensor
+  SELECT ?sensor[*] WHERE
+  ```
+- how are the links added? These are not part of TTL:
+    - idea 1: interpret a special TTL relationships (bf:hasLink, for example) as a "link"
+        - would then need to infer type?
+        - this requires too many relationships:
+            ```
+            ?vav hasLink ex:link-1
+            ex:link-1 hasKey <key here>
+            ex:link-1 hasValue <value here>
+            ```
+            what if it had key and no value, etc
+    - idea 2: separate file that is loaded in
+    - idea 3: api that can be called (either query language or some format get sent in over network).
+        - What would data format be?
+         ```json
+            {
+             ex:temp-sensor-1:
+                {
+                    URI: ucberkeley/eecs/soda/sensors/etcetc/1,
+                    UUID: abcdef,
+                },
+             ex:temp-sensor-2:
+                {
+                    URI: ucberkeley/eecs/soda/sensors/etcetc/2,
+                    UUID: ghijkl,
+                }
+            }
+         ```
+
+
