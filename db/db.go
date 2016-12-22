@@ -16,6 +16,8 @@ import (
 	"github.com/op/go-logging"
 	"github.com/pkg/errors"
 	"github.com/syndtr/goleveldb/leveldb"
+	"github.com/syndtr/goleveldb/leveldb/filter"
+	"github.com/syndtr/goleveldb/leveldb/opt"
 	"github.com/tinylib/msgp/msgp"
 	"github.com/zhangxinngang/murmur"
 )
@@ -44,6 +46,8 @@ type DB struct {
 	predIndex map[turtle.URI]*PredicateEntity
 	// graph structure
 	graphDB *leveldb.DB
+	// node link structure
+	linkDB *linkDB
 	// store relationships and their inverses
 	relationships map[turtle.URI]turtle.URI
 	// store the namespace prefixes as strings
@@ -65,26 +69,30 @@ type DB struct {
 func NewDB(cfg *config.Config) (*DB, error) {
 	path := strings.TrimSuffix(cfg.DBPath, "/")
 
+	options := &opt.Options{
+		Filter: filter.NewBloomFilter(32),
+	}
+
 	// set up entity, pk databases
 	entityDBPath := path + "/db-entities"
-	entityDB, err := leveldb.OpenFile(entityDBPath, nil)
+	entityDB, err := leveldb.OpenFile(entityDBPath, options)
 	if err != nil {
 		return nil, errors.Wrapf(err, "Could not open entityDB file %s", entityDBPath)
 	}
 
 	pkDBPath := path + "/db-pk"
-	pkDB, err := leveldb.OpenFile(pkDBPath, nil)
+	pkDB, err := leveldb.OpenFile(pkDBPath, options)
 	if err != nil {
 		return nil, errors.Wrapf(err, "Could not open pkDB file %s", pkDBPath)
 	}
 
 	graphDBPath := path + "/db-graph"
-	graphDB, err := leveldb.OpenFile(graphDBPath, nil)
+	graphDB, err := leveldb.OpenFile(graphDBPath, options)
 	if err != nil {
 		return nil, errors.Wrapf(err, "Could not open graphDB file %s", graphDBPath)
 	}
 	predDBPath := path + "/db-pred"
-	predDB, err := leveldb.OpenFile(predDBPath, nil)
+	predDB, err := leveldb.OpenFile(predDBPath, options)
 	if err != nil {
 		return nil, errors.Wrapf(err, "Could not open predDB file %s", predDBPath)
 	}
