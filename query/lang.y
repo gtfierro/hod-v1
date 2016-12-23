@@ -107,19 +107,19 @@ var          : VAR LBRACK linkList RBRACK
 
 linkList     : LINK
              {
-                if $1.str == "*" {
-                  $$.selectAllLinks = true
-                } else {
-                  $$.links = []Link{{Name: $1.str}}
-                }
+                $$.links = []Link{{Name: $1.str}}
+             }
+             | ASTERISK
+             {
+                $$.selectAllLinks = true
              }
              | LINK COMMA linkList
              {
-                if $1.str == "*" {
-                    $$.selectAllLinks = true
-                } else {
-                    $$.links = append([]Link{{Name: $1.str}}, $3.links...)
-                }
+                $$.links = append([]Link{{Name: $1.str}}, $3.links...)
+             }
+             | ASTERISK COMMA linkList
+             {
+                $$.selectAllLinks = true
              }
              ;
 
@@ -306,7 +306,7 @@ func newlexer(r io.Reader) *lexer {
             {Token: PARTIAL,  Pattern: "PARTIAL"},
             {Token: URI,  Pattern: "[a-zA-Z]+:[a-zA-Z0-9_\\-#%$@]+"},
             {Token: VAR,  Pattern: "\\?[a-zA-Z0-9_]+"},
-            {Token: LINK,  Pattern: "\\*|([a-zA-Z][a-zA-Z0-9_-]*)"},
+            {Token: LINK,  Pattern: "[a-zA-Z][a-zA-Z0-9_-]*"},
             {Token: QUESTION,  Pattern: "\\?"},
             {Token: SLASH,  Pattern: "/"},
             {Token: PLUS,  Pattern: "\\+"},
