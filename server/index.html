@@ -85,6 +85,10 @@
                 <input type="checkbox" class="filled-in" id="fullURI" checked="checked" />
                 <label for="fullURI">Full URI</label>
               </p>
+              <p>
+                <input type="checkbox" class="filled-in" id="showJSON" />
+                <label for="showJSON">Show JSON</label>
+              </p>
               <ul class="collapsible" data-collapsible="accordion">
                 <li>
                     <div class="collapsible-header teal lighten-2" style="color: white">Common Queries<i class="material-icons">expand_more</i></div>
@@ -112,9 +116,12 @@ SELECT ?vav WHERE {
 		</div>
       </div>
       <div class="row">
-      <h4>Results</h4>
-      <table class="highlight bordered" id="resultstable">
-      </table>
+        <h4 id="resultsheader" hidden>Results</h4>
+        <div class="col s12">
+          <table class="highlight bordered" id="resultstable"></table>
+        </div>
+        <div class="col s12" id="resultsjson">
+        </div>
       </div>
     </div>
     <script type="text/javascript">
@@ -128,10 +135,19 @@ SELECT ?vav WHERE {
 
           var submit_query = function(query) {
             $("#errortext").hide();
+            $("#resultsjson").hide();
+            $("#resultstable").hide();
             var useFullURI = $("#fullURI")[0].checked;
+            var showJSON = $("#showJSON")[0].checked;
             var html = "";
             $.post("/api/query", query, function(data) {
-                if (data.Rows.length > 0) {
+                $("#resultsheader").show();
+                if (showJSON) {
+                    $("#resultsjson").show();
+                    html = "<code>" + JSON.stringify(data) + "</code>";
+                    $("#resultsjson").html(html);
+                } else if (data.Rows.length > 0) {
+                    $("#resultstable").show();
                     var firstrow = data.Rows[0];
                     html += "<thead><tr>";
                     for (var key in firstrow) {
