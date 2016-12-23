@@ -45,9 +45,10 @@ func StartHodServer(db *hod.DB, cfg *config.Config) {
 	// TODO: how do we handle loading in data? Need to have the multiple
 	// concurrent buildings issue fixed first, but for now it is sufficient
 	// to just have one server per building
-	//r.POST("/load", server.handleLoad)
-	r.POST("/query", server.handleQuery)
-	r.POST("/loadlinks", server.handleLoadLinks)
+	r.POST("/api/query", server.handleQuery)
+	r.POST("/api/loadlinks", server.handleLoadLinks)
+	r.ServeFiles("/static/*filepath", http.Dir("./server/static"))
+	r.GET("/", server.serveHome)
 	server.router = r
 
 	var (
@@ -97,7 +98,7 @@ func (srv *hodServer) handleQuery(rw http.ResponseWriter, req *http.Request, ps 
 	parsed, err := query.Parse(req.Body)
 	if err != nil {
 		log.Error(err)
-		rw.WriteHeader(500)
+		rw.WriteHeader(400)
 		rw.Write([]byte(err.Error()))
 		return
 	}
@@ -137,4 +138,9 @@ func (srv *hodServer) handleLoadLinks(rw http.ResponseWriter, req *http.Request,
 		return
 	}
 	return
+}
+
+func (srv *hodServer) serveHome(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
+	defer req.Body.Close()
+	http.ServeFile(rw, req, "server/index.html")
 }
