@@ -48,6 +48,9 @@
             border-top: 1px solid black;
             border-bottom: 1px solid black;
         }
+        #resultstable {
+            font-size: 12px;
+        }
     </style>
   	<title>HodDB Query</title>
   </head>
@@ -78,6 +81,10 @@
 		<div class="col s3">
             <div class="input-field col s12">
               <button class="btn waves-effect waves-light" form="queryform" type="submit" name="action">Run Query</button>
+              <p>
+                <input type="checkbox" class="filled-in" id="fullURI" checked="checked" />
+                <label for="fullURI">Full URI</label>
+              </p>
               <ul class="collapsible" data-collapsible="accordion">
                 <li>
                     <div class="collapsible-header teal lighten-2" style="color: white">Common Queries<i class="material-icons">expand_more</i></div>
@@ -104,6 +111,11 @@ SELECT ?vav WHERE {
           </div>
 		</div>
       </div>
+      <div class="row">
+      <h4>Results</h4>
+      <table class="highlight bordered" id="resultstable">
+      </table>
+      </div>
     </div>
     <script type="text/javascript">
           var textarea = document.getElementById("queryarea");
@@ -116,10 +128,31 @@ SELECT ?vav WHERE {
 
           var submit_query = function(query) {
             $("#errortext").hide();
-            $.post("/api/query", query, function(data, status, jx) {
-                console.log(data);
-                console.log(status);
-                console.log(jx);
+            var useFullURI = $("#fullURI")[0].checked;
+            var html = "";
+            $.post("/api/query", query, function(data) {
+                if (data.Rows.length > 0) {
+                    var firstrow = data.Rows[0];
+                    html += "<thead><tr>";
+                    for (var key in firstrow) {
+                        html += "<td><b>" + key + "</b></td>";
+                    }
+                    html += "</tr></thead><tbody>";
+                    data.Rows.forEach(function(element) {
+                        html += "<tr>"
+                        for (var key in element) {
+                            if (useFullURI) {
+                                var newstuff = element[key].Namespace + "#" + element[key].Value;
+                            } else {
+                                var newstuff = element[key].Value;
+                            }
+                            html += "<td>" + newstuff + "</td>"
+                        }
+                        html += "</tr>"
+                    });
+                    html += "</tbody>";
+                    $("#resultstable").html(html);
+                }
             }).fail(function(e) {
                 $("#errortext").show();
                 $("#errortext > p").text(e.responseText);
