@@ -25,7 +25,7 @@ import (
 
 func benchLoad(c *cli.Context) error {
 	if c.NArg() == 0 {
-		return errors.New("Need to specify a turtle file to load")
+		log.Fatal("Need to specify a turtle file to load")
 	}
 	filename := c.Args().Get(0)
 	p := turtle.GetParser()
@@ -37,7 +37,7 @@ func benchLoad(c *cli.Context) error {
 
 func load(c *cli.Context) error {
 	if c.NArg() == 0 {
-		return errors.New("Need to specify a turtle file to load")
+		log.Fatal("Need to specify a turtle file to load")
 	}
 	filename := c.Args().Get(0)
 	cfg, err := config.ReadConfig(c.String("config"))
