@@ -51,6 +51,15 @@
         #resultstable {
             font-size: 12px;
         }
+        .listhighlight:hover {
+            background-color: #eee;
+        }
+        .listhighlight {
+            color: black;
+        }
+        .row {
+            padding-left: 50px;
+        }
     </style>
   	<title>HodDB Query</title>
   </head>
@@ -59,64 +68,55 @@
     <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
     <script type="text/javascript" src="static/js/materialize.min.js"></script>
     <div class="container">
-      <h1>HodDB Query</h1>
-      <div class="row">
-        <nav>
-          <div class="nav-wrapper blue lighten-3">
-            <!--<a href="#" class="brand-logo center">Logo</a>-->
-            <ul id="nav-mobile" class="left hide-on-med-and-down">
-              <li><a href="#">Query</a></li>
-              <li><a href="#">Visualize</a></li>
-              <li><a href="#">Documentation</a></li>
-            </ul>
-          </div>
-        </nav>
+      <div>
+        <ul id="slide-out" style="width:350px" class="side-nav fixed blue lighten-5">
+            <li><h3>HodDB Query</h3></li>
+            <li><a href="#">Query<i class="material-icons">keyboard_arrow_right</i></a></li>
+            <li><a href="#">Visualize<i class="material-icons">keyboard_arrow_right</i></a></li>
+            <li><a href="#">Documentation<i class="material-icons">keyboard_arrow_right</i></a></li>
+            <li><hr></li>
+            <li><h5>Common Queries</h5></li>
+            <li class="collection-item"><a id="query_vavselect" class="listhighlight">VAV Select<i class="material-icons">code</i></a><li>
+            <li class="collection-item"><a id="query_tempselect" class="listhighlight">Zone Temperature Sensors<i class="material-icons">code</i></a><li>
+            <li class="collection-item"><a id="query_vavcmd" class="listhighlight">VAV Commands<i class="material-icons">code</i></a><li>
+            <li class="collection-item"><a id="query_floors" class="listhighlight">Spatial Building Structure<i class="material-icons">code</i></a><li>
+        </ul>
       </div>
       <div class="row">
-        <div id="errortext" class="col s12 card-panel red lighten-2" hidden>
-        <p></p>
+        <div class="input-field col s2">
+          <button class="btn waves-effect waves-light green" form="queryform" type="submit" name="action">Run Query</button>
+        </div>
+        <div class="col s2">
+          <p>
+            <input type="checkbox" class="filled-in" id="fullURI"/>
+            <label for="fullURI">Full URI</label>
+          </p>
+        </div>
+        <div class="col s2">
+          <p>
+            <input type="checkbox" class="filled-in" id="showJSON" />
+            <label for="showJSON">Show JSON</label>
+          </p>
         </div>
       </div>
+
       <div class="row">
-		<div class="col s3">
-            <div class="input-field col s12">
-              <button class="btn waves-effect waves-light green" form="queryform" type="submit" name="action">Run Query</button>
-              <p>
-                <input type="checkbox" class="filled-in" id="fullURI"/>
-                <label for="fullURI">Full URI</label>
-              </p>
-              <p>
-                <input type="checkbox" class="filled-in" id="showJSON" />
-                <label for="showJSON">Show JSON</label>
-              </p>
-              <ul class="collapsible" data-collapsible="accordion">
-                <li>
-                    <div class="collapsible-header teal lighten-2" style="color: white">Common Queries<i class="material-icons">expand_more</i></div>
-                    <div class="collapsible-body">
-                        <ul class="collection">
-                            <a href="#" id="query_vavselect" class="collection-item">VAV Select</a>
-                            <a href="#" id="query_tempselect" class="collection-item">Zone Temperature Sensors</a>
-                            <a href="#" id="query_vavcmd" class="collection-item">VAV Commands</a>
-                            <a href="#" id="query_floors" class="collection-item">Spatial Building Structure</a>
-                        </ul>
-                    </div>
-                </li>
-              </ul>
-            </div>
-		</div>
-		<div class="col s9">
-          <div class="input-field col s12">
-            <form id="queryform" form="queryform" class="col s12">
-                <textarea id="queryarea" name="queryarea">
+        <div class="col s12">
+          <form id="queryform" form="queryform" class="col s12">
+            <textarea id="queryarea" name="queryarea">
 SELECT ?vav WHERE {
     ?vav rdf:type brick:VAV .
 };</textarea>
-            </form>
+          </form>
+        </div>
+        <div class="row">
+          <div id="errortext" class="col s12 card-panel red lighten-2" hidden>
+          <p></p>
           </div>
-		</div>
+        </div>
       </div>
       <div class="row">
-        <h4 id="resultsheader" hidden>Results</h4>
+        <h4 id="resultsheader" class="col s12" hidden>Results</h4>
         <div class="col s12">
           <table class="highlight bordered" id="resultstable"></table>
         </div>
