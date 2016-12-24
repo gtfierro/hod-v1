@@ -2,6 +2,16 @@
 
 A database for [Brick](http://brickschema.org/)
 
+## Interface
+
+Located in `server`
+
+Features:
+- Results display:
+  - [ ] when you click a row, you get those items, their relationships, and the "degree 1" links
+        out from each of those nodes (relationship + node)
+        - or have clicking the nodes expand that out
+
 ## Structure
 
 ## TODO Items
@@ -35,9 +45,6 @@ Action Operators:
         - [ ] ability to select key/value pairs on returned nodes
 - [x] COUNT
     - counts number of resolved tuples
-- [ ] GROUPBY
-    - e.g. for this room, here's all of the VAVs and zones
-    - only if really *really* needed -- can do this after a query anyway
 
 Tests:
 - [x] full query tests on known dataset
