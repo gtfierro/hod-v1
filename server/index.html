@@ -2,6 +2,7 @@
   <head>
     <meta charset="utf-8">
     <link rel="stylesheet" href="static/lib/codemirror.css">
+    <script src="static/js/moment.js"></script>
     <script src="static/lib/codemirror.js"></script>
     <script src="static/addon/edit/matchbrackets.js"></script>
     <script src="static/mode/sparql/sparql.js"></script>
@@ -117,6 +118,8 @@ SELECT ?vav WHERE {
       </div>
       <div class="row">
         <h4 id="resultsheader" class="col s12" hidden>Results</h4>
+        <div class="col s12" id="elapsed">
+        </div>
         <div class="col s12">
           <table class="highlight bordered" id="resultstable"></table>
         </div>
@@ -140,7 +143,11 @@ SELECT ?vav WHERE {
             var useFullURI = $("#fullURI")[0].checked;
             var showJSON = $("#showJSON")[0].checked;
             var html = "";
+            var begin = moment();
             $.post("/api/query", query, function(data) {
+                var end = moment();
+                var duration = moment.duration(end - begin);
+                $("#elapsed").text(duration.milliseconds() + " ms");
                 $("#resultsheader").show();
                 if (showJSON) {
                     $("#resultsjson").show();
