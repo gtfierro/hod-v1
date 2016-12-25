@@ -47,10 +47,12 @@ func StartHodServer(db *hod.DB, cfg *config.Config) {
 	// to just have one server per building
 	r.POST("/api/query", server.handleQuery)
 	r.POST("/api/loadlinks", server.handleLoadLinks)
+	r.POST("/api/querydot", server.handleQueryDot)
 	r.ServeFiles("/static/*filepath", http.Dir("./server/static"))
 	r.GET("/", server.serveQuery)
 	r.GET("/query", server.serveQuery)
 	r.GET("/help", server.serveHelp)
+	r.GET("/visualize", server.serveVisualize)
 	server.router = r
 
 	var (
@@ -150,4 +152,24 @@ func (srv *hodServer) serveHelp(rw http.ResponseWriter, req *http.Request, ps ht
 func (srv *hodServer) serveQuery(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
 	defer req.Body.Close()
 	http.ServeFile(rw, req, "server/query.html")
+}
+
+func (srv *hodServer) serveVisualize(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
+	defer req.Body.Close()
+	http.ServeFile(rw, req, "server/visualize.html")
+}
+
+func (srv *hodServer) handleQueryDot(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
+	defer req.Body.Close()
+
+	dot, err := srv.db.QueryToDOT(req.Body)
+	if err != nil {
+		log.Error(err)
+		rw.WriteHeader(400)
+		rw.Write([]byte(err.Error()))
+		return
+	}
+
+	rw.Write([]byte(dot))
+	return
 }
