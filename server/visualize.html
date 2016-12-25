@@ -142,18 +142,11 @@ SELECT ?vav WHERE {
                 options.interaction = {
                   hover: true
                 };
-                options.physics = {
-                  barnesHut: {
-                      springLength: 200,
-                      avoidOverlap: .5,
-                      springConstant: .01
-                  },
-                };
                 options.layout = {
                     hierarchical: {
                       enabled: true,
-                      levelSeparation: 200,
-                      nodeSpacing: 200,
+                      levelSeparation: 400,
+                      nodeSpacing: 250,
                       edgeMinimization: true,
                       direction: 'LR'
                     }
