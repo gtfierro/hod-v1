@@ -122,6 +122,7 @@ SELECT ?vav WHERE {
             var html = "";
             var begin = moment();
             console.log(query);
+            $("#errortext").hide();
             $.post("/api/querydot", query, function(data) {
                 console.log(network);
                 if (network != null) {
