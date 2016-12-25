@@ -1,6 +1,9 @@
 package db
 
 import (
+	"fmt"
+	"io"
+	"strings"
 	"sync"
 	"time"
 
@@ -152,3 +155,66 @@ func (db *DB) UpdateLinks(updates *LinkUpdates) error {
 // for getting links from entities, we probably want to adopt a more generator-based approach
 // to actually getting the rows from the database; as we get each row, we get the associated links,
 // pipe that out to our accumulator (probably just appending to a list).
+
+// takes a query and returns a DOT representation to visualize
+// the construction of the query
+func (db *DB) QueryToDOT(querystring io.Reader) (string, error) {
+	q, err := query.Parse(querystring)
+	if err != nil {
+		return "", err
+	}
+
+	dot := ""
+	dot += "digraph G {\n"
+	dot += "ratio=\"auto\"\n"
+	dot += "rankdir=\"LR\"\n"
+	dot += "size=\"7.5,10\"\n"
+
+	if len(q.Where.Ors) > 0 {
+		orTerms := query.FlattenOrClauseList(q.Where.Ors)
+		oldFilters := q.Where.Filters
+		for _, orTerm := range orTerms {
+			filters := append(oldFilters, orTerm...)
+			for _, filter := range filters {
+				var parts []string
+				for _, p := range filter.Path {
+					parts = append(parts, fmt.Sprintf("%s%s", p.Predicate, p.Pattern))
+				}
+				line := fmt.Sprintf("\"%s\" -> \"%s\" [label=\"%s\"];\n", filter.Subject, filter.Object, strings.Join(parts, "/"))
+				if !strings.Contains(dot, line) {
+					dot += line
+				}
+
+				for _, sv := range q.Select.Variables {
+					if filter.Subject == sv.Var {
+						line := fmt.Sprintf("\"%s\" [fillcolor=#e57373]\n", filter.Subject)
+						if !strings.Contains(dot, line) {
+							dot += line
+						}
+					}
+				}
+			}
+		}
+	} else {
+		for _, filter := range q.Where.Filters {
+			var parts []string
+			for _, p := range filter.Path {
+				parts = append(parts, fmt.Sprintf("%s%s", p.Predicate, p.Pattern))
+			}
+			line := fmt.Sprintf("\"%s\" -> \"%s\" [label=\"%s\"];\n", filter.Subject, filter.Object, strings.Join(parts, "/"))
+			if !strings.Contains(dot, line) {
+				dot += line
+			}
+			for _, sv := range q.Select.Variables {
+				if filter.Subject == sv.Var {
+					line := fmt.Sprintf("\"%s\" [fillcolor=#e57373]\n", filter.Subject)
+					if !strings.Contains(dot, line) {
+						dot += line
+					}
+				}
+			}
+		}
+	}
+	dot += "}"
+	return dot, nil
+}
