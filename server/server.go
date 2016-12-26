@@ -50,7 +50,7 @@ func StartHodServer(db *hod.DB, cfg *config.Config) {
 	r.POST("/api/query", server.handleQuery)
 	r.POST("/api/loadlinks", server.handleLoadLinks)
 	r.POST("/api/querydot", server.handleQueryDot)
-	r.ServeFiles("/static/*filepath", http.Dir(cfg.StaticPath+"/server/static"))
+	r.ServeFiles("/static/*filepath", http.Dir(cfg.StaticPath+"/static"))
 	r.GET("/", server.serveQuery)
 	r.GET("/query", server.serveQuery)
 	r.GET("/help", server.serveHelp)
@@ -153,7 +153,6 @@ func (srv *hodServer) serveHelp(rw http.ResponseWriter, req *http.Request, ps ht
 
 func (srv *hodServer) serveQuery(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
 	defer req.Body.Close()
-	log.Debug(srv.staticpath)
 	http.ServeFile(rw, req, srv.staticpath+"/query.html")
 }
 
