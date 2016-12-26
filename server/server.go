@@ -30,15 +30,17 @@ func init() {
 }
 
 type hodServer struct {
-	db     *hod.DB
-	port   string
-	router *httprouter.Router
+	db         *hod.DB
+	port       string
+	staticpath string
+	router     *httprouter.Router
 }
 
 func StartHodServer(db *hod.DB, cfg *config.Config) {
 	server := &hodServer{
-		db:   db,
-		port: cfg.ServerPort,
+		db:         db,
+		port:       cfg.ServerPort,
+		staticpath: cfg.StaticPath,
 	}
 	r := httprouter.New()
 
@@ -146,17 +148,18 @@ func (srv *hodServer) handleLoadLinks(rw http.ResponseWriter, req *http.Request,
 
 func (srv *hodServer) serveHelp(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
 	defer req.Body.Close()
-	http.ServeFile(rw, req, "server/help.html")
+	http.ServeFile(rw, req, srv.staticpath+"/help.html")
 }
 
 func (srv *hodServer) serveQuery(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
 	defer req.Body.Close()
-	http.ServeFile(rw, req, "server/query.html")
+	log.Debug(srv.staticpath)
+	http.ServeFile(rw, req, srv.staticpath+"/query.html")
 }
 
 func (srv *hodServer) serveVisualize(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
 	defer req.Body.Close()
-	http.ServeFile(rw, req, "server/visualize.html")
+	http.ServeFile(rw, req, srv.staticpath+"/visualize.html")
 }
 
 func (srv *hodServer) handleQueryDot(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
