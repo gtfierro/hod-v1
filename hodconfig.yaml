@@ -47,6 +47,9 @@
 
 # Whether or not to serve on localhost. If false, serves on a public interface
 #Localhost: true
+#
+# Path to the server directory of hod, which contains the necessary HTML files
+#StaticPath: $GOPATH/src/github.com/gtfierro/hod/server
 
 ####
 # Profiling Information for HTTP Server

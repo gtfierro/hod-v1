@@ -1,6 +1,8 @@
 package config
 
 import (
+	"os"
+
 	"github.com/spf13/viper"
 )
 
@@ -19,6 +21,7 @@ type Config struct {
 	ServerPort string
 	UseIPv6    bool
 	Localhost  bool
+	StaticPath string
 
 	EnableCPUProfile   bool
 	EnableMEMProfile   bool
@@ -41,6 +44,8 @@ func init() {
 	viper.SetDefault("ServerPort", "47808")
 	viper.SetDefault("UseIPv6", false)
 	viper.SetDefault("Localhost", true)
+	prefix := os.Getenv("GOPATH")
+	viper.SetDefault("StaticPath", prefix+"/src/github.com/gtfierro/hod/server")
 
 	viper.SetDefault("EnableCPUProfile", false)
 	viper.SetDefault("EnableMEMProfile", false)
@@ -72,6 +77,7 @@ func ReadConfig(file string) (*Config, error) {
 		ServerPort:             viper.GetString("ServerPort"),
 		UseIPv6:                viper.GetBool("UseIPv6"),
 		Localhost:              viper.GetBool("Localhost"),
+		StaticPath:             viper.GetString("StaticPath"),
 		EnableCPUProfile:       viper.GetBool("EnableCPUProfile"),
 		EnableMEMProfile:       viper.GetBool("EnableMEMProfile"),
 		EnableBlockProfile:     viper.GetBool("EnableBlockProfile"),
