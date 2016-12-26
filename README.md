@@ -7,10 +7,14 @@ A database for [Brick](http://brickschema.org/)
 Located in `server`
 
 Features:
+- [ ] Query Planner Vis:
+  - As you type a query, it renders a graph of the nodes and their relationship
+  - visualize the query, not the results
 - Results display:
   - [ ] when you click a row, you get those items, their relationships, and the "degree 1" links
         out from each of those nodes (relationship + node)
         - or have clicking the nodes expand that out
+
 
 ## Structure
 
