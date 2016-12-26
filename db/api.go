@@ -185,14 +185,6 @@ func (db *DB) QueryToDOT(querystring io.Reader) (string, error) {
 					dot += line
 				}
 
-				for _, sv := range q.Select.Variables {
-					if filter.Subject == sv.Var {
-						line := fmt.Sprintf("\"%s\" [fillcolor=#e57373]\n", filter.Subject)
-						if !strings.Contains(dot, line) {
-							dot += line
-						}
-					}
-				}
 			}
 		}
 	} else {
@@ -205,15 +197,10 @@ func (db *DB) QueryToDOT(querystring io.Reader) (string, error) {
 			if !strings.Contains(dot, line) {
 				dot += line
 			}
-			for _, sv := range q.Select.Variables {
-				if filter.Subject == sv.Var {
-					line := fmt.Sprintf("\"%s\" [fillcolor=#e57373]\n", filter.Subject)
-					if !strings.Contains(dot, line) {
-						dot += line
-					}
-				}
-			}
 		}
+	}
+	for _, sv := range q.Select.Variables {
+		dot += fmt.Sprintf("\"%s\" [fillcolor=#e57373]\n", sv.Var)
 	}
 	dot += "}"
 	return dot, nil
