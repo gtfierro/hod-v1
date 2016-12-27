@@ -1,0 +1,58 @@
+body {
+    margin:40px auto;
+    line-height:1.6;
+    font-size:18px;
+    font-family: Inconsolata, monospace;
+    color:#444;
+    padding:0 10px;
+    font-weight: 400;
+    line-height: 24px;
+}
+h1,h2,h3 {
+    line-height:1.2;
+    color:#333;
+    text-align: left;
+}
+a {
+    text-decoration: none;
+}
+a:link {
+    color: black;
+}
+a:visited {
+    color: black;
+}
+a:active {
+    color: black;
+}
+a:hover {
+    color: blue;
+    border-bottom:1px dotted black;
+}
+.CodeMirror {
+    border-top: 1px solid black;
+    border-bottom: 1px solid black;
+}
+#resultstable {
+    font-size: 12px;
+}
+.listhighlight:hover {
+    background-color: #eee;
+}
+.listhighlight {
+    color: black;
+}
+header, main, footer {
+  padding-left: 200px;
+}
+
+@media only screen and (max-width : 992px) {
+  header, main, footer {
+    padding-left: 0;
+  }
+}
+.helptitle {
+       color: blue;
+       font-size: 30px;
+       border-bottom: 1px solid blue;
+}
