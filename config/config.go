@@ -29,10 +29,11 @@ type Config struct {
 }
 
 func init() {
+	prefix := os.Getenv("GOPATH")
 	// set defaults for config
 	viper.SetDefault("DBPath", "_hoddb")
-	viper.SetDefault("BrickFrameTTL", "BrickFrame.ttl")
-	viper.SetDefault("BrickClassTTL", "Brick.ttl")
+	viper.SetDefault("BrickFrameTTL", prefix+"/src/github.com/gtfierro/hod/BrickFrame.ttl")
+	viper.SetDefault("BrickClassTTL", prefix+"/src/github.com/gtfierro/hod/Brick.ttl")
 	viper.SetDefault("ReloadBrick", true)
 
 	viper.SetDefault("ShowDependencyGraph", false)
@@ -44,7 +45,6 @@ func init() {
 	viper.SetDefault("ServerPort", "47808")
 	viper.SetDefault("UseIPv6", false)
 	viper.SetDefault("Localhost", true)
-	prefix := os.Getenv("GOPATH")
 	viper.SetDefault("StaticPath", prefix+"/src/github.com/gtfierro/hod/server")
 
 	viper.SetDefault("EnableCPUProfile", false)
@@ -54,6 +54,7 @@ func init() {
 	viper.SetConfigName("hodconfig")
 	// set search paths for config
 	viper.AddConfigPath("/etc/hoddb/")
+	viper.AddConfigPath(prefix + "/src/github.com/gtfierro/hod")
 	viper.AddConfigPath(".")
 }
 
