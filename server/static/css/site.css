@@ -56,3 +56,9 @@ header, main, footer {
        font-size: 30px;
        border-bottom: 1px solid blue;
 }
+
+#mynetwork {
+  width: 100%;
+  height: 500px;
+  border: 1px solid lightgray;
+}
