@@ -6,13 +6,13 @@
 ####
 
 # the location of the database files
-#DBPath = _hoddb
+#DBPath: _hoddb
 
 # the path to the TTL file containing Brick relationships
-#BrickFrameTTL = "BrickFrame.ttl"
+#BrickFrameTTL: "BrickFrame.ttl"
 
 # the path to the TTL file containing Brick classes
-#BrickClassTTL = "Brick.ttl"
+#BrickClassTTL: "Brick.ttl"
 #
 
 ####
