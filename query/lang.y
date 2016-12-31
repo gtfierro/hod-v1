@@ -34,16 +34,16 @@ import (
 
 %%
 
-query        : selectClause limitClause WHERE LBRACE whereTriples RBRACE SEMICOLON
+query        : selectClause WHERE LBRACE whereTriples RBRACE limitClause SEMICOLON
              {
                yylex.(*lexer).varlist = $1.varlist
                yylex.(*lexer).distinct = $1.distinct
-               yylex.(*lexer).triples = $5.triples
+               yylex.(*lexer).triples = $4.triples
                yylex.(*lexer).distinct = $1.distinct
                yylex.(*lexer).partial = $1.partial
                yylex.(*lexer).count = $1.count
-               yylex.(*lexer).orclauses = $5.orclauses
-               yylex.(*lexer).limit = $2.limit
+               yylex.(*lexer).orclauses = $4.orclauses
+               yylex.(*lexer).limit = $6.limit
              }
              ;
 
