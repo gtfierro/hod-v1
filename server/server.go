@@ -54,7 +54,7 @@ func StartHodServer(db *hod.DB, cfg *config.Config) {
 	r.GET("/", server.serveQuery)
 	r.GET("/query", server.serveQuery)
 	r.GET("/help", server.serveHelp)
-	r.GET("/visualize", server.serveVisualize)
+	r.GET("/plan", server.servePlanner)
 	server.router = r
 
 	var (
@@ -156,9 +156,9 @@ func (srv *hodServer) serveQuery(rw http.ResponseWriter, req *http.Request, ps h
 	http.ServeFile(rw, req, srv.staticpath+"/query.html")
 }
 
-func (srv *hodServer) serveVisualize(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
+func (srv *hodServer) servePlanner(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
 	defer req.Body.Close()
-	http.ServeFile(rw, req, srv.staticpath+"/visualize.html")
+	http.ServeFile(rw, req, srv.staticpath+"/plan.html")
 }
 
 func (srv *hodServer) handleQueryDot(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
