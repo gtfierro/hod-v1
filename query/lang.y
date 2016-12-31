@@ -3,6 +3,7 @@ package query
 
 import (
     "io"
+    "strconv"
     turtle "github.com/gtfierro/hod/goraptor"
     "fmt"
 )
@@ -20,27 +21,29 @@ import (
     orclauses []OrClause
     varlist []SelectVar
     links []Link
+    limit int64
     distinct bool
     count bool
     partial bool
     selectAllLinks bool
 }
 
-%token SELECT COUNT DISTINCT WHERE OR UNION PARTIAL
+%token SELECT COUNT DISTINCT WHERE OR UNION PARTIAL LIMIT
 %token COMMA LBRACE RBRACE LPAREN RPAREN DOT SEMICOLON SLASH PLUS QUESTION ASTERISK BAR
-%token LINK VAR URI LBRACK RBRACK
+%token LINK VAR URI LBRACK RBRACK NUMBER
 
 %%
 
-query        : selectClause WHERE LBRACE whereTriples RBRACE SEMICOLON
+query        : selectClause limitClause WHERE LBRACE whereTriples RBRACE SEMICOLON
              {
                yylex.(*lexer).varlist = $1.varlist
                yylex.(*lexer).distinct = $1.distinct
-               yylex.(*lexer).triples = $4.triples
+               yylex.(*lexer).triples = $5.triples
                yylex.(*lexer).distinct = $1.distinct
                yylex.(*lexer).partial = $1.partial
                yylex.(*lexer).count = $1.count
-               yylex.(*lexer).orclauses = $4.orclauses
+               yylex.(*lexer).orclauses = $5.orclauses
+               yylex.(*lexer).limit = $2.limit
              }
              ;
 
@@ -78,6 +81,20 @@ selectClause : SELECT varList
                 $$.distinct = false
                 $$.count = true
                 $$.partial = true
+             }
+             ;
+
+limitClause  : 
+             {
+                $$.limit = 0
+             }
+             | LIMIT NUMBER
+             {
+                num, err := strconv.ParseInt($2.str, 10, 64)
+                if err != nil {
+                    yylex.Error(err.Error())
+                }
+                $$.limit = num
              }
              ;
 
@@ -282,6 +299,7 @@ type lexer struct {
     count bool
     partial bool
     pos int
+    limit int64
 }
 
 func newlexer(r io.Reader) *lexer {
@@ -297,13 +315,15 @@ func newlexer(r io.Reader) *lexer {
             {Token: SEMICOLON,  Pattern: ";"},
             {Token: DOT,  Pattern: "\\."},
             {Token: BAR,  Pattern: "\\|"},
-            {Token: SELECT,  Pattern: "SELECT"},
+            {Token: SELECT,  Pattern: "(SELECT)|(select)"},
             {Token: COUNT,  Pattern: "COUNT"},
             {Token: DISTINCT,  Pattern: "DISTINCT"},
             {Token: WHERE,  Pattern: "WHERE"},
             {Token: OR,  Pattern: "OR"},
             {Token: UNION,  Pattern: "UNION"},
             {Token: PARTIAL,  Pattern: "PARTIAL"},
+            {Token: LIMIT,  Pattern: "LIMIT"},
+            {Token: NUMBER,  Pattern: "[0-9]+"},
             {Token: URI,  Pattern: "[a-zA-Z]+:[a-zA-Z0-9_\\-#%$@]+"},
             {Token: VAR,  Pattern: "\\?[a-zA-Z0-9_]+"},
             {Token: LINK,  Pattern: "[a-zA-Z][a-zA-Z0-9_-]*"},

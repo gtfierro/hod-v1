@@ -52,6 +52,14 @@ func TestQueryParse(t *testing.T) {
 			},
 		},
 		{
+			"SELECT ?x LIMIT 10 WHERE { ?x rdf:type brick:Room . } ;",
+			SelectClause{Limit: 10, Variables: []SelectVar{{Var: turtle.ParseURI("?x")}}, HasLinks: false},
+			WhereClause{
+				[]Filter{{Subject: turtle.ParseURI("?x"), Path: []PathPattern{PathPattern{turtle.ParseURI("rdf:type"), PATTERN_SINGLE}}, Object: turtle.ParseURI("brick:Room")}},
+				[]OrClause{},
+			},
+		},
+		{
 			"SELECT ?x ?y WHERE { ?x ?y brick:Room . } ;",
 			SelectClause{Variables: []SelectVar{{Var: turtle.ParseURI("?x")}, {Var: turtle.ParseURI("?y")}}, HasLinks: false},
 			WhereClause{
