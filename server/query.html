@@ -69,8 +69,13 @@ SELECT ?vav WHERE {
       </div>
       <div class="row">
         <h4 id="resultsheader" class="col s12" hidden>Results</h4>
-        <div class="col s12" id="elapsed">
+        <div class="col s2">
+          <p id="resultsnum"></p>
         </div>
+        <div class="col s2">
+          <p id="elapsed"></p>
+        </div>
+        <div class="col s10"></div>
         <div class="col s12">
           <table class="highlight bordered" id="resultstable"></table>
         </div>
@@ -108,6 +113,7 @@ SELECT ?vav WHERE {
                 } else if (data.Rows.length > 0) {
                     $("#resultstable").show();
                     var firstrow = data.Rows[0];
+                    var number = 0;
                     html += "<thead><tr>";
                     for (var key in firstrow) {
                         html += "<td><b>" + key + "</b></td>";
@@ -124,9 +130,11 @@ SELECT ?vav WHERE {
                             html += "<td>" + newstuff + "</td>"
                         }
                         html += "</tr>"
+                        number += 1
                     });
                     html += "</tbody>";
                     $("#resultstable").html(html);
+                    $("#resultsnum").text(number+ " results");
                 }
             }).fail(function(e) {
                 $("#errortext").show();
