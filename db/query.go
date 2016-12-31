@@ -59,7 +59,7 @@ func (db *DB) getQueryResults(q query.Query) [][]turtle.URI {
 	}
 
 	runStart = time.Now()
-	results := db.expandTuples(rm, qp.selectVars, q.Select.Partial)
+	results := db.expandTuples(rm, qp.selectVars, q.Select.Partial, q.Select.Limit)
 	if db.showQueryLatencies {
 		log.Infof("Expanded tuples in %s", time.Since(runStart))
 	}

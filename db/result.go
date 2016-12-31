@@ -195,7 +195,7 @@ func newResultMap() *resultMap {
 	}
 }
 
-func (db *DB) expandTuples(rm *resultMap, selectVars []string, matchPartial bool) [][]turtle.URI {
+func (db *DB) expandTuples(rm *resultMap, selectVars []string, matchPartial bool, limit int) [][]turtle.URI {
 	var tuples []map[string]turtle.URI
 	var startvar string
 	var results [][]turtle.URI
@@ -233,6 +233,9 @@ tupleLoop:
 			row = append(row, tup[varname])
 		}
 		results = append(results, row)
+		if limit > 0 && len(results) == limit {
+			return results
+		}
 	}
 	return results
 }
