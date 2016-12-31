@@ -7,9 +7,14 @@ A database for [Brick](http://brickschema.org/)
 Located in `server`
 
 Features:
-- [ ] Query Planner Vis:
+- [x] Query Planner Vis:
   - As you type a query, it renders a graph of the nodes and their relationship
   - visualize the query, not the results
+- [ ] Query Debugger Vis:
+  - As you type a query, it gets continuously evaluated and Hod returns a DOT representation of
+    the class structure of the returned results
+  - with this, we also get the 'one hop' of relationships/classes away from those that *are* returned.
+  - allows you to "explore" the building graph
 - Results display:
   - [ ] when you click a row, you get those items, their relationships, and the "degree 1" links
         out from each of those nodes (relationship + node)
@@ -46,9 +51,11 @@ Action Operators:
 - [x] SELECT:
     - retrieves list of the resolved tuples
     - maybe add:
-        - [ ] ability to select key/value pairs on returned nodes
+        - [x] ability to select key/value pairs on returned nodes
 - [x] COUNT
     - counts number of resolved tuples
+- [x] LIMIT
+    - limit the number of returned rows
 
 Tests:
 - [x] full query tests on known dataset
@@ -159,5 +166,3 @@ Called 'links':
                 }
             }
          ```
-
-
