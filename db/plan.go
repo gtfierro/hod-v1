@@ -2,6 +2,7 @@ package db
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/google/btree"
@@ -24,10 +25,21 @@ type queryPlan struct {
 	varOrder   *variableStateMap
 }
 
+func (qp *queryPlan) findVarDepth(target string) int {
+	var depth = 0
+	start := qp.varOrder.vars[target]
+	for start != RESOLVED {
+		start = qp.varOrder.vars[start]
+		depth += 1
+	}
+	return depth
+}
+
 func (db *DB) formQueryPlan(dg *dependencyGraph) *queryPlan {
 	qp := new(queryPlan)
 	qp.selectVars = dg.selectVars
-	statemap := newVariableStateMap()
+	qp.varOrder = newVariableStateMap()
+
 	for term := range dg.iter() {
 		var (
 			subjectIsVariable  = strings.HasPrefix(term.Subject.Value, "?")
@@ -38,8 +50,8 @@ func (db *DB) formQueryPlan(dg *dependencyGraph) *queryPlan {
 			hasResolvedObject  bool
 			newop              operation
 		)
-		hasResolvedSubject = statemap.hasVar(subjectVar)
-		hasResolvedObject = statemap.hasVar(objectVar)
+		hasResolvedSubject = qp.varOrder.hasVar(subjectVar)
+		hasResolvedObject = qp.varOrder.hasVar(objectVar)
 
 		switch {
 		case subjectIsVariable && objectIsVariable:
@@ -47,20 +59,30 @@ func (db *DB) formQueryPlan(dg *dependencyGraph) *queryPlan {
 			case hasResolvedSubject && hasResolvedObject:
 				// if we have both subject and object, we filter
 				rso := &restrictSubjectObjectByPredicate{term: term}
-				if statemap.varIsChild(subjectVar) {
-					statemap.addLink(subjectVar, objectVar)
+				subDepth := qp.findVarDepth(subjectVar)
+				objDepth := qp.findVarDepth(objectVar)
+				if subDepth > objDepth {
+					qp.varOrder.addLink(subjectVar, objectVar)
 					rso.parentVar = subjectVar
 					rso.childVar = objectVar
-				} else if statemap.varIsChild(objectVar) {
-					statemap.addLink(objectVar, subjectVar)
+				} else if objDepth > subDepth {
+					qp.varOrder.addLink(objectVar, subjectVar)
 					rso.parentVar = objectVar
 					rso.childVar = subjectVar
-				} else if statemap.varIsTop(subjectVar) {
-					statemap.addLink(subjectVar, objectVar)
+				} else if qp.varOrder.varIsChild(subjectVar) {
+					qp.varOrder.addLink(subjectVar, objectVar)
 					rso.parentVar = subjectVar
 					rso.childVar = objectVar
-				} else if statemap.varIsTop(objectVar) {
-					statemap.addLink(objectVar, subjectVar)
+				} else if qp.varOrder.varIsChild(objectVar) {
+					qp.varOrder.addLink(objectVar, subjectVar)
+					rso.parentVar = objectVar
+					rso.childVar = subjectVar
+				} else if qp.varOrder.varIsTop(subjectVar) {
+					qp.varOrder.addLink(subjectVar, objectVar)
+					rso.parentVar = subjectVar
+					rso.childVar = objectVar
+				} else if qp.varOrder.varIsTop(objectVar) {
+					qp.varOrder.addLink(objectVar, subjectVar)
 					rso.parentVar = objectVar
 					rso.childVar = subjectVar
 				}
@@ -68,33 +90,47 @@ func (db *DB) formQueryPlan(dg *dependencyGraph) *queryPlan {
 				newop = rso
 			case hasResolvedObject:
 				newop = &resolveSubjectFromVarObject{term: term}
-				statemap.addLink(objectVar, subjectVar)
+				qp.varOrder.addLink(objectVar, subjectVar)
 			case hasResolvedSubject:
 				newop = &resolveObjectFromVarSubject{term: term}
-				statemap.addLink(subjectVar, objectVar)
+				qp.varOrder.addLink(subjectVar, objectVar)
 			default:
 				panic("HERE")
 			}
 		case subjectIsVariable:
 			newop = &resolveSubject{term: term}
-			if !statemap.varIsChild(subjectVar) {
-				statemap.addTopLevel(subjectVar)
+			if !qp.varOrder.varIsChild(subjectVar) {
+				qp.varOrder.addTopLevel(subjectVar)
 			}
 		case objectIsVariable:
 			newop = &resolveObject{term: term}
-			if !statemap.varIsChild(objectVar) {
-				statemap.addTopLevel(objectVar)
+			if !qp.varOrder.varIsChild(objectVar) {
+				qp.varOrder.addTopLevel(objectVar)
 			}
 		}
 		qp.operations = append(qp.operations, newop)
 	}
-	qp.varOrder = statemap
+	// sort operations
+	sort.Sort(qp)
 	return qp
 }
 
 type operation interface {
 	run(db *DB, varOrder *variableStateMap, rm *resultMap) (*resultMap, error)
 	String() string
+	SortKey() string
+}
+
+func (qp *queryPlan) Len() int {
+	return len(qp.operations)
+}
+func (qp *queryPlan) Swap(i, j int) {
+	qp.operations[i], qp.operations[j] = qp.operations[j], qp.operations[i]
+}
+func (qp *queryPlan) Less(i, j int) bool {
+	iDepth := qp.findVarDepth(qp.operations[i].SortKey())
+	jDepth := qp.findVarDepth(qp.operations[j].SortKey())
+	return iDepth < jDepth
 }
 
 // ?subject predicate object
@@ -105,6 +141,10 @@ type resolveSubject struct {
 
 func (rs *resolveSubject) String() string {
 	return fmt.Sprintf("[resolveSubject %s]", rs.term)
+}
+
+func (rs *resolveSubject) SortKey() string {
+	return rs.term.Subject.String()
 }
 
 func (rs *resolveSubject) run(db *DB, varOrder *variableStateMap, rm *resultMap) (*resultMap, error) {
@@ -131,6 +171,10 @@ func (ro *resolveObject) String() string {
 	return fmt.Sprintf("[resolveObject %s]", ro.term)
 }
 
+func (ro *resolveObject) SortKey() string {
+	return ro.term.Object.String()
+}
+
 func (ro *resolveObject) run(db *DB, varOrder *variableStateMap, rm *resultMap) (*resultMap, error) {
 	// fetch the subject from the graph
 	subject, err := db.GetEntity(ro.term.Subject)
@@ -154,6 +198,10 @@ type restrictSubjectObjectByPredicate struct {
 
 func (rso *restrictSubjectObjectByPredicate) String() string {
 	return fmt.Sprintf("[restrictSubObjByPred %s]", rso.term)
+}
+
+func (rso *restrictSubjectObjectByPredicate) SortKey() string {
+	return rso.parentVar
 }
 
 // this forms a linking between the subject and object vars; for each
@@ -216,6 +264,10 @@ func (rsv *resolveSubjectFromVarObject) String() string {
 	return fmt.Sprintf("[resolveSubFromVarObj %s]", rsv.term)
 }
 
+func (rsv *resolveSubjectFromVarObject) SortKey() string {
+	return rsv.term.Object.String()
+}
+
 // Use this when we have subject and object variables, but only object has been filled in
 func (rsv *resolveSubjectFromVarObject) run(db *DB, varOrder *variableStateMap, rm *resultMap) (*resultMap, error) {
 	var (
@@ -239,6 +291,10 @@ type resolveObjectFromVarSubject struct {
 
 func (rov *resolveObjectFromVarSubject) String() string {
 	return fmt.Sprintf("[resolveObjFromVarSub %s]", rov.term)
+}
+
+func (rov *resolveObjectFromVarSubject) SortKey() string {
+	return rov.term.Subject.String()
 }
 
 func (rov *resolveObjectFromVarSubject) run(db *DB, varOrder *variableStateMap, rm *resultMap) (*resultMap, error) {
