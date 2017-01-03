@@ -29,6 +29,16 @@ func makeDependencyGraph(q query.Query) *dependencyGraph {
 	return dg
 }
 
+func (dg *dependencyGraph) numUnresolved(qt *queryTerm) int {
+	num := 0
+	for _, v := range qt.variables {
+		if !dg.variables[v] {
+			num++
+		}
+	}
+	return num
+}
+
 func (dg *dependencyGraph) iter() chan *queryTerm {
 	iter := make(chan *queryTerm)
 
