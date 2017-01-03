@@ -18,11 +18,11 @@
   	<title>HodDB Query</title>
     <ul id="slide-out" style="width:350px" class="side-nav fixed blue lighten-5">
         <li><h3 class="center-align" !important>HodDB</h3></li>
-        <li><a href="/query">Query<i class="material-icons">keyboard_arrow_right</i></a></li>
-        <li><a href="/plan">Planner<i class="material-icons">keyboard_arrow_right</i></a></li>
-        <li><a href="/help">Help<i class="material-icons">keyboard_arrow_right</i></a></li>
+        <li><a class="tooltipped" data-position="right" data-delay="100" data-tooltip="Execute BRICK queries" href="/query">Query<i class="material-icons">keyboard_arrow_right</i></a></li>
+        <li class="active"><a class="tooltipped" data-position="right" data-delay="100" data-tooltip="Visualize the construction of BRICK queries" href="/plan">Planner<i class="material-icons">keyboard_arrow_right</i></a></li>
+        <li><a class="tooltipped" data-position="right" data-delay="100" data-tooltip="Documentation and other resources" href="/help">Help<i class="material-icons">keyboard_arrow_right</i></a></li>
         <li><hr></li>
-        <li><h5>Common Queries</h5></li>
+        <li class="subheader center-align">Common Queries</li>
         <li class="collection-item"><a id="query_vavselect" class="listhighlight">VAV Select<i class="material-icons">code</i></a><li>
         <li class="collection-item"><a id="query_tempselect" class="listhighlight">Zone Temperature Sensors<i class="material-icons">code</i></a><li>
         <li class="collection-item"><a id="query_vavcmd" class="listhighlight">VAV Commands<i class="material-icons">code</i></a><li>
@@ -36,6 +36,7 @@
     <script type="text/javascript" src="static/js/materialize.min.js"></script>
     <main>
     <div class="container">
+      <h5 class="col s12 center-align">Query Planner</h3>
       <div class="row">
         <div class="col s12">
           <form id="queryform" form="queryform" class="col s12">
