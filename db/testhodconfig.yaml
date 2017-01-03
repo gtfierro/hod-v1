@@ -1,5 +1,6 @@
 ReloadBrick: false
 ShowQueryPlan: false
+ShowDependencyGraph: false
 ShowQueryPlanLatencies: false
 ShowOperationLatencies: false
 ShowQueryLatencies: false
