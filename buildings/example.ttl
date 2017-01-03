@@ -10,18 +10,16 @@
 soda_hall:ahu_1 a brick:AHU ;
     bf:feeds soda_hall:vav_1 .
 
+soda_hall:room_1 a brick:Room ;
+    bf:isPartOf soda_hall:floor_1,
+        soda_hall:hvaczone_1 .
+
 soda_hall:ztemp_1 a brick:Zone_Temperature_Sensor ;
     bf:isPointOf soda_hall:vav_1 .
 
 soda_hall:floor_1 a brick:Floor .
 
-soda_hall:room_1 a brick:Room ;
-    bf:isPartOf soda_hall:floor_1,
-        soda_hall:hvaczone_1 .
-
-soda_hall:hvaczone_1 a brick:HVAC_Zone ;
-    bf:hasPart soda_hall:room_1 ;
-    bf:isFedBy soda_hall:vav_1 .
+soda_hall:hvaczone_1 a brick:HVAC_Zone .
 
 soda_hall:vav_1 a brick:VAV ;
     bf:feeds soda_hall:hvaczone_1 .
