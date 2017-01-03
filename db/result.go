@@ -137,12 +137,17 @@ func (rm *resultMap) replaceEntity(varname string, entity *ResultEntity) bool {
 func (rm *resultMap) iterVariable(variable string) []*ResultEntity {
 	var _iterbtree func(btree *btree.BTree, itervars []string)
 	var results []*ResultEntity
+	for k, v := range rm.varOrder.vars {
+		log.Noticef("var ord: %s depends on %s", k, v)
+	}
 	iterorder := rm.getVariableChain(variable)
 	if len(iterorder) == 0 {
 		panic("no order for variable " + variable)
 	}
+	log.Error(iterorder)
 	if rm.varOrder.vars[variable] == RESOLVED { // top level
 		tree := rm.vars[variable]
+		log.Debugf("iter var %s, tree size %d", variable, tree.Len())
 		if tree == nil {
 			return results
 		}

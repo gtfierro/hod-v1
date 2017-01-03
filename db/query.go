@@ -90,7 +90,11 @@ func (db *DB) formDependencyGraph(q query.Query) *dependencyGraph {
 		var added = []*queryTerm{}
 		for _, term := range terms {
 			if numUnresolved(term) < 2 {
-				dg.addRootTerm(term)
+				if len(dg.roots) == 0 {
+					dg.addRootTerm(term)
+				} else {
+					dg.addChild(term)
+				}
 				added = append(added, term)
 			}
 		}

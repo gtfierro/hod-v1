@@ -34,14 +34,16 @@ func (dg *dependencyGraph) iter() chan *queryTerm {
 
 	go func() {
 		stack := list.New()
-		for _, r := range dg.roots {
-			stack.PushFront(r)
-		}
+		//for _, r := range dg.roots {
+		//	stack.PushFront(r)
+		//}
+		stack.PushFront(dg.roots[0])
 		for stack.Len() > 0 {
 			node := stack.Remove(stack.Front()).(*queryTerm)
 			iter <- node
+			log.Debug("send", node)
 			for _, c := range node.children {
-				stack.PushBack(c)
+				stack.PushFront(c)
 			}
 		}
 		close(iter)
@@ -97,23 +99,32 @@ func (dg *dependencyGraph) addChild(qt *queryTerm) bool {
 	}
 	stack := list.New()
 	// push the roots onto the stack
-	for _, r := range dg.roots {
-		stack.PushFront(r)
-	}
+	//for _, r := range dg.roots {
+	//	stack.PushFront(r)
+	//}
+	stack.PushFront(dg.roots[0])
+addchildloop:
 	for stack.Len() > 0 {
 		node := stack.Remove(stack.Front()).(*queryTerm)
 		// if depends on, attach and return
 		if qt.dependsOn(node) {
 			//fmt.Println("node", qt.String(), "depends on", node.String())
+			for _, child := range node.children {
+				if qt.dependsOn(child) {
+					stack.PushFront(child)
+					continue addchildloop
+				}
+			}
 			node.children = append(node.children, qt)
 			return true
 		}
 		// add node children to back of stack
 		for _, c := range node.children {
-			stack.PushBack(c)
+			stack.PushFront(c)
 		}
 	}
-	return false
+	dg.roots[0].children = append(dg.roots[0].children, qt)
+	return true
 }
 
 // stores the state/variables for a particular triple

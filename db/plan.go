@@ -64,6 +64,7 @@ func (db *DB) formQueryPlan(dg *dependencyGraph) *queryPlan {
 					rso.parentVar = objectVar
 					rso.childVar = subjectVar
 				}
+				log.Warningf("%s depends on %s", rso.childVar, rso.parentVar)
 				newop = rso
 			case hasResolvedObject:
 				newop = &resolveSubjectFromVarObject{term: term}
