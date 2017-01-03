@@ -23,6 +23,7 @@ type queryPlan struct {
 	operations []operation
 	selectVars []string
 	varOrder   *variableStateMap
+	dg         *dependencyGraph
 }
 
 func (qp *queryPlan) findVarDepth(target string) int {
@@ -37,6 +38,7 @@ func (qp *queryPlan) findVarDepth(target string) int {
 
 func (db *DB) formQueryPlan(dg *dependencyGraph) *queryPlan {
 	qp := new(queryPlan)
+	qp.dg = dg
 	qp.selectVars = dg.selectVars
 	qp.varOrder = newVariableStateMap()
 
@@ -107,6 +109,8 @@ func (db *DB) formQueryPlan(dg *dependencyGraph) *queryPlan {
 			if !qp.varOrder.varIsChild(objectVar) {
 				qp.varOrder.addTopLevel(objectVar)
 			}
+		default:
+			log.Fatal("Nothing chosen for", term)
 		}
 		qp.operations = append(qp.operations, newop)
 	}
@@ -119,6 +123,7 @@ type operation interface {
 	run(db *DB, varOrder *variableStateMap, rm *resultMap) (*resultMap, error)
 	String() string
 	SortKey() string
+	GetTerm() *queryTerm
 }
 
 func (qp *queryPlan) Len() int {
@@ -147,6 +152,10 @@ func (rs *resolveSubject) SortKey() string {
 	return rs.term.Subject.String()
 }
 
+func (rs *resolveSubject) GetTerm() *queryTerm {
+	return rs.term
+}
+
 func (rs *resolveSubject) run(db *DB, varOrder *variableStateMap, rm *resultMap) (*resultMap, error) {
 	// fetch the object from the graph
 	object, err := db.GetEntity(rs.term.Object)
@@ -158,7 +167,18 @@ func (rs *resolveSubject) run(db *DB, varOrder *variableStateMap, rm *resultMap)
 	subjectVar := rs.term.Subject.String()
 	// get all subjects reachable from the given object along the path
 	subjects := db.getSubjectFromPredObject(object.PK, rs.term.Path)
-	rm.addVariable(subjectVar, subjects)
+
+	// need to restrict if we are child. Else, just add definition
+	if varOrder.varIsChild(subjectVar) {
+		entSubjects := hashTreeToEntityTree(subjects)
+		for _, subject := range rm.iterVariable(subjectVar) {
+			if !entSubjects.Has(subject) {
+				subject.PK = emptyHash
+			}
+		}
+	} else {
+		rm.addVariable(subjectVar, subjects)
+	}
 	return rm, nil
 }
 
@@ -173,6 +193,10 @@ func (ro *resolveObject) String() string {
 
 func (ro *resolveObject) SortKey() string {
 	return ro.term.Object.String()
+}
+
+func (ro *resolveObject) GetTerm() *queryTerm {
+	return ro.term
 }
 
 func (ro *resolveObject) run(db *DB, varOrder *variableStateMap, rm *resultMap) (*resultMap, error) {
@@ -202,6 +226,10 @@ func (rso *restrictSubjectObjectByPredicate) String() string {
 
 func (rso *restrictSubjectObjectByPredicate) SortKey() string {
 	return rso.parentVar
+}
+
+func (rso *restrictSubjectObjectByPredicate) GetTerm() *queryTerm {
+	return rso.term
 }
 
 // this forms a linking between the subject and object vars; for each
@@ -268,6 +296,10 @@ func (rsv *resolveSubjectFromVarObject) SortKey() string {
 	return rsv.term.Object.String()
 }
 
+func (rsv *resolveSubjectFromVarObject) GetTerm() *queryTerm {
+	return rsv.term
+}
+
 // Use this when we have subject and object variables, but only object has been filled in
 func (rsv *resolveSubjectFromVarObject) run(db *DB, varOrder *variableStateMap, rm *resultMap) (*resultMap, error) {
 	var (
@@ -295,6 +327,10 @@ func (rov *resolveObjectFromVarSubject) String() string {
 
 func (rov *resolveObjectFromVarSubject) SortKey() string {
 	return rov.term.Subject.String()
+}
+
+func (rov *resolveObjectFromVarSubject) GetTerm() *queryTerm {
+	return rov.term
 }
 
 func (rov *resolveObjectFromVarSubject) run(db *DB, varOrder *variableStateMap, rm *resultMap) (*resultMap, error) {

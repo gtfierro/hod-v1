@@ -137,9 +137,6 @@ func (rm *resultMap) replaceEntity(varname string, entity *ResultEntity) bool {
 func (rm *resultMap) iterVariable(variable string) []*ResultEntity {
 	var _iterbtree func(btree *btree.BTree, itervars []string)
 	var results []*ResultEntity
-	for k, v := range rm.varOrder.vars {
-		log.Noticef("var ord: %s depends on %s", k, v)
-	}
 	iterorder := rm.getVariableChain(variable)
 	if len(iterorder) == 0 {
 		panic("no order for variable " + variable)
@@ -147,12 +144,15 @@ func (rm *resultMap) iterVariable(variable string) []*ResultEntity {
 	log.Error(iterorder)
 	if rm.varOrder.vars[variable] == RESOLVED { // top level
 		tree := rm.vars[variable]
-		log.Debugf("iter var %s, tree size %d", variable, tree.Len())
 		if tree == nil {
 			return results
 		}
 		max := tree.Max()
 		iter := func(i btree.Item) bool {
+			entity := i.(*ResultEntity)
+			if entity.PK == emptyHash {
+				return i != max
+			}
 			results = append(results, i.(*ResultEntity))
 			return i != max
 		}
@@ -166,6 +166,9 @@ func (rm *resultMap) iterVariable(variable string) []*ResultEntity {
 		max := tree.Max()
 		iter := func(i btree.Item) bool {
 			entity := i.(*ResultEntity)
+			if entity.PK == emptyHash {
+				return i != max
+			}
 			if len(itervars) == 0 {
 				results = append(results, entity)
 				return i != max
@@ -246,8 +249,11 @@ tupleLoop:
 }
 
 func (db *DB) _getTuplesFromTree(name string, ve *ResultEntity) []map[string]turtle.URI {
-	uri := db.MustGetURI(ve.PK)
 	var ret []map[string]turtle.URI
+	if ve.PK == emptyHash {
+		return ret
+	}
+	uri := db.MustGetURI(ve.PK)
 	vars := make(map[string]turtle.URI)
 	vars[name] = uri
 	if len(ve.Next) == 0 {

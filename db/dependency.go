@@ -51,7 +51,6 @@ func (dg *dependencyGraph) iter() chan *queryTerm {
 		for stack.Len() > 0 {
 			node := stack.Remove(stack.Front()).(*queryTerm)
 			iter <- node
-			log.Debug("send", node)
 			for _, c := range node.children {
 				stack.PushFront(c)
 			}
