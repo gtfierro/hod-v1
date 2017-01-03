@@ -210,7 +210,18 @@ func (ro *resolveObject) run(db *DB, varOrder *variableStateMap, rm *resultMap) 
 	objectVar := ro.term.Object.String()
 	// get all objects reachable from the given subject along the path
 	objects := db.getObjectFromSubjectPred(subject.PK, ro.term.Path)
-	rm.addVariable(objectVar, objects)
+
+	// need to restrict if we are child. Else, just add definition
+	if varOrder.varIsChild(objectVar) {
+		entobjects := hashTreeToEntityTree(objects)
+		for _, object := range rm.iterVariable(objectVar) {
+			if !entobjects.Has(object) {
+				object.PK = emptyHash
+			}
+		}
+	} else {
+		rm.addVariable(objectVar, objects)
+	}
 	return rm, nil
 }
 
