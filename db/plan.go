@@ -88,7 +88,6 @@ func (db *DB) formQueryPlan(dg *dependencyGraph) *queryPlan {
 					rso.parentVar = objectVar
 					rso.childVar = subjectVar
 				}
-				log.Warningf("%s depends on %s", rso.childVar, rso.parentVar)
 				newop = rso
 			case hasResolvedObject:
 				newop = &resolveSubjectFromVarObject{term: term}
@@ -270,9 +269,6 @@ func (rso *restrictSubjectObjectByPredicate) run(db *DB, varOrder *variableState
 					subject.Next[objectVar] = intersectTrees(objects, objTree)
 				}
 			}
-			//if len(subject.Next) > 0 {
-			//	rm.replaceEntity(subjectVar, subject)
-			//}
 		}
 	} else if rso.parentVar == objectVar {
 		for _, object := range rm.iterVariable(objectVar) {
@@ -284,9 +280,6 @@ func (rso *restrictSubjectObjectByPredicate) run(db *DB, varOrder *variableState
 					object.Next[subjectVar] = intersectTrees(subjects, subTree)
 				}
 			}
-			//if len(object.Next) > 0 {
-			//	rm.replaceEntity(objectVar, object)
-			//}
 		}
 	} else {
 		log.Fatal("unfamiliar situation")

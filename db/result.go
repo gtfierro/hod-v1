@@ -141,7 +141,6 @@ func (rm *resultMap) iterVariable(variable string) []*ResultEntity {
 	if len(iterorder) == 0 {
 		panic("no order for variable " + variable)
 	}
-	log.Error(iterorder)
 	if rm.varOrder.vars[variable] == RESOLVED { // top level
 		tree := rm.vars[variable]
 		if tree == nil {

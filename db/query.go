@@ -42,7 +42,7 @@ func (db *DB) getQueryResults(q query.Query) [][]turtle.URI {
 
 	if db.showQueryPlan {
 		for _, op := range qp.operations {
-			log.Debug("op", op)
+			log.Notice("op", op)
 		}
 	}
 	if db.showQueryPlanLatencies {
