@@ -3,3 +3,6 @@ query/y.output
 
 # binary
 hod
+
+# testing database
+_hoddb
