@@ -18,6 +18,9 @@
 ####
 # configuration for verbosity during operation
 ####
+#
+# Show the namespace prefixes
+#ShowNamespaces: true
 
 # Show the built dependency graph of query terms
 #ShowDependencyGraph: false

@@ -12,6 +12,7 @@ type Config struct {
 	BrickClassTTL string
 	ReloadBrick   bool
 
+	ShowNamespaces         bool
 	ShowDependencyGraph    bool
 	ShowQueryPlan          bool
 	ShowQueryPlanLatencies bool
@@ -36,6 +37,7 @@ func init() {
 	viper.SetDefault("BrickClassTTL", prefix+"/src/github.com/gtfierro/hod/Brick.ttl")
 	viper.SetDefault("ReloadBrick", true)
 
+	viper.SetDefault("ShowNamespaces", true)
 	viper.SetDefault("ShowDependencyGraph", false)
 	viper.SetDefault("ShowQueryPlan", false)
 	viper.SetDefault("ShowQueryPlanLatencies", false)
@@ -70,6 +72,7 @@ func ReadConfig(file string) (*Config, error) {
 		BrickFrameTTL:          viper.GetString("BrickFrameTTL"),
 		BrickClassTTL:          viper.GetString("BrickClassTTL"),
 		ReloadBrick:            viper.GetBool("ReloadBrick"),
+		ShowNamespaces:         viper.GetBool("ShowNamespaces"),
 		ShowDependencyGraph:    viper.GetBool("ShowDependencyGraph"),
 		ShowQueryPlan:          viper.GetBool("ShowQueryPlan"),
 		ShowQueryPlanLatencies: viper.GetBool("ShowQueryPlanLatencies"),

@@ -185,6 +185,12 @@ func NewDB(cfg *config.Config) (*DB, error) {
 		}
 	}
 
+	if cfg.ShowNamespaces {
+		for k, v := range db.namespaces {
+			log.Noticef("%s => %s", k, v)
+		}
+	}
+
 	return db, nil
 }
 
