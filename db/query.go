@@ -438,3 +438,31 @@ func (db *DB) getSubjectObjectFromPred(path []query.PathPattern) (soPair [][][4]
 	//}
 	return soPair
 }
+
+func (db *DB) getPredicateFromSubjectObject(subject, object *Entity) *btree.BTree {
+	reachable := btree.New(2)
+
+	for edge, objects := range subject.InEdges {
+		for _, edgeObject := range objects {
+			log.Debug(edgeObject, object.PK)
+			if edgeObject == object.PK {
+				// matches!
+				var edgepk [4]byte
+				copy(edgepk[:], []byte(edge))
+				reachable.ReplaceOrInsert(Item(edgepk))
+			}
+		}
+	}
+	for edge, objects := range subject.OutEdges {
+		for _, edgeObject := range objects {
+			if edgeObject == object.PK {
+				// matches!
+				var edgepk [4]byte
+				copy(edgepk[:], []byte(edge))
+				reachable.ReplaceOrInsert(Item(edgepk))
+			}
+		}
+	}
+
+	return reachable
+}
