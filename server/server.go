@@ -101,6 +101,7 @@ func StartHodServer(db *hod.DB, cfg *config.Config) {
 func (srv *hodServer) handleQuery(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
 	defer req.Body.Close()
 
+	log.Infof("Query from %s", req.RemoteAddr)
 	parsed, err := query.Parse(req.Body)
 	if err != nil {
 		log.Error(err)
@@ -126,6 +127,7 @@ func (srv *hodServer) handleQuery(rw http.ResponseWriter, req *http.Request, ps 
 
 func (srv *hodServer) handleLoadLinks(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
 	defer req.Body.Close()
+	log.Infof("LoadLinks from %s", req.RemoteAddr)
 
 	var updates = new(hod.LinkUpdates)
 	decoder := json.NewDecoder(req.Body)
@@ -147,22 +149,26 @@ func (srv *hodServer) handleLoadLinks(rw http.ResponseWriter, req *http.Request,
 }
 
 func (srv *hodServer) serveHelp(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
+	log.Infof("Serve help from %s", req.RemoteAddr)
 	defer req.Body.Close()
 	http.ServeFile(rw, req, srv.staticpath+"/help.html")
 }
 
 func (srv *hodServer) serveQuery(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
+	log.Infof("Serve query from %s", req.RemoteAddr)
 	defer req.Body.Close()
 	http.ServeFile(rw, req, srv.staticpath+"/query.html")
 }
 
 func (srv *hodServer) servePlanner(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
+	log.Infof("Serve planner from %s", req.RemoteAddr)
 	defer req.Body.Close()
 	http.ServeFile(rw, req, srv.staticpath+"/plan.html")
 }
 
 func (srv *hodServer) handleQueryDot(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
 	defer req.Body.Close()
+	log.Infof("QueryDot from %s", req.RemoteAddr)
 
 	dot, err := srv.db.QueryToDOT(req.Body)
 	if err != nil {
