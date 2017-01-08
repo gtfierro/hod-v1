@@ -26,7 +26,7 @@ const MaxValLength = 128
 
 type Link struct {
 	URI    turtle.URI
-	entity [4]byte
+	entity Key
 	Key    []byte
 	Value  []byte
 }
@@ -141,17 +141,17 @@ func newLinkDB(hod *DB, cfg *config.Config) (*linkDB, error) {
 
 // copies the entity and key bytes into 'dest' to act as the access key for
 // the underlying leveldb
-func getlinkdbkey(entity [4]byte, key []byte, dest *[64]byte) {
+func getlinkdbkey(entity Key, key []byte, dest *[64]byte) {
 	// TODO: switch this to uri/key, not entity. Use this method to retrieve entity PK
 	copy(dest[:], entity[:])
-	copy(dest[4:], key)
+	copy(dest[4:], key[:])
 }
 
 func (ldb *linkDB) getKey(l *Link, dest *[64]byte) {
 	hash := ldb.hod.MustGetHash(l.URI)
 	l.entity = hash
 	copy(dest[:], hash[:])
-	copy(dest[4:], l.Key)
+	copy(dest[4:], l.Key[:])
 }
 
 func (ldb *linkDB) startTx() (*leveldb.Transaction, error) {
@@ -179,7 +179,7 @@ func (ldb *linkDB) get(link *Link) (value []byte, err error) {
 	return
 }
 
-func (ldb *linkDB) getAll(entity [4]byte) (keys [][]byte, values [][]byte, err error) {
+func (ldb *linkDB) getAll(entity Key) (keys [][]byte, values [][]byte, err error) {
 	var start, limit [16]byte
 	copy(start[:], entity[:])
 	for i := 4; i < 16; i++ {

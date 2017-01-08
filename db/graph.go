@@ -20,7 +20,7 @@ import (
 // Second pass:
 //  - fill in all of the edges in the graph
 func (db *DB) buildGraph(dataset turtle.DataSet) error {
-	var predicates = make(map[string][4]byte)
+	var predicates = make(map[string]Key)
 	var subjAdded = 0
 	var objAdded = 0
 	graphtx, err := db.graphDB.OpenTransaction()

@@ -8,29 +8,29 @@ type RelshipIndex map[string]string
 type NamespaceIndex map[string]string
 
 type Entity struct {
-	PK [4]byte `msg:"p"`
+	PK Key `msg:"p"`
 	// note: we have to use string keys to get msgp to work
-	InEdges  map[string][][4]byte `msg:"ein"`
-	OutEdges map[string][][4]byte `msg:"eout"`
+	InEdges  map[string][]Key `msg:"ein"`
+	OutEdges map[string][]Key `msg:"eout"`
 }
 
 func NewEntity() *Entity {
 	return &Entity{
-		InEdges:  make(map[string][][4]byte),
-		OutEdges: make(map[string][][4]byte),
+		InEdges:  make(map[string][]Key),
+		OutEdges: make(map[string][]Key),
 	}
 }
 
 // returns true if we added an endpoint; false if it was already there
-func (e *Entity) AddInEdge(predicate, endpoint [4]byte) bool {
+func (e *Entity) AddInEdge(predicate, endpoint Key) bool {
 	var (
-		edgeList [][4]byte
+		edgeList []Key
 		found    bool
 	)
 	// check if we already have an edgelist for the given predicate
 	if edgeList, found = e.InEdges[string(predicate[:])]; !found {
 		// if we don't, then create a new one and put the endpoint in it
-		edgeList = [][4]byte{endpoint}
+		edgeList = []Key{endpoint}
 		e.InEdges[string(predicate[:])] = edgeList
 		return true
 	}
@@ -48,15 +48,15 @@ func (e *Entity) AddInEdge(predicate, endpoint [4]byte) bool {
 }
 
 // returns true if we added an endpoint; false if it was already there
-func (e *Entity) AddOutEdge(predicate, endpoint [4]byte) bool {
+func (e *Entity) AddOutEdge(predicate, endpoint Key) bool {
 	var (
-		edgeList [][4]byte
+		edgeList []Key
 		found    bool
 	)
 	// check if we already have an edgelist for the given predicate
 	if edgeList, found = e.OutEdges[string(predicate[:])]; !found {
 		// if we don't, then create a new one and put the endpoint in it
-		edgeList = [][4]byte{endpoint}
+		edgeList = []Key{endpoint}
 		e.OutEdges[string(predicate[:])] = edgeList
 		return true
 	}
@@ -74,7 +74,7 @@ func (e *Entity) AddOutEdge(predicate, endpoint [4]byte) bool {
 }
 
 type PredicateEntity struct {
-	PK [4]byte `msg:"p"`
+	PK Key `msg:"p"`
 	// note: we have to use string keys to get msgp to work
 	Subjects map[string]map[string]uint32 `msg:"s"`
 	Objects  map[string]map[string]uint32 `msg:"o"`
@@ -87,7 +87,7 @@ func NewPredicateEntity() *PredicateEntity {
 	}
 }
 
-func (e *PredicateEntity) AddSubjectObject(subject, object [4]byte) {
+func (e *PredicateEntity) AddSubjectObject(subject, object Key) {
 	// if we have the subject
 	if ms, found := e.Subjects[string(subject[:])]; found {
 		// find the map of related objects

@@ -23,7 +23,7 @@ func hashTreeToEntityTree(src *btree.BTree) *btree.BTree {
 	max := src.Max()
 	iter := func(i btree.Item) bool {
 		ve := &ResultEntity{
-			PK:   i.(Item),
+			PK:   i.(Key),
 			Next: make(map[string]*btree.BTree),
 		}
 		newTree.ReplaceOrInsert(ve)
@@ -62,7 +62,7 @@ func dumpHashTree(tree *btree.BTree, db *DB, limit int) {
 		} else if limit > 0 {
 			limit -= 1 //
 		}
-		fmt.Println(db.MustGetURI(i.(Item)))
+		fmt.Println(db.MustGetURI(i.(Key)))
 		return i != max
 	}
 	tree.Ascend(iter)

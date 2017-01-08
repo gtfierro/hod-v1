@@ -24,7 +24,7 @@ import (
 
 // logger
 var log *logging.Logger
-var emptyHash = [4]byte{0, 0, 0, 0}
+var emptyHash = Key{0, 0, 0, 0}
 
 func init() {
 	log = logging.MustGetLogger("hod")
@@ -54,9 +54,9 @@ type DB struct {
 	namespaces map[string]string
 	// cache for entity hashes
 	entityHashCache   *freecache.Cache
-	entityObjectCache map[[4]byte]*Entity
+	entityObjectCache map[Key]*Entity
 	eocLock           sync.RWMutex
-	uriCache          map[[4]byte]turtle.URI
+	uriCache          map[Key]turtle.URI
 	uriLock           sync.RWMutex
 	// config options for output
 	showDependencyGraph    bool
@@ -112,8 +112,8 @@ func NewDB(cfg *config.Config) (*DB, error) {
 		showOperationLatencies: cfg.ShowOperationLatencies,
 		showQueryLatencies:     cfg.ShowQueryLatencies,
 		entityHashCache:        freecache.NewCache(4 * 10000),
-		entityObjectCache:      make(map[[4]byte]*Entity),
-		uriCache:               make(map[[4]byte]turtle.URI),
+		entityObjectCache:      make(map[Key]*Entity),
+		uriCache:               make(map[Key]turtle.URI),
 	}
 
 	linkDB, err := newLinkDB(db, cfg)
@@ -290,13 +290,13 @@ func (db *DB) loadPredicateEntity(predicate turtle.URI, _predicateHash, _subject
 	var (
 		pred          *PredicateEntity
 		found         bool
-		predicateHash [4]byte
-		subjectHash   [4]byte
-		objectHash    [4]byte
+		predicateHash Key
+		subjectHash   Key
+		objectHash    Key
 	)
-	copy(predicateHash[:], _predicateHash)
-	copy(subjectHash[:], _subjectHash)
-	copy(objectHash[:], _objectHash)
+	predicateHash.FromSlice(_predicateHash)
+	subjectHash.FromSlice(_subjectHash)
+	objectHash.FromSlice(_objectHash)
 
 	if pred, found = db.predIndex[predicate]; !found {
 		pred = NewPredicateEntity()
@@ -477,8 +477,8 @@ func (db *DB) LoadDataset(dataset turtle.DataSet) error {
 }
 
 // returns the uint32 hash of the given URI (this is adjusted for uniqueness)
-func (db *DB) GetHash(entity turtle.URI) ([4]byte, error) {
-	var rethash [4]byte
+func (db *DB) GetHash(entity turtle.URI) (Key, error) {
+	var rethash Key
 	if hash, err := db.entityHashCache.Get(entity.Bytes()); err != nil {
 		if err == freecache.ErrNotFound {
 			val, err := db.entityDB.Get(entity.Bytes(), nil)
@@ -500,7 +500,7 @@ func (db *DB) GetHash(entity turtle.URI) ([4]byte, error) {
 	return rethash, nil
 }
 
-func (db *DB) MustGetHash(entity turtle.URI) [4]byte {
+func (db *DB) MustGetHash(entity turtle.URI) Key {
 	val, err := db.GetHash(entity)
 	if err != nil {
 		panic(err)
@@ -508,7 +508,7 @@ func (db *DB) MustGetHash(entity turtle.URI) [4]byte {
 	return val
 }
 
-func (db *DB) GetURI(hash [4]byte) (turtle.URI, error) {
+func (db *DB) GetURI(hash Key) (turtle.URI, error) {
 	db.uriLock.RLock()
 	if uri, found := db.uriCache[hash]; found {
 		db.uriLock.RUnlock()
@@ -526,7 +526,7 @@ func (db *DB) GetURI(hash [4]byte) (turtle.URI, error) {
 	return uri, nil
 }
 
-func (db *DB) MustGetURI(hash [4]byte) turtle.URI {
+func (db *DB) MustGetURI(hash Key) turtle.URI {
 	val, err := db.pkDB.Get(hash[:], nil)
 	if err != nil {
 		panic(err)
@@ -535,7 +535,7 @@ func (db *DB) MustGetURI(hash [4]byte) turtle.URI {
 }
 
 func (db *DB) MustGetURIStringHash(hash string) turtle.URI {
-	var c [4]byte
+	var c Key
 	copy(c[:], []byte(hash))
 	val, err := db.pkDB.Get(c[:], nil)
 	if err != nil {
@@ -561,7 +561,7 @@ func (db *DB) GetEntity(uri turtle.URI) (*Entity, error) {
 	return entity, nil
 }
 
-func (db *DB) GetEntityFromHash(hash [4]byte) (*Entity, error) {
+func (db *DB) GetEntityFromHash(hash Key) (*Entity, error) {
 	db.eocLock.RLock()
 	if ent, found := db.entityObjectCache[hash]; found {
 		db.eocLock.RUnlock()
@@ -580,7 +580,7 @@ func (db *DB) GetEntityFromHash(hash [4]byte) (*Entity, error) {
 	return ent, err
 }
 
-func (db *DB) MustGetEntityFromHash(hash [4]byte) *Entity {
+func (db *DB) MustGetEntityFromHash(hash Key) *Entity {
 	e, err := db.GetEntityFromHash(hash)
 	if err != nil {
 		panic(err)
@@ -621,7 +621,7 @@ func (db *DB) GetEntityTx(graphtx *leveldb.Transaction, uri turtle.URI) (*Entity
 	return entity, nil
 }
 
-func (db *DB) GetEntityFromHashTx(graphtx *leveldb.Transaction, hash [4]byte) (*Entity, error) {
+func (db *DB) GetEntityFromHashTx(graphtx *leveldb.Transaction, hash Key) (*Entity, error) {
 	bytes, err := graphtx.Get(hash[:], nil)
 	if err != nil {
 		return nil, err

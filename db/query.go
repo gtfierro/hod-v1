@@ -2,7 +2,6 @@ package db
 
 import (
 	"container/list"
-	"encoding/binary"
 	"fmt"
 	"time"
 
@@ -21,13 +20,6 @@ import (
 //
 // First we "clean" these by making sure that they have their full
 // namespaces rather than the prefix
-
-type Item [4]byte
-
-func (i Item) Less(than btree.Item) bool {
-	t := than.(Item)
-	return binary.LittleEndian.Uint32(i[:]) < binary.LittleEndian.Uint32(t[:])
-}
 
 func (db *DB) getQueryResults(q query.Query) [][]turtle.URI {
 	if db.showQueryPlan {
@@ -165,7 +157,7 @@ func (db *DB) followPathFromObject(object *Entity, results *btree.BTree, searchs
 	predHash, err := db.GetHash(pattern.Predicate)
 	if err != nil && err == leveldb.ErrNotFound {
 		log.Infof("Adding unseen predicate %s", pattern.Predicate)
-		var hashdest [4]byte
+		var hashdest Key
 		if err := db.insertEntity(pattern.Predicate, hashdest[:]); err != nil {
 			panic(fmt.Errorf("Could not insert entity %s (%v)", pattern.Predicate, err))
 		}
@@ -178,10 +170,10 @@ func (db *DB) followPathFromObject(object *Entity, results *btree.BTree, searchs
 
 	for stack.Len() > 0 {
 		entity := stack.Remove(stack.Front()).(*Entity)
-		if traversed.Has(Item(entity.PK)) {
+		if traversed.Has(entity.PK) {
 			continue
 		}
-		traversed.ReplaceOrInsert(Item(entity.PK))
+		traversed.ReplaceOrInsert(entity.PK)
 		switch pattern.Pattern {
 		case query.PATTERN_SINGLE:
 			// [found] indicates whether or not we have any edges with the given pattern
@@ -192,11 +184,11 @@ func (db *DB) followPathFromObject(object *Entity, results *btree.BTree, searchs
 			}
 			// here, these entities are all connected by the required predicate
 			for _, entityHash := range edges {
-				results.ReplaceOrInsert(Item(entityHash))
+				results.ReplaceOrInsert(entityHash)
 			}
 			// because this is one hop, we don't add any new entities to the stack
 		case query.PATTERN_ZERO_ONE:
-			results.ReplaceOrInsert(Item(entity.PK))
+			results.ReplaceOrInsert(entity.PK)
 			endpoints, found := entity.InEdges[string(predHash[:])]
 			// this requires the pattern to exist, so we skip if we have no edges of that name
 			if !found {
@@ -204,11 +196,11 @@ func (db *DB) followPathFromObject(object *Entity, results *btree.BTree, searchs
 			}
 			// here, these entities are all connected by the required predicate
 			for _, entityHash := range endpoints {
-				results.ReplaceOrInsert(Item(entityHash))
+				results.ReplaceOrInsert(entityHash)
 			}
 			// because this is one hop, we don't add any new entities to the stack
 		case query.PATTERN_ZERO_PLUS:
-			results.ReplaceOrInsert(Item(entity.PK))
+			results.ReplaceOrInsert(entity.PK)
 			endpoints, found := entity.InEdges[string(predHash[:])]
 			// this requires the pattern to exist, so we skip if we have no edges of that name
 			if !found {
@@ -217,10 +209,10 @@ func (db *DB) followPathFromObject(object *Entity, results *btree.BTree, searchs
 			// here, these entities are all connected by the required predicate
 			for _, entityHash := range endpoints {
 				nextEntity := db.MustGetEntityFromHash(entityHash)
-				if !results.Has(Item(nextEntity.PK)) {
+				if !results.Has(nextEntity.PK) {
 					searchstack.PushBack(nextEntity)
 				}
-				results.ReplaceOrInsert(Item(entityHash))
+				results.ReplaceOrInsert(entityHash)
 				stack.PushBack(nextEntity)
 			}
 		case query.PATTERN_ONE_PLUS:
@@ -232,7 +224,7 @@ func (db *DB) followPathFromObject(object *Entity, results *btree.BTree, searchs
 			// here, these entities are all connected by the required predicate
 			for _, entityHash := range edges {
 				nextEntity := db.MustGetEntityFromHash(entityHash)
-				results.ReplaceOrInsert(Item(nextEntity.PK))
+				results.ReplaceOrInsert(nextEntity.PK)
 				searchstack.PushBack(nextEntity)
 				// also make sure to add this to the stack so we can search
 				stack.PushBack(nextEntity)
@@ -256,10 +248,10 @@ func (db *DB) followPathFromSubject(subject *Entity, results *btree.BTree, searc
 
 	for stack.Len() > 0 {
 		entity := stack.Remove(stack.Front()).(*Entity)
-		if traversed.Has(Item(entity.PK)) {
+		if traversed.Has(entity.PK) {
 			continue
 		}
-		traversed.ReplaceOrInsert(Item(entity.PK))
+		traversed.ReplaceOrInsert(entity.PK)
 		switch pattern.Pattern {
 		case query.PATTERN_SINGLE:
 			// [found] indicates whether or not we have any edges with the given pattern
@@ -270,13 +262,13 @@ func (db *DB) followPathFromSubject(subject *Entity, results *btree.BTree, searc
 			}
 			// here, these entities are all connected by the required predicate
 			for _, entityHash := range endpoints {
-				results.ReplaceOrInsert(Item(entityHash))
+				results.ReplaceOrInsert(entityHash)
 			}
 			// because this is one hop, we don't add any new entities to the stack
 		case query.PATTERN_ZERO_ONE:
 			// this does not require the pattern to exist, so we add the current entity plus any
 			// connected by the appropriate edge
-			results.ReplaceOrInsert(Item(entity.PK))
+			results.ReplaceOrInsert(entity.PK)
 			endpoints, found := entity.OutEdges[string(predHash[:])]
 			// this requires the pattern to exist, so we skip if we have no edges of that name
 			if !found {
@@ -284,11 +276,11 @@ func (db *DB) followPathFromSubject(subject *Entity, results *btree.BTree, searc
 			}
 			// here, these entities are all connected by the required predicate
 			for _, entityHash := range endpoints {
-				results.ReplaceOrInsert(Item(entityHash))
+				results.ReplaceOrInsert(entityHash)
 			}
 			// because this is one hop, we don't add any new entities to the stack
 		case query.PATTERN_ZERO_PLUS:
-			results.ReplaceOrInsert(Item(entity.PK))
+			results.ReplaceOrInsert(entity.PK)
 			endpoints, found := entity.OutEdges[string(predHash[:])]
 			// this requires the pattern to exist, so we skip if we have no edges of that name
 			if !found {
@@ -297,10 +289,10 @@ func (db *DB) followPathFromSubject(subject *Entity, results *btree.BTree, searc
 			// here, these entities are all connected by the required predicate
 			for _, entityHash := range endpoints {
 				nextEntity := db.MustGetEntityFromHash(entityHash)
-				if !results.Has(Item(nextEntity.PK)) {
+				if !results.Has(nextEntity.PK) {
 					searchstack.PushBack(nextEntity)
 				}
-				results.ReplaceOrInsert(Item(entityHash))
+				results.ReplaceOrInsert(entityHash)
 				stack.PushBack(nextEntity)
 			}
 		case query.PATTERN_ONE_PLUS:
@@ -312,7 +304,7 @@ func (db *DB) followPathFromSubject(subject *Entity, results *btree.BTree, searc
 			// here, these entities are all connected by the required predicate
 			for _, entityHash := range edges {
 				nextEntity := db.MustGetEntityFromHash(entityHash)
-				results.ReplaceOrInsert(Item(nextEntity.PK))
+				results.ReplaceOrInsert(nextEntity.PK)
 				searchstack.PushBack(nextEntity)
 				// also make sure to add this to the stack so we can search
 				stack.PushBack(nextEntity)
@@ -321,7 +313,7 @@ func (db *DB) followPathFromSubject(subject *Entity, results *btree.BTree, searc
 	}
 }
 
-func (db *DB) getSubjectFromPredObject(objectHash [4]byte, path []query.PathPattern) *btree.BTree {
+func (db *DB) getSubjectFromPredObject(objectHash Key, path []query.PathPattern) *btree.BTree {
 	// first get the initial object entity from the db
 	// then we're going to conduct a BFS search starting from this entity looking for all entities
 	// that have the required path sequence. We place the results in a BTree to maintain uniqueness
@@ -346,11 +338,11 @@ func (db *DB) getSubjectFromPredObject(objectHash [4]byte, path []query.PathPatt
 		for stack.Len() > 0 {
 			entity := stack.Remove(stack.Front()).(*Entity)
 			// if we have already traversed this entity, skip it
-			if traversed.Has(Item(entity.PK)) {
+			if traversed.Has(entity.PK) {
 				continue
 			}
 			// mark this entity as traversed
-			traversed.ReplaceOrInsert(Item(entity.PK))
+			traversed.ReplaceOrInsert(entity.PK)
 			db.followPathFromObject(entity, reachable, stack, segment)
 		}
 
@@ -358,7 +350,7 @@ func (db *DB) getSubjectFromPredObject(objectHash [4]byte, path []query.PathPatt
 		if idx < len(path)-1 {
 			max := reachable.Max()
 			iter := func(i btree.Item) bool {
-				ent, err := db.GetEntityFromHash(i.(Item))
+				ent, err := db.GetEntityFromHash(i.(Key))
 				if err != nil {
 					log.Error(err)
 					return false
@@ -375,7 +367,7 @@ func (db *DB) getSubjectFromPredObject(objectHash [4]byte, path []query.PathPatt
 }
 
 // Given object and predicate, get all subjects
-func (db *DB) getObjectFromSubjectPred(subjectHash [4]byte, path []query.PathPattern) *btree.BTree {
+func (db *DB) getObjectFromSubjectPred(subjectHash Key, path []query.PathPattern) *btree.BTree {
 	subEntity, err := db.GetEntityFromHash(subjectHash)
 	if err != nil {
 		panic(err)
@@ -394,11 +386,11 @@ func (db *DB) getObjectFromSubjectPred(subjectHash [4]byte, path []query.PathPat
 		for stack.Len() > 0 {
 			entity := stack.Remove(stack.Front()).(*Entity)
 			// if we have already traversed this entity, skip it
-			if traversed.Has(Item(entity.PK)) {
+			if traversed.Has(entity.PK) {
 				continue
 			}
 			// mark this entity as traversed
-			traversed.ReplaceOrInsert(Item(entity.PK))
+			traversed.ReplaceOrInsert(entity.PK)
 			db.followPathFromSubject(entity, reachable, stack, segment)
 		}
 
@@ -406,7 +398,7 @@ func (db *DB) getObjectFromSubjectPred(subjectHash [4]byte, path []query.PathPat
 		if idx < len(path)-1 {
 			max := reachable.Max()
 			iter := func(i btree.Item) bool {
-				ent, err := db.GetEntityFromHash(i.(Item))
+				ent, err := db.GetEntityFromHash(i.(Key))
 				if err != nil {
 					log.Error(err)
 					return false
@@ -423,7 +415,7 @@ func (db *DB) getObjectFromSubjectPred(subjectHash [4]byte, path []query.PathPat
 }
 
 // Given a predicate, it returns pairs of (subject, object) that are connected by that relationship
-func (db *DB) getSubjectObjectFromPred(path []query.PathPattern) (soPair [][][4]byte) {
+func (db *DB) getSubjectObjectFromPred(path []query.PathPattern) (soPair [][]Key) {
 	//pe, found := db.predIndex[pattern.Predicate]
 	//if !found {
 	//	panic(fmt.Sprintf("Cannot find predicate %s", pattern.Predicate))
@@ -447,9 +439,9 @@ func (db *DB) getPredicateFromSubjectObject(subject, object *Entity) *btree.BTre
 			log.Debug(edgeObject, object.PK)
 			if edgeObject == object.PK {
 				// matches!
-				var edgepk [4]byte
-				copy(edgepk[:], []byte(edge))
-				reachable.ReplaceOrInsert(Item(edgepk))
+				var edgepk Key
+				edgepk.FromSlice([]byte(edge))
+				reachable.ReplaceOrInsert(edgepk)
 			}
 		}
 	}
