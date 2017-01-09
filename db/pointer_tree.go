@@ -32,11 +32,19 @@ func (pt *pointerTree) Len() int {
 }
 
 func (pt *pointerTree) Max() *Entity {
-	return pt.tree.Max().(*Entity)
+	max := pt.tree.Max()
+	if max == nil {
+		return nil
+	}
+	return max.(*Entity)
 }
 
 func (pt *pointerTree) Min() *Entity {
-	return pt.tree.Min().(*Entity)
+	min := pt.tree.Min()
+	if min == nil {
+		return nil
+	}
+	return min.(*Entity)
 }
 
 func (pt *pointerTree) Delete(ent *Entity) *Entity {

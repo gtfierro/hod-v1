@@ -2,7 +2,6 @@ package db
 
 import (
 	"github.com/google/btree"
-	"github.com/gtfierro/bloom"
 	"testing"
 )
 
@@ -92,14 +91,6 @@ func BenchmarkIntersectTreesBtreeNone(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		intersectTreesBtree(A, B)
-	}
-}
-
-func BenchmarkBloomAdd(b *testing.B) {
-	f := bloom.NewWithEstimates(1000, .001)
-	for i := 0; i < b.N; i++ {
-		bitsa := [4]byte{byte(i), byte(i + 1), byte(i + 2), byte(i + 3)}
-		f.Add(bitsa[:])
 	}
 }
 

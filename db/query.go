@@ -27,7 +27,7 @@ func (db *DB) getQueryResults(q query.Query) [][]turtle.URI {
 
 	// form dependency graph and build query plan out of it
 	dg := db.formDependencyGraph(q)
-	qp := db.formQueryPlan(dg)
+	qp := db.formQueryPlan(dg, q)
 
 	if db.showQueryPlan {
 		for _, op := range qp.operations {
@@ -42,13 +42,14 @@ func (db *DB) getQueryResults(q query.Query) [][]turtle.URI {
 	}
 
 	runStart := time.Now()
-	rm := db.executeQueryPlan(qp)
+	ctx := db.executeQueryPlan(qp)
 	if db.showQueryLatencies {
 		log.Infof("Ran query in %s", time.Since(runStart))
 	}
 
 	runStart = time.Now()
-	results := db.expandTuples(rm, qp.selectVars, q.Select.Partial, q.Select.Limit)
+	ctx.dumpTraverseOrder()
+	results := ctx.expandTuples()
 	if db.showQueryLatencies {
 		log.Infof("Expanded tuples in %s", time.Since(runStart))
 	}
@@ -115,9 +116,7 @@ func (db *DB) formDependencyGraph(q query.Query) *dependencyGraph {
 	return dg
 }
 
-// TODO: going to get rid of resultmap soon
-func (db *DB) executeQueryPlan(plan *queryPlan) *resultMap {
-	rm := newResultMap()
+func (db *DB) executeQueryPlan(plan *queryPlan) *queryContext {
 	ctx := newQueryContext(plan, db)
 
 	for _, op := range ctx.operations {
@@ -130,8 +129,5 @@ func (db *DB) executeQueryPlan(plan *queryPlan) *resultMap {
 			log.Fatal(err)
 		}
 	}
-	for _, row := range ctx.expandTuples() {
-		log.Warning(row)
-	}
-	return rm
+	return ctx
 }

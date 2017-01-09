@@ -2,6 +2,8 @@ package db
 
 import (
 	"sort"
+
+	"github.com/gtfierro/hod/query"
 )
 
 // need operator types that go into the query plan
@@ -13,8 +15,8 @@ import (
 // the queryplanner. What we should do now is take that dependency graph and turn
 // it into a query plan
 
-func (db *DB) formQueryPlan(dg *dependencyGraph) *queryPlan {
-	qp := newQueryPlan(dg)
+func (db *DB) formQueryPlan(dg *dependencyGraph, q query.Query) *queryPlan {
+	qp := newQueryPlan(dg, q)
 
 	for term := range dg.iter() {
 		var (

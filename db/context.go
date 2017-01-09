@@ -1,26 +1,50 @@
 package db
 
 import (
+	"container/list"
+	"fmt"
+
 	turtle "github.com/gtfierro/hod/goraptor"
+	"github.com/gtfierro/hod/query"
 )
 
 // queryContext
 type queryContext struct {
-	candidates map[string]*pointerTree
-	chains     map[Key]*linkRecord
-	db         *DB
+	candidates    map[string]*pointerTree
+	chains        map[Key]*linkRecord
+	db            *DB
+	traverseOrder *list.List
+	traverseVars  map[string]*list.Element
 	// embedded query plan
 	*queryPlan
 }
 
 func newQueryContext(plan *queryPlan, db *DB) *queryContext {
 	ctx := &queryContext{
-		candidates: make(map[string]*pointerTree),
-		chains:     make(map[Key]*linkRecord),
-		queryPlan:  plan,
-		db:         db,
+		candidates:    make(map[string]*pointerTree),
+		chains:        make(map[Key]*linkRecord),
+		queryPlan:     plan,
+		traverseOrder: list.New(),
+		traverseVars:  make(map[string]*list.Element),
+		db:            db,
 	}
 	return ctx
+}
+
+func (ctx *queryContext) dumpVarCounts() {
+	for varname, tree := range ctx.candidates {
+		fmt.Println("var count", varname, tree.Len())
+	}
+}
+
+func (ctx *queryContext) dumpTraverseOrder() {
+	elem := ctx.traverseOrder.Front()
+	for elem.Next() != nil {
+		varname := elem.Value.(string)
+		fmt.Println(varname, "next =>", elem.Next().Value.(string))
+		elem = elem.Next()
+	}
+	fmt.Println(elem.Value.(string))
 }
 
 // now we need to plan out the set of actions for adding/filtering vars on the query context
@@ -34,6 +58,18 @@ func (ctx *queryContext) getValues(varname string) *pointerTree {
 	return ctx.candidates[varname]
 }
 
+// returns the set of reachable values from the given entity
+func (ctx *queryContext) getLinkedValues(ent *Entity) *pointerTree {
+	var res = newPointerTree(3)
+	chain := ctx.chains[ent.PK]
+	if chain != nil {
+		for _, link := range chain.links {
+			res.Add(ctx.db.MustGetEntityFromHash(link.me))
+		}
+	}
+	return res
+}
+
 // if values don't exist for the variable w/n this context, then we just add these values
 // if values DO already exist, then we take the intersection
 func (ctx *queryContext) addOrFilterVariable(varname string, values *pointerTree) {
@@ -42,6 +78,13 @@ func (ctx *queryContext) addOrFilterVariable(varname string, values *pointerTree
 	} else {
 		ctx.candidates[varname] = values
 	}
+
+	_, found := ctx.traverseVars[varname]
+	if !found {
+		elem := ctx.traverseOrder.PushBack(varname)
+		ctx.traverseVars[varname] = elem
+	}
+
 }
 
 // unions, not intersects
@@ -52,21 +95,63 @@ func (ctx *queryContext) addOrMergeVariable(varname string, values *pointerTree)
 	} else {
 		ctx.candidates[varname] = values
 	}
+
+	_, found := ctx.traverseVars[varname]
+	if !found {
+		elem := ctx.traverseOrder.PushBack(varname)
+		ctx.traverseVars[varname] = elem
+	}
 }
 
-func (ctx *queryContext) addReachable(parent *Entity, reachable *pointerTree) {
+func (ctx *queryContext) addReachable(parent *Entity, parentVar string, reachable *pointerTree, reachableVar string) {
 	chain, found := ctx.chains[parent.PK]
 	if !found {
 		chain = &linkRecord{me: parent.PK}
 	}
 	reachable.mergeOntoLinkRecord(chain)
 	ctx.chains[parent.PK] = chain
+
+	parentElem, found := ctx.traverseVars[parentVar]
+	if !found {
+		parentElem = ctx.traverseOrder.PushBack(parentVar)
+		ctx.traverseVars[parentVar] = parentElem
+	}
+
+	childElem, found := ctx.traverseVars[reachableVar]
+	if found {
+		ctx.traverseOrder.MoveAfter(childElem, parentElem)
+	} else {
+		elem := ctx.traverseOrder.InsertAfter(reachableVar, parentElem)
+		ctx.traverseVars[reachableVar] = elem
+	}
+}
+
+// returns true if any vars are reachable from this entity
+func (ctx *queryContext) entityHasFollowers(ent *Entity) bool {
+	if ent == nil || ent.PK == emptyHash {
+		return false
+	}
+	link, found := ctx.chains[ent.PK]
+	if !found || link == nil {
+		return false
+	}
+	return len(link.links) > 0
+}
+
+// gets the name of the next variable
+func (ctx *queryContext) getChild(varname string) string {
+	elem := ctx.traverseVars[varname].Next()
+	if elem != nil {
+		return elem.Value.(string)
+	}
+	return ""
 }
 
 func (ctx *queryContext) expandTuples() [][]turtle.URI {
 	var (
 		startvar string
 		results  [][]turtle.URI
+		tuples   []map[string]turtle.URI
 	)
 	// choose first variable
 	for v, state := range ctx.vars {
@@ -86,18 +171,69 @@ func (ctx *queryContext) expandTuples() [][]turtle.URI {
 	}
 
 	topVarTree := ctx.candidates[startvar]
+	if topVarTree == nil {
+		return results // fail early
+	}
 	max := topVarTree.Max()
 	iter := func(ent *Entity) bool {
-		results = append(results, []turtle.URI{ctx.db.MustGetURI(ent.PK)})
+		newtups := ctx._getTuplesFromTree(startvar, ent)
+		tuples = append(tuples, newtups...)
 		return ent != max
 	}
 	topVarTree.Iter(iter)
-	// now for each of these, we traverse the link records
-	//length := 1
-	//for idx, value := range results {
-	//	log.Debug(idx, value, ctx.chains[value[length]])
-	//}
+tupleLoop:
+	for _, tup := range tuples {
+		var row []turtle.URI
+		for _, varname := range ctx.selectVars {
+			if _, found := tup[varname]; !found {
+				if ctx.query.Select.Partial {
+					continue
+				} else {
+					continue tupleLoop
+				}
+			}
+			row = append(row, tup[varname])
+		}
+		results = append(results, row)
+		if ctx.query.Select.Limit > 0 && len(results) == ctx.query.Select.Limit {
+			return results
+		}
+	}
 	return results
+}
+
+func (ctx *queryContext) _getTuplesFromTree(name string, ent *Entity) []map[string]turtle.URI {
+	var ret []map[string]turtle.URI
+	if ent == nil || ent.PK == emptyHash {
+		return ret
+	}
+	uri := ctx.db.MustGetURI(ent.PK)
+	vars := make(map[string]turtle.URI)
+	vars[name] = uri
+	childName := ctx.getChild(name)
+	if !ctx.entityHasFollowers(ent) || childName == "" {
+		ret = append(ret, map[string]turtle.URI{name: uri})
+	} else {
+		// loop through the values of the child var
+		childValues := ctx.getLinkedValues(ent)
+		max := childValues.Max()
+		iter := func(ent *Entity) bool {
+			for _, m := range ctx._getTuplesFromTree(childName, ent) {
+				for k, v := range m {
+					vars[k] = v
+				}
+				// when we want to append, make sure to allocate a new map
+				newvar := make(map[string]turtle.URI)
+				for k, v := range vars {
+					newvar[k] = v
+				}
+				ret = append(ret, newvar)
+			}
+			return ent != max
+		}
+		childValues.Iter(iter)
+	}
+	return ret
 }
 
 const (
@@ -110,13 +246,15 @@ type queryPlan struct {
 	operations []operation
 	selectVars []string
 	dg         *dependencyGraph
+	query      query.Query
 	vars       map[string]string
 }
 
-func newQueryPlan(dg *dependencyGraph) *queryPlan {
+func newQueryPlan(dg *dependencyGraph, q query.Query) *queryPlan {
 	plan := &queryPlan{
 		selectVars: dg.selectVars,
 		dg:         dg,
+		query:      q,
 		vars:       make(map[string]string),
 	}
 	return plan
@@ -124,7 +262,7 @@ func newQueryPlan(dg *dependencyGraph) *queryPlan {
 
 func (qp *queryPlan) dumpVarchain() {
 	for k, v := range qp.vars {
-		log.Debug(k, "=>", v)
+		fmt.Println(k, "=>", v)
 	}
 }
 

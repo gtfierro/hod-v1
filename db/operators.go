@@ -171,9 +171,9 @@ func (rso *restrictSubjectObjectByPredicate) run(ctx *queryContext) error {
 		max := subTree.Max()
 		iter := func(subject *Entity) bool {
 			objects := hashTreeToPointerTree(ctx.db, ctx.db.getObjectFromSubjectPred(subject.PK, rso.term.Path))
-			ctx.addOrFilterVariable(objectVar, objects)
+			ctx.addOrMergeVariable(objectVar, objects)
 			// now add the links. From subject var, the links are the object results
-			ctx.addReachable(subject, objects)
+			ctx.addReachable(subject, subjectVar, objects, objectVar)
 			return subject != max
 		}
 		subTree.Iter(iter)
@@ -183,8 +183,8 @@ func (rso *restrictSubjectObjectByPredicate) run(ctx *queryContext) error {
 		max := objTree.Max()
 		iter := func(object *Entity) bool {
 			subjects := hashTreeToPointerTree(ctx.db, ctx.db.getSubjectFromPredObject(object.PK, rso.term.Path))
-			ctx.addOrFilterVariable(subjectVar, subjects)
-			ctx.addReachable(object, subjects)
+			ctx.addOrMergeVariable(subjectVar, subjects)
+			ctx.addReachable(object, objectVar, subjects, subjectVar)
 			return object != max
 		}
 		objTree.Iter(iter)
@@ -224,7 +224,7 @@ func (rsv *resolveSubjectFromVarObject) run(ctx *queryContext) error {
 	iter := func(object *Entity) bool {
 		subjects := hashTreeToPointerTree(ctx.db, ctx.db.getSubjectFromPredObject(object.PK, rsv.term.Path))
 		ctx.addOrMergeVariable(subjectVar, subjects)
-		ctx.addReachable(object, subjects)
+		ctx.addReachable(object, objectVar, subjects, subjectVar)
 		return object != max
 	}
 	objTree.Iter(iter)
@@ -257,7 +257,7 @@ func (rov *resolveObjectFromVarSubject) run(ctx *queryContext) error {
 	iter := func(subject *Entity) bool {
 		objects := hashTreeToPointerTree(ctx.db, ctx.db.getObjectFromSubjectPred(subject.PK, rov.term.Path))
 		ctx.addOrMergeVariable(objectVar, objects)
-		ctx.addReachable(subject, objects)
+		ctx.addReachable(subject, subjectVar, objects, objectVar)
 		return subject != max
 	}
 	subTree.Iter(iter)
