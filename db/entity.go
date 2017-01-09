@@ -1,7 +1,11 @@
 //go:generate msgp
 package db
 
-import ()
+import (
+	"encoding/binary"
+
+	"github.com/google/btree"
+)
 
 type PredIndex map[string]*PredicateEntity
 type RelshipIndex map[string]string
@@ -19,6 +23,11 @@ func NewEntity() *Entity {
 		InEdges:  make(map[string][]Key),
 		OutEdges: make(map[string][]Key),
 	}
+}
+
+func (e *Entity) Less(than btree.Item) bool {
+	t := than.(*Entity)
+	return binary.LittleEndian.Uint32(e.PK[:]) < binary.LittleEndian.Uint32(t.PK[:])
 }
 
 // returns true if we added an endpoint; false if it was already there
