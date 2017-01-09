@@ -33,6 +33,33 @@ func hashTreeToEntityTree(src *btree.BTree) *btree.BTree {
 	return newTree
 }
 
+// merges all the keys from 'src' into 'dst'
+func mergePointerTrees(dest, src *pointerTree) {
+	max := src.Max()
+	iter := func(e *Entity) bool {
+		dest.Add(e)
+		return e != max
+	}
+	src.Iter(iter)
+}
+
+// takes a btree of [4]byte hashes, and turns those into
+// a tree of ResultEntity
+func hashTreeToPointerTree(db *DB, src *btree.BTree) *pointerTree {
+	newTree := newPointerTree(3)
+	max := src.Max()
+	iter := func(i btree.Item) bool {
+		if i == nil {
+			return i != max
+		}
+		ve := db.MustGetEntityFromHash(i.(Key))
+		newTree.Add(ve)
+		return i != max
+	}
+	src.Ascend(iter)
+	return newTree
+}
+
 // takes the intersection of the two trees and returns it
 func intersectTrees(a, b *btree.BTree) *btree.BTree {
 	res := btree.New(3)
@@ -51,6 +78,27 @@ func intersectTrees(a, b *btree.BTree) *btree.BTree {
 		return i != max
 	}
 	a.Ascend(iter)
+	return res
+}
+
+// takes the intersection of the two pointertrees and returns it
+func intersectPointerTrees(a, b *pointerTree) *pointerTree {
+	res := newPointerTree(3)
+	// early skip
+	if a.Len() == 0 || b.Len() == 0 || a.Max().Less(b.Min()) || b.Max().Less(a.Min()) {
+		return res
+	}
+	if a.Len() < b.Len() {
+		a, b = b, a
+	}
+	max := a.Max()
+	iter := func(e *Entity) bool {
+		if b.Has(e) {
+			res.Add(e)
+		}
+		return e != max
+	}
+	a.Iter(iter)
 	return res
 }
 

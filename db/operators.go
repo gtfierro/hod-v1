@@ -4,13 +4,14 @@ package db
 import (
 	"fmt"
 
-	"github.com/google/btree"
+	//"github.com/google/btree"
+	//"github.com/gtfierro/hod/query"
 	"github.com/pkg/errors"
 	"github.com/syndtr/goleveldb/leveldb"
 )
 
 type operation interface {
-	run(db *DB, varOrder *variableStateMap, rm *resultMap) (*resultMap, error)
+	run(ctx *queryContext) error
 	String() string
 	SortKey() string
 	GetTerm() *queryTerm
@@ -34,30 +35,21 @@ func (rs *resolveSubject) GetTerm() *queryTerm {
 	return rs.term
 }
 
-func (rs *resolveSubject) run(db *DB, varOrder *variableStateMap, rm *resultMap) (*resultMap, error) {
+func (rs *resolveSubject) run(ctx *queryContext) error {
 	// fetch the object from the graph
-	object, err := db.GetEntity(rs.term.Object)
+	object, err := ctx.db.GetEntity(rs.term.Object)
 	if err != nil && err != leveldb.ErrNotFound {
-		return rm, errors.Wrap(err, fmt.Sprintf("%+v", rs.term))
+		return errors.Wrap(err, fmt.Sprintf("%+v", rs.term))
 	} else if err == leveldb.ErrNotFound {
-		return rm, nil
+		return nil
 	}
 	subjectVar := rs.term.Subject.String()
 	// get all subjects reachable from the given object along the path
-	subjects := db.getSubjectFromPredObject(object.PK, rs.term.Path)
+	subjects := ctx.db.getSubjectFromPredObject(object.PK, rs.term.Path)
 
-	// need to restrict if we are child. Else, just add definition
-	if varOrder.varIsChild(subjectVar) {
-		entSubjects := hashTreeToEntityTree(subjects)
-		for _, subject := range rm.iterVariable(subjectVar) {
-			if !entSubjects.Has(subject) {
-				subject.PK = emptyHash
-			}
-		}
-	} else {
-		rm.addVariable(subjectVar, subjects)
-	}
-	return rm, nil
+	ctx.addOrFilterVariable(subjectVar, hashTreeToPointerTree(ctx.db, subjects))
+
+	return nil
 }
 
 // object predicate ?object
@@ -78,30 +70,21 @@ func (ro *resolveObject) GetTerm() *queryTerm {
 	return ro.term
 }
 
-func (ro *resolveObject) run(db *DB, varOrder *variableStateMap, rm *resultMap) (*resultMap, error) {
+func (ro *resolveObject) run(ctx *queryContext) error {
 	// fetch the subject from the graph
-	subject, err := db.GetEntity(ro.term.Subject)
+	subject, err := ctx.db.GetEntity(ro.term.Subject)
 	if err != nil && err != leveldb.ErrNotFound {
-		return rm, errors.Wrap(err, fmt.Sprintf("%+v", ro.term))
+		return errors.Wrap(err, fmt.Sprintf("%+v", ro.term))
 	} else if err == leveldb.ErrNotFound {
-		return rm, nil
+		return nil
 	}
 	objectVar := ro.term.Object.String()
 	// get all objects reachable from the given subject along the path
-	objects := db.getObjectFromSubjectPred(subject.PK, ro.term.Path)
+	objects := ctx.db.getObjectFromSubjectPred(subject.PK, ro.term.Path)
 
-	// need to restrict if we are child. Else, just add definition
-	if varOrder.varIsChild(objectVar) {
-		entobjects := hashTreeToEntityTree(objects)
-		for _, object := range rm.iterVariable(objectVar) {
-			if !entobjects.Has(object) {
-				object.PK = emptyHash
-			}
-		}
-	} else {
-		rm.addVariable(objectVar, objects)
-	}
-	return rm, nil
+	ctx.addOrFilterVariable(objectVar, hashTreeToPointerTree(ctx.db, objects))
+
+	return nil
 }
 
 // object ?predicate object
@@ -122,39 +105,29 @@ func (op *resolvePredicate) GetTerm() *queryTerm {
 	return op.term
 }
 
-func (op *resolvePredicate) run(db *DB, varOrder *variableStateMap, rm *resultMap) (*resultMap, error) {
+func (op *resolvePredicate) run(ctx *queryContext) error {
 	// fetch the subject from the graph
-	subject, err := db.GetEntity(op.term.Subject)
+	subject, err := ctx.db.GetEntity(op.term.Subject)
 	if err != nil && err != leveldb.ErrNotFound {
-		return rm, errors.Wrap(err, fmt.Sprintf("%+v", op.term))
+		return errors.Wrap(err, fmt.Sprintf("%+v", op.term))
 	} else if err == leveldb.ErrNotFound {
-		return rm, nil
+		return nil
 	}
 	// now get object
-	object, err := db.GetEntity(op.term.Object)
+	object, err := ctx.db.GetEntity(op.term.Object)
 	if err != nil && err != leveldb.ErrNotFound {
-		return rm, errors.Wrap(err, fmt.Sprintf("%+v", op.term))
+		return errors.Wrap(err, fmt.Sprintf("%+v", op.term))
 	} else if err == leveldb.ErrNotFound {
-		return rm, nil
+		return nil
 	}
 
 	predicateVar := op.term.Path[0].Predicate.String()
 	// get all preds w/ the given end object, starting from the given subject
 
-	predicates := db.getPredicateFromSubjectObject(subject, object)
+	predicates := ctx.db.getPredicateFromSubjectObject(subject, object)
 
-	// need to restrict if we are child. Else, just add definition
-	if varOrder.varIsChild(predicateVar) {
-		entpredicates := hashTreeToEntityTree(predicates)
-		for _, pred := range rm.iterVariable(predicateVar) {
-			if !entpredicates.Has(pred) {
-				pred.PK = emptyHash
-			}
-		}
-	} else {
-		rm.addVariable(predicateVar, predicates)
-	}
-	return rm, nil
+	ctx.addOrFilterVariable(predicateVar, hashTreeToPointerTree(ctx.db, predicates))
+	return nil
 }
 
 // ?sub pred ?obj
@@ -184,42 +157,42 @@ func (rso *restrictSubjectObjectByPredicate) GetTerm() *queryTerm {
 //      associated with any other variable)
 //  - resolved, connected (we have proposal values for the variable, and they are linked
 //      to another variable)
-func (rso *restrictSubjectObjectByPredicate) run(db *DB, varOrder *variableStateMap, rm *resultMap) (*resultMap, error) {
+
+func (rso *restrictSubjectObjectByPredicate) run(ctx *queryContext) error {
 	var (
 		subjectVar = rso.term.Subject.String()
 		objectVar  = rso.term.Object.String()
-		subTree    = rm.getVar(subjectVar)
-		objTree    = rm.getVar(objectVar)
+		subTree    = ctx.getValues(subjectVar)
+		objTree    = ctx.getValues(objectVar)
 	)
 	// we add the objects on to each subject
 	if rso.parentVar == subjectVar {
 		// iterate through current subjects
-		for _, subject := range rm.iterVariable(subjectVar) {
-			objects := hashTreeToEntityTree(db.getObjectFromSubjectPred(subject.PK, rso.term.Path))
-			if objects.Len() > 0 {
-				if objTree == nil {
-					subject.Next[objectVar] = objects
-				} else {
-					subject.Next[objectVar] = intersectTrees(objects, objTree)
-				}
-			}
+		max := subTree.Max()
+		iter := func(subject *Entity) bool {
+			objects := hashTreeToPointerTree(ctx.db, ctx.db.getObjectFromSubjectPred(subject.PK, rso.term.Path))
+			ctx.addOrFilterVariable(objectVar, objects)
+			// now add the links. From subject var, the links are the object results
+			ctx.addReachable(subject, objects)
+			return subject != max
 		}
+		subTree.Iter(iter)
+
 	} else if rso.parentVar == objectVar {
-		for _, object := range rm.iterVariable(objectVar) {
-			subjects := hashTreeToEntityTree(db.getSubjectFromPredObject(object.PK, rso.term.Path))
-			if subjects.Len() > 0 {
-				if subTree == nil {
-					object.Next[subjectVar] = subjects
-				} else {
-					object.Next[subjectVar] = intersectTrees(subjects, subTree)
-				}
-			}
+		// iterate through current objects
+		max := objTree.Max()
+		iter := func(object *Entity) bool {
+			subjects := hashTreeToPointerTree(ctx.db, ctx.db.getSubjectFromPredObject(object.PK, rso.term.Path))
+			ctx.addOrFilterVariable(subjectVar, subjects)
+			ctx.addReachable(object, subjects)
+			return object != max
 		}
+		objTree.Iter(iter)
 	} else {
 		log.Fatal("unfamiliar situation")
 	}
 
-	return rm, nil
+	return nil
 }
 
 // ?sub pred ?obj, but we have already resolved the object
@@ -241,20 +214,21 @@ func (rsv *resolveSubjectFromVarObject) GetTerm() *queryTerm {
 }
 
 // Use this when we have subject and object variables, but only object has been filled in
-func (rsv *resolveSubjectFromVarObject) run(db *DB, varOrder *variableStateMap, rm *resultMap) (*resultMap, error) {
+func (rsv *resolveSubjectFromVarObject) run(ctx *queryContext) error {
 	var (
 		objectVar  = rsv.term.Object.String()
 		subjectVar = rsv.term.Subject.String()
+		objTree    = ctx.getValues(objectVar)
 	)
-	for _, object := range rm.iterVariable(objectVar) {
-		subjects := hashTreeToEntityTree(db.getSubjectFromPredObject(object.PK, rsv.term.Path))
-		if _, found := object.Next[subjectVar]; found {
-			mergeTrees(object.Next[subjectVar], subjects)
-		} else {
-			object.Next[subjectVar] = subjects
-		}
+	max := objTree.Max()
+	iter := func(object *Entity) bool {
+		subjects := hashTreeToPointerTree(ctx.db, ctx.db.getSubjectFromPredObject(object.PK, rsv.term.Path))
+		ctx.addOrMergeVariable(subjectVar, subjects)
+		ctx.addReachable(object, subjects)
+		return object != max
 	}
-	return rm, nil
+	objTree.Iter(iter)
+	return nil
 }
 
 type resolveObjectFromVarSubject struct {
@@ -273,20 +247,21 @@ func (rov *resolveObjectFromVarSubject) GetTerm() *queryTerm {
 	return rov.term
 }
 
-func (rov *resolveObjectFromVarSubject) run(db *DB, varOrder *variableStateMap, rm *resultMap) (*resultMap, error) {
+func (rov *resolveObjectFromVarSubject) run(ctx *queryContext) error {
 	var (
 		objectVar  = rov.term.Object.String()
 		subjectVar = rov.term.Subject.String()
+		subTree    = ctx.getValues(subjectVar)
 	)
-	for _, subject := range rm.iterVariable(subjectVar) {
-		objects := hashTreeToEntityTree(db.getObjectFromSubjectPred(subject.PK, rov.term.Path))
-		if _, found := subject.Next[objectVar]; found {
-			mergeTrees(subject.Next[objectVar], objects)
-		} else {
-			subject.Next[objectVar] = objects
-		}
+	max := subTree.Max()
+	iter := func(subject *Entity) bool {
+		objects := hashTreeToPointerTree(ctx.db, ctx.db.getObjectFromSubjectPred(subject.PK, rov.term.Path))
+		ctx.addOrMergeVariable(objectVar, objects)
+		ctx.addReachable(subject, objects)
+		return subject != max
 	}
-	return rm, nil
+	subTree.Iter(iter)
+	return nil
 }
 
 type resolveObjectFromVarSubjectPred struct {
@@ -305,25 +280,116 @@ func (op *resolveObjectFromVarSubjectPred) GetTerm() *queryTerm {
 	return op.term
 }
 
-func (rov *resolveObjectFromVarSubjectPred) run(db *DB, varOrder *variableStateMap, rm *resultMap) (*resultMap, error) {
-	return nil, nil
+// TODO: implement resolveObjectFromVarSubjectPred
+func (rov *resolveObjectFromVarSubjectPred) run(ctx *queryContext) error {
+	return nil
 }
 
 type resolveSubjectObjectFromPred struct {
 	term *queryTerm
 }
 
-func (rso *resolveSubjectObjectFromPred) run(db *DB, varOrder *variableStateMap, rm *resultMap) (*resultMap, error) {
-	subsobjs := db.getSubjectObjectFromPred(rso.term.Path)
+func (rso *resolveSubjectObjectFromPred) run(ctx *queryContext) error {
+	subsobjs := ctx.db.getSubjectObjectFromPred(rso.term.Path)
 	subjectVar := rso.term.Subject.String()
 	objectVar := rso.term.Object.String()
-	subjects := btree.New(3)
-	objects := btree.New(3)
+	subjects := newPointerTree(3)
+	objects := newPointerTree(3)
 	for _, sopair := range subsobjs {
-		subjects.ReplaceOrInsert(Item(sopair[0]))
-		objects.ReplaceOrInsert(Item(sopair[1]))
+		subjects.Add(ctx.db.MustGetEntityFromHash(sopair[0]))
+		objects.Add(ctx.db.MustGetEntityFromHash(sopair[1]))
 	}
-	rm.addVariable(subjectVar, subjects)
-	rm.addVariable(objectVar, objects)
-	return rm, nil
+	ctx.addOrFilterVariable(subjectVar, subjects)
+	ctx.addOrFilterVariable(objectVar, objects)
+	return nil
+}
+
+type resolveSubjectPredFromObject struct {
+	term *queryTerm
+}
+
+func (op *resolveSubjectPredFromObject) String() string {
+	return fmt.Sprintf("[resolveSubPredFromObj %s]", op.term)
+}
+
+func (op *resolveSubjectPredFromObject) SortKey() string {
+	return op.term.Path[0].Predicate.String()
+}
+
+func (op *resolveSubjectPredFromObject) GetTerm() *queryTerm {
+	return op.term
+}
+
+// we have an object and want to find subjects/predicates that connect to it.
+// If we have partially resolved the predicate, then we iterate through those connected to
+// the known object and then pull the associated subjects. We then filter those subjects
+// by anything we've already resolved.
+// If we have *not* resolved the predicate, then this is easy: just graph traverse from the object
+
+func (op *resolveSubjectPredFromObject) run(ctx *queryContext) error {
+	//var (
+	//	tree  *btree.BTree
+	//	found bool
+	//)
+	//subjectVar := op.term.Subject.String()
+	//predicateVar := op.term.Path[0].Predicate.String()
+
+	//for k, v := range varOrder.vars {
+	//	log.Warning(k, "=>", v)
+	//}
+
+	//// fetch the object from the graph
+	//object, err := ctx.db.GetEntity(op.term.Object)
+	//if err != nil && err != leveldb.ErrNotFound {
+	//	return errors.Wrap(err, fmt.Sprintf("%+v", op.term))
+	//} else if err == leveldb.ErrNotFound {
+	//	return nil
+	//}
+	//candidateSubjects := btree.New(2)
+	//// get all predicates from it
+	//predicates := hashTreeToEntityTree(ctx.db.getPredicatesFromObject(object))
+	//// for each subject reachable from each predicate, add the predicate as aa
+	//// dependent of the subject
+	//predmax := predicates.Max()
+	//iterpred := func(i btree.Item) bool {
+	//	predicate := i.(*ResultEntity)
+	//	path := []query.PathPattern{{Predicate: ctx.db.MustGetURI(predicate.PK), Pattern: query.PATTERN_SINGLE}}
+	//	subjects := hashTreeToEntityTree(ctx.db.getSubjectFromPredObject(object.PK, path))
+	//	max := subjects.Max()
+	//	iter := func(i btree.Item) bool {
+	//		ent := i.(*ResultEntity)
+	//		if tree, found = ent.Next[predicateVar]; !found {
+	//			tree = btree.New(2)
+	//		}
+	//		tree.ReplaceOrInsert(predicate)
+	//		candidateSubjects.ReplaceOrInsert(ent) // subject
+	//		ent.Next[predicateVar] = tree
+	//		return i != max
+	//	}
+	//	subjects.Ascend(iter)
+	//	return i != predmax
+	//}
+	//predicates.Ascend(iterpred)
+
+	//addSubjects := btree.New(2)
+	//hasSubjects := false
+
+	//// need to merge w/ the subjects we've already gotten
+	//for _, subject := range rm.iterVariable(subjectVar) {
+	//	log.Debug("already have", ctx.db.MustGetURI(subject.PK))
+	//	hasSubjects = true
+	//	if candidateSubjects.Has(subject) {
+	//		log.Debug("in candidates")
+	//		addSubjects.ReplaceOrInsert(subject)
+	//		log.Debugf("add subs %d", addSubjects.Len())
+	//	}
+	//}
+	//if hasSubjects || rm.varOrder.hasVar(subjectVar) {
+	//	log.Debug("add subs have it")
+	//	rm.addVariable(subjectVar, addSubjects)
+	//} else {
+	//	rm.addVariable(subjectVar, candidateSubjects)
+	//}
+
+	return nil
 }

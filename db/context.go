@@ -1,9 +1,13 @@
 package db
 
+import (
+	turtle "github.com/gtfierro/hod/goraptor"
+)
+
 // queryContext
 type queryContext struct {
 	candidates map[string]*pointerTree
-	chains     map[Key]linkRecord
+	chains     map[Key]*linkRecord
 	db         *DB
 	// embedded query plan
 	*queryPlan
@@ -11,13 +15,24 @@ type queryContext struct {
 
 func newQueryContext(plan *queryPlan, db *DB) *queryContext {
 	ctx := &queryContext{
-		queryPlan: plan,
-		db:        db,
+		candidates: make(map[string]*pointerTree),
+		chains:     make(map[Key]*linkRecord),
+		queryPlan:  plan,
+		db:         db,
 	}
 	return ctx
 }
 
 // now we need to plan out the set of actions for adding/filtering vars on the query context
+
+// returns the set of current guesses for the given variable
+func (ctx *queryContext) getValues(varname string) *pointerTree {
+	if tree, found := ctx.candidates[varname]; found && tree != nil {
+		return tree
+	}
+	ctx.candidates[varname] = newPointerTree(3)
+	return ctx.candidates[varname]
+}
 
 // if values don't exist for the variable w/n this context, then we just add these values
 // if values DO already exist, then we take the intersection
@@ -29,7 +44,60 @@ func (ctx *queryContext) addOrFilterVariable(varname string, values *pointerTree
 	}
 }
 
-func (ctx *queryContext) linkValues(parent *Entity, reachable pointerTree) {
+// unions, not intersects
+func (ctx *queryContext) addOrMergeVariable(varname string, values *pointerTree) {
+	if oldValues, exists := ctx.candidates[varname]; exists {
+		mergePointerTrees(oldValues, values)
+		ctx.candidates[varname] = oldValues
+	} else {
+		ctx.candidates[varname] = values
+	}
+}
+
+func (ctx *queryContext) addReachable(parent *Entity, reachable *pointerTree) {
+	chain, found := ctx.chains[parent.PK]
+	if !found {
+		chain = &linkRecord{me: parent.PK}
+	}
+	reachable.mergeOntoLinkRecord(chain)
+	ctx.chains[parent.PK] = chain
+}
+
+func (ctx *queryContext) expandTuples() [][]turtle.URI {
+	var (
+		startvar string
+		results  [][]turtle.URI
+	)
+	// choose first variable
+	for v, state := range ctx.vars {
+		if state == RESOLVED {
+			startvar = v
+			break
+		}
+	}
+	if len(startvar) == 0 {
+		// need to choose the "parent" if there is no RESOLVED variable
+		for _, parent := range ctx.vars {
+			if _, exists := ctx.vars[parent]; !exists {
+				startvar = parent
+				break
+			}
+		}
+	}
+
+	topVarTree := ctx.candidates[startvar]
+	max := topVarTree.Max()
+	iter := func(ent *Entity) bool {
+		results = append(results, []turtle.URI{ctx.db.MustGetURI(ent.PK)})
+		return ent != max
+	}
+	topVarTree.Iter(iter)
+	// now for each of these, we traverse the link records
+	//length := 1
+	//for idx, value := range results {
+	//	log.Debug(idx, value, ctx.chains[value[length]])
+	//}
+	return results
 }
 
 const (
@@ -52,6 +120,12 @@ func newQueryPlan(dg *dependencyGraph) *queryPlan {
 		vars:       make(map[string]string),
 	}
 	return plan
+}
+
+func (qp *queryPlan) dumpVarchain() {
+	for k, v := range qp.vars {
+		log.Debug(k, "=>", v)
+	}
 }
 
 func (qp *queryPlan) findVarDepth(target string) int {

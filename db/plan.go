@@ -13,28 +13,8 @@ import (
 // the queryplanner. What we should do now is take that dependency graph and turn
 // it into a query plan
 
-type queryPlan struct {
-	operations []operation
-	selectVars []string
-	varOrder   *variableStateMap
-	dg         *dependencyGraph
-}
-
-func (qp *queryPlan) findVarDepth(target string) int {
-	var depth = 0
-	start := qp.varOrder.vars[target]
-	for start != RESOLVED {
-		start = qp.varOrder.vars[start]
-		depth += 1
-	}
-	return depth
-}
-
 func (db *DB) formQueryPlan(dg *dependencyGraph) *queryPlan {
-	qp := new(queryPlan)
-	qp.dg = dg
-	qp.selectVars = dg.selectVars
-	qp.varOrder = newVariableStateMap()
+	qp := newQueryPlan(dg)
 
 	for term := range dg.iter() {
 		var (
@@ -50,9 +30,9 @@ func (db *DB) formQueryPlan(dg *dependencyGraph) *queryPlan {
 			hasResolvedPredicate bool
 			newop                operation
 		)
-		hasResolvedSubject = qp.varOrder.hasVar(subjectVar)
-		hasResolvedObject = qp.varOrder.hasVar(objectVar)
-		hasResolvedPredicate = qp.varOrder.hasVar(predicateVar)
+		hasResolvedSubject = qp.hasVar(subjectVar)
+		hasResolvedObject = qp.hasVar(objectVar)
+		hasResolvedPredicate = qp.hasVar(predicateVar)
 
 		switch {
 		case subjectIsVariable && objectIsVariable && predicateIsVariable:
@@ -67,8 +47,13 @@ func (db *DB) formQueryPlan(dg *dependencyGraph) *queryPlan {
 			switch {
 			case !hasResolvedSubject && !hasResolvedObject && !hasResolvedPredicate:
 				log.Fatal("?x ?y ?z queries not supported yet")
+			case !hasResolvedSubject && !hasResolvedObject && hasResolvedPredicate:
+			case !hasResolvedSubject && hasResolvedObject && !hasResolvedPredicate:
+			case !hasResolvedSubject && hasResolvedObject && hasResolvedPredicate:
+			case hasResolvedSubject && !hasResolvedObject && !hasResolvedPredicate:
 			case hasResolvedSubject && !hasResolvedObject && hasResolvedPredicate:
-
+			case hasResolvedSubject && hasResolvedObject && !hasResolvedPredicate:
+			case hasResolvedSubject && hasResolvedObject && hasResolvedPredicate:
 			}
 		case subjectIsVariable && objectIsVariable && !predicateIsVariable:
 			switch {
@@ -78,59 +63,61 @@ func (db *DB) formQueryPlan(dg *dependencyGraph) *queryPlan {
 				subDepth := qp.findVarDepth(subjectVar)
 				objDepth := qp.findVarDepth(objectVar)
 				if subDepth > objDepth {
-					qp.varOrder.addLink(subjectVar, objectVar)
+					qp.addLink(subjectVar, objectVar)
 					rso.parentVar = subjectVar
 					rso.childVar = objectVar
 				} else if objDepth > subDepth {
-					qp.varOrder.addLink(objectVar, subjectVar)
+					qp.addLink(objectVar, subjectVar)
 					rso.parentVar = objectVar
 					rso.childVar = subjectVar
-				} else if qp.varOrder.varIsChild(subjectVar) {
-					qp.varOrder.addLink(subjectVar, objectVar)
+				} else if qp.varIsChild(subjectVar) {
+					qp.addLink(subjectVar, objectVar)
 					rso.parentVar = subjectVar
 					rso.childVar = objectVar
-				} else if qp.varOrder.varIsChild(objectVar) {
-					qp.varOrder.addLink(objectVar, subjectVar)
+				} else if qp.varIsChild(objectVar) {
+					qp.addLink(objectVar, subjectVar)
 					rso.parentVar = objectVar
 					rso.childVar = subjectVar
-				} else if qp.varOrder.varIsTop(subjectVar) {
-					qp.varOrder.addLink(subjectVar, objectVar)
+				} else if qp.varIsTop(subjectVar) {
+					qp.addLink(subjectVar, objectVar)
 					rso.parentVar = subjectVar
 					rso.childVar = objectVar
-				} else if qp.varOrder.varIsTop(objectVar) {
-					qp.varOrder.addLink(objectVar, subjectVar)
+				} else if qp.varIsTop(objectVar) {
+					qp.addLink(objectVar, subjectVar)
 					rso.parentVar = objectVar
 					rso.childVar = subjectVar
 				}
 				newop = rso
 			case hasResolvedObject:
 				newop = &resolveSubjectFromVarObject{term: term}
-				qp.varOrder.addLink(objectVar, subjectVar)
+				qp.addLink(objectVar, subjectVar)
 			case hasResolvedSubject:
 				newop = &resolveObjectFromVarSubject{term: term}
-				qp.varOrder.addLink(subjectVar, objectVar)
+				qp.addLink(subjectVar, objectVar)
 			default:
 				panic("HERE")
 			}
 		case !subjectIsVariable && !objectIsVariable && predicateIsVariable:
 			newop = &resolvePredicate{term: term}
-			if !qp.varOrder.varIsChild(predicateVar) {
-				qp.varOrder.addTopLevel(predicateVar)
+			if !qp.varIsChild(predicateVar) {
+				qp.addTopLevel(predicateVar)
 			}
-			//log.Fatal("x ?y z query not supported yet")
 		case subjectIsVariable && !objectIsVariable && predicateIsVariable:
-			log.Fatal("?x ?y z query not supported yet")
+			newop = &resolveSubjectPredFromObject{term: term}
+			//qp.addTopLevel(subjectVar)
+			qp.addLink(subjectVar, predicateVar)
+			//log.Fatal("?x ?y z query not supported yet")
 		case !subjectIsVariable && objectIsVariable && predicateIsVariable:
 			log.Fatal("x ?y ?z query not supported yet")
 		case subjectIsVariable:
 			newop = &resolveSubject{term: term}
-			if !qp.varOrder.varIsChild(subjectVar) {
-				qp.varOrder.addTopLevel(subjectVar)
+			if !qp.varIsChild(subjectVar) {
+				qp.addTopLevel(subjectVar)
 			}
 		case objectIsVariable:
 			newop = &resolveObject{term: term}
-			if !qp.varOrder.varIsChild(objectVar) {
-				qp.varOrder.addTopLevel(objectVar)
+			if !qp.varIsChild(objectVar) {
+				qp.addTopLevel(objectVar)
 			}
 		default:
 			log.Fatal("Nothing chosen for", term)
@@ -140,51 +127,4 @@ func (db *DB) formQueryPlan(dg *dependencyGraph) *queryPlan {
 	// sort operations
 	sort.Sort(qp)
 	return qp
-}
-
-func (qp *queryPlan) Len() int {
-	return len(qp.operations)
-}
-func (qp *queryPlan) Swap(i, j int) {
-	qp.operations[i], qp.operations[j] = qp.operations[j], qp.operations[i]
-}
-func (qp *queryPlan) Less(i, j int) bool {
-	iDepth := qp.findVarDepth(qp.operations[i].SortKey())
-	jDepth := qp.findVarDepth(qp.operations[j].SortKey())
-	return iDepth < jDepth
-}
-
-const (
-	RESOLVED   = "RESOLVED"
-	UNRESOLVED = ""
-)
-
-type variableStateMap struct {
-	vars map[string]string
-}
-
-func newVariableStateMap() *variableStateMap {
-	return &variableStateMap{
-		vars: make(map[string]string),
-	}
-}
-
-func (vsm *variableStateMap) hasVar(variable string) bool {
-	return vsm.vars[variable] != UNRESOLVED
-}
-
-func (vsm *variableStateMap) varIsChild(variable string) bool {
-	return vsm.hasVar(variable) && vsm.vars[variable] != RESOLVED
-}
-
-func (vsm *variableStateMap) varIsTop(variable string) bool {
-	return vsm.hasVar(variable) && vsm.vars[variable] == RESOLVED
-}
-
-func (vsm *variableStateMap) addTopLevel(variable string) {
-	vsm.vars[variable] = RESOLVED
-}
-
-func (vsm *variableStateMap) addLink(parent, child string) {
-	vsm.vars[child] = parent
 }

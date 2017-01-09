@@ -68,7 +68,7 @@ func (re ResultEntity) Less(than btree.Item) bool {
 // map wrapper for storing intermediate results
 type resultMap struct {
 	vars     map[string]*btree.BTree
-	varOrder *variableStateMap
+	varOrder *queryPlan
 	tuples   *btree.BTree
 }
 
@@ -78,7 +78,12 @@ func (rm *resultMap) has(variable string) bool {
 }
 
 func (rm *resultMap) addVariable(variable string, tree *btree.BTree) {
-	rm.vars[variable] = hashTreeToEntityTree(tree)
+	first := tree.Max()
+	if _, ok := first.(Key); ok {
+		rm.vars[variable] = hashTreeToEntityTree(tree)
+	} else {
+		rm.vars[variable] = tree
+	}
 }
 
 func (rm *resultMap) getVariableChain(variable string) []string {
@@ -212,6 +217,16 @@ func (db *DB) expandTuples(rm *resultMap, selectVars []string, matchPartial bool
 			break
 		}
 	}
+	if len(startvar) == 0 {
+		// need to choose the "parent" if there is no RESOLVED variable
+		for _, parent := range rm.varOrder.vars {
+			if _, exists := rm.varOrder.vars[parent]; !exists {
+				startvar = parent
+				break
+			}
+		}
+	}
+
 	tree := rm.vars[startvar]
 	if tree != nil {
 		max := tree.Max()

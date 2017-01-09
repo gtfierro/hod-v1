@@ -6,7 +6,7 @@ import (
 
 type linkRecord struct {
 	me    Key
-	links []linkRecord
+	links []*linkRecord
 }
 
 type pointerTree struct {
@@ -19,8 +19,8 @@ func newPointerTree(size int) *pointerTree {
 	}
 }
 
-func (pt *pointerTree) Add(ent *Entity) *Entity {
-	return pt.tree.ReplaceOrInsert(ent).(*Entity)
+func (pt *pointerTree) Add(ent *Entity) {
+	pt.tree.ReplaceOrInsert(ent)
 }
 
 func (pt *pointerTree) Has(ent *Entity) bool {
@@ -48,4 +48,16 @@ func (pt *pointerTree) Iter(iter func(ent *Entity) bool) {
 		e := i.(*Entity)
 		return iter(e)
 	})
+}
+
+// TODO: pretty sure this should intersect, but it might be union
+// intersects the contents of the pointertree onto the link record
+func (pt *pointerTree) mergeOntoLinkRecord(rec *linkRecord) {
+	max := pt.Max()
+	iter := func(ent *Entity) bool {
+		newlink := &linkRecord{me: ent.PK}
+		rec.links = append(rec.links, newlink)
+		return ent != max
+	}
+	pt.Iter(iter)
 }
