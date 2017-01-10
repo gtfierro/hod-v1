@@ -1,0 +1,6 @@
+=============== Jan 9, 2017 (PST) ===============
+21:28:15.555977 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+21:28:15.556090 db@open opening
+21:28:15.556251 version@stat F·[] S·0B[] Sc·[]
+21:28:15.562181 db@janitor F·2 G·0
+21:28:15.562209 db@open done T·6.112961ms

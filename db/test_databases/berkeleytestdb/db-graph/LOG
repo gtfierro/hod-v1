@@ -1,60 +1,26 @@
-=============== Dec 17, 2016 (PST) ===============
-23:07:55.081679 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
-23:07:55.081793 db@open opening
-23:07:55.082108 version@stat F·[] S·0B[] Sc·[]
-23:07:55.084142 db@janitor F·2 G·0
-23:07:55.084161 db@open done T·2.361998ms
-23:07:55.648408 transaction@flush created L0@2 N·3095 S·51KiB "\x00#\xb7\x02,v2768":"\xff\xa7e\x04,v1284"
-23:07:55.648448 version@stat F·[1] S·51KiB[51KiB] Sc·[0.25]
-23:07:55.761089 transaction@flush created L0@3 N·7829 S·2MiB "\x00q\"i,v8495":"\xff\xa7e\x04,v8810"
-23:07:55.871043 transaction@flush created L0@4 N·7200 S·2MiB "\x00d\x15z,v12317":"\xff\x93\xf0\xbc,v16127"
-23:07:55.963815 transaction@flush created L0@5 N·6612 S·3MiB "\x00#\xb7\x02,v20499":"\xffd\xf3H,v21793"
-23:07:55.979295 transaction@flush created L0@6 N·471 S·377KiB "\x03|W\x19,v25147":"\xfeg\xbc\x86,v24826"
-23:07:55.979332 version@stat F·[5] S·8MiB[8MiB] Sc·[1.25]
-23:07:55.984987 table@compaction L0·5 -> L1·0 S·8MiB Q·25207
-23:07:56.023213 table@build created L1@7 N·3095 S·185KiB "\x00#\xb7\x02,v20499":"\xff\xa7e\x04,v9133"
-23:07:56.023263 version@stat F·[0 1] S·185KiB[0B 185KiB] Sc·[0.00 0.00]
-23:07:56.024972 table@compaction committed F-4 S-8MiB Ke·0 D·22112 T·39.941977ms
-23:07:56.025115 table@remove removed @6
-23:07:56.025671 table@remove removed @5
-23:07:56.026214 table@remove removed @4
-23:07:56.026671 table@remove removed @3
-23:07:56.026753 table@remove removed @2
-23:07:56.229212 transaction@flush created L0@8 N·1708 S·28KiB "\x00\r%\xb6,v26374":"\xff\xfe\xe9,,v26623"
-23:07:56.229247 version@stat F·[1 1] S·213KiB[28KiB 185KiB] Sc·[0.25 0.00]
-23:07:56.311056 transaction@flush created L0@9 N·7548 S·652KiB "\x00\r%\xb6,v33553":"\xff\xfe\xe9,,v30978"
-23:07:56.311097 version@stat F·[2 1] S·865KiB[680KiB 185KiB] Sc·[0.50 0.00]
-=============== Dec 17, 2016 (PST) ===============
-23:08:34.882725 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
-23:08:34.883205 version@stat F·[2 1] S·865KiB[680KiB 185KiB] Sc·[0.50 0.00]
-23:08:34.883221 db@open opening
-23:08:34.883289 journal@recovery F·1
-23:08:34.884154 journal@recovery recovering @1
-23:08:34.885177 version@stat F·[2 1] S·865KiB[680KiB 185KiB] Sc·[0.50 0.00]
-23:08:34.885406 db@janitor F·5 G·0
-23:08:34.885422 db@open done T·2.195215ms
-23:08:36.705699 table@compaction L0·2 -> L1·1 S·865KiB Q·34463
-23:08:36.722052 table@build created L1@12 N·4803 S·287KiB "\x00\r%\xb6,v33553":"\xff\xfe\xe9,,v33611"
-23:08:36.722106 version@stat F·[0 1] S·287KiB[0B 287KiB] Sc·[0.00 0.00]
-23:08:36.730159 table@compaction committed F-2 S-577KiB Ke·0 D·7548 T·24.409185ms
-23:08:36.730415 table@remove removed @9
-23:08:36.730566 table@remove removed @8
-23:08:36.730659 table@remove removed @7
-=============== Dec 17, 2016 (PST) ===============
-23:08:52.063591 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
-23:08:52.063703 version@stat F·[0 1] S·287KiB[0B 287KiB] Sc·[0.00 0.00]
-23:08:52.063712 db@open opening
-23:08:52.063760 journal@recovery F·1
-23:08:52.063999 journal@recovery recovering @10
-23:08:52.065143 version@stat F·[0 1] S·287KiB[0B 287KiB] Sc·[0.00 0.00]
-23:08:52.065736 db@janitor F·3 G·0
-23:08:52.065758 db@open done T·2.038889ms
-=============== Dec 17, 2016 (PST) ===============
-23:09:11.580996 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
-23:09:11.581612 version@stat F·[0 1] S·287KiB[0B 287KiB] Sc·[0.00 0.00]
-23:09:11.581631 db@open opening
-23:09:11.581689 journal@recovery F·1
-23:09:11.582309 journal@recovery recovering @13
-23:09:11.582536 version@stat F·[0 1] S·287KiB[0B 287KiB] Sc·[0.00 0.00]
-23:09:11.582970 db@janitor F·3 G·0
-23:09:11.582985 db@open done T·1.348144ms
+=============== Jan 9, 2017 (PST) ===============
+21:28:15.542720 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+21:28:15.542867 db@open opening
+21:28:15.543068 version@stat F·[] S·0B[] Sc·[]
+21:28:15.548974 db@janitor F·2 G·0
+21:28:15.548999 db@open done T·6.124892ms
+21:28:16.129075 transaction@flush created L0@2 N·3105 S·63KiB "\x00#\xb7\x02,v2778":"\xff\xa7e\x04,v1294"
+21:28:16.129114 version@stat F·[1] S·63KiB[63KiB] Sc·[0.25]
+21:28:16.253601 transaction@flush created L0@3 N·7829 S·2MiB "\x00q\"i,v8505":"\xff\xa7e\x04,v8820"
+21:28:16.370990 transaction@flush created L0@4 N·7200 S·2MiB "\x00d\x15z,v12327":"\xff\x93\xf0\xbc,v16137"
+21:28:16.484040 transaction@flush created L0@5 N·6612 S·3MiB "\x00#\xb7\x02,v20509":"\xffd\xf3H,v21803"
+21:28:16.497101 transaction@flush created L0@6 N·471 S·379KiB "\x03|W\x19,v25157":"\xfeg\xbc\x86,v24836"
+21:28:16.497131 version@stat F·[5] S·8MiB[8MiB] Sc·[1.25]
+21:28:16.499045 table@compaction L0·5 -> L1·0 S·8MiB Q·25217
+21:28:16.529904 table@build created L1@7 N·3105 S·198KiB "\x00#\xb7\x02,v20509":"\xff\xa7e\x04,v9143"
+21:28:16.529969 version@stat F·[0 1] S·198KiB[0B 198KiB] Sc·[0.00 0.00]
+21:28:16.535511 table@compaction committed F-4 S-8MiB Ke·0 D·22112 T·36.424496ms
+21:28:16.535643 table@remove removed @6
+21:28:16.536150 table@remove removed @5
+21:28:16.536651 table@remove removed @4
+21:28:16.537047 table@remove removed @3
+21:28:16.537128 table@remove removed @2
+21:28:16.743002 transaction@flush created L0@8 N·1716 S·35KiB "\x00\r%\xb6,v26390":"\xff\xfe\xe9,,v26640"
+21:28:16.743036 version@stat F·[1 1] S·233KiB[35KiB 198KiB] Sc·[0.25 0.00]
+21:28:16.839967 transaction@flush created L0@9 N·7548 S·684KiB "\x00\r%\xb6,v33571":"\xff\xfe\xe9,,v30996"
+21:28:16.840005 version@stat F·[2 1] S·917KiB[719KiB 198KiB] Sc·[0.50 0.00]
