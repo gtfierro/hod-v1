@@ -281,6 +281,7 @@ func (op *resolveObjectFromVarSubjectPred) GetTerm() *queryTerm {
 }
 
 // TODO: implement resolveObjectFromVarSubjectPred
+// ?s ?p o
 func (rov *resolveObjectFromVarSubjectPred) run(ctx *queryContext) error {
 	return nil
 }

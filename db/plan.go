@@ -46,16 +46,24 @@ func (db *DB) formQueryPlan(dg *dependencyGraph, q query.Query) *queryPlan {
 			// subject resolved:
 			// object resolved:
 			// pred resolved:
+			// TODO: put this in a single operator!
 			switch {
 			case !hasResolvedSubject && !hasResolvedObject && !hasResolvedPredicate:
 				log.Fatal("?x ?y ?z queries not supported yet")
 			case !hasResolvedSubject && !hasResolvedObject && hasResolvedPredicate:
+				log.Fatal("?x ?y ?z queries not supported yet")
 			case !hasResolvedSubject && hasResolvedObject && !hasResolvedPredicate:
+				log.Fatal("?x ?y ?z queries not supported yet")
 			case !hasResolvedSubject && hasResolvedObject && hasResolvedPredicate:
+				log.Fatal("?x ?y ?z queries not supported yet")
 			case hasResolvedSubject && !hasResolvedObject && !hasResolvedPredicate:
+				log.Fatal("?x ?y ?z queries not supported yet")
 			case hasResolvedSubject && !hasResolvedObject && hasResolvedPredicate:
+				log.Fatal("?x ?y ?z queries not supported yet")
 			case hasResolvedSubject && hasResolvedObject && !hasResolvedPredicate:
+				log.Fatal("?x ?y ?z queries not supported yet")
 			case hasResolvedSubject && hasResolvedObject && hasResolvedPredicate:
+				log.Fatal("?x ?y ?z queries not supported yet")
 			}
 		case subjectIsVariable && objectIsVariable && !predicateIsVariable:
 			switch {
@@ -105,18 +113,22 @@ func (db *DB) formQueryPlan(dg *dependencyGraph, q query.Query) *queryPlan {
 				qp.addTopLevel(predicateVar)
 			}
 		case subjectIsVariable && !objectIsVariable && predicateIsVariable:
+			// ?s ?p o
+			// TODO: finish/reimplement this
 			newop = &resolveSubjectPredFromObject{term: term}
-			//qp.addTopLevel(subjectVar)
 			qp.addLink(subjectVar, predicateVar)
-			//log.Fatal("?x ?y z query not supported yet")
 		case !subjectIsVariable && objectIsVariable && predicateIsVariable:
+			// s ?p ?o
+			// TODO: implement this
 			log.Fatal("x ?y ?z query not supported yet")
 		case subjectIsVariable:
+			// ?s p o
 			newop = &resolveSubject{term: term}
 			if !qp.varIsChild(subjectVar) {
 				qp.addTopLevel(subjectVar)
 			}
 		case objectIsVariable:
+			// s p ?o
 			newop = &resolveObject{term: term}
 			if !qp.varIsChild(objectVar) {
 				qp.addTopLevel(objectVar)
