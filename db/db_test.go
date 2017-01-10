@@ -1,7 +1,6 @@
 package db
 
 import (
-	"io"
 	"strings"
 	"testing"
 
@@ -184,17 +183,20 @@ func BenchmarkQueryPerformance1(b *testing.B) {
 	}
 	benchmarks := []struct {
 		name  string
-		query io.Reader
+		query string
 	}{
-		{"SimpleSubjectVarTriple", strings.NewReader("SELECT ?x WHERE { ?x rdf:type brick:Room . };")},
-		{"LongerQuery1", strings.NewReader("SELECT ?vav ?room WHERE { ?vav rdf:type brick:VAV . ?room rdf:type brick:Room . ?zone rdf:type brick:HVAC_Zone . ?vav bf:feeds+ ?zone . ?room bf:isPartOf ?zone . }; ")},
+		{"SimpleSubjectVarTriple", "SELECT ?x WHERE { ?x rdf:type brick:Room . };"},
+		{"LongerQuery1", "SELECT ?vav ?room WHERE { ?vav rdf:type brick:VAV . ?room rdf:type brick:Room . ?zone rdf:type brick:HVAC_Zone . ?vav bf:feeds+ ?zone . ?room bf:isPartOf ?zone . }; "},
 	}
 
 	for _, bm := range benchmarks {
 		b.Run(bm.name, func(b *testing.B) {
 			b.ReportAllocs()
 			for i := 0; i < b.N; i++ {
-				q, _ := query.Parse(bm.query)
+				q, e := query.Parse(strings.NewReader(bm.query))
+				if e != nil {
+					b.Error(e)
+				}
 				db.RunQuery(q)
 			}
 		})
