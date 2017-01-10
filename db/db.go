@@ -175,6 +175,10 @@ func NewDB(cfg *config.Config) (*DB, error) {
 		if err != nil {
 			return nil, err
 		}
+		err = db.LoadDataset(relships)
+		if err != nil {
+			return nil, err
+		}
 		err = db.LoadDataset(classships)
 		if err != nil {
 			return nil, err
