@@ -13,7 +13,9 @@
 
 # the path to the TTL file containing Brick classes
 #BrickClassTTL: "Brick.ttl"
-#
+
+# whether or not to reload the Brick database files
+#ReloadBrick: true
 
 ####
 # configuration for verbosity during operation
