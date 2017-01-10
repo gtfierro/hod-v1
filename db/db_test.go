@@ -30,6 +30,10 @@ func TestDBQuery(t *testing.T) {
 			[]ResultMap{{"?x": turtle.ParseURI("http://buildsys.org/ontologies/building_example#room_1")}},
 		},
 		{
+			"SELECT ?x WHERE { ?x rdf:type <http://buildsys.org/ontologies/Brick#Room> . };",
+			[]ResultMap{{"?x": turtle.ParseURI("http://buildsys.org/ontologies/building_example#room_1")}},
+		},
+		{
 			"SELECT ?x WHERE { ?ahu rdf:type brick:AHU . ?ahu bf:feeds ?x .};",
 			[]ResultMap{{"?x": turtle.ParseURI("http://buildsys.org/ontologies/building_example#vav_1")}},
 		},

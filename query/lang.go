@@ -53,9 +53,10 @@ const BAR = 57365
 const LINK = 57366
 const VAR = 57367
 const URI = 57368
-const LBRACK = 57369
-const RBRACK = 57370
-const NUMBER = 57371
+const FULLURI = 57369
+const LBRACK = 57370
+const RBRACK = 57371
+const NUMBER = 57372
 
 var yyToknames = [...]string{
 	"$end",
@@ -84,6 +85,7 @@ var yyToknames = [...]string{
 	"LINK",
 	"VAR",
 	"URI",
+	"FULLURI",
 	"LBRACK",
 	"RBRACK",
 	"NUMBER",
@@ -94,7 +96,7 @@ const yyEofCode = 1
 const yyErrCode = 2
 const yyInitialStackSize = 16
 
-//line lang.y:288
+//line lang.y:298
 
 const eof = 0
 
@@ -140,6 +142,7 @@ func newlexer(r io.Reader) *lexer {
 			{Token: SLASH, Pattern: "/"},
 			{Token: PLUS, Pattern: "\\+"},
 			{Token: ASTERISK, Pattern: "\\*"},
+			{Token: FULLURI, Pattern: "<[^<>\"{}|^`\\\\]*>"},
 		})
 	scanner.SetInput(r)
 	return &lexer{
@@ -176,72 +179,73 @@ var yyExca = [...]int{
 	-2, 0,
 }
 
-const yyNprod = 36
+const yyNprod = 38
 const yyPrivate = 57344
 
 var yyTokenNames []string
 var yyStates []string
 
-const yyLast = 70
+const yyLast = 79
 
 var yyAct = [...]int{
 
-	19, 21, 30, 25, 57, 22, 38, 23, 24, 34,
-	17, 7, 12, 10, 56, 8, 58, 23, 24, 33,
-	32, 29, 28, 37, 35, 44, 27, 10, 26, 45,
-	10, 61, 43, 46, 47, 48, 65, 49, 50, 58,
-	52, 53, 13, 54, 55, 40, 51, 59, 60, 39,
-	6, 42, 62, 63, 64, 11, 5, 31, 14, 15,
-	16, 3, 4, 18, 36, 20, 9, 41, 2, 1,
+	19, 21, 27, 24, 22, 32, 59, 23, 25, 26,
+	40, 17, 12, 10, 58, 63, 23, 25, 26, 36,
+	29, 31, 28, 39, 37, 34, 60, 10, 7, 35,
+	25, 26, 8, 30, 45, 48, 49, 50, 13, 42,
+	34, 34, 51, 52, 56, 57, 67, 10, 41, 60,
+	34, 34, 61, 62, 64, 65, 66, 46, 6, 54,
+	55, 47, 5, 11, 44, 53, 14, 15, 16, 3,
+	4, 18, 33, 38, 20, 9, 43, 2, 1,
 }
 var yyPact = [...]int{
 
-	57, -1000, 49, 5, 2, 29, -1000, -12, -12, -12,
-	-17, -1000, -12, -8, -1000, -1000, -1000, 4, -1000, 8,
-	-8, -6, -8, -1000, -1000, -22, 37, 33, 40, -1000,
-	-18, 6, 13, -1000, -6, -6, 32, -1000, -1000, 4,
-	4, -4, -25, -1, -6, -6, -1000, -1000, -1000, 15,
-	-18, -1000, -8, -8, -1000, -1000, -1000, -1000, -1000, -1000,
-	-1000, -1000, 22, -1000, -1000, -1000,
+	65, -1000, 55, 22, 2, 25, -1000, -12, -12, -12,
+	-17, -1000, -12, -9, -1000, -1000, -1000, -2, -1000, 19,
+	-9, 4, -9, -1000, -1000, -1000, -1000, -19, 36, 27,
+	53, -1000, -18, 38, 15, -1000, 4, 4, 51, -1000,
+	-1000, -2, -2, -4, -24, 9, 4, 4, -1000, -1000,
+	-1000, -1, -18, -1000, -9, -9, -1000, -1000, -1000, -1000,
+	-1000, -1000, -1000, -1000, 32, -1000, -1000, -1000,
 }
 var yyPgo = [...]int{
 
-	0, 69, 68, 0, 67, 50, 66, 3, 65, 1,
-	2, 64, 57,
+	0, 78, 77, 0, 76, 58, 75, 2, 74, 1,
+	5, 73, 72, 3,
 }
 var yyR1 = [...]int{
 
 	0, 1, 2, 2, 2, 2, 2, 4, 4, 5,
 	5, 6, 6, 7, 7, 7, 7, 3, 3, 8,
-	8, 8, 11, 11, 11, 10, 10, 10, 12, 12,
-	12, 12, 12, 12, 9, 9,
+	8, 8, 11, 11, 11, 10, 10, 10, 13, 13,
+	12, 12, 12, 12, 12, 12, 9, 9,
 }
 var yyR2 = [...]int{
 
 	0, 7, 2, 3, 3, 2, 3, 0, 2, 1,
 	2, 4, 1, 1, 1, 3, 3, 1, 2, 4,
 	5, 3, 1, 3, 3, 1, 3, 3, 1, 1,
-	2, 2, 2, 3, 1, 1,
+	1, 1, 2, 2, 2, 3, 1, 1,
 }
 var yyChk = [...]int{
 
 	-1000, -1, -2, 4, 5, 7, -5, 6, 10, -6,
-	25, -5, 10, 13, -5, -5, -5, 27, -5, -3,
-	-8, -9, 13, 25, 26, -7, 24, 22, 14, -3,
-	-10, -12, 26, 25, 15, -9, -11, -3, 28, 12,
-	12, -4, 11, -9, 19, 23, 20, 21, 22, -10,
-	-10, 14, 8, 9, -7, -7, 18, 29, 17, -10,
-	-10, 16, -9, -3, -3, 14,
+	25, -5, 10, 13, -5, -5, -5, 28, -5, -3,
+	-8, -9, 13, 25, -13, 26, 27, -7, 24, 22,
+	14, -3, -10, -12, -13, 25, 15, -9, -11, -3,
+	29, 12, 12, -4, 11, -9, 19, 23, 20, 21,
+	22, -10, -10, 14, 8, 9, -7, -7, 18, 30,
+	17, -10, -10, 16, -9, -3, -3, 14,
 }
 var yyDef = [...]int{
 
 	0, -2, 0, 0, 0, 0, 2, 0, 0, 9,
 	12, 5, 0, 0, 3, 4, 10, 0, 6, 0,
-	17, 0, 0, 34, 35, 0, 13, 14, 7, 18,
-	0, 25, 28, 29, 0, 0, 0, 22, 11, 0,
-	0, 0, 0, 0, 0, 0, 30, 31, 32, 0,
-	0, 21, 0, 0, 15, 16, 1, 8, 19, 26,
-	27, 33, 0, 23, 24, 20,
+	17, 0, 0, 36, 37, 28, 29, 0, 13, 14,
+	7, 18, 0, 25, 30, 31, 0, 0, 0, 22,
+	11, 0, 0, 0, 0, 0, 0, 0, 32, 33,
+	34, 0, 0, 21, 0, 0, 15, 16, 1, 8,
+	19, 26, 27, 35, 0, 23, 24, 20,
 }
 var yyTok1 = [...]int{
 
@@ -251,7 +255,7 @@ var yyTok2 = [...]int{
 
 	2, 3, 4, 5, 6, 7, 8, 9, 10, 11,
 	12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
-	22, 23, 24, 25, 26, 27, 28, 29,
+	22, 23, 24, 25, 26, 27, 28, 29, 30,
 }
 var yyTok3 = [...]int{
 	0,
@@ -847,47 +851,59 @@ yydefault:
 		yyDollar = yyS[yypt-1 : yypt+1]
 		//line lang.y:254
 		{
-			yyVAL.pred = []PathPattern{{Predicate: turtle.ParseURI(yyDollar[1].str), Pattern: PATTERN_SINGLE}}
+			yyVAL.str = yyDollar[1].str
 		}
 	case 29:
 		yyDollar = yyS[yypt-1 : yypt+1]
 		//line lang.y:258
 		{
-			yyVAL.pred = []PathPattern{{Predicate: turtle.ParseURI(yyDollar[1].str), Pattern: PATTERN_SINGLE}}
+			yyVAL.str = yyDollar[1].str[1 : len(yyDollar[1].str)-1]
 		}
 	case 30:
-		yyDollar = yyS[yypt-2 : yypt+1]
-		//line lang.y:262
+		yyDollar = yyS[yypt-1 : yypt+1]
+		//line lang.y:264
 		{
-			yyVAL.pred = []PathPattern{{Predicate: turtle.ParseURI(yyDollar[1].str), Pattern: PATTERN_ONE_PLUS}}
+			yyVAL.pred = []PathPattern{{Predicate: turtle.ParseURI(yyDollar[1].str), Pattern: PATTERN_SINGLE}}
 		}
 	case 31:
-		yyDollar = yyS[yypt-2 : yypt+1]
-		//line lang.y:266
+		yyDollar = yyS[yypt-1 : yypt+1]
+		//line lang.y:268
 		{
-			yyVAL.pred = []PathPattern{{Predicate: turtle.ParseURI(yyDollar[1].str), Pattern: PATTERN_ZERO_ONE}}
+			yyVAL.pred = []PathPattern{{Predicate: turtle.ParseURI(yyDollar[1].str), Pattern: PATTERN_SINGLE}}
 		}
 	case 32:
 		yyDollar = yyS[yypt-2 : yypt+1]
-		//line lang.y:270
+		//line lang.y:272
+		{
+			yyVAL.pred = []PathPattern{{Predicate: turtle.ParseURI(yyDollar[1].str), Pattern: PATTERN_ONE_PLUS}}
+		}
+	case 33:
+		yyDollar = yyS[yypt-2 : yypt+1]
+		//line lang.y:276
+		{
+			yyVAL.pred = []PathPattern{{Predicate: turtle.ParseURI(yyDollar[1].str), Pattern: PATTERN_ZERO_ONE}}
+		}
+	case 34:
+		yyDollar = yyS[yypt-2 : yypt+1]
+		//line lang.y:280
 		{
 			yyVAL.pred = []PathPattern{{Predicate: turtle.ParseURI(yyDollar[1].str), Pattern: PATTERN_ZERO_PLUS}}
 		}
-	case 33:
+	case 35:
 		yyDollar = yyS[yypt-3 : yypt+1]
-		//line lang.y:274
+		//line lang.y:284
 		{
 			yyVAL.pred = yyDollar[2].pred
 		}
-	case 34:
+	case 36:
 		yyDollar = yyS[yypt-1 : yypt+1]
-		//line lang.y:280
+		//line lang.y:290
 		{
 			yyVAL.val = turtle.ParseURI(yyDollar[1].str)
 		}
-	case 35:
+	case 37:
 		yyDollar = yyS[yypt-1 : yypt+1]
-		//line lang.y:284
+		//line lang.y:294
 		{
 			yyVAL.val = turtle.ParseURI(yyDollar[1].str)
 		}

@@ -52,6 +52,14 @@ func TestQueryParse(t *testing.T) {
 			},
 		},
 		{
+			"SELECT ?x WHERE { ?x rdf:type <http://buildsys.org/ontologies/Brick#Room> . } ;",
+			SelectClause{Variables: []SelectVar{{Var: turtle.ParseURI("?x")}}, HasLinks: false},
+			WhereClause{
+				[]Filter{{Subject: turtle.ParseURI("?x"), Path: []PathPattern{PathPattern{turtle.ParseURI("rdf:type"), PATTERN_SINGLE}}, Object: turtle.ParseURI("<http://buildsys.org/ontologies/Brick#Room>")}},
+				[]OrClause{},
+			},
+		},
+		{
 			"SELECT ?x WHERE { ?x ?y brick:Room . } ;",
 			SelectClause{Variables: []SelectVar{{Var: turtle.ParseURI("?x")}}, HasLinks: false},
 			WhereClause{

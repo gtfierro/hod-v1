@@ -30,7 +30,7 @@ import (
 
 %token SELECT COUNT DISTINCT WHERE OR UNION PARTIAL LIMIT
 %token COMMA LBRACE RBRACE LPAREN RPAREN DOT SEMICOLON SLASH PLUS QUESTION ASTERISK BAR
-%token LINK VAR URI LBRACK RBRACK NUMBER
+%token LINK VAR URI FULLURI LBRACK RBRACK NUMBER
 
 %%
 
@@ -250,7 +250,17 @@ path         : pathatom
              }
              ;
 
-pathatom     : URI
+uri          : URI
+             {
+                $$.str = $1.str
+             }
+             | FULLURI
+             {
+                $$.str = $1.str[1:len($1.str)-1]
+             }
+             ;
+
+pathatom     : uri
              {
                 $$.pred = []PathPattern{{Predicate: turtle.ParseURI($1.str), Pattern: PATTERN_SINGLE}}
              }
@@ -258,15 +268,15 @@ pathatom     : URI
              {
                 $$.pred = []PathPattern{{Predicate: turtle.ParseURI($1.str), Pattern: PATTERN_SINGLE}}
              }
-             | URI PLUS
+             | uri PLUS
              {
                 $$.pred = []PathPattern{{Predicate: turtle.ParseURI($1.str), Pattern: PATTERN_ONE_PLUS}}
              }
-             | URI QUESTION
+             | uri QUESTION
              {
                 $$.pred = []PathPattern{{Predicate: turtle.ParseURI($1.str), Pattern: PATTERN_ZERO_ONE}}
              }
-             | URI ASTERISK
+             | uri ASTERISK
              {
                 $$.pred = []PathPattern{{Predicate: turtle.ParseURI($1.str), Pattern: PATTERN_ZERO_PLUS}}
              }
@@ -280,7 +290,7 @@ term         : VAR
              {
                 $$.val = turtle.ParseURI($1.str)
              }
-             | URI
+             | uri
              {
                 $$.val = turtle.ParseURI($1.str)
              }
@@ -331,6 +341,7 @@ func newlexer(r io.Reader) *lexer {
             {Token: SLASH,  Pattern: "/"},
             {Token: PLUS,  Pattern: "\\+"},
             {Token: ASTERISK,  Pattern: "\\*"},
+            {Token: FULLURI,  Pattern: "<[^<>\"{}|^`\\\\]*>"},
         })
 	scanner.SetInput(r)
     return &lexer{
