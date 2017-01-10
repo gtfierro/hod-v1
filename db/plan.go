@@ -114,13 +114,12 @@ func (db *DB) formQueryPlan(dg *dependencyGraph, q query.Query) *queryPlan {
 			}
 		case subjectIsVariable && !objectIsVariable && predicateIsVariable:
 			// ?s ?p o
-			// TODO: finish/reimplement this
 			newop = &resolveSubjectPredFromObject{term: term}
 			qp.addLink(subjectVar, predicateVar)
 		case !subjectIsVariable && objectIsVariable && predicateIsVariable:
 			// s ?p ?o
-			// TODO: implement this
-			log.Fatal("x ?y ?z query not supported yet")
+			newop = &resolvePredObjectFromSubject{term: term}
+			qp.addLink(objectVar, predicateVar)
 		case subjectIsVariable:
 			// ?s p o
 			newop = &resolveSubject{term: term}

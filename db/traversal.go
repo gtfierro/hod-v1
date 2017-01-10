@@ -344,3 +344,14 @@ func (db *DB) getPredicatesFromObject(object *Entity) *btree.BTree {
 
 	return reachable
 }
+
+func (db *DB) getPredicatesFromSubject(subject *Entity) *btree.BTree {
+	reachable := btree.New(2)
+	var edgepk Key
+	for edge := range subject.OutEdges {
+		edgepk.FromSlice([]byte(edge))
+		reachable.ReplaceOrInsert(edgepk)
+	}
+
+	return reachable
+}

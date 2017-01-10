@@ -4,8 +4,7 @@ package db
 import (
 	"fmt"
 
-	//"github.com/google/btree"
-	//"github.com/gtfierro/hod/query"
+	"github.com/gtfierro/hod/query"
 	"github.com/pkg/errors"
 	"github.com/syndtr/goleveldb/leveldb"
 )
@@ -326,71 +325,100 @@ func (op *resolveSubjectPredFromObject) GetTerm() *queryTerm {
 // the known object and then pull the associated subjects. We then filter those subjects
 // by anything we've already resolved.
 // If we have *not* resolved the predicate, then this is easy: just graph traverse from the object
-
 func (op *resolveSubjectPredFromObject) run(ctx *queryContext) error {
-	//var (
-	//	tree  *btree.BTree
-	//	found bool
-	//)
-	//subjectVar := op.term.Subject.String()
-	//predicateVar := op.term.Path[0].Predicate.String()
+	var (
+		tree *pointerTree
+	)
+	subjectVar := op.term.Subject.String()
+	predicateVar := op.term.Path[0].Predicate.String()
 
-	//for k, v := range varOrder.vars {
-	//	log.Warning(k, "=>", v)
-	//}
+	// fetch the object from the graph
+	object, err := ctx.db.GetEntity(op.term.Object)
+	if err != nil && err != leveldb.ErrNotFound {
+		return errors.Wrap(err, fmt.Sprintf("%+v", op.term))
+	} else if err == leveldb.ErrNotFound {
+		return nil
+	}
+	candidateSubjects := newPointerTree(2)
+	// get all predicates from it
+	predicates := hashTreeToPointerTree(ctx.db, ctx.db.getPredicatesFromObject(object))
+	// for each subject reachable from each predicate, add the predicate as aa
+	// dependent of the subject
+	predmax := predicates.Max()
+	iterpred := func(predicate *Entity) bool {
+		path := []query.PathPattern{{Predicate: ctx.db.MustGetURI(predicate.PK), Pattern: query.PATTERN_SINGLE}}
+		subjects := hashTreeToPointerTree(ctx.db, ctx.db.getSubjectFromPredObject(object.PK, path))
+		max := subjects.Max()
+		iter := func(ent *Entity) bool {
+			tree = ctx.getLinkedValues(ent)
+			tree.Add(predicate)
+			candidateSubjects.Add(ent) // subject
+			ctx.addReachable(ent, subjectVar, tree, predicateVar)
+			return ent != max
+		}
+		subjects.Iter(iter)
+		return predicate != predmax
+	}
+	predicates.Iter(iterpred)
 
-	//// fetch the object from the graph
-	//object, err := ctx.db.GetEntity(op.term.Object)
-	//if err != nil && err != leveldb.ErrNotFound {
-	//	return errors.Wrap(err, fmt.Sprintf("%+v", op.term))
-	//} else if err == leveldb.ErrNotFound {
-	//	return nil
-	//}
-	//candidateSubjects := btree.New(2)
-	//// get all predicates from it
-	//predicates := hashTreeToEntityTree(ctx.db.getPredicatesFromObject(object))
-	//// for each subject reachable from each predicate, add the predicate as aa
-	//// dependent of the subject
-	//predmax := predicates.Max()
-	//iterpred := func(i btree.Item) bool {
-	//	predicate := i.(*ResultEntity)
-	//	path := []query.PathPattern{{Predicate: ctx.db.MustGetURI(predicate.PK), Pattern: query.PATTERN_SINGLE}}
-	//	subjects := hashTreeToEntityTree(ctx.db.getSubjectFromPredObject(object.PK, path))
-	//	max := subjects.Max()
-	//	iter := func(i btree.Item) bool {
-	//		ent := i.(*ResultEntity)
-	//		if tree, found = ent.Next[predicateVar]; !found {
-	//			tree = btree.New(2)
-	//		}
-	//		tree.ReplaceOrInsert(predicate)
-	//		candidateSubjects.ReplaceOrInsert(ent) // subject
-	//		ent.Next[predicateVar] = tree
-	//		return i != max
-	//	}
-	//	subjects.Ascend(iter)
-	//	return i != predmax
-	//}
-	//predicates.Ascend(iterpred)
+	// need to merge w/ the subjects we've already gotten
+	ctx.addOrFilterVariable(subjectVar, candidateSubjects)
 
-	//addSubjects := btree.New(2)
-	//hasSubjects := false
+	return nil
+}
 
-	//// need to merge w/ the subjects we've already gotten
-	//for _, subject := range rm.iterVariable(subjectVar) {
-	//	log.Debug("already have", ctx.db.MustGetURI(subject.PK))
-	//	hasSubjects = true
-	//	if candidateSubjects.Has(subject) {
-	//		log.Debug("in candidates")
-	//		addSubjects.ReplaceOrInsert(subject)
-	//		log.Debugf("add subs %d", addSubjects.Len())
-	//	}
-	//}
-	//if hasSubjects || rm.varOrder.hasVar(subjectVar) {
-	//	log.Debug("add subs have it")
-	//	rm.addVariable(subjectVar, addSubjects)
-	//} else {
-	//	rm.addVariable(subjectVar, candidateSubjects)
-	//}
+type resolvePredObjectFromSubject struct {
+	term *queryTerm
+}
+
+func (op *resolvePredObjectFromSubject) String() string {
+	return fmt.Sprintf("[resolvePredObjectFromSubject %s]", op.term)
+}
+
+func (op *resolvePredObjectFromSubject) SortKey() string {
+	return op.term.Path[0].Predicate.String()
+}
+
+func (op *resolvePredObjectFromSubject) GetTerm() *queryTerm {
+	return op.term
+}
+
+func (op *resolvePredObjectFromSubject) run(ctx *queryContext) error {
+	var (
+		tree *pointerTree
+	)
+	objectVar := op.term.Object.String()
+	predicateVar := op.term.Path[0].Predicate.String()
+
+	// fetch the subject from the graph
+	subject, err := ctx.db.GetEntity(op.term.Subject)
+	if err != nil && err != leveldb.ErrNotFound {
+		return errors.Wrap(err, fmt.Sprintf("%+v", op.term))
+	} else if err == leveldb.ErrNotFound {
+		return nil
+	}
+	candidateObjects := newPointerTree(2)
+	// get all predicates from it
+	predicates := hashTreeToPointerTree(ctx.db, ctx.db.getPredicatesFromSubject(subject))
+	predmax := predicates.Max()
+	iterpred := func(predicate *Entity) bool {
+		path := []query.PathPattern{{Predicate: ctx.db.MustGetURI(predicate.PK), Pattern: query.PATTERN_SINGLE}}
+		objects := hashTreeToPointerTree(ctx.db, ctx.db.getObjectFromSubjectPred(subject.PK, path))
+		max := objects.Max()
+		iter := func(ent *Entity) bool {
+			tree = ctx.getLinkedValues(ent)
+			tree.Add(predicate)
+			candidateObjects.Add(ent) // object
+			ctx.addReachable(ent, objectVar, tree, predicateVar)
+			return ent != max
+		}
+		objects.Iter(iter)
+		return predicate != predmax
+	}
+	predicates.Iter(iterpred)
+
+	// need to merge w/ the objects we've already gotten
+	ctx.addOrFilterVariable(objectVar, candidateObjects)
 
 	return nil
 }
