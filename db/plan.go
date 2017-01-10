@@ -48,23 +48,16 @@ func (db *DB) formQueryPlan(dg *dependencyGraph, q query.Query) *queryPlan {
 			// pred resolved:
 			// TODO: put this in a single operator!
 			switch {
-			case !hasResolvedSubject && !hasResolvedObject && !hasResolvedPredicate:
-				log.Fatal("?x ?y ?z queries not supported yet")
-			case !hasResolvedSubject && !hasResolvedObject && hasResolvedPredicate:
-				log.Fatal("?x ?y ?z queries not supported yet")
-			case !hasResolvedSubject && hasResolvedObject && !hasResolvedPredicate:
-				log.Fatal("?x ?y ?z queries not supported yet")
-			case !hasResolvedSubject && hasResolvedObject && hasResolvedPredicate:
-				log.Fatal("?x ?y ?z queries not supported yet")
-			case hasResolvedSubject && !hasResolvedObject && !hasResolvedPredicate:
-				log.Fatal("?x ?y ?z queries not supported yet")
-			case hasResolvedSubject && !hasResolvedObject && hasResolvedPredicate:
-				log.Fatal("?x ?y ?z queries not supported yet")
-			case hasResolvedSubject && hasResolvedObject && !hasResolvedPredicate:
-				log.Fatal("?x ?y ?z queries not supported yet")
-			case hasResolvedSubject && hasResolvedObject && hasResolvedPredicate:
-				log.Fatal("?x ?y ?z queries not supported yet")
+			case hasResolvedSubject:
+				newop = &resolveVarTripleFromSubject{term: term}
+			case hasResolvedObject:
+				newop = &resolveVarTripleFromObject{term: term}
+			case hasResolvedPredicate:
+				newop = &resolveVarTripleFromPredicate{term: term}
+			default: // all are vars
+				newop = &resolveVarTripleAll{term: term}
 			}
+			log.Fatal("?x ?y ?z queries not supported yet")
 		case subjectIsVariable && objectIsVariable && !predicateIsVariable:
 			switch {
 			case hasResolvedSubject && hasResolvedObject:

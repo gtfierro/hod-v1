@@ -422,3 +422,91 @@ func (op *resolvePredObjectFromSubject) run(ctx *queryContext) error {
 
 	return nil
 }
+
+// TODO: implement these for ?s ?p ?o constructs
+// TODO: also requires query planner
+type resolveVarTripleFromSubject struct {
+	term *queryTerm
+}
+
+func (op *resolveVarTripleFromSubject) String() string {
+	return fmt.Sprintf("[resolveVarTripleFromSubject %s]", op.term)
+}
+
+func (op *resolveVarTripleFromSubject) SortKey() string {
+	return op.term.Subject.String()
+}
+
+func (op *resolveVarTripleFromSubject) GetTerm() *queryTerm {
+	return op.term
+}
+
+// ?s ?p ?o; start from s
+func (op *resolveVarTripleFromSubject) run(ctx *queryContext) error {
+	// for all subjects, find all predicates and objects. Note: these predicates
+	// and objects may be partially evaluated already
+	return nil
+}
+
+type resolveVarTripleFromObject struct {
+	term *queryTerm
+}
+
+func (op *resolveVarTripleFromObject) String() string {
+	return fmt.Sprintf("[resolveVarTripleFromObject %s]", op.term)
+}
+
+func (op *resolveVarTripleFromObject) SortKey() string {
+	return op.term.Object.String()
+}
+
+func (op *resolveVarTripleFromObject) GetTerm() *queryTerm {
+	return op.term
+}
+
+// ?s ?p ?o; start from s
+func (op *resolveVarTripleFromObject) run(ctx *queryContext) error {
+	return nil
+}
+
+type resolveVarTripleFromPredicate struct {
+	term *queryTerm
+}
+
+func (op *resolveVarTripleFromPredicate) String() string {
+	return fmt.Sprintf("[resolveVarTripleFromPredicate %s]", op.term)
+}
+
+func (op *resolveVarTripleFromPredicate) SortKey() string {
+	return op.term.Path[0].Predicate.String()
+}
+
+func (op *resolveVarTripleFromPredicate) GetTerm() *queryTerm {
+	return op.term
+}
+
+// ?s ?p ?o; start from s
+func (op *resolveVarTripleFromPredicate) run(ctx *queryContext) error {
+	return nil
+}
+
+type resolveVarTripleAll struct {
+	term *queryTerm
+}
+
+func (op *resolveVarTripleAll) String() string {
+	return fmt.Sprintf("[resolveVarTripleAll %s]", op.term)
+}
+
+func (op *resolveVarTripleAll) SortKey() string {
+	return op.term.Subject.String()
+}
+
+func (op *resolveVarTripleAll) GetTerm() *queryTerm {
+	return op.term
+}
+
+// ?s ?p ?o; start from s
+func (op *resolveVarTripleAll) run(ctx *queryContext) error {
+	return nil
+}
