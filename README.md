@@ -2,6 +2,18 @@
 
 A database for [Brick](http://brickschema.org/)
 
+
+## Documentation
+
+[http://hoddb.org/](http://hoddb.org/)
+
+## Collaboration
+
+Look at the [issue tracker](https://github.com/gtfierro/hod/issues) for anything that isn't already assigned
+
+
+---
+
 ## Interface
 
 Located in `server`
