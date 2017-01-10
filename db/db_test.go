@@ -73,6 +73,16 @@ func TestDBQuery(t *testing.T) {
 			"SELECT ?sensor WHERE { ?sensor rdf:type/rdfs:subClassOf* brick:Zone_Temperature_Sensor . };",
 			[]ResultMap{{"?sensor": turtle.ParseURI("http://buildsys.org/ontologies/building_example#ztemp_1")}},
 		},
+		{
+			"SELECT ?s ?p WHERE { ?s ?p brick:Zone_Temperature_Sensor . ?s rdfs:subClassOf brick:Zone_Temperature_Sensor . };",
+			[]ResultMap{
+				{"?s": turtle.ParseURI("http://buildsys.org/ontologies/Brick#Average_Zone_Temperature_Sensor"), "?p": turtle.ParseURI("http://www.w3.org/2000/01/rdf-schema#subClassOf")},
+				{"?s": turtle.ParseURI("http://buildsys.org/ontologies/Brick#Coldest_Zone_Temperature_Sensor"), "?p": turtle.ParseURI("http://www.w3.org/2000/01/rdf-schema#subClassOf")},
+				{"?s": turtle.ParseURI("http://buildsys.org/ontologies/Brick#Highest_Zone_Temperature_Sensor"), "?p": turtle.ParseURI("http://www.w3.org/2000/01/rdf-schema#subClassOf")},
+				{"?s": turtle.ParseURI("http://buildsys.org/ontologies/Brick#Lowest_Zone_Temperature_Sensor"), "?p": turtle.ParseURI("http://www.w3.org/2000/01/rdf-schema#subClassOf")},
+				{"?s": turtle.ParseURI("http://buildsys.org/ontologies/Brick#Warmest_Zone_Temperature_Sensor"), "?p": turtle.ParseURI("http://www.w3.org/2000/01/rdf-schema#subClassOf")},
+			},
+		},
 	} {
 		q, e := query.Parse(strings.NewReader(test.query))
 		if e != nil {
