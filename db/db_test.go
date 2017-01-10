@@ -88,6 +88,88 @@ func TestDBQuery(t *testing.T) {
 	}
 }
 
+func TestDBQueryBerkeley(t *testing.T) {
+	cfg, err := config.ReadConfig("testhodconfig.yaml")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	cfg.DBPath = "test_databases/berkeleytestdb"
+	db, err := NewDB(cfg)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	for _, test := range []struct {
+		query       string
+		resultCount int
+	}{
+		{
+			"COUNT ?x WHERE { ?x rdf:type brick:Room . };",
+			243,
+		},
+		{
+			"COUNT ?x WHERE { ?ahu rdf:type brick:AHU . ?ahu bf:feeds ?x .};",
+			240,
+		},
+		{
+			"COUNT ?x WHERE { ?ahu rdf:type brick:AHU . ?ahu bf:feeds+ ?x .};",
+			480,
+		},
+		{
+			"COUNT ?x WHERE { ?ahu rdf:type brick:AHU . ?x bf:isFedBy+ ?ahu .};",
+			480,
+		},
+		{
+			"COUNT ?x WHERE { ?ahu rdf:type brick:AHU . ?ahu bf:feeds/bf:feeds ?x .};",
+			240,
+		},
+		{
+			"COUNT ?x WHERE { ?ahu rdf:type brick:AHU . ?ahu bf:feeds/bf:feeds+ ?x .};",
+			240,
+		},
+		{
+			"COUNT ?x WHERE { ?ahu rdf:type brick:AHU . ?ahu bf:feeds/bf:feeds? ?x .};",
+			480,
+		},
+		{
+			"COUNT ?x WHERE { ?ahu rdf:type brick:AHU . ?x bf:isFedBy/bf:isFedBy? ?ahu .};",
+			480,
+		},
+		{
+			"COUNT ?x WHERE { ?ahu rdf:type brick:AHU . ?ahu bf:feeds* ?x .};",
+			485,
+		},
+		{
+			"COUNT ?x WHERE { ?ahu rdf:type brick:AHU . ?x bf:isFedBy* ?ahu .};",
+			485,
+		},
+		{
+			"COUNT ?vav ?room WHERE { ?vav rdf:type brick:VAV . ?room rdf:type brick:Room . ?zone rdf:type brick:HVAC_Zone . ?vav bf:feeds+ ?zone . ?room bf:isPartOf ?zone . }; ",
+			243,
+		},
+		{
+			"COUNT ?sensor WHERE { ?sensor rdf:type/rdfs:subClassOf* brick:Zone_Temperature_Sensor . };",
+			232,
+		},
+		{
+			"COUNT ?sensor ?room WHERE { ?sensor rdf:type/rdfs:subClassOf* brick:Zone_Temperature_Sensor . ?vav rdf:type brick:VAV . ?zone rdf:type brick:HVAC_Zone . ?room rdf:type brick:Room . ?vav bf:feeds+ ?zone . ?zone bf:hasPart ?room . { ?sensor bf:isPointOf ?vav . OR ?sensor bf:isPointOf ?room .} };",
+			232,
+		},
+	} {
+		q, e := query.Parse(strings.NewReader(test.query))
+		if e != nil {
+			t.Error(test.query, e)
+			continue
+		}
+		result := db.RunQuery(q)
+		if result.Count != test.resultCount {
+			t.Errorf("Results for %s had %d expected %d", test.query, result.Count, test.resultCount)
+			return
+		}
+	}
+}
+
 func BenchmarkQueryPerformance1(b *testing.B) {
 	cfg, err := config.ReadConfig("testhodconfig.yaml")
 	if err != nil {
