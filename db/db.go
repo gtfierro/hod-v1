@@ -487,7 +487,7 @@ func (db *DB) GetHash(entity turtle.URI) (Key, error) {
 		if err == freecache.ErrNotFound {
 			val, err := db.entityDB.Get(entity.Bytes(), nil)
 			if err != nil {
-				return emptyHash, err
+				return emptyHash, errors.Wrapf(err, "Could not get Entity for %s", entity)
 			}
 			copy(rethash[:], val)
 			if rethash == emptyHash {
@@ -496,7 +496,7 @@ func (db *DB) GetHash(entity turtle.URI) (Key, error) {
 			db.entityHashCache.Set(entity.Bytes(), rethash[:], 3600) // expire 1 hour
 			return rethash, nil
 		} else {
-			return emptyHash, err
+			return emptyHash, errors.Wrapf(err, "Could not get Entity for %s", entity)
 		}
 	} else {
 		copy(rethash[:], hash)
@@ -533,7 +533,7 @@ func (db *DB) GetURI(hash Key) (turtle.URI, error) {
 func (db *DB) MustGetURI(hash Key) turtle.URI {
 	val, err := db.pkDB.Get(hash[:], nil)
 	if err != nil {
-		panic(err)
+		panic(errors.Wrapf(err, "Could not get URI for %v", hash))
 	}
 	return turtle.ParseURI(string(val))
 }
@@ -543,7 +543,7 @@ func (db *DB) MustGetURIStringHash(hash string) turtle.URI {
 	copy(c[:], []byte(hash))
 	val, err := db.pkDB.Get(c[:], nil)
 	if err != nil {
-		panic(err)
+		panic(errors.Wrapf(err, "Could not get URI for %v", []byte(hash)))
 	}
 	return turtle.ParseURI(string(val))
 }
@@ -556,11 +556,11 @@ func (db *DB) GetEntity(uri turtle.URI) (*Entity, error) {
 	}
 	bytes, err := db.graphDB.Get(hash[:], nil)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "Could not get Entity from graph for %s", uri)
 	}
 	_, err = entity.UnmarshalMsg(bytes)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "Could not unmarshal Entity for %s", uri)
 	}
 	return entity, nil
 }
@@ -576,7 +576,7 @@ func (db *DB) GetEntityFromHash(hash Key) (*Entity, error) {
 	defer db.eocLock.Unlock()
 	bytes, err := db.graphDB.Get(hash[:], nil)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "Could not get Entity from graph for %s", db.MustGetURI(hash))
 	}
 	ent := NewEntity()
 	_, err = ent.UnmarshalMsg(bytes)
@@ -587,7 +587,7 @@ func (db *DB) GetEntityFromHash(hash Key) (*Entity, error) {
 func (db *DB) MustGetEntityFromHash(hash Key) *Entity {
 	e, err := db.GetEntityFromHash(hash)
 	if err != nil {
-		panic(err)
+		panic(fmt.Sprint(hash, err))
 	}
 	return e
 }
