@@ -23,6 +23,7 @@ func (db *DB) buildGraph(dataset turtle.DataSet) error {
 	var predicates = make(map[string]Key)
 	var subjAdded = 0
 	var objAdded = 0
+	var predAdded = 0
 	graphtx, err := db.graphDB.OpenTransaction()
 	if err != nil {
 		return errors.Wrap(err, "Could not open transaction on graph dataset")
@@ -90,12 +91,34 @@ func (db *DB) buildGraph(dataset turtle.DataSet) error {
 		} else if err != nil {
 			return err
 		}
+
+		// make predicate entity
+		predHash, err := db.GetHash(triple.Predicate)
+		if err != nil {
+			return err
+		}
+		// check if entity exists
+		if exists, err := graphtx.Has(predHash[:], nil); err == nil && !exists {
+			// if not exists, create a new entity and insert it
+			predAdded += 1
+			predEnt := NewEntity()
+			predEnt.PK = predHash
+			bytes, err := predEnt.MarshalMsg(nil)
+			if err != nil {
+				return err
+			}
+			if err := graphtx.Put(predHash[:], bytes, nil); err != nil {
+				return err
+			}
+		} else if err != nil {
+			return err
+		}
 	}
 	if err := graphtx.Commit(); err != nil {
 		return errors.Wrap(err, "Could not commit transaction")
 	}
 
-	log.Noticef("ADDED subjects %d, objects %d", subjAdded, objAdded)
+	log.Noticef("ADDED subjects %d, predicates %d, objects %d", subjAdded, predAdded, objAdded)
 
 	graphtx, err = db.graphDB.OpenTransaction()
 	if err != nil {
