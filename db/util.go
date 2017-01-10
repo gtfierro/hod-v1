@@ -16,23 +16,6 @@ func mergeTrees(dest, src *btree.BTree) {
 	src.Ascend(iter)
 }
 
-// takes a btree of [4]byte hashes, and turns those into
-// a tree of ResultEntity
-func hashTreeToEntityTree(src *btree.BTree) *btree.BTree {
-	newTree := btree.New(3)
-	max := src.Max()
-	iter := func(i btree.Item) bool {
-		ve := &ResultEntity{
-			PK:   i.(Key),
-			Next: make(map[string]*btree.BTree),
-		}
-		newTree.ReplaceOrInsert(ve)
-		return i != max
-	}
-	src.Ascend(iter)
-	return newTree
-}
-
 // merges all the keys from 'src' into 'dst'
 func mergePointerTrees(dest, src *pointerTree) {
 	max := src.Max()
@@ -44,7 +27,7 @@ func mergePointerTrees(dest, src *pointerTree) {
 }
 
 // takes a btree of [4]byte hashes, and turns those into
-// a tree of ResultEntity
+// a tree of Entity
 func hashTreeToPointerTree(db *DB, src *btree.BTree) *pointerTree {
 	newTree := newPointerTree(3)
 	max := src.Max()
@@ -124,7 +107,7 @@ func dumpEntityTree(tree *btree.BTree, db *DB, limit int) {
 		} else if limit > 0 {
 			limit -= 1 //
 		}
-		fmt.Println(db.MustGetURI(i.(*ResultEntity).PK))
+		fmt.Println(db.MustGetURI(i.(*Entity).PK))
 		return i != max
 	}
 	tree.Ascend(iter)

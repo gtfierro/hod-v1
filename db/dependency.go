@@ -44,9 +44,6 @@ func (dg *dependencyGraph) iter() chan *queryTerm {
 
 	go func() {
 		stack := list.New()
-		//for _, r := range dg.roots {
-		//	stack.PushFront(r)
-		//}
 		stack.PushFront(dg.roots[0])
 		for stack.Len() > 0 {
 			node := stack.Remove(stack.Front()).(*queryTerm)
