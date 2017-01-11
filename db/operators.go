@@ -161,8 +161,8 @@ func (rso *restrictSubjectObjectByPredicate) run(ctx *queryContext) error {
 	var (
 		subjectVar = rso.term.Subject.String()
 		objectVar  = rso.term.Object.String()
-		subTree    = ctx.getValues(subjectVar)
-		objTree    = ctx.getValues(objectVar)
+		subTree, _ = ctx.getValues(subjectVar)
+		objTree, _ = ctx.getValues(objectVar)
 	)
 	// we add the objects on to each subject
 	if rso.parentVar == subjectVar {
@@ -217,7 +217,7 @@ func (rsv *resolveSubjectFromVarObject) run(ctx *queryContext) error {
 	var (
 		objectVar  = rsv.term.Object.String()
 		subjectVar = rsv.term.Subject.String()
-		objTree    = ctx.getValues(objectVar)
+		objTree, _ = ctx.getValues(objectVar)
 	)
 	max := objTree.Max()
 	iter := func(object *Entity) bool {
@@ -250,7 +250,7 @@ func (rov *resolveObjectFromVarSubject) run(ctx *queryContext) error {
 	var (
 		objectVar  = rov.term.Object.String()
 		subjectVar = rov.term.Subject.String()
-		subTree    = ctx.getValues(subjectVar)
+		subTree, _ = ctx.getValues(subjectVar)
 	)
 	max := subTree.Max()
 	iter := func(subject *Entity) bool {
@@ -446,12 +446,13 @@ func (op *resolveVarTripleFromSubject) run(ctx *queryContext) error {
 	// for all subjects, find all predicates and objects. Note: these predicates
 	// and objects may be partially evaluated already
 	var (
-		subjectVar          = op.term.Subject.String()
-		predicateVar        = op.term.Path[0].Predicate.String()
-		subjects            = ctx.getValues(subjectVar)
-		knownPredicates     = ctx.getValues(predicateVar)
-		candidateObjects    = newPointerTree(2)
-		candidatePredicates = newPointerTree(2)
+		subjectVar                     = op.term.Subject.String()
+		objectVar                      = op.term.Object.String()
+		predicateVar                   = op.term.Path[0].Predicate.String()
+		subjects, _                    = ctx.getValues(subjectVar)
+		knownPredicates, hadPredicates = ctx.getValues(predicateVar)
+		candidateObjects               = newPointerTree(2)
+		candidatePredicates            = newPointerTree(2)
 	)
 
 	maxSub := subjects.Max()
@@ -461,7 +462,7 @@ func (op *resolveVarTripleFromSubject) run(ctx *queryContext) error {
 		for edge, objectList := range subject.OutEdges {
 			predKey.FromSlice([]byte(edge))
 			predicate := ctx.db.MustGetEntityFromHash(predKey)
-			if !knownPredicates.Has(predicate) {
+			if hadPredicates && !knownPredicates.Has(predicate) {
 				continue // skip
 			}
 			candidatePredicates.Add(predicate)

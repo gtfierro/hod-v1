@@ -50,12 +50,13 @@ func (ctx *queryContext) dumpTraverseOrder() {
 // now we need to plan out the set of actions for adding/filtering vars on the query context
 
 // returns the set of current guesses for the given variable
-func (ctx *queryContext) getValues(varname string) *pointerTree {
+// returns TRUE if the tree is known, FALSE otherwise
+func (ctx *queryContext) getValues(varname string) (*pointerTree, bool) {
 	if tree, found := ctx.candidates[varname]; found && tree != nil {
-		return tree
+		return tree, true
 	}
 	ctx.candidates[varname] = newPointerTree(3)
-	return ctx.candidates[varname]
+	return ctx.candidates[varname], false
 }
 
 // returns the set of reachable values from the given entity
