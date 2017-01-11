@@ -7,6 +7,8 @@
     <script src="static/addon/edit/matchbrackets.js"></script>
     <script src="static/mode/sparql/sparql.js"></script>
     <script src="static/mode/python/python.js"></script>
+    <script type="text/javascript" src="static/js/vis.min.js"></script>
+    <link href="static/css/vis-network.min.css" rel="stylesheet" type="text/css" />
     <!--Import Google Icon Font-->
     <link href="http://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <!--Import materialize.css-->
@@ -14,13 +16,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link type="text/css" rel="stylesheet" href="static/css/site.css" />
   	<title>HodDB Query</title>
-    <ul id="slide-out" class="side-nav fixed blue lighten-5">
+    <ul id="slide-out" style="width:350px" class="side-nav fixed blue lighten-5">
         <li><h3 class="center-align" !important>HodDB</h3></li>
-        <li class="active"><a class="tooltipped" data-position="right" data-delay="100" data-tooltip="Execute BRICK queries" href="/query">Query<i class="material-icons">keyboard_arrow_right</i></a></li>
+        <li><a class="tooltipped" data-position="right" data-delay="100" data-tooltip="Execute BRICK queries" href="/query">Query<i class="material-icons">keyboard_arrow_right</i></a></li>
         <li><a class="tooltipped" data-position="right" data-delay="100" data-tooltip="Visualize the construction of BRICK queries" href="/plan">Planner<i class="material-icons">keyboard_arrow_right</i></a></li>
-        <li><a class="tooltipped" data-position="right" data-delay="100" data-tooltip="Explore BRICK graphs" href="/explore">Explore<i class="material-icons">keyboard_arrow_right</i></a></li>
+        <li class="active"><a class="tooltipped" data-position="right" data-delay="100" data-tooltip="Explore BRICK graphs" href="/explore">Explore<i class="material-icons">keyboard_arrow_right</i></a></li>
         <li><a class="tooltipped" data-position="right" data-delay="100" data-tooltip="Documentation and other resources" href="/help">Help<i class="material-icons">keyboard_arrow_right</i></a></li>
-        <li><div class="divider"></div></li>
+        <li><hr></li>
         <li class="subheader center-align">Common Queries</li>
         <li class="collection-item"><a id="query_vavselect" class="listhighlight">VAV Select<i class="material-icons">code</i></a><li>
         <li class="collection-item"><a id="query_tempselect" class="listhighlight">Zone Temperature Sensors<i class="material-icons">code</i></a><li>
@@ -35,53 +37,23 @@
     <script type="text/javascript" src="static/js/materialize.min.js"></script>
     <main>
     <div class="container">
-      <div class="row">
-        <h5 class="col s12 center-align">Query</h3>
-        <div class="input-field col s2">
-          <button class="btn waves-effect waves-light green" form="queryform" type="submit" name="action">Run Query</button>
-        </div>
-        <div class="col s2">
-          <p>
-            <input type="checkbox" class="filled-in" id="fullURI"/>
-            <label for="fullURI">Full URI</label>
-          </p>
-        </div>
-        <div class="col s2">
-          <p>
-            <input type="checkbox" class="filled-in" id="showJSON" />
-            <label for="showJSON">Show JSON</label>
-          </p>
-        </div>
-      </div>
-
+      <h5 class="col s12 center-align">Graph Explorer</h5>
       <div class="row">
         <div class="col s12">
           <form id="queryform" form="queryform" class="col s12">
             <textarea id="queryarea" name="queryarea">
 SELECT ?vav WHERE {
     ?vav rdf:type brick:VAV .
-} LIMIT 500;</textarea>
+};</textarea>
           </form>
-        </div>
-        <div class="row">
-          <div id="errortext" class="col s12 card-panel red lighten-2" hidden>
-          <p></p>
-          </div>
         </div>
       </div>
       <div class="row">
-        <h4 id="resultsheader" class="col s12" hidden>Results</h4>
-        <div class="col s2">
-          <p id="resultsnum"></p>
+        <div id="errortext" class="col s12 card-panel red lighten-2" hidden>
+          <p></p>
         </div>
-        <div class="col s2">
-          <p id="elapsed"></p>
-        </div>
-        <div class="col s10"></div>
         <div class="col s12">
-          <table class="highlight bordered" id="resultstable"></table>
-        </div>
-        <div class="col s12" id="resultsjson">
+          <div id="mynetwork"></div>
         </div>
       </div>
     </div>
@@ -96,48 +68,40 @@ SELECT ?vav WHERE {
           cm.refresh();
 
           var submit_query = function(query) {
-            $("#errortext").hide();
-            $("#resultsjson").hide();
-            $("#resultstable").hide();
-            var useFullURI = $("#fullURI")[0].checked;
-            var showJSON = $("#showJSON")[0].checked;
             var html = "";
             var begin = moment();
-            $.post("/api/query", query, function(data) {
+            console.log(query);
+            $("#errortext").hide();
+            $.post("/api/queryclassdot", query, function(data) {
+                console.log(network);
+                if (network != null) {
+                    network.destroy();
+                }
                 var end = moment();
                 var duration = moment.duration(end - begin);
                 $("#elapsed").text(duration.milliseconds() + " ms");
-                $("#resultsheader").show();
-                if (showJSON) {
-                    $("#resultsjson").show();
-                    html = "<code>" + JSON.stringify(data) + "</code>";
-                    $("#resultsjson").html(html);
-                } else if (data.Rows.length > 0) {
-                    $("#resultstable").show();
-                    var firstrow = data.Rows[0];
-                    var number = 0;
-                    html += "<thead><tr>";
-                    for (var key in firstrow) {
-                        html += "<td><b>" + key + "</b></td>";
-                    }
-                    html += "</tr></thead><tbody>";
-                    data.Rows.forEach(function(element) {
-                        html += "<tr>"
-                        for (var key in element) {
-                            if (useFullURI) {
-                                var newstuff = element[key].Namespace + "#" + element[key].Value;
-                            } else {
-                                var newstuff = element[key].Value;
-                            }
-                            html += "<td>" + newstuff + "</td>"
-                        }
-                        html += "</tr>"
-                        number += 1
-                    });
-                    html += "</tbody>";
-                    $("#resultstable").html(html);
-                    $("#resultsnum").text(number + " results");
-                }
+                console.log(data);
+                var parsedData = vis.network.convertDot(data);
+                var container = document.getElementById('mynetwork');
+                var data = {
+                  nodes: parsedData.nodes,
+                  edges: parsedData.edges
+                };
+                var options = parsedData.options;
+                options.interaction = {
+                  hover: true
+                };
+                options.physics = {
+                  barnesHut: {
+                      gravitationalConstant: -5000,
+                      avoidOverlap: .10,
+                      springLength: 200,
+                  },
+                  timestep: 0.1
+                };
+
+                var network = new vis.Network(container, data, options);
+                network.redraw();
             }).fail(function(e) {
                 $("#errortext").show();
                 $("#errortext > p").text(e.responseText);
@@ -152,12 +116,31 @@ SELECT ?vav WHERE {
             }
           );
 
-          // handle querying
-          $("#queryform").submit(function(event) {
-            var querytext = $("#queryarea").val();
-            submit_query(querytext);
-            event.preventDefault();
-          });
+          // https://davidwalsh.name/javascript-debounce-function
+          function debounce(func, wait, immediate) {
+            var timeout;
+            return function() {
+              var context = this, args = arguments;
+              var later = function() {
+                timeout = null;
+                if (!immediate) func.apply(context, args);
+              };
+              var callNow = immediate && !timeout;
+              clearTimeout(timeout);
+              timeout = setTimeout(later, wait);
+              if (callNow) func.apply(context, args);
+            };
+          };
+
+          var postponed_eval = debounce(function() {
+              submit_query(cm.getValue())
+          }, 500);
+
+          cm.on("change", postponed_eval);
+
+          // run once
+          var querytext = $("#queryarea").val();
+          submit_query(querytext);
 
           $("#query_vavselect").click(function(event) {
             cm.setValue("SELECT ?vav WHERE {\n\t?vav rdf:type brick:VAV .\n};");
