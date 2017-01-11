@@ -500,8 +500,44 @@ func (op *resolveVarTripleFromObject) GetTerm() *queryTerm {
 	return op.term
 }
 
-// ?s ?p ?o; start from s
+// ?s ?p ?o; start from o
 func (op *resolveVarTripleFromObject) run(ctx *queryContext) error {
+	var (
+		subjectVar                     = op.term.Subject.String()
+		objectVar                      = op.term.Object.String()
+		predicateVar                   = op.term.Path[0].Predicate.String()
+		objects, _                     = ctx.getValues(objectVar)
+		knownPredicates, hadPredicates = ctx.getValues(predicateVar)
+		candidateSubjects              = newPointerTree(2)
+		candidatePredicates            = newPointerTree(2)
+	)
+
+	maxObj := objects.Max()
+	var predKey Key
+	objectIter := func(object *Entity) bool {
+		linkedPredicates := newPointerTree(2)
+		for edge, subjectList := range object.InEdges {
+			predKey.FromSlice([]byte(edge))
+			predicate := ctx.db.MustGetEntityFromHash(predKey)
+			if hadPredicates && !knownPredicates.Has(predicate) {
+				continue // skip
+			}
+			candidatePredicates.Add(predicate)
+			linkedPredicates.Add(predicate)
+			linkedSubjects := newPointerTree(2)
+			for _, subjectKey := range subjectList {
+				subject := ctx.db.MustGetEntityFromHash(subjectKey)
+				candidateSubjects.Add(subject)
+				linkedSubjects.Add(subject)
+			}
+			ctx.addReachable(predicate, predicateVar, linkedSubjects, subjectVar)
+		}
+		ctx.addReachable(object, objectVar, linkedPredicates, predicateVar)
+		return object != maxObj
+	}
+	objects.Iter(objectIter)
+	ctx.addOrMergeVariable(subjectVar, candidateSubjects)
+	ctx.addOrMergeVariable(predicateVar, candidatePredicates)
 	return nil
 }
 
