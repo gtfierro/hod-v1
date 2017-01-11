@@ -99,6 +99,20 @@ func dumpHashTree(tree *btree.BTree, db *DB, limit int) {
 	tree.Ascend(iter)
 }
 
+func dumpPointerTree(tree *pointerTree, db *DB, limit int) {
+	max := tree.Max()
+	iter := func(e *Entity) bool {
+		if limit == 0 {
+			return false // stop iteration
+		} else if limit > 0 {
+			limit -= 1 //
+		}
+		fmt.Println(db.MustGetURI(e.PK))
+		return e != max
+	}
+	tree.Iter(iter)
+}
+
 func dumpEntityTree(tree *btree.BTree, db *DB, limit int) {
 	max := tree.Max()
 	iter := func(i btree.Item) bool {
