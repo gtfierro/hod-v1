@@ -311,7 +311,6 @@ func (db *DB) getPredicateFromSubjectObject(subject, object *Entity) *btree.BTre
 
 	for edge, objects := range subject.InEdges {
 		for _, edgeObject := range objects {
-			log.Debug(edgeObject, object.PK)
 			if edgeObject == object.PK {
 				// matches!
 				var edgepk Key

@@ -54,7 +54,6 @@ func (db *DB) formQueryPlan(dg *dependencyGraph, q query.Query) *queryPlan {
 				newop = &resolveVarTripleFromObject{term: term}
 			case hasResolvedPredicate:
 				newop = &resolveVarTripleFromPredicate{term: term}
-				log.Fatal("?x ?y ?z queries not supported yet")
 			default: // all are vars
 				newop = &resolveVarTripleAll{term: term}
 				log.Fatal("?x ?y ?z queries not supported yet")

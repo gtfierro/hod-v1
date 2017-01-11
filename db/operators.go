@@ -557,8 +557,46 @@ func (op *resolveVarTripleFromPredicate) GetTerm() *queryTerm {
 	return op.term
 }
 
-// ?s ?p ?o; start from s
+// ?s ?p ?o; start from p
 func (op *resolveVarTripleFromPredicate) run(ctx *queryContext) error {
+	// for all predicates, pull the entity from the predindex
+	var (
+		subjectVar        = op.term.Subject.String()
+		objectVar         = op.term.Object.String()
+		predicateVar      = op.term.Path[0].Predicate.String()
+		predicates, _     = ctx.getValues(predicateVar)
+		candidateObjects  = newPointerTree(2)
+		candidateSubjects = newPointerTree(2)
+	)
+	predMax := predicates.Max()
+	predIter := func(ent *Entity) bool {
+		uri := ctx.db.MustGetURI(ent.PK)
+		predicate := ctx.db.predIndex[uri]
+		// iter through subjects
+		linkedSubjects := newPointerTree(2)
+		for subStrHash, subjectMap := range predicate.Subjects {
+			var subjectHash Key
+			copy(subjectHash[:], []byte(subStrHash))
+			subject := ctx.db.MustGetEntityFromHash(subjectHash)
+			candidateSubjects.Add(subject)
+			linkedSubjects.Add(subject)
+			linkedObjects := newPointerTree(2)
+			// link objects to subject
+			for objStrHash := range subjectMap {
+				var objectHash Key
+				copy(objectHash[:], []byte(objStrHash))
+				object := ctx.db.MustGetEntityFromHash(objectHash)
+				candidateObjects.Add(object)
+				linkedObjects.Add(object)
+			}
+			ctx.addReachable(subject, subjectVar, linkedObjects, objectVar)
+		}
+		ctx.addReachable(ent, predicateVar, linkedSubjects, subjectVar)
+		return ent != predMax
+	}
+	predicates.Iter(predIter)
+	ctx.addOrMergeVariable(objectVar, candidateObjects)
+	ctx.addOrMergeVariable(subjectVar, candidateSubjects)
 	return nil
 }
 
