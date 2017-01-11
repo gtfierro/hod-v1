@@ -1,6 +1,7 @@
 package server
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"net"
@@ -14,6 +15,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"github.com/op/go-logging"
 	"github.com/pkg/profile"
+	"golang.org/x/crypto/acme/autocert"
 )
 
 // logger
@@ -59,35 +61,6 @@ func StartHodServer(db *hod.DB, cfg *config.Config) {
 	r.GET("/explore", server.serveExplorer)
 	server.router = r
 
-	var (
-		addrString string
-		nettype    string
-	)
-
-	// check if ipv6
-	if cfg.UseIPv6 {
-		nettype = "tcp6"
-	} else {
-		nettype = "tcp4"
-	}
-
-	if cfg.Localhost {
-		addrString = "localhost:" + server.port
-	} else {
-		addrString = "0.0.0.0:" + server.port
-	}
-
-	address, err := net.ResolveTCPAddr(nettype, addrString)
-	if err != nil {
-		log.Fatalf("Error resolving address %s (%s)", server.port, err.Error())
-	}
-
-	http.Handle("/", server.router)
-	log.Notice("Starting HTTP Server on ", addrString)
-	srv := &http.Server{
-		Addr: address.String(),
-	}
-
 	// enable profiling if configured
 	if cfg.EnableCPUProfile {
 		defer profile.Start(profile.CPUProfile, profile.ProfilePath(".")).Stop()
@@ -97,7 +70,45 @@ func StartHodServer(db *hod.DB, cfg *config.Config) {
 		defer profile.Start(profile.BlockProfile, profile.ProfilePath(".")).Stop()
 	}
 
-	log.Fatal(srv.ListenAndServe())
+	// configure server
+	var (
+		addrString string
+		nettype    string
+	)
+
+	// check if ipv6
+	if cfg.UseIPv6 {
+		nettype = "tcp6"
+		addrString = "[" + cfg.ListenAddress + "]:" + server.port
+	} else {
+		nettype = "tcp4"
+		addrString = cfg.ListenAddress + ":" + server.port
+	}
+
+	address, err := net.ResolveTCPAddr(nettype, addrString)
+	if err != nil {
+		log.Fatalf("Error resolving address %s (%s)", addrString, err.Error())
+	}
+
+	http.Handle("/", server.router)
+	log.Notice("Starting HTTP Server on ", addrString)
+
+	if cfg.TLSHost != "" {
+		m := autocert.Manager{
+			Prompt:     autocert.AcceptTOS,
+			HostPolicy: autocert.HostWhitelist(cfg.TLSHost),
+		}
+		s := &http.Server{
+			Addr:      address.String(),
+			TLSConfig: &tls.Config{GetCertificate: m.GetCertificate},
+		}
+		log.Fatal(s.ListenAndServeTLS("", ""))
+	} else {
+		srv := &http.Server{
+			Addr: address.String(),
+		}
+		log.Fatal(srv.ListenAndServe())
+	}
 }
 
 func (srv *hodServer) handleQuery(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {

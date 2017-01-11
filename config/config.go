@@ -19,10 +19,11 @@ type Config struct {
 	ShowOperationLatencies bool
 	ShowQueryLatencies     bool
 
-	ServerPort string
-	UseIPv6    bool
-	Localhost  bool
-	StaticPath string
+	ServerPort    string
+	UseIPv6       bool
+	ListenAddress string
+	StaticPath    string
+	TLSHost       string
 
 	EnableCPUProfile   bool
 	EnableMEMProfile   bool
@@ -46,8 +47,9 @@ func init() {
 
 	viper.SetDefault("ServerPort", "47808")
 	viper.SetDefault("UseIPv6", false)
-	viper.SetDefault("Localhost", true)
+	viper.SetDefault("ListenAddress", "127.0.0.1")
 	viper.SetDefault("StaticPath", prefix+"/src/github.com/gtfierro/hod/server")
+	viper.SetDefault("TLSHost", "") // disabled
 
 	viper.SetDefault("EnableCPUProfile", false)
 	viper.SetDefault("EnableMEMProfile", false)
@@ -80,8 +82,9 @@ func ReadConfig(file string) (*Config, error) {
 		ShowQueryLatencies:     viper.GetBool("ShowQueryLatencies"),
 		ServerPort:             viper.GetString("ServerPort"),
 		UseIPv6:                viper.GetBool("UseIPv6"),
-		Localhost:              viper.GetBool("Localhost"),
+		ListenAddress:          viper.GetString("ListenAddress"),
 		StaticPath:             viper.GetString("StaticPath"),
+		TLSHost:                viper.GetString("TLSHost"),
 		EnableCPUProfile:       viper.GetBool("EnableCPUProfile"),
 		EnableMEMProfile:       viper.GetBool("EnableMEMProfile"),
 		EnableBlockProfile:     viper.GetBool("EnableBlockProfile"),
