@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	turtle "github.com/gtfierro/hod/goraptor"
 	"github.com/gtfierro/hod/query"
 
 	"github.com/google/btree"
@@ -203,5 +204,104 @@ func (db *DB) QueryToDOT(querystring io.Reader) (string, error) {
 		dot += fmt.Sprintf("\"%s\" [fillcolor=#e57373]\n", sv.Var)
 	}
 	dot += "}"
+	return dot, nil
+}
+
+// executes a query and returns a DOT string of the classes involved
+func (db *DB) QueryToClassDOT(querystring io.Reader) (string, error) {
+	q, err := query.Parse(querystring)
+	if err != nil {
+		return "", err
+	}
+	// create DOT template string
+	dot := ""
+	dot += "digraph G {\n"
+	dot += "ratio=\"auto\"\n"
+	dot += "rankdir=\"LR\"\n"
+	dot += "size=\"7.5,10\"\n"
+
+	// get rdf:type predicate hash as a string
+	typeURI := turtle.ParseURI("rdf:type")
+	typeURI.Namespace = db.namespaces[typeURI.Namespace]
+	typeKey, err := db.GetHash(typeURI)
+	if err != nil {
+		return "", err
+	}
+	typeKeyString := typeKey.String()
+
+	log.Debug(typeURI, db.MustGetEntityFromHash(typeKey))
+
+	getClass := func(ent *Entity) (classes []turtle.URI, err error) {
+		_classes := ent.OutEdges[typeKeyString]
+		for _, class := range _classes {
+			classes = append(classes, db.MustGetURI(class))
+		}
+		return
+	}
+
+	getEdges := func(ent *Entity) (predicates, objects []turtle.URI, reterr error) {
+		var predKey Key
+		for predKeyString, objectList := range ent.OutEdges {
+			predKey.FromSlice([]byte(predKeyString))
+			predURI, err := db.GetURI(predKey)
+			if err != nil {
+				reterr = err
+				return
+			}
+			for _, objectKey := range objectList {
+				objectEnt, err := db.GetEntityFromHash(objectKey)
+				if err != nil {
+					reterr = err
+					return
+				}
+				objectClasses, err := getClass(objectEnt)
+				if err != nil {
+					reterr = err
+					return
+				}
+				for _, class := range objectClasses {
+					predicates = append(predicates, predURI)
+					objects = append(objects, class)
+				}
+
+			}
+		}
+		return
+	}
+
+	result := db.RunQuery(q)
+	for _, row := range result.Rows {
+		for _, uri := range row {
+			ent, err := db.GetEntity(uri)
+			if err != nil {
+				return "", err
+			}
+			classList, err := getClass(ent)
+			if err != nil {
+				return "", err
+			}
+			preds, objs, err := getEdges(ent)
+			if err != nil {
+				return "", err
+			}
+			// add class as node to graph
+			for _, class := range classList {
+				line := fmt.Sprintf("\"%s\" [fillcolor=#4caf50]\n", class.Value)
+				if !strings.Contains(dot, line) {
+					dot += line
+				}
+				for i := 0; i < len(preds); i++ {
+					line := fmt.Sprintf("\"%s\" -> \"%s\" [label=\"%s\"];\n", class.Value, objs[i].Value, preds[i].Value)
+					if !strings.Contains(dot, line) {
+						dot += line
+					}
+				}
+			}
+
+		}
+	}
+
+	dot += "}"
+
 	return dot, nil
 }
