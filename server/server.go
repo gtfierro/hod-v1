@@ -50,11 +50,13 @@ func StartHodServer(db *hod.DB, cfg *config.Config) {
 	r.POST("/api/query", server.handleQuery)
 	r.POST("/api/loadlinks", server.handleLoadLinks)
 	r.POST("/api/querydot", server.handleQueryDot)
+	r.POST("/api/queryclassdot", server.handleQueryClassDot)
 	r.ServeFiles("/static/*filepath", http.Dir(cfg.StaticPath+"/static"))
 	r.GET("/", server.serveQuery)
 	r.GET("/query", server.serveQuery)
 	r.GET("/help", server.serveHelp)
 	r.GET("/plan", server.servePlanner)
+	r.GET("/explore", server.serveExplorer)
 	server.router = r
 
 	var (
@@ -166,11 +168,33 @@ func (srv *hodServer) servePlanner(rw http.ResponseWriter, req *http.Request, ps
 	http.ServeFile(rw, req, srv.staticpath+"/plan.html")
 }
 
+func (srv *hodServer) serveExplorer(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
+	log.Infof("Serve explorer from %s", req.RemoteAddr)
+	defer req.Body.Close()
+	http.ServeFile(rw, req, srv.staticpath+"/explore.html")
+}
+
 func (srv *hodServer) handleQueryDot(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
 	defer req.Body.Close()
 	log.Infof("QueryDot from %s", req.RemoteAddr)
 
 	dot, err := srv.db.QueryToDOT(req.Body)
+	if err != nil {
+		log.Error(err)
+		rw.WriteHeader(400)
+		rw.Write([]byte(err.Error()))
+		return
+	}
+
+	rw.Write([]byte(dot))
+	return
+}
+
+func (srv *hodServer) handleQueryClassDot(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
+	defer req.Body.Close()
+	log.Infof("QueryDot from %s", req.RemoteAddr)
+
+	dot, err := srv.db.QueryToClassDOT(req.Body)
 	if err != nil {
 		log.Error(err)
 		rw.WriteHeader(400)
