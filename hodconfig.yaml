@@ -52,9 +52,13 @@
 
 # Whether or not to serve on localhost. If false, serves on a public interface
 #ListenAddress: 0.0.0.0
-#
+
 # Path to the server directory of hod, which contains the necessary HTML files
 #StaticPath: $GOPATH/src/github.com/gtfierro/hod/server
+
+# If specified, serve the frontend over HTTPS using golang.org/x/crypto/acme/autocert
+# If left blank (default), just serve over HTTP
+#TLSHost: ""
 
 ####
 # Profiling Information for HTTP Server
