@@ -17,3 +17,7 @@ func (k Key) Less(than btree.Item) bool {
 func (k *Key) FromSlice(src []byte) {
 	copy(k[:], src)
 }
+
+func (k Key) String() string {
+	return string(k[:])
+}
