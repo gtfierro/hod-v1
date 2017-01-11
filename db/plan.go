@@ -38,15 +38,6 @@ func (db *DB) formQueryPlan(dg *dependencyGraph, q query.Query) *queryPlan {
 
 		switch {
 		case subjectIsVariable && objectIsVariable && predicateIsVariable:
-			// Cases:
-			// NONE resolved: enumerate all triples in the store
-			// subject, pred resolved:
-			// object, pred resolved:
-			// subject, object resolved:
-			// subject resolved:
-			// object resolved:
-			// pred resolved:
-			// TODO: put this in a single operator!
 			switch {
 			case hasResolvedSubject:
 				newop = &resolveVarTripleFromSubject{term: term}
