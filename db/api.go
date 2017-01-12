@@ -226,8 +226,6 @@ func (db *DB) QueryToClassDOT(querystring io.Reader) (string, error) {
 	}
 	typeKeyString := typeKey.String()
 
-	log.Debug(typeURI, db.MustGetEntityFromHash(typeKey))
-
 	getClass := func(ent *Entity) (classes []turtle.URI, err error) {
 		_classes := ent.OutEdges[typeKeyString]
 		for _, class := range _classes {
