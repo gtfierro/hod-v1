@@ -70,8 +70,8 @@ var submit_query = function(query) {
 
       var force = d3.layout.force()
         .gravity(.05)
-        .distance(200)
-        .charge(-600)
+        .distance(250)
+        .charge(-1000)
         .size([width, height]);
       force
         .nodes(nodes)
