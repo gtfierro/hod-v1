@@ -216,9 +216,6 @@ func (db *DB) QueryToClassDOT(querystring io.Reader) (string, error) {
 	// create DOT template string
 	dot := ""
 	dot += "digraph G {\n"
-	dot += "ratio=\"auto\"\n"
-	dot += "rankdir=\"LR\"\n"
-	dot += "size=\"7.5,10\"\n"
 
 	// get rdf:type predicate hash as a string
 	typeURI := turtle.ParseURI("rdf:type")
@@ -286,7 +283,7 @@ func (db *DB) QueryToClassDOT(querystring io.Reader) (string, error) {
 			}
 			// add class as node to graph
 			for _, class := range classList {
-				line := fmt.Sprintf("\"%s\" [fillcolor=#4caf50]\n", class.Value)
+				line := fmt.Sprintf("\"%s\" [fillcolor=\"#4caf50\"];\n", class.Value)
 				if !strings.Contains(dot, line) {
 					dot += line
 				}
