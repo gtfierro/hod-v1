@@ -62,3 +62,19 @@ header, main, footer {
   height: 500px;
   border: 1px solid lightgray;
 }
+
+
+.link {
+  stroke: #aaa;
+  stroke-width: 1.5px;
+}
+
+.node text {
+  stroke:#333;
+  cursos:pointer;
+}
+
+.node circle{
+  stroke:#fff;
+  stroke-width:3px;
+}

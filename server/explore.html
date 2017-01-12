@@ -7,8 +7,10 @@
     <script src="static/addon/edit/matchbrackets.js"></script>
     <script src="static/mode/sparql/sparql.js"></script>
     <script src="static/mode/python/python.js"></script>
-    <script type="text/javascript" src="static/js/vis.min.js"></script>
-    <link href="static/css/vis-network.min.css" rel="stylesheet" type="text/css" />
+    <script src="static/js/dotgraph/js/dotparser.js"></script>
+    <script src="static/js/dotgraph/js/dotgraph.js"></script>
+    <script src="http://d3js.org/d3.v2.min.js?2.9.3"></script>
+
     <!--Import Google Icon Font-->
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <!--Import materialize.css-->
@@ -58,111 +60,6 @@ SELECT ?vav WHERE {
       </div>
     </div>
     </main>
-    <script type="text/javascript">
-          var textarea = document.getElementById("queryarea");
-          var cm = CodeMirror.fromTextArea(textarea, {
-            mode:  "application/sparql-query",
-            matchBrackets: true,
-            lineNumbers: true
-          });
-          cm.refresh();
-
-          var submit_query = function(query) {
-            var html = "";
-            var begin = moment();
-            console.log(query);
-            $("#errortext").hide();
-            $.post("/api/queryclassdot", query, function(data) {
-                console.log(network);
-                if (network != null) {
-                    network.destroy();
-                }
-                var end = moment();
-                var duration = moment.duration(end - begin);
-                $("#elapsed").text(duration.milliseconds() + " ms");
-                console.log(data);
-                var parsedData = vis.network.convertDot(data);
-                var container = document.getElementById('mynetwork');
-                var data = {
-                  nodes: parsedData.nodes,
-                  edges: parsedData.edges
-                };
-                var options = parsedData.options;
-                options.interaction = {
-                  hover: true
-                };
-                options.physics = {
-                  barnesHut: {
-                      gravitationalConstant: -5000,
-                      avoidOverlap: .10,
-                      springLength: 200,
-                  },
-                  timestep: 0.1
-                };
-
-                var network = new vis.Network(container, data, options);
-                network.redraw();
-            }).fail(function(e) {
-                $("#errortext").show();
-                $("#errortext > p").text(e.responseText);
-            });
-          }
-
-          // init collapsible parts
-          $('.collapsible').collapsible();
-
-          $('.button-collapse').sideNav({
-            menuWidth: 350, // Default is 240
-            }
-          );
-
-          // https://davidwalsh.name/javascript-debounce-function
-          function debounce(func, wait, immediate) {
-            var timeout;
-            return function() {
-              var context = this, args = arguments;
-              var later = function() {
-                timeout = null;
-                if (!immediate) func.apply(context, args);
-              };
-              var callNow = immediate && !timeout;
-              clearTimeout(timeout);
-              timeout = setTimeout(later, wait);
-              if (callNow) func.apply(context, args);
-            };
-          };
-
-          var postponed_eval = debounce(function() {
-              submit_query(cm.getValue())
-          }, 500);
-
-          cm.on("change", postponed_eval);
-
-          // run once
-          var querytext = $("#queryarea").val();
-          submit_query(querytext);
-
-          $("#query_vavselect").click(function(event) {
-            cm.setValue("SELECT ?vav WHERE {\n\t?vav rdf:type brick:VAV .\n};");
-            cm.setSize("100%", Math.max(300, cm.lineCount()*25));
-            event.preventDefault();
-          });
-          $("#query_tempselect").click(function(event) {
-            cm.setValue("SELECT ?sensor ?room\nWHERE {\n\t?sensor rdf:type/rdfs:subClassOf* brick:Zone_Temperature_Sensor .\n\t?room rdf:type brick:Room .\n\t?vav rdf:type brick:VAV .\n\t?zone rdf:type brick:HVAC_Zone .\n\n\t?vav bf:feeds+ ?zone .\n\t?zone bf:hasPart ?room .\n\t{\n\t\t?sensor bf:isPointOf ?vav .\n\t\tOR\n\t\t?sensor bf:isPointOf ?room . \n\t}\n};");
-            cm.setSize("100%", Math.max(300, cm.lineCount()*25));
-            cm.refresh();
-            event.preventDefault();
-          });
-          $("#query_vavcmd").click(function(event) {
-            cm.setValue("SELECT ?vlv_cmd ?vav\nWHERE {\n\t{\n\t\t?vlv_cmd rdf:type brick:Reheat_Valve_Command .\n\t\tOR\n\t\t?vlv_cmd rdf:type brick:Cooling_Valve_Command .\n\t}\n\t?vav rdf:type brick:VAV .\n\t?vav bf:hasPoint+ ?vlv_cmd .\n};");
-            cm.setSize("100%", Math.max(300, cm.lineCount()*25));
-            event.preventDefault();
-          });
-          $("#query_floors").click(function(event) {
-            cm.setValue("SELECT ?floor ?room ?zone\nWHERE {\n\t?floor rdf:type brick:Floor .\n\t?room rdf:type brick:Room .\n\t?zone rdf:type brick:HVAC_Zone .\n\t?room bf:isPartOf+ ?floor .\n\t?room bf:isPartOf+ ?zone .\n};");
-            cm.setSize("100%", Math.max(300, cm.lineCount()*25));
-            event.preventDefault();
-          });
-    </script>
+    <script src="static/js/explore.js"></script>
   </body>
 </html>
