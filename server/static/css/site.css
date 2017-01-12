@@ -63,6 +63,11 @@ header, main, footer {
   border: 1px solid lightgray;
 }
 
+svg {
+    text-align: center;
+    margin: 0 auto;
+    position: relative;
+}
 
 .link {
   stroke: #aaa;

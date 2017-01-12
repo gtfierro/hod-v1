@@ -22,11 +22,15 @@ var submit_query = function(query) {
 
       var graph = DotParser.parse(data);
       console.log(graph);
-      var width=900;
+      var width=1000;
       var height=500;
       var svg = d3.select("#mynetwork").append("svg")
       .attr("width", width)
-      .attr("height", height);
+      .attr("height", height)
+      .call(d3.behavior.zoom().on("zoom", function () {
+            svg.attr("transform", "translate(" + d3.event.translate + ")" + " scale(" + d3.event.scale + ")")
+            }))
+      .append("g");
 
       var edges = [];
       var nodes = [];
