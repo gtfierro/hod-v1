@@ -69,6 +69,7 @@ func ReadConfig(file string) (*Config, error) {
 	if err := viper.ReadInConfig(); err != nil {
 		return nil, err
 	}
+	viper.AutomaticEnv()
 	c := &Config{
 		DBPath:                 viper.GetString("DBPath"),
 		BrickFrameTTL:          viper.GetString("BrickFrameTTL"),
