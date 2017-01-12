@@ -675,3 +675,12 @@ func (db *DB) expandOrClauseFilters(orc query.OrClause) query.OrClause {
 	}
 	return orc
 }
+
+func (db *DB) abbreviate(uri turtle.URI) string {
+	for abbv, ns := range db.namespaces {
+		if abbv != "" && ns == uri.Namespace {
+			return abbv + ":" + uri.Value
+		}
+	}
+	return uri.Value
+}

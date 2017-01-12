@@ -283,12 +283,12 @@ func (db *DB) QueryToClassDOT(querystring io.Reader) (string, error) {
 			}
 			// add class as node to graph
 			for _, class := range classList {
-				line := fmt.Sprintf("\"%s\" [fillcolor=\"#4caf50\"];\n", class.Value)
+				line := fmt.Sprintf("\"%s\" [fillcolor=\"#4caf50\"];\n", db.abbreviate(class))
 				if !strings.Contains(dot, line) {
 					dot += line
 				}
 				for i := 0; i < len(preds); i++ {
-					line := fmt.Sprintf("\"%s\" -> \"%s\" [label=\"%s\"];\n", class.Value, objs[i].Value, preds[i].Value)
+					line := fmt.Sprintf("\"%s\" -> \"%s\" [label=\"%s\"];\n", db.abbreviate(class), db.abbreviate(objs[i]), db.abbreviate(preds[i]))
 					if !strings.Contains(dot, line) {
 						dot += line
 					}
