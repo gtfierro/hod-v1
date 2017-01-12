@@ -6,3 +6,6 @@ hod
 
 # testing database
 _hoddb
+
+# Lets Encrypt certs
+certs
