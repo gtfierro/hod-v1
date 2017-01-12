@@ -97,6 +97,7 @@ func StartHodServer(db *hod.DB, cfg *config.Config) {
 		m := autocert.Manager{
 			Prompt:     autocert.AcceptTOS,
 			HostPolicy: autocert.HostWhitelist(cfg.TLSHost),
+			Cache:      autocert.DirCache("certs"),
 		}
 		s := &http.Server{
 			Addr:      address.String(),
