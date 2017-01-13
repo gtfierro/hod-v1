@@ -258,8 +258,10 @@ func (db *DB) QueryToClassDOT(querystring io.Reader) (string, error) {
 					return
 				}
 				for _, class := range objectClasses {
-					predicates = append(predicates, predURI)
-					objects = append(objects, class)
+					if predURI.Value != "type" && class.Value != "Class" {
+						predicates = append(predicates, predURI)
+						objects = append(objects, class)
+					}
 				}
 
 			}
