@@ -137,16 +137,19 @@ func (db *DB) RunQuery(q query.Query) QueryResult {
 	return result
 }
 
-// TODO: add api call for adding/removing links for entities
 func (db *DB) UpdateLinks(updates *LinkUpdates) error {
 	tx, err := db.linkDB.startTx()
 	if err != nil {
 		return err
 	}
 	for _, linkAdd := range updates.Adding {
+		linkAdd.Key = db.policy.SanitizeBytes(linkAdd.Key)
+		linkAdd.Value = db.policy.SanitizeBytes(linkAdd.Value)
 		db.linkDB.set(tx, linkAdd)
 	}
 	for _, linkRm := range updates.Removing {
+		linkRm.Key = db.policy.SanitizeBytes(linkRm.Key)
+		linkRm.Value = db.policy.SanitizeBytes(linkRm.Value)
 		db.linkDB.delete(tx, linkRm)
 	}
 	return tx.Commit()

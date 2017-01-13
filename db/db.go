@@ -13,6 +13,7 @@ import (
 	"github.com/gtfierro/hod/query"
 
 	"github.com/coocood/freecache"
+	"github.com/microcosm-cc/bluemonday"
 	"github.com/op/go-logging"
 	"github.com/pkg/errors"
 	"github.com/syndtr/goleveldb/leveldb"
@@ -64,6 +65,8 @@ type DB struct {
 	showQueryPlanLatencies bool
 	showOperationLatencies bool
 	showQueryLatencies     bool
+	// policy for sanitizing user links
+	policy *bluemonday.Policy
 }
 
 func NewDB(cfg *config.Config) (*DB, error) {
@@ -114,6 +117,7 @@ func NewDB(cfg *config.Config) (*DB, error) {
 		entityHashCache:        freecache.NewCache(4 * 10000),
 		entityObjectCache:      make(map[Key]*Entity),
 		uriCache:               make(map[Key]turtle.URI),
+		policy:                 bluemonday.StrictPolicy(),
 	}
 
 	linkDB, err := newLinkDB(db, cfg)
