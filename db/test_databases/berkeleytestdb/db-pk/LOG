@@ -8,3 +8,14 @@
 21:28:16.031493 version@stat F·[1] S·92KiB[92KiB] Sc·[0.25]
 21:28:16.669433 transaction@flush created L0@3 N·1711 S·42KiB "\x00\r%\xb6,v4296":"\xff\xfe\xe9,,v4545"
 21:28:16.669454 version@stat F·[2] S·135KiB[135KiB] Sc·[0.50]
+=============== Jan 13, 2017 (PST) ===============
+09:23:47.404410 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+09:23:47.404561 version@stat F·[2] S·135KiB[135KiB] Sc·[0.50]
+09:23:47.404574 db@open opening
+09:23:47.404669 journal@recovery F·1
+09:23:47.406370 journal@recovery recovering @1
+09:23:47.408436 version@stat F·[2] S·135KiB[135KiB] Sc·[0.50]
+09:23:47.408657 db@janitor F·4 G·0
+09:23:47.408671 db@open done T·4.090149ms
+09:23:47.772574 transaction@flush created L0@6 N·30 S·1KiB "\x02\xcb*\xc1,v4841":"\xfc\xb2\x0f\xc8,v4851"
+09:23:47.772598 version@stat F·[3] S·136KiB[136KiB] Sc·[0.75]
