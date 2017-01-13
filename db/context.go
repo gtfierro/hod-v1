@@ -10,23 +10,27 @@ import (
 
 // queryContext
 type queryContext struct {
-	candidates    map[string]*pointerTree
-	chains        map[Key]*linkRecord
-	db            *DB
-	traverseOrder *list.List
-	traverseVars  map[string]*list.Element
+	candidates       map[string]*pointerTree
+	chains           map[Key]*linkRecord
+	db               *DB
+	traverseOrder    *list.List
+	traverseVars     map[string]*list.Element
+	linkedValueCache map[Key]*pointerTree
+	tupleCache       map[string][]map[string]turtle.URI
 	// embedded query plan
 	*queryPlan
 }
 
 func newQueryContext(plan *queryPlan, db *DB) *queryContext {
 	ctx := &queryContext{
-		candidates:    make(map[string]*pointerTree),
-		chains:        make(map[Key]*linkRecord),
-		queryPlan:     plan,
-		traverseOrder: list.New(),
-		traverseVars:  make(map[string]*list.Element),
-		db:            db,
+		candidates:       make(map[string]*pointerTree),
+		chains:           make(map[Key]*linkRecord),
+		queryPlan:        plan,
+		traverseOrder:    list.New(),
+		traverseVars:     make(map[string]*list.Element),
+		linkedValueCache: make(map[Key]*pointerTree),
+		tupleCache:       make(map[string][]map[string]turtle.URI),
+		db:               db,
 	}
 	return ctx
 }
@@ -61,6 +65,9 @@ func (ctx *queryContext) getValues(varname string) (*pointerTree, bool) {
 
 // returns the set of reachable values from the given entity
 func (ctx *queryContext) getLinkedValues(ent *Entity) *pointerTree {
+	if tree, found := ctx.linkedValueCache[ent.PK]; found {
+		return tree
+	}
 	var res = newPointerTree(3)
 	chain := ctx.chains[ent.PK]
 	if chain != nil {
@@ -68,6 +75,7 @@ func (ctx *queryContext) getLinkedValues(ent *Entity) *pointerTree {
 			res.Add(ctx.db.MustGetEntityFromHash(link.me))
 		}
 	}
+	ctx.linkedValueCache[ent.PK] = res
 	return res
 }
 
@@ -209,6 +217,10 @@ func (ctx *queryContext) _getTuplesFromTree(name string, ent *Entity) []map[stri
 		return ret
 	}
 	uri := ctx.db.MustGetURI(ent.PK)
+	if ret, found := ctx.tupleCache[name+ent.PK.String()]; found {
+		return ret
+	}
+
 	vars := make(map[string]turtle.URI)
 	vars[name] = uri
 	childName := ctx.getChild(name)
@@ -234,6 +246,7 @@ func (ctx *queryContext) _getTuplesFromTree(name string, ent *Entity) []map[stri
 		}
 		childValues.Iter(iter)
 	}
+	ctx.tupleCache[name+ent.PK.String()] = ret
 	return ret
 }
 

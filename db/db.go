@@ -535,21 +535,17 @@ func (db *DB) GetURI(hash Key) (turtle.URI, error) {
 }
 
 func (db *DB) MustGetURI(hash Key) turtle.URI {
-	val, err := db.pkDB.Get(hash[:], nil)
+	uri, err := db.GetURI(hash)
 	if err != nil {
 		panic(errors.Wrapf(err, "Could not get URI for %v", hash))
 	}
-	return turtle.ParseURI(string(val))
+	return uri
 }
 
 func (db *DB) MustGetURIStringHash(hash string) turtle.URI {
 	var c Key
 	copy(c[:], []byte(hash))
-	val, err := db.pkDB.Get(c[:], nil)
-	if err != nil {
-		panic(errors.Wrapf(err, "Could not get URI for %v", []byte(hash)))
-	}
-	return turtle.ParseURI(string(val))
+	return db.MustGetURI(c)
 }
 
 func (db *DB) GetEntity(uri turtle.URI) (*Entity, error) {
