@@ -1,0 +1,20 @@
+{
+    "http://buildsys.org/ontologies/building_example#ahu_1": {
+        "UUID": "3a038c7c-c7e6-11e6-bfc1-1002b58053c7"
+    },
+    "http://buildsys.org/ontologies/building_example#vav_1": {
+        "UUID": "427b8f7c-dc3a-11e6-8b12-1002b58053c7"
+    },
+    "http://buildsys.org/ontologies/building_example#ztemp_1": {
+        "UUID": "4a36f42c-dc3a-11e6-8b12-1002b58053c7"
+    },
+    "http://buildsys.org/ontologies/building_example#floor_1": {
+        "Coords": "[0, 1]"
+    },
+    "http://buildsys.org/ontologies/building_example#room_1": {
+        "Coords": "[1, 2]"
+    },
+    "http://buildsys.org/ontologies/building_example#hvaczone_1": {
+        "Coords": "[2, 3]"
+    }
+}
