@@ -1,6 +1,17 @@
-=============== Jan 9, 2017 (PST) ===============
-21:27:57.400601 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
-21:27:57.400773 db@open opening
-21:27:57.400949 version@stat F·[] S·0B[] Sc·[]
-21:27:57.407068 db@janitor F·2 G·0
-21:27:57.407092 db@open done T·6.311475ms
+=============== Jan 16, 2017 (PST) ===============
+14:18:14.076192 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+14:18:14.076337 db@open opening
+14:18:14.076503 version@stat F·[] S·0B[] Sc·[]
+14:18:14.078273 db@janitor F·2 G·0
+14:18:14.078290 db@open done T·1.947844ms
+=============== Jan 16, 2017 (PST) ===============
+14:18:21.414314 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+14:18:21.414384 version@stat F·[] S·0B[] Sc·[]
+14:18:21.414390 db@open opening
+14:18:21.414418 journal@recovery F·1
+14:18:21.414499 journal@recovery recovering @1
+14:18:21.414832 version@stat F·[] S·0B[] Sc·[]
+14:18:21.414997 db@janitor F·2 G·0
+14:18:21.415014 db@open done T·620.434µs
+14:18:21.427818 transaction@flush created L0@4 N·6 S·340B "I\xe1\xbe..\x00\x00\x00,v4":"\xf2,\xbc..\x00\x00\x00,v1"
+14:18:21.427856 version@stat F·[1] S·340B[340B] Sc·[0.25]
