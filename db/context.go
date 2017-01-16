@@ -8,6 +8,8 @@ import (
 	"github.com/gtfierro/hod/query"
 )
 
+var emptyTree = newPointerTree(3)
+
 // queryContext
 type queryContext struct {
 	candidates       map[string]*pointerTree
@@ -59,8 +61,7 @@ func (ctx *queryContext) getValues(varname string) (*pointerTree, bool) {
 	if tree, found := ctx.candidates[varname]; found && tree != nil {
 		return tree, true
 	}
-	ctx.candidates[varname] = newPointerTree(3)
-	return ctx.candidates[varname], false
+	return emptyTree, false
 }
 
 // returns the set of reachable values from the given entity
@@ -229,9 +230,13 @@ func (ctx *queryContext) _getTuplesFromTree(name string, ent *Entity) []map[stri
 	} else {
 		// loop through the values of the child var
 		childValues := ctx.getLinkedValues(ent)
+		candidateChildValues, hasRestrictions := ctx.getValues(childName)
 		max := childValues.Max()
-		iter := func(ent *Entity) bool {
-			for _, m := range ctx._getTuplesFromTree(childName, ent) {
+		iter := func(child *Entity) bool {
+			if hasRestrictions && !candidateChildValues.Has(child) {
+				return child != max
+			}
+			for _, m := range ctx._getTuplesFromTree(childName, child) {
 				for k, v := range m {
 					vars[k] = v
 				}
@@ -242,7 +247,7 @@ func (ctx *queryContext) _getTuplesFromTree(name string, ent *Entity) []map[stri
 				}
 				ret = append(ret, newvar)
 			}
-			return ent != max
+			return child != max
 		}
 		childValues.Iter(iter)
 	}
