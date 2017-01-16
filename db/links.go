@@ -178,17 +178,15 @@ func (ldb *linkDB) get(link *Link) (value []byte, err error) {
 func (ldb *linkDB) getAll(entity Key) (keys [][]byte, values [][]byte, err error) {
 	var start, limit [16]byte
 	copy(start[:], entity[:])
-	for i := 4; i < 16; i++ {
-		start[i] = 0
-	}
 	copy(limit[:], entity[:])
 	for i := 4; i < 16; i++ {
+		start[i] = 0
 		limit[i] = 0xFF
 	}
 	keyrange := &util.Range{Start: start[:], Limit: limit[:]}
 	iter := ldb.db.NewIterator(keyrange, nil)
 	for iter.Next() {
-		keys = append(keys, iter.Key())
+		keys = append(keys, iter.Key()[4:]) // remember to skip 4-byte PK
 		values = append(values, iter.Value())
 	}
 	iter.Release()

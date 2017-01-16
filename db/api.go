@@ -95,7 +95,7 @@ func (db *DB) RunQuery(q query.Query) QueryResult {
 						links[row[idx]] = make(map[string]string)
 					}
 					for i := 0; i < len(keys); i++ {
-						links[row[idx]][string(keys[i])] = string(values[i])
+						links[row[idx]][string(keys[i][:4])] = string(values[i])
 					}
 				} else {
 					for _, _link := range selectvar.Links {
