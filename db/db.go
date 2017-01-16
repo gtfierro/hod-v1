@@ -202,6 +202,19 @@ func NewDB(cfg *config.Config) (*DB, error) {
 	return db, nil
 }
 
+func (db *DB) Close() {
+	checkError := func(err error) {
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+	checkError(db.entityDB.Close())
+	checkError(db.pkDB.Close())
+	checkError(db.predDB.Close())
+	checkError(db.graphDB.Close())
+	checkError(db.linkDB.Close())
+}
+
 // hashes the given URI into the byte array
 func (db *DB) hashURI(u turtle.URI, dest []byte, salt uint32) {
 	var hash uint32

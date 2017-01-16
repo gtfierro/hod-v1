@@ -51,6 +51,7 @@ func BenchmarkExpandTuples(b *testing.B) {
 	}
 	cfg.DBPath = "test_databases/berkeleytestdb"
 	db, err := NewDB(cfg)
+	defer db.Close()
 	if err != nil {
 		b.Error(err)
 		return

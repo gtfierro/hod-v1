@@ -15,10 +15,6 @@ import (
 	"github.com/syndtr/goleveldb/leveldb/util"
 )
 
-// TODO: integrate this in with the db. Two pars:
-// TODO: - add ability to set links from API call
-// TODO: - hook up fetching links with query evaluation
-
 var ErrKeyTooLong = errors.New("Key is more than 12 bytes")
 
 const MaxKeyLength = 12
@@ -220,4 +216,8 @@ func (ldb *linkDB) delete(tx *leveldb.Transaction, link *Link) (err error) {
 	ldb.getKey(link, &fetchKey)
 	err = tx.Delete(fetchKey[:], nil)
 	return
+}
+
+func (ldb *linkDB) Close() error {
+	return ldb.db.Close()
 }

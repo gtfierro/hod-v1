@@ -17,6 +17,7 @@ func TestDBQuery(t *testing.T) {
 	}
 	cfg.DBPath = "test_databases/testdb"
 	db, err := NewDB(cfg)
+	defer db.Close()
 	if err != nil {
 		t.Error(err)
 		return
@@ -109,6 +110,7 @@ func TestDBQueryBerkeley(t *testing.T) {
 	}
 	cfg.DBPath = "test_databases/berkeleytestdb"
 	db, err := NewDB(cfg)
+	defer db.Close()
 	if err != nil {
 		t.Error(err)
 		return
@@ -191,6 +193,7 @@ func BenchmarkQueryPerformance1(b *testing.B) {
 	}
 	cfg.DBPath = "test_databases/berkeleytestdb"
 	db, err := NewDB(cfg)
+	defer db.Close()
 	if err != nil {
 		b.Error(err)
 		return
