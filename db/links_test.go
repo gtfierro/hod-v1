@@ -2,9 +2,13 @@ package db
 
 import (
 	"encoding/json"
+	"reflect"
+	"strings"
 	"testing"
 
-	"github.com/gtfierro/hod/goraptor"
+	"github.com/gtfierro/hod/config"
+	turtle "github.com/gtfierro/hod/goraptor"
+	"github.com/gtfierro/hod/query"
 )
 
 //func TestLinkdbkey(t *testing.T) {
@@ -85,6 +89,67 @@ func TestLinkUpdateUnmarshal(t *testing.T) {
 		}
 		if !compareLinkUpdates(test.result, updates) {
 			t.Errorf("Expected\n%+v\nbut got\n%+v", test.result, updates)
+		}
+	}
+}
+
+func TestLinkQuery(t *testing.T) {
+	cfg, err := config.ReadConfig("testhodconfig.yaml")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	cfg.DBPath = "test_databases/testdb"
+	db, err := NewDB(cfg)
+	defer db.Close()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	for _, test := range []struct {
+		query   string
+		results []LinkResultMap
+	}{
+		{
+			"SELECT ?x[UUID] WHERE { ?x rdf:type brick:VAV . };",
+			[]LinkResultMap{
+				{
+					turtle.ParseURI("http://buildsys.org/ontologies/building_example#vav_1"): {
+						"UUID": "427b8f7c-dc3a-11e6-8b12-1002b58053c7",
+					},
+				},
+			},
+		},
+		{
+			"SELECT ?f[Coords] WHERE { ?x rdf:type brick:VAV . ?x bf:feeds ?f . };",
+			[]LinkResultMap{
+				{
+					turtle.ParseURI("http://buildsys.org/ontologies/building_example#hvaczone_1"): {
+						"Coords": "[2, 3]",
+					},
+				},
+			},
+		},
+		{
+			"SELECT ?x[*] WHERE { ?x rdf:type brick:VAV . };",
+			[]LinkResultMap{
+				{
+					turtle.ParseURI("http://buildsys.org/ontologies/building_example#vav_1"): {
+						"UUID": "427b8f7c-dc3a-11e6-8b12-1002b58053c7",
+					},
+				},
+			},
+		},
+	} {
+		q, e := query.Parse(strings.NewReader(test.query))
+		if e != nil {
+			t.Error(test.query, e)
+			continue
+		}
+		result := db.RunQuery(q)
+		if !reflect.DeepEqual(result.Links, test.results) {
+			t.Errorf("Results for %s had\n %+v\nexpected\n %+v", test.query, result.Links, test.results)
+			return
 		}
 	}
 }
