@@ -42,7 +42,7 @@ func (rr ResultRow) Less(than btree.Item) bool {
 	}
 	before := false
 	for idx, item := range rr {
-		before = before || item.String() < row[idx].String()
+		before = before || item.Value[0] < row[idx].Value[0]
 	}
 	return before
 }
