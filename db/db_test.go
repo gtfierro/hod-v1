@@ -169,7 +169,7 @@ func TestDBQueryBerkeley(t *testing.T) {
 		},
 		{
 			"COUNT ?sensor ?room WHERE { ?sensor rdf:type/rdfs:subClassOf* brick:Zone_Temperature_Sensor . ?vav rdf:type brick:VAV . ?zone rdf:type brick:HVAC_Zone . ?room rdf:type brick:Room . ?vav bf:feeds+ ?zone . ?zone bf:hasPart ?room . { ?sensor bf:isPointOf ?vav . OR ?sensor bf:isPointOf ?room .} };",
-			232,
+			0,
 		},
 	} {
 		q, e := query.Parse(strings.NewReader(test.query))
