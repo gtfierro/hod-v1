@@ -40,18 +40,18 @@ func (db *DB) RunQuery(q query.Query) QueryResult {
 		wg.Add(len(orTerms))
 		for _, orTerm := range orTerms {
 			orTerm := orTerm
-			q := q
-			go func(orTerm []query.Filter) {
+			go func(q query.Query, orTerm []query.Filter) {
+				tmpQuery := q.Copy()
 				// augment with the filters
-				q.Where.Filters = append(oldFilters, orTerm...)
-				results := db.getQueryResults(q)
+				tmpQuery.Where.Filters = append(oldFilters, orTerm...)
+				results := db.getQueryResults(*tmpQuery)
 				rowLock.Lock()
 				for _, row := range results {
 					unionedRows.ReplaceOrInsert(ResultRow(row))
 				}
 				rowLock.Unlock()
 				wg.Done()
-			}(orTerm)
+			}(q, orTerm)
 		}
 		wg.Wait()
 	} else {

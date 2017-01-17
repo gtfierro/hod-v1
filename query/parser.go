@@ -10,6 +10,20 @@ type Query struct {
 	Where  WhereClause
 }
 
+func (q Query) Copy() *Query {
+	newq := &Query{
+		Select: q.Select,
+		Where: WhereClause{
+			Filters: make([]Filter, len(q.Where.Filters)),
+		},
+	}
+	for i, v := range q.Where.Filters {
+		newq.Where.Filters[i] = v.Copy()
+	}
+	copy(newq.Where.Ors, q.Where.Ors)
+	return newq
+}
+
 type SelectClause struct {
 	Variables []SelectVar
 	Distinct  bool
@@ -23,6 +37,15 @@ type SelectVar struct {
 	Var      turtle.URI
 	AllLinks bool
 	Links    []Link
+}
+
+func (v SelectVar) Copy() SelectVar {
+	sv := SelectVar{
+		Var:      v.Var,
+		AllLinks: v.AllLinks,
+	}
+	copy(sv.Links, v.Links)
+	return sv
 }
 
 type Link struct {
@@ -40,10 +63,36 @@ type Filter struct {
 	Object  turtle.URI
 }
 
+func (f Filter) Copy() Filter {
+	ff := Filter{
+		Subject: f.Subject,
+		Object:  f.Object,
+		Path:    make([]PathPattern, len(f.Path)),
+	}
+	for i, p := range f.Path {
+		ff.Path[i] = p
+	}
+	return ff
+}
+
 func (f Filter) Equals(f2 Filter) bool {
 	return f.Subject == f2.Subject &&
 		f.Object == f2.Object &&
 		comparePathSliceAsSet(f.Path, f2.Path)
+}
+
+func (f Filter) NumVars() int {
+	num := 0
+	if f.Subject.IsVariable() {
+		num++
+	}
+	if f.Path[0].Predicate.IsVariable() {
+		num++
+	}
+	if f.Object.IsVariable() {
+		num++
+	}
+	return num
 }
 
 type OrClause struct {
