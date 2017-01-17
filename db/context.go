@@ -64,6 +64,14 @@ func (ctx *queryContext) getValues(varname string) (*pointerTree, bool) {
 	return emptyTree, false
 }
 
+func (ctx *queryContext) candidateHasValue(varname string, ent *Entity) bool {
+	tree, found := ctx.candidates[varname]
+	if found {
+		return tree.Has(ent)
+	}
+	return true // no values to filter, so we just say "yes"
+}
+
 // returns the set of reachable values from the given entity
 func (ctx *queryContext) getLinkedValues(ent *Entity) *pointerTree {
 	if tree, found := ctx.linkedValueCache[ent.PK]; found {
@@ -137,6 +145,30 @@ func (ctx *queryContext) addReachable(parent *Entity, parentVar string, reachabl
 		chain = &linkRecord{me: parent.PK}
 	}
 	reachable.mergeOntoLinkRecord(chain)
+	ctx.chains[parent.PK] = chain
+
+	parentElem, found := ctx.traverseVars[parentVar]
+	if !found {
+		parentElem = ctx.traverseOrder.PushBack(parentVar)
+		ctx.traverseVars[parentVar] = parentElem
+	}
+
+	childElem, found := ctx.traverseVars[reachableVar]
+	if found {
+		ctx.traverseOrder.MoveAfter(childElem, parentElem)
+	} else {
+		elem := ctx.traverseOrder.InsertAfter(reachableVar, parentElem)
+		ctx.traverseVars[reachableVar] = elem
+	}
+}
+
+func (ctx *queryContext) addReachableSingle(parent *Entity, parentVar string, reachable *Entity, reachableVar string) {
+	chain, found := ctx.chains[parent.PK]
+	if !found {
+		chain = &linkRecord{me: parent.PK}
+	}
+	// add on this one record
+	chain.links = append(chain.links, &linkRecord{me: reachable.PK})
 	ctx.chains[parent.PK] = chain
 
 	parentElem, found := ctx.traverseVars[parentVar]

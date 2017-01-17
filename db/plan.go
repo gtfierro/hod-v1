@@ -100,10 +100,8 @@ func (db *DB) formQueryPlan(dg *dependencyGraph, q query.Query) *queryPlan {
 				newop = &resolveObjectFromVarSubject{term: term}
 				qp.addLink(subjectVar, objectVar)
 			default:
-				for _, op := range qp.operations {
-					log.Warning(op)
-				}
-				panic("HERE")
+				newop = &resolveSubjectObjectFromPred{term: term}
+				qp.addLink(subjectVar, objectVar)
 			}
 		case !subjectIsVariable && !objectIsVariable && predicateIsVariable:
 			newop = &resolvePredicate{term: term}

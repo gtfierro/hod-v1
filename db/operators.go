@@ -284,6 +284,18 @@ type resolveSubjectObjectFromPred struct {
 	term *queryTerm
 }
 
+func (op *resolveSubjectObjectFromPred) String() string {
+	return fmt.Sprintf("[resolveSubObjFromPred %s]", op.term)
+}
+
+func (op *resolveSubjectObjectFromPred) SortKey() string {
+	return op.term.Subject.String()
+}
+
+func (op *resolveSubjectObjectFromPred) GetTerm() *queryTerm {
+	return op.term
+}
+
 func (rso *resolveSubjectObjectFromPred) run(ctx *queryContext) error {
 	subsobjs := ctx.db.getSubjectObjectFromPred(rso.term.Path)
 	subjectVar := rso.term.Subject.String()
@@ -291,11 +303,16 @@ func (rso *resolveSubjectObjectFromPred) run(ctx *queryContext) error {
 	subjects := newPointerTree(3)
 	objects := newPointerTree(3)
 	for _, sopair := range subsobjs {
-		subjects.Add(ctx.db.MustGetEntityFromHash(sopair[0]))
-		objects.Add(ctx.db.MustGetEntityFromHash(sopair[1]))
+		subject := ctx.db.MustGetEntityFromHash(sopair[0])
+		object := ctx.db.MustGetEntityFromHash(sopair[1])
+		if ctx.candidateHasValue(subjectVar, subject) && ctx.candidateHasValue(objectVar, object) {
+			ctx.addReachableSingle(subject, subjectVar, object, objectVar)
+			subjects.Add(subject)
+			objects.Add(object)
+		}
 	}
-	ctx.addOrFilterVariable(subjectVar, subjects)
-	ctx.addOrFilterVariable(objectVar, objects)
+	ctx.define(subjectVar, subjects)
+	ctx.define(objectVar, objects)
 	return nil
 }
 

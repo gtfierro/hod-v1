@@ -31,6 +31,48 @@ func TestDBQuery(t *testing.T) {
 			[]ResultMap{{"?x": turtle.ParseURI("http://buildsys.org/ontologies/building_example#room_1")}},
 		},
 		{
+			"SELECT ?x WHERE { bldg:room_1 rdf:type ?x . };",
+			[]ResultMap{{"?x": turtle.ParseURI("http://buildsys.org/ontologies/Brick#Room")}},
+		},
+		{
+			"SELECT ?x WHERE { bldg:room_1 ?x brick:Room . };",
+			[]ResultMap{{"?x": turtle.ParseURI("http://www.w3.org/1999/02/22-rdf-syntax-ns#type")}},
+		},
+		{
+			"SELECT ?x ?y WHERE { ?x bf:feeds ?y . };",
+			[]ResultMap{{"?x": turtle.ParseURI("http://buildsys.org/ontologies/building_example#hvaczone_1"), "?y": turtle.ParseURI("http://buildsys.org/ontologies/building_example#vav_1")}},
+		},
+		{
+			"SELECT ?x ?y WHERE { bldg:room_1 ?x ?y . };",
+			[]ResultMap{
+				{"?x": turtle.ParseURI("http://buildsys.org/ontologies/BrickFrame#isPartOf"), "?y": turtle.ParseURI("http://buildsys.org/ontologies/building_example#floor_1")},
+				{"?x": turtle.ParseURI("http://buildsys.org/ontologies/BrickFrame#isPartOf"), "?y": turtle.ParseURI("http://buildsys.org/ontologies/building_example#hvaczone_1")},
+				{"?x": turtle.ParseURI("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"), "?y": turtle.ParseURI("http://buildsys.org/ontologies/Brick#Room")},
+			},
+		},
+		{
+			"SELECT ?x ?y WHERE { ?r rdf:type brick:Room . ?r ?x ?y . };",
+			[]ResultMap{
+				{"?x": turtle.ParseURI("http://buildsys.org/ontologies/BrickFrame#isPartOf"), "?y": turtle.ParseURI("http://buildsys.org/ontologies/building_example#floor_1")},
+				{"?x": turtle.ParseURI("http://buildsys.org/ontologies/BrickFrame#isPartOf"), "?y": turtle.ParseURI("http://buildsys.org/ontologies/building_example#hvaczone_1")},
+				{"?x": turtle.ParseURI("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"), "?y": turtle.ParseURI("http://buildsys.org/ontologies/Brick#Room")},
+			},
+		},
+		{
+			"SELECT ?x ?y WHERE { ?r rdf:type brick:Room . ?x ?y ?r . };",
+			[]ResultMap{
+				{"?y": turtle.ParseURI("http://buildsys.org/ontologies/BrickFrame#hasPart"), "?x": turtle.ParseURI("http://buildsys.org/ontologies/building_example#floor_1")},
+				{"?y": turtle.ParseURI("http://buildsys.org/ontologies/BrickFrame#hasPart"), "?x": turtle.ParseURI("http://buildsys.org/ontologies/building_example#hvaczone_1")},
+			},
+		},
+		{
+			"SELECT ?x ?y WHERE { bldg:room_1 ?p bldg:floor_1 . ?x ?p ?y . };",
+			[]ResultMap{
+				{"?y": turtle.ParseURI("http://buildsys.org/ontologies/BrickFrame#hasPart"), "?x": turtle.ParseURI("http://buildsys.org/ontologies/building_example#floor_1")},
+				{"?y": turtle.ParseURI("http://buildsys.org/ontologies/BrickFrame#hasPart"), "?x": turtle.ParseURI("http://buildsys.org/ontologies/building_example#hvaczone_1")},
+			},
+		},
+		{
 			"SELECT ?x WHERE { ?x rdf:type <http://buildsys.org/ontologies/Brick#Room> . };",
 			[]ResultMap{{"?x": turtle.ParseURI("http://buildsys.org/ontologies/building_example#room_1")}},
 		},

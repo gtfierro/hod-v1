@@ -291,18 +291,18 @@ func (db *DB) getObjectFromSubjectPred(subjectHash Key, path []query.PathPattern
 
 // Given a predicate, it returns pairs of (subject, object) that are connected by that relationship
 func (db *DB) getSubjectObjectFromPred(path []query.PathPattern) (soPair [][]Key) {
-	//pe, found := db.predIndex[pattern.Predicate]
-	//if !found {
-	//	panic(fmt.Sprintf("Cannot find predicate %s", pattern.Predicate))
-	//}
-	//for subject, objectMap := range pe.Subjects {
-	//	for object := range objectMap {
-	//		var sh, oh [4]byte
-	//		copy(sh[:], subject)
-	//		copy(oh[:], object)
-	//		soPair = append(soPair, [][4]byte{sh, oh})
-	//	}
-	//}
+	pe, found := db.predIndex[path[0].Predicate]
+	if !found {
+		panic(fmt.Sprintf("Cannot find predicate %s", path[0].Predicate))
+	}
+	for subject, objectMap := range pe.Subjects {
+		for object := range objectMap {
+			var sh, oh Key
+			sh.FromSlice([]byte(subject))
+			oh.FromSlice([]byte(object))
+			soPair = append(soPair, []Key{sh, oh})
+		}
+	}
 	return soPair
 }
 
