@@ -2,6 +2,7 @@ package db
 
 import (
 	"fmt"
+	"sort"
 	"time"
 
 	turtle "github.com/gtfierro/hod/goraptor"
@@ -26,7 +27,7 @@ func (db *DB) getQueryResults(q query.Query) [][]turtle.URI {
 	planStart := time.Now()
 
 	// form dependency graph and build query plan out of it
-	dg := db.formDependencyGraph(q)
+	dg := db.sortQueryTerms(q)
 	qp := db.formQueryPlan(dg, q)
 
 	if db.showQueryPlan {
@@ -51,68 +52,9 @@ func (db *DB) getQueryResults(q query.Query) [][]turtle.URI {
 	results := ctx.expandTuples()
 	if db.showQueryLatencies {
 		log.Infof("Expanded tuples in %s", time.Since(runStart))
+		log.Infof("Has %d results", len(results))
 	}
 	return results
-}
-
-// We need an execution plan for the list of filters contained in a query. How do we do this?
-func (db *DB) formDependencyGraph(q query.Query) *dependencyGraph {
-	dg := makeDependencyGraph(q)
-	terms := make([]*queryTerm, len(q.Where.Filters))
-	for i, f := range q.Where.Filters {
-		terms[i] = dg.makeQueryTerm(f)
-	}
-
-	numUnresolved := func(qt *queryTerm) int {
-		num := 0
-		for _, v := range qt.variables {
-			if !dg.variables[v] {
-				num++
-			}
-		}
-		return num
-	}
-
-	originalLength := len(terms)
-	for len(terms) > 0 {
-		// first find all the terms with 0 or 1 unresolved variable terms
-		var added = []*queryTerm{}
-		for _, term := range terms {
-			if numUnresolved(term) < 2 {
-				if len(dg.roots) == 0 {
-					dg.addRootTerm(term)
-				} else {
-					dg.addChild(term)
-				}
-				added = append(added, term)
-			}
-		}
-		// remove the terms that we added to the root set
-		terms = filterTermList(terms, added)
-		added = []*queryTerm{}
-		for _, term := range terms {
-			if dg.addChild(term) {
-				added = append(added, term)
-			}
-		}
-		terms = filterTermList(terms, added)
-		if len(terms) == originalLength {
-			// we don't have any root elements. Need to consider 2-variable terms
-			added = []*queryTerm{}
-			for _, term := range terms {
-				if numUnresolved(term) == 2 {
-					dg.addRootTerm(term)
-					added = append(added, term)
-					break
-				}
-			}
-			terms = filterTermList(terms, added)
-		}
-	}
-	if db.showDependencyGraph {
-		dg.dump()
-	}
-	return dg
 }
 
 func (db *DB) executeQueryPlan(plan *queryPlan) *queryContext {
@@ -129,4 +71,23 @@ func (db *DB) executeQueryPlan(plan *queryPlan) *queryContext {
 		}
 	}
 	return ctx
+}
+
+func (db *DB) sortQueryTerms(q query.Query) *dependencyGraph {
+	dg := makeDependencyGraph(q)
+	terms := make([]*queryTerm, len(q.Where.Filters))
+	for i, f := range q.Where.Filters {
+		terms[i] = dg.makeQueryTerm(f)
+	}
+
+	// now we order the list such that each term tries to be adjacent
+	// to those that it shares a variable with
+
+	// do it twice. First time to put all of the definition terms up front
+	// the second time to order by overlap
+	sort.Sort(queryTermList(terms))
+	sort.Sort(queryTermList(terms))
+
+	dg.terms = terms
+	return dg
 }

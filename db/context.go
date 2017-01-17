@@ -80,11 +80,30 @@ func (ctx *queryContext) getLinkedValues(ent *Entity) *pointerTree {
 	return res
 }
 
+// if we already have values for the given variable name, we filter the values given by those
+// (take the intersection). Else we just keep the provided values the same
+func (ctx *queryContext) filterIfDefined(varname string, values *pointerTree) *pointerTree {
+	if tree, found := ctx.getValues(varname); found {
+		values = intersectPointerTrees(tree, values)
+	}
+	return values
+}
+
+func (ctx *queryContext) define(varname string, values *pointerTree) {
+	ctx.candidates[varname] = values
+	_, found := ctx.traverseVars[varname]
+	if !found {
+		elem := ctx.traverseOrder.PushBack(varname)
+		ctx.traverseVars[varname] = elem
+	}
+}
+
 // if values don't exist for the variable w/n this context, then we just add these values
 // if values DO already exist, then we take the intersection
 func (ctx *queryContext) addOrFilterVariable(varname string, values *pointerTree) {
 	if oldValues, exists := ctx.candidates[varname]; exists {
 		ctx.candidates[varname] = intersectPointerTrees(oldValues, values)
+		values = ctx.candidates[varname]
 	} else {
 		ctx.candidates[varname] = values
 	}
@@ -112,7 +131,6 @@ func (ctx *queryContext) addOrMergeVariable(varname string, values *pointerTree)
 		ctx.traverseVars[varname] = elem
 	}
 }
-
 func (ctx *queryContext) addReachable(parent *Entity, parentVar string, reachable *pointerTree, reachableVar string) {
 	chain, found := ctx.chains[parent.PK]
 	if !found {
@@ -230,12 +248,8 @@ func (ctx *queryContext) _getTuplesFromTree(name string, ent *Entity) []map[stri
 	} else {
 		// loop through the values of the child var
 		childValues := ctx.getLinkedValues(ent)
-		candidateChildValues, hasRestrictions := ctx.getValues(childName)
 		max := childValues.Max()
 		iter := func(child *Entity) bool {
-			if hasRestrictions && !candidateChildValues.Has(child) {
-				return child != max
-			}
 			for _, m := range ctx._getTuplesFromTree(childName, child) {
 				for k, v := range m {
 					vars[k] = v

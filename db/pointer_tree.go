@@ -69,3 +69,12 @@ func (pt *pointerTree) mergeOntoLinkRecord(rec *linkRecord) {
 	}
 	pt.Iter(iter)
 }
+
+func (pt *pointerTree) mergeFromTree(t *pointerTree) {
+	max := t.Max()
+	iter := func(e *Entity) bool {
+		pt.Add(e)
+		return e != max
+	}
+	t.Iter(iter)
+}

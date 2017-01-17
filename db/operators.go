@@ -46,7 +46,7 @@ func (rs *resolveSubject) run(ctx *queryContext) error {
 	// get all subjects reachable from the given object along the path
 	subjects := ctx.db.getSubjectFromPredObject(object.PK, rs.term.Path)
 
-	ctx.addOrFilterVariable(subjectVar, hashTreeToPointerTree(ctx.db, subjects))
+	ctx.define(subjectVar, hashTreeToPointerTree(ctx.db, subjects))
 
 	return nil
 }
@@ -81,7 +81,7 @@ func (ro *resolveObject) run(ctx *queryContext) error {
 	// get all objects reachable from the given subject along the path
 	objects := ctx.db.getObjectFromSubjectPred(subject.PK, ro.term.Path)
 
-	ctx.addOrFilterVariable(objectVar, hashTreeToPointerTree(ctx.db, objects))
+	ctx.define(objectVar, hashTreeToPointerTree(ctx.db, objects))
 
 	return nil
 }
@@ -125,7 +125,7 @@ func (op *resolvePredicate) run(ctx *queryContext) error {
 
 	predicates := ctx.db.getPredicateFromSubjectObject(subject, object)
 
-	ctx.addOrFilterVariable(predicateVar, hashTreeToPointerTree(ctx.db, predicates))
+	ctx.define(predicateVar, hashTreeToPointerTree(ctx.db, predicates))
 	return nil
 }
 
@@ -148,15 +148,6 @@ func (rso *restrictSubjectObjectByPredicate) GetTerm() *queryTerm {
 	return rso.term
 }
 
-// this forms a linking between the subject and object vars; for each
-// subject, we want to have the set of objects that 'follow' from it.
-// A variable can be in various states:
-//  - unresolved (we don't know what the variable is)
-//  - resolved, unconnected (we have proposal values for the variable, but they aren't
-//      associated with any other variable)
-//  - resolved, connected (we have proposal values for the variable, and they are linked
-//      to another variable)
-
 func (rso *restrictSubjectObjectByPredicate) run(ctx *queryContext) error {
 	var (
 		subjectVar = rso.term.Subject.String()
@@ -168,25 +159,29 @@ func (rso *restrictSubjectObjectByPredicate) run(ctx *queryContext) error {
 	if rso.parentVar == subjectVar {
 		// iterate through current subjects
 		max := subTree.Max()
+		newObjects := newPointerTree(3)
 		iter := func(subject *Entity) bool {
 			objects := hashTreeToPointerTree(ctx.db, ctx.db.getObjectFromSubjectPred(subject.PK, rso.term.Path))
-			ctx.addOrMergeVariable(objectVar, objects)
-			// now add the links. From subject var, the links are the object results
+			objects = ctx.filterIfDefined(objectVar, objects)
+			newObjects.mergeFromTree(objects)
 			ctx.addReachable(subject, subjectVar, objects, objectVar)
 			return subject != max
 		}
 		subTree.Iter(iter)
-
+		ctx.define(objectVar, newObjects)
 	} else if rso.parentVar == objectVar {
 		// iterate through current objects
 		max := objTree.Max()
+		newSubjects := newPointerTree(3)
 		iter := func(object *Entity) bool {
 			subjects := hashTreeToPointerTree(ctx.db, ctx.db.getSubjectFromPredObject(object.PK, rso.term.Path))
-			ctx.addOrMergeVariable(subjectVar, subjects)
+			subjects = ctx.filterIfDefined(subjectVar, subjects)
+			newSubjects.mergeFromTree(subjects)
 			ctx.addReachable(object, objectVar, subjects, subjectVar)
 			return object != max
 		}
 		objTree.Iter(iter)
+		ctx.define(subjectVar, newSubjects)
 	} else {
 		log.Fatal("unfamiliar situation")
 	}

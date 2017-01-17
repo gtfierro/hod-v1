@@ -1,7 +1,6 @@
 package db
 
 import (
-	"container/list"
 	"fmt"
 	"github.com/gtfierro/hod/query"
 	"reflect"
@@ -14,6 +13,7 @@ type dependencyGraph struct {
 	roots      []*queryTerm
 	// map of variable name -> resolved?
 	variables map[string]bool
+	terms     []*queryTerm
 }
 
 // initializes the query plan struct
@@ -29,108 +29,10 @@ func makeDependencyGraph(q query.Query) *dependencyGraph {
 	return dg
 }
 
-func (dg *dependencyGraph) numUnresolved(qt *queryTerm) int {
-	num := 0
-	for _, v := range qt.variables {
-		if !dg.variables[v] {
-			num++
-		}
-	}
-	return num
-}
-
-func (dg *dependencyGraph) iter() chan *queryTerm {
-	iter := make(chan *queryTerm)
-
-	go func() {
-		stack := list.New()
-		stack.PushFront(dg.roots[0])
-		for stack.Len() > 0 {
-			node := stack.Remove(stack.Front()).(*queryTerm)
-			iter <- node
-			for _, c := range node.children {
-				stack.PushFront(c)
-			}
-		}
-		close(iter)
-	}()
-
-	return iter
-}
-
-// returns true of the query plan or any of its children
-// already includes the given query term
-func (dg *dependencyGraph) hasChild(qt *queryTerm) bool {
-	for _, r := range dg.roots {
-		if r.equals(qt) {
-			return true
-		}
-		if r.hasChild(qt) {
-			return true
-		}
-	}
-	return false
-}
-
-// adds the query term to the root set if it is
-// not already there
-func (dg *dependencyGraph) addRootTerm(qt *queryTerm) {
-	if !dg.hasChild(qt) {
-		// loop through and append to a node if we share a variable with it
-		for _, root := range dg.roots {
-			if root.bubbleDownDepends(qt) {
-				return
-			}
-		}
-		// otherwise, add it to the roots
-		dg.roots = append(dg.roots, qt)
-	}
-}
-
 func (dg *dependencyGraph) dump() {
-	for _, r := range dg.roots {
-		r.dump(0)
+	for _, r := range dg.terms {
+		fmt.Println(r)
 	}
-}
-
-// Firstly, if qt is already in the plan, we return
-// iterate through in a breadth first search for any node
-// [qt] shares a variable with. We attach qt as a child of that
-// term
-// Returns true if the node was added
-func (dg *dependencyGraph) addChild(qt *queryTerm) bool {
-	if dg.hasChild(qt) {
-		fmt.Println("dg already has", qt.String())
-		return false
-	}
-	stack := list.New()
-	// push the roots onto the stack
-	//for _, r := range dg.roots {
-	//	stack.PushFront(r)
-	//}
-	stack.PushFront(dg.roots[0])
-addchildloop:
-	for stack.Len() > 0 {
-		node := stack.Remove(stack.Front()).(*queryTerm)
-		// if depends on, attach and return
-		if qt.dependsOn(node) {
-			//fmt.Println("node", qt.String(), "depends on", node.String())
-			for _, child := range node.children {
-				if qt.dependsOn(child) {
-					stack.PushFront(child)
-					continue addchildloop
-				}
-			}
-			node.children = append(node.children, qt)
-			return true
-		}
-		// add node children to back of stack
-		for _, c := range node.children {
-			stack.PushFront(c)
-		}
-	}
-	dg.roots[0].children = append(dg.roots[0].children, qt)
-	return true
 }
 
 // stores the state/variables for a particular triple
@@ -148,30 +50,19 @@ func (dg *dependencyGraph) makeQueryTerm(f query.Filter) *queryTerm {
 		[]*queryTerm{},
 		[]string{},
 	}
-	// TODO: handle the predicates
 	if qt.Subject.IsVariable() {
 		dg.variables[qt.Subject.String()] = false
 		qt.variables = append(qt.variables, qt.Subject.String())
+	}
+	if qt.Path[0].Predicate.IsVariable() {
+		dg.variables[qt.Path[0].Predicate.String()] = false
+		qt.variables = append(qt.variables, qt.Path[0].Predicate.String())
 	}
 	if qt.Object.IsVariable() {
 		dg.variables[qt.Object.String()] = false
 		qt.variables = append(qt.variables, qt.Object.String())
 	}
 	return qt
-}
-
-// returns true if the term or any of its children has
-// the given child
-func (qt *queryTerm) hasChild(child *queryTerm) bool {
-	for _, c := range qt.children {
-		if c.equals(child) {
-			return true
-		}
-		if c.hasChild(child) {
-			return true
-		}
-	}
-	return false
 }
 
 // returns true if two query terms are equal
@@ -203,20 +94,16 @@ func (qt *queryTerm) dependsOn(other *queryTerm) bool {
 	return false
 }
 
-// adds "other" as a child of the furthest node down the children tree
-// that the node depends on. Returns true if "other" was added to the tree,
-// and false otherwise
-func (qt *queryTerm) bubbleDownDepends(other *queryTerm) bool {
-	if !other.dependsOn(qt) {
-		return false
-	}
-	for _, child := range qt.children {
-		if other.bubbleDownDepends(child) {
-			return true
+func (qt *queryTerm) overlap(other *queryTerm) int {
+	count := 0
+	for _, v := range qt.variables {
+		for _, vv := range other.variables {
+			if vv == v {
+				count++
+			}
 		}
 	}
-	qt.children = append(qt.children, other)
-	return true
+	return count
 }
 
 // removes all terms in the removeList from removeFrom and returns
@@ -236,4 +123,36 @@ func filterTermList(removeFrom, removeList []*queryTerm) []*queryTerm {
 		}
 	}
 	return ret
+}
+
+type queryTermList []*queryTerm
+
+func (list queryTermList) Len() int {
+	return len(list)
+}
+func (list queryTermList) Swap(i, j int) {
+	list[i], list[j] = list[j], list[i]
+}
+func (list queryTermList) Less(i, j int) bool {
+	if len(list[i].variables) == 1 {
+		return true
+	} else if len(list[j].variables) == 1 {
+		return false
+	}
+	i_overlap := 0
+	for idx := 0; idx < i; idx++ {
+		if idx == j {
+			continue
+		}
+		i_overlap += list[i].overlap(list[idx])
+	}
+	j_overlap := 0
+	for idx := 0; idx < j; idx++ {
+		if idx == i {
+			continue
+		}
+		j_overlap += list[j].overlap(list[idx])
+	}
+	return i_overlap > j_overlap
+
 }
