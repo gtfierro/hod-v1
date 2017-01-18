@@ -39,19 +39,20 @@ func (db *DB) RunQuery(q query.Query) QueryResult {
 		var wg sync.WaitGroup
 		wg.Add(len(orTerms))
 		for _, orTerm := range orTerms {
-			orTerm := orTerm
-			go func(q query.Query, orTerm []query.Filter) {
-				tmpQuery := q.Copy()
-				// augment with the filters
-				tmpQuery.Where.Filters = append(oldFilters, orTerm...)
-				results := db.getQueryResults(*tmpQuery)
+			tmpQuery := q.Copy()
+			// augment with the filters
+			tmpQuery.Where.Filters = make([]query.Filter, len(oldFilters)+len(orTerm))
+			copy(tmpQuery.Where.Filters, oldFilters)
+			copy(tmpQuery.Where.Filters[len(oldFilters):], orTerm)
+			go func(q query.Query) {
+				results := db.getQueryResults(q)
 				rowLock.Lock()
 				for _, row := range results {
 					unionedRows.ReplaceOrInsert(ResultRow(row))
 				}
 				rowLock.Unlock()
 				wg.Done()
-			}(q, orTerm)
+			}(tmpQuery)
 		}
 		wg.Wait()
 	} else {
