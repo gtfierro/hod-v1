@@ -286,8 +286,6 @@ func (ctx *queryContext) _getTuplesFromTree(name string, ent *Entity) []map[stri
 				continue
 			}
 			if childName == name {
-				log.Debug("continuing from", uri, childName)
-				log.Debug(ret)
 				ret = append(ret, map[string]turtle.URI{name: uri})
 				continue
 			}
