@@ -116,8 +116,43 @@ func startHTTP(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
+	defer db.Close()
 	server.StartHodServer(db, cfg)
 	return nil
+}
+
+func doQuery(c *cli.Context) error {
+	cfg, err := config.ReadConfig(c.String("config"))
+	if err != nil {
+		return err
+	}
+	cfg.ReloadBrick = false
+	db, err := hod.NewDB(cfg)
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+	var (
+		q   query.Query
+		res hod.QueryResult
+	)
+	if c.String("query") != "" {
+		q, err = query.Parse(strings.NewReader(c.String("query")))
+		if err != nil {
+			log.Fatal(err)
+		}
+	} else if c.String("file") != "" {
+		file, err := os.Open(c.String("file"))
+		if err != nil {
+			log.Fatal(err)
+		}
+		q, err = query.Parse(file)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+	res = db.RunQuery(q)
+	return res.DumpToCSV(c.Bool("prefixes"), db, os.Stdout)
 }
 
 func dump(c *cli.Context) error {

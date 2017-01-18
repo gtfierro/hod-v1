@@ -66,6 +66,7 @@ func (db *DB) RunQuery(q query.Query) QueryResult {
 	}
 
 	var result QueryResult
+	result.selectVars = q.Select.Variables
 
 	if q.Select.Count {
 		// return the count of results
@@ -287,12 +288,12 @@ func (db *DB) QueryToClassDOT(querystring io.Reader) (string, error) {
 			}
 			// add class as node to graph
 			for _, class := range classList {
-				line := fmt.Sprintf("\"%s\" [fillcolor=\"#4caf50\"];\n", db.abbreviate(class))
+				line := fmt.Sprintf("\"%s\" [fillcolor=\"#4caf50\"];\n", db.Abbreviate(class))
 				if !strings.Contains(dot, line) {
 					dot += line
 				}
 				for i := 0; i < len(preds); i++ {
-					line := fmt.Sprintf("\"%s\" -> \"%s\" [label=\"%s\"];\n", db.abbreviate(class), db.abbreviate(objs[i]), db.abbreviate(preds[i]))
+					line := fmt.Sprintf("\"%s\" -> \"%s\" [label=\"%s\"];\n", db.Abbreviate(class), db.Abbreviate(objs[i]), db.Abbreviate(preds[i]))
 					if !strings.Contains(dot, line) {
 						dot += line
 					}
@@ -305,4 +306,13 @@ func (db *DB) QueryToClassDOT(querystring io.Reader) (string, error) {
 	dot += "}"
 
 	return dot, nil
+}
+
+func (db *DB) Abbreviate(uri turtle.URI) string {
+	for abbv, ns := range db.namespaces {
+		if abbv != "" && ns == uri.Namespace {
+			return abbv + ":" + uri.Value
+		}
+	}
+	return uri.Value
 }

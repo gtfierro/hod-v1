@@ -90,6 +90,29 @@ func main() {
 				},
 			},
 		},
+		{
+			Name:   "query",
+			Usage:  "Query from command line (non-interactive)",
+			Action: doQuery,
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:  "file, f",
+					Usage: "Path to hoddb query file",
+				},
+				cli.StringFlag{
+					Name:  "config, c",
+					Usage: "Path to hoddb config file",
+				},
+				cli.StringFlag{
+					Name:  "query, q",
+					Usage: "Query string",
+				},
+				cli.BoolFlag{
+					Name:  "prefixes, p",
+					Usage: "If true, abbreviate all namespaces. Else, just print the full URI",
+				},
+			},
+		},
 	}
 	app.Run(os.Args)
 }
