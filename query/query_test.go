@@ -197,7 +197,7 @@ func TestQueryParse(t *testing.T) {
 		r := strings.NewReader(test.str)
 		q, e := Parse(r)
 		if e != nil {
-			t.Errorf("Error on query: %s", test.str, e)
+			t.Errorf("Error on query: %s (%s)", test.str, e)
 			continue
 		}
 		if !reflect.DeepEqual(q.Select, test.selectClause) {
