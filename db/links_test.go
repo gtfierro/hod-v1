@@ -44,31 +44,31 @@ func TestLinkUpdateUnmarshal(t *testing.T) {
 		{
 			`{"ex:temp-sensor-1": { "URI": "ucberkeley/eecs/soda/sensors/etcetc/1" }}`,
 			&LinkUpdates{Adding: []*Link{
-				{URI: turtle.URI{"ex", "temp-sensor-1"}, Key: []byte("URI"), Value: []byte("ucberkeley/eecs/soda/sensors/etcetc/1")},
+				{URI: turtle.URI{Namespace: "ex", Value: "temp-sensor-1"}, Key: []byte("URI"), Value: []byte("ucberkeley/eecs/soda/sensors/etcetc/1")},
 			}},
 		},
 		{
 			`{"ex:temp-sensor-1": { "URI": "ucberkeley/eecs/soda/sensors/etcetc/1", "UUID": "abcdef" }}`,
 			&LinkUpdates{Adding: []*Link{
-				{URI: turtle.URI{"ex", "temp-sensor-1"}, Key: []byte("URI"), Value: []byte("ucberkeley/eecs/soda/sensors/etcetc/1")},
-				{URI: turtle.URI{"ex", "temp-sensor-1"}, Key: []byte("UUID"), Value: []byte("abcdef")},
+				{URI: turtle.URI{Namespace: "ex", Value: "temp-sensor-1"}, Key: []byte("URI"), Value: []byte("ucberkeley/eecs/soda/sensors/etcetc/1")},
+				{URI: turtle.URI{Namespace: "ex", Value: "temp-sensor-1"}, Key: []byte("UUID"), Value: []byte("abcdef")},
 			}},
 		},
 		{
 			`{"ex:temp-sensor-1": { "URI": "ucberkeley/eecs/soda/sensors/etcetc/1" }, "ex:temp-sensor-2": { "URI": "ucberkeley/eecs/soda/sensors/etcetc/2"}}`,
 			&LinkUpdates{Adding: []*Link{
-				{URI: turtle.URI{"ex", "temp-sensor-1"}, Key: []byte("URI"), Value: []byte("ucberkeley/eecs/soda/sensors/etcetc/1")},
-				{URI: turtle.URI{"ex", "temp-sensor-2"}, Key: []byte("URI"), Value: []byte("ucberkeley/eecs/soda/sensors/etcetc/2")},
+				{URI: turtle.URI{Namespace: "ex", Value: "temp-sensor-1"}, Key: []byte("URI"), Value: []byte("ucberkeley/eecs/soda/sensors/etcetc/1")},
+				{URI: turtle.URI{Namespace: "ex", Value: "temp-sensor-2"}, Key: []byte("URI"), Value: []byte("ucberkeley/eecs/soda/sensors/etcetc/2")},
 			}},
 		},
 		{
 			`{"ex:temp-sensor-1": { "URI": "ucberkeley/eecs/soda/sensors/etcetc/1", "UUID": "" }}`,
 			&LinkUpdates{
 				Adding: []*Link{
-					{URI: turtle.URI{"ex", "temp-sensor-1"}, Key: []byte("URI"), Value: []byte("ucberkeley/eecs/soda/sensors/etcetc/1")},
+					{URI: turtle.URI{Namespace: "ex", Value: "temp-sensor-1"}, Key: []byte("URI"), Value: []byte("ucberkeley/eecs/soda/sensors/etcetc/1")},
 				},
 				Removing: []*Link{
-					{URI: turtle.URI{"ex", "temp-sensor-1"}, Key: []byte("UUID")},
+					{URI: turtle.URI{Namespace: "ex", Value: "temp-sensor-1"}, Key: []byte("UUID")},
 				},
 			},
 		},
@@ -76,7 +76,7 @@ func TestLinkUpdateUnmarshal(t *testing.T) {
 			`{"ex:temp-sensor-1": {}}`,
 			&LinkUpdates{
 				Removing: []*Link{
-					{URI: turtle.URI{"ex", "temp-sensor-1"}},
+					{URI: turtle.URI{Namespace: "ex", Value: "temp-sensor-1"}},
 				},
 			},
 		},
