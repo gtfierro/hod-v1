@@ -47,8 +47,8 @@ func (pt *pointerTree) Min() *Entity {
 	return min.(*Entity)
 }
 
-func (pt *pointerTree) Delete(ent *Entity) *Entity {
-	return pt.tree.Delete(ent).(*Entity)
+func (pt *pointerTree) DeleteMax() *Entity {
+	return pt.tree.DeleteMax().(*Entity)
 }
 
 func (pt *pointerTree) Iter(iter func(ent *Entity) bool) {

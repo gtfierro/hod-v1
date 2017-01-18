@@ -248,13 +248,16 @@ func (rov *resolveObjectFromVarSubject) run(ctx *queryContext) error {
 		subTree, _ = ctx.getValues(subjectVar)
 	)
 	max := subTree.Max()
+	newObjects := newPointerTree(3)
 	iter := func(subject *Entity) bool {
 		objects := hashTreeToPointerTree(ctx.db, ctx.db.getObjectFromSubjectPred(subject.PK, rov.term.Path))
-		ctx.addOrMergeVariable(objectVar, objects)
+		objects = ctx.filterIfDefined(objectVar, objects)
+		newObjects.mergeFromTree(objects)
 		ctx.addReachable(subject, subjectVar, objects, objectVar)
 		return subject != max
 	}
 	subTree.Iter(iter)
+	ctx.define(objectVar, newObjects)
 	return nil
 }
 
@@ -362,7 +365,7 @@ func (op *resolveSubjectPredFromObject) run(ctx *queryContext) error {
 		subjects := hashTreeToPointerTree(ctx.db, ctx.db.getSubjectFromPredObject(object.PK, path))
 		max := subjects.Max()
 		iter := func(ent *Entity) bool {
-			tree = ctx.getLinkedValues(ent)
+			tree = ctx.getLinkedValues(predicateVar, ent)
 			tree.Add(predicate)
 			candidateSubjects.Add(ent) // subject
 			ctx.addReachable(ent, subjectVar, tree, predicateVar)
@@ -418,7 +421,7 @@ func (op *resolvePredObjectFromSubject) run(ctx *queryContext) error {
 		objects := hashTreeToPointerTree(ctx.db, ctx.db.getObjectFromSubjectPred(subject.PK, path))
 		max := objects.Max()
 		iter := func(ent *Entity) bool {
-			tree = ctx.getLinkedValues(ent)
+			tree = ctx.getLinkedValues(predicateVar, ent)
 			tree.Add(predicate)
 			candidateObjects.Add(ent) // object
 			ctx.addReachable(ent, objectVar, tree, predicateVar)

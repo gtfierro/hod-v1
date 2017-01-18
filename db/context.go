@@ -13,11 +13,11 @@ var emptyTree = newPointerTree(3)
 // queryContext
 type queryContext struct {
 	candidates       map[string]*pointerTree
-	chains           map[Key]*linkRecord
+	chains           map[Key]map[string]*linkRecord
 	db               *DB
 	traverseOrder    *list.List
 	traverseVars     map[string]*list.Element
-	linkedValueCache map[Key]*pointerTree
+	linkedValueCache map[Key]map[string]*pointerTree
 	tupleCache       map[string][]map[string]turtle.URI
 	// embedded query plan
 	*queryPlan
@@ -26,11 +26,11 @@ type queryContext struct {
 func newQueryContext(plan *queryPlan, db *DB) *queryContext {
 	ctx := &queryContext{
 		candidates:       make(map[string]*pointerTree),
-		chains:           make(map[Key]*linkRecord),
+		chains:           make(map[Key]map[string]*linkRecord),
 		queryPlan:        plan,
 		traverseOrder:    list.New(),
 		traverseVars:     make(map[string]*list.Element),
-		linkedValueCache: make(map[Key]*pointerTree),
+		linkedValueCache: make(map[Key]map[string]*pointerTree),
 		tupleCache:       make(map[string][]map[string]turtle.URI),
 		db:               db,
 	}
@@ -73,18 +73,21 @@ func (ctx *queryContext) candidateHasValue(varname string, ent *Entity) bool {
 }
 
 // returns the set of reachable values from the given entity
-func (ctx *queryContext) getLinkedValues(ent *Entity) *pointerTree {
-	if tree, found := ctx.linkedValueCache[ent.PK]; found {
+func (ctx *queryContext) getLinkedValues(varname string, ent *Entity) *pointerTree {
+	if tree, found := ctx.linkedValueCache[ent.PK][varname]; found {
 		return tree
 	}
 	var res = newPointerTree(3)
-	chain := ctx.chains[ent.PK]
+	chain := ctx.chains[ent.PK][varname]
 	if chain != nil {
 		for _, link := range chain.links {
 			res.Add(ctx.db.MustGetEntityFromHash(link.me))
 		}
 	}
-	ctx.linkedValueCache[ent.PK] = res
+	if _, found := ctx.linkedValueCache[ent.PK]; !found {
+		ctx.linkedValueCache[ent.PK] = make(map[string]*pointerTree)
+	}
+	ctx.linkedValueCache[ent.PK][varname] = res
 	return res
 }
 
@@ -140,12 +143,15 @@ func (ctx *queryContext) addOrMergeVariable(varname string, values *pointerTree)
 	}
 }
 func (ctx *queryContext) addReachable(parent *Entity, parentVar string, reachable *pointerTree, reachableVar string) {
-	chain, found := ctx.chains[parent.PK]
+	chain, found := ctx.chains[parent.PK][reachableVar]
 	if !found {
 		chain = &linkRecord{me: parent.PK}
 	}
 	reachable.mergeOntoLinkRecord(chain)
-	ctx.chains[parent.PK] = chain
+	if _, found := ctx.chains[parent.PK]; !found {
+		ctx.chains[parent.PK] = make(map[string]*linkRecord)
+	}
+	ctx.chains[parent.PK][reachableVar] = chain
 
 	parentElem, found := ctx.traverseVars[parentVar]
 	if !found {
@@ -163,13 +169,16 @@ func (ctx *queryContext) addReachable(parent *Entity, parentVar string, reachabl
 }
 
 func (ctx *queryContext) addReachableSingle(parent *Entity, parentVar string, reachable *Entity, reachableVar string) {
-	chain, found := ctx.chains[parent.PK]
+	chain, found := ctx.chains[parent.PK][reachableVar]
 	if !found {
 		chain = &linkRecord{me: parent.PK}
 	}
 	// add on this one record
 	chain.links = append(chain.links, &linkRecord{me: reachable.PK})
-	ctx.chains[parent.PK] = chain
+	if _, found := ctx.chains[parent.PK]; !found {
+		ctx.chains[parent.PK] = make(map[string]*linkRecord)
+	}
+	ctx.chains[parent.PK][reachableVar] = chain
 
 	parentElem, found := ctx.traverseVars[parentVar]
 	if !found {
@@ -191,20 +200,14 @@ func (ctx *queryContext) entityHasFollowers(ent *Entity) bool {
 	if ent == nil || ent.PK == emptyHash {
 		return false
 	}
-	link, found := ctx.chains[ent.PK]
-	if !found || link == nil {
-		return false
+	if m, found := ctx.chains[ent.PK]; found && len(m) > 0 {
+		for _, links := range m {
+			if len(links.links) > 0 {
+				return true
+			}
+		}
 	}
-	return len(link.links) > 0
-}
-
-// gets the name of the next variable
-func (ctx *queryContext) getChild(varname string) string {
-	elem := ctx.traverseVars[varname].Next()
-	if elem != nil {
-		return elem.Value.(string)
-	}
-	return ""
+	return false
 }
 
 func (ctx *queryContext) expandTuples() [][]turtle.URI {
@@ -274,28 +277,38 @@ func (ctx *queryContext) _getTuplesFromTree(name string, ent *Entity) []map[stri
 
 	vars := make(map[string]turtle.URI)
 	vars[name] = uri
-	childName := ctx.getChild(name)
-	if !ctx.entityHasFollowers(ent) || childName == "" {
+	if !ctx.entityHasFollowers(ent) {
 		ret = append(ret, map[string]turtle.URI{name: uri})
 	} else {
 		// loop through the values of the child var
-		childValues := ctx.getLinkedValues(ent)
-		max := childValues.Max()
-		iter := func(child *Entity) bool {
-			for _, m := range ctx._getTuplesFromTree(childName, child) {
-				for k, v := range m {
-					vars[k] = v
-				}
-				// when we want to append, make sure to allocate a new map
-				newvar := make(map[string]turtle.URI)
-				for k, v := range vars {
-					newvar[k] = v
-				}
-				ret = append(ret, newvar)
+		for childName, _links := range ctx.chains[ent.PK] {
+			if len(_links.links) == 0 {
+				continue
 			}
-			return child != max
+			if childName == name {
+				log.Debug("continuing from", uri, childName)
+				log.Debug(ret)
+				ret = append(ret, map[string]turtle.URI{name: uri})
+				continue
+			}
+			childValues := ctx.getLinkedValues(childName, ent)
+			max := childValues.Max()
+			iter := func(child *Entity) bool {
+				for _, m := range ctx._getTuplesFromTree(childName, child) {
+					for k, v := range m {
+						vars[k] = v
+					}
+					// when we want to append, make sure to allocate a new map
+					newvar := make(map[string]turtle.URI)
+					for k, v := range vars {
+						newvar[k] = v
+					}
+					ret = append(ret, newvar)
+				}
+				return child != max
+			}
+			childValues.Iter(iter)
 		}
-		childValues.Iter(iter)
 	}
 	ctx.tupleCache[name+ent.PK.String()] = ret
 	return ret
@@ -329,28 +342,6 @@ func (qp *queryPlan) dumpVarchain() {
 	for k, v := range qp.vars {
 		fmt.Println(k, "=>", v)
 	}
-}
-
-func (qp *queryPlan) findVarDepth(target string) int {
-	var depth = 0
-	start := qp.vars[target]
-	for start != RESOLVED {
-		start = qp.vars[start]
-		depth += 1
-	}
-	return depth
-}
-
-func (qp *queryPlan) Len() int {
-	return len(qp.operations)
-}
-func (qp *queryPlan) Swap(i, j int) {
-	qp.operations[i], qp.operations[j] = qp.operations[j], qp.operations[i]
-}
-func (qp *queryPlan) Less(i, j int) bool {
-	iDepth := qp.findVarDepth(qp.operations[i].SortKey())
-	jDepth := qp.findVarDepth(qp.operations[j].SortKey())
-	return iDepth < jDepth
 }
 
 func (plan *queryPlan) hasVar(variable string) bool {
