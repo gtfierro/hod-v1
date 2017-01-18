@@ -55,6 +55,7 @@ func load(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
+	defer db.Close()
 	err = db.LoadDataset(ds)
 	if err != nil {
 		return err
@@ -77,6 +78,7 @@ func loadLinks(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
+	defer db.Close()
 	file, err := os.Open(filename)
 	if err != nil {
 		return err
@@ -100,6 +102,7 @@ func startCLI(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
+	defer db.Close()
 	return runInteractiveQuery(db)
 }
 
