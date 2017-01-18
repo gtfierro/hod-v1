@@ -10,8 +10,8 @@ type Query struct {
 	Where  WhereClause
 }
 
-func (q Query) Copy() *Query {
-	newq := &Query{
+func (q Query) Copy() Query {
+	newq := Query{
 		Select: q.Select,
 		Where: WhereClause{
 			Filters: make([]Filter, len(q.Where.Filters)),
