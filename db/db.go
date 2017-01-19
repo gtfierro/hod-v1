@@ -548,6 +548,9 @@ func (db *DB) GetURI(hash Key) (turtle.URI, error) {
 }
 
 func (db *DB) MustGetURI(hash Key) turtle.URI {
+	if hash == emptyHash {
+		return turtle.URI{}
+	}
 	uri, err := db.GetURI(hash)
 	if err != nil {
 		panic(errors.Wrapf(err, "Could not get URI for %v", hash))
