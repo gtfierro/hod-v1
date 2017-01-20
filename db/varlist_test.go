@@ -145,6 +145,11 @@ func TestVarlistMoveAfter(t *testing.T) {
 			moveafter: [][]string{[]string{"c", "a"}},
 			results:   []string{"a", "c", "d", "b"},
 		},
+		{
+			elements:  []string{"a", "b", "c", "d"},
+			moveafter: [][]string{[]string{"a", "d"}},
+			results:   []string{"d", "a", "b", "c"},
+		},
 	} {
 		list := newvarlist()
 		for _, elem := range test.elements {

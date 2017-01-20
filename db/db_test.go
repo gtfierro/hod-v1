@@ -1,6 +1,7 @@
 package db
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
@@ -131,6 +132,7 @@ func TestDBQuery(t *testing.T) {
 			},
 		},
 	} {
+		fmt.Println(test.query)
 		q, e := query.Parse(strings.NewReader(test.query))
 		if e != nil {
 			t.Error(test.query, e)
@@ -210,6 +212,10 @@ func TestDBQueryBerkeley(t *testing.T) {
 			232,
 		},
 		{
+			"COUNT ?sensor ?room WHERE { ?sensor rdf:type/rdfs:subClassOf* brick:Zone_Temperature_Sensor . ?room rdf:type brick:Room . ?vav rdf:type brick:VAV . ?zone rdf:type brick:HVAC_Zone . ?vav bf:feeds+ ?zone . ?zone bf:hasPart ?room . ?sensor bf:isPointOf ?vav .  };",
+			232,
+		},
+		{
 			"COUNT ?sensor ?room WHERE { ?sensor rdf:type/rdfs:subClassOf* brick:Zone_Temperature_Sensor . ?vav rdf:type brick:VAV . ?zone rdf:type brick:HVAC_Zone . ?room rdf:type brick:Room . ?vav bf:feeds+ ?zone . ?zone bf:hasPart ?room . { ?sensor bf:isPointOf ?vav . OR ?sensor bf:isPointOf ?room .} };",
 			232,
 		},
@@ -217,7 +223,12 @@ func TestDBQueryBerkeley(t *testing.T) {
 			"COUNT ?sensor ?room WHERE { ?sensor rdf:type/rdfs:subClassOf* brick:Zone_Temperature_Sensor . ?room rdf:type brick:Room . ?vav rdf:type brick:VAV . ?zone rdf:type brick:HVAC_Zone . ?vav bf:feeds+ ?zone . ?zone bf:hasPart ?room . ?sensor bf:isPointOf ?room .  };",
 			0,
 		},
+		{
+			"SELECT ?vav ?x ?y WHERE { ?vav rdf:type brick:VAV . ?vav bf:hasPoint ?x . ?vav bf:isFedBy ?y . };",
+			485,
+		},
 	} {
+		fmt.Println(test.query)
 		q, e := query.Parse(strings.NewReader(test.query))
 		if e != nil {
 			t.Error(test.query, e)

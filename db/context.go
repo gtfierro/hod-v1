@@ -15,7 +15,7 @@ type queryContext struct {
 	candidates       map[string]*pointerTree
 	chains           map[Key]map[string]*linkRecord
 	db               *DB
-	traverseOrder    *list.List
+	_traverseOrder   *varlist
 	traverseVars     map[string]*list.Element
 	linkedValueCache map[Key]map[string]*pointerTree
 	tupleCache       map[string][]map[string]turtle.URI
@@ -30,7 +30,7 @@ func newQueryContext(plan *queryPlan, db *DB) *queryContext {
 		candidates:       make(map[string]*pointerTree),
 		chains:           make(map[Key]map[string]*linkRecord),
 		queryPlan:        plan,
-		traverseOrder:    list.New(),
+		_traverseOrder:   newvarlist(),
 		traverseVars:     make(map[string]*list.Element),
 		linkedValueCache: make(map[Key]map[string]*pointerTree),
 		tupleCache:       make(map[string][]map[string]turtle.URI),
@@ -47,38 +47,38 @@ func (ctx *queryContext) dumpVarCounts() {
 	}
 }
 
-func (ctx *queryContext) dumpTraverseOrder() {
-	elem := ctx.traverseOrder.Front()
-	for elem.Next() != nil {
-		varname := elem.Value.(string)
-		fmt.Println(varname, "next =>", elem.Next().Value.(string))
-		elem = elem.Next()
+func (ctx *queryContext) dumpChildren() {
+	for varname, tree := range ctx.candidates {
+		if tree.Len() == 0 {
+			continue
+		}
+		fmt.Println("var ", varname, "has children")
+		i := tree.Max()
+		for varname, links := range ctx.chains[i.PK] {
+			fmt.Println("   =>", varname, len(links.links))
+		}
+
 	}
-	fmt.Println(elem.Value.(string))
-	//length := len(ctx._traverseOrder.list)
-	//for i := 0; i < length-1; i++ {
-	//	cur := ctx._traverseOrder.list[i]
-	//	next := ctx._traverseOrder.list[i+1]
-	//	fmt.Println(cur.value, "next =>", next.value)
-	//}
 }
 
-// returns how far down the given variable is in the traverse order
-func (ctx *queryContext) getVarDepth(varname string) int {
-	if depth, found := ctx.vardepth[varname]; found {
-		return depth
+func (ctx *queryContext) dumpTraverseOrder() {
+	length := len(ctx._traverseOrder.list)
+	for i := 0; i < length-1; i++ {
+		cur := ctx._traverseOrder.list[i]
+		next := ctx._traverseOrder.list[i+1]
+		fmt.Println(cur.value, "next =>", next.value)
 	}
-	depth := 1
-	elem := ctx.traverseOrder.Front()
-	for elem.Next() != nil {
-		if varname == elem.Value.(string) {
-			return depth
+	fmt.Println("children")
+	ctx.dumpChildren()
+	// NEW STUFF
+	fmt.Println("-----")
+	for varname, entry := range ctx._traverseOrder.lookup {
+		if entry._prev != nil {
+			fmt.Println(varname, "<=", entry._prev.value)
+		} else {
+			fmt.Println(varname)
 		}
-		elem = elem.Next()
-		depth += 1
 	}
-	ctx.vardepth[varname] = depth
-	return depth
 }
 
 // now we need to plan out the set of actions for adding/filtering vars on the query context
@@ -130,11 +130,11 @@ func (ctx *queryContext) filterIfDefined(varname string, values *pointerTree) *p
 
 func (ctx *queryContext) define(varname string, values *pointerTree) {
 	ctx.candidates[varname] = values
-	_, found := ctx.traverseVars[varname]
-	if !found {
-		elem := ctx.traverseOrder.PushBack(varname)
-		ctx.traverseVars[varname] = elem
+
+	if !ctx._traverseOrder.has(varname) {
+		ctx._traverseOrder.pushBack(varname)
 	}
+
 }
 
 // if values don't exist for the variable w/n this context, then we just add these values
@@ -147,10 +147,8 @@ func (ctx *queryContext) addOrFilterVariable(varname string, values *pointerTree
 		ctx.candidates[varname] = values
 	}
 
-	_, found := ctx.traverseVars[varname]
-	if !found {
-		elem := ctx.traverseOrder.PushBack(varname)
-		ctx.traverseVars[varname] = elem
+	if !ctx._traverseOrder.has(varname) {
+		ctx._traverseOrder.pushBack(varname)
 	}
 
 }
@@ -164,10 +162,8 @@ func (ctx *queryContext) addOrMergeVariable(varname string, values *pointerTree)
 		ctx.candidates[varname] = values
 	}
 
-	_, found := ctx.traverseVars[varname]
-	if !found {
-		elem := ctx.traverseOrder.PushBack(varname)
-		ctx.traverseVars[varname] = elem
+	if !ctx._traverseOrder.has(varname) {
+		ctx._traverseOrder.pushBack(varname)
 	}
 }
 func (ctx *queryContext) addReachable(parent *Entity, parentVar string, reachable *pointerTree, reachableVar string) {
@@ -182,24 +178,13 @@ func (ctx *queryContext) addReachable(parent *Entity, parentVar string, reachabl
 	}
 	ctx.chains[parent.PK][reachableVar] = chain
 
-	parentElem, found := ctx.traverseVars[parentVar]
-	if !found {
-		parentElem = ctx.traverseOrder.PushBack(parentVar)
-		ctx.traverseVars[parentVar] = parentElem
+	if !ctx._traverseOrder.has(parentVar) {
+		ctx._traverseOrder.pushBack(parentVar)
 	}
-
-	childElem, found := ctx.traverseVars[reachableVar]
-	if found {
-		// TODO: problem here is when we move the element, we need to move its children with it
-		// implementation is going to be *varlist at the bottom.
-		// needs tests!
-
-		// this is the command that would need fixing
-		ctx.traverseOrder.MoveAfter(childElem, parentElem)
+	if ctx._traverseOrder.has(reachableVar) {
+		ctx._traverseOrder.moveAfter(reachableVar, parentVar)
 	} else {
-		log.Debug("insert", reachableVar, "after", parentElem.Value.(string))
-		elem := ctx.traverseOrder.InsertAfter(reachableVar, parentElem)
-		ctx.traverseVars[reachableVar] = elem
+		ctx._traverseOrder.insertAfter(reachableVar, parentVar)
 	}
 
 	ctx.dumpTraverseOrder()
@@ -217,18 +202,13 @@ func (ctx *queryContext) addReachableSingle(parent *Entity, parentVar string, re
 	}
 	ctx.chains[parent.PK][reachableVar] = chain
 
-	parentElem, found := ctx.traverseVars[parentVar]
-	if !found {
-		parentElem = ctx.traverseOrder.PushBack(parentVar)
-		ctx.traverseVars[parentVar] = parentElem
+	if !ctx._traverseOrder.has(parentVar) {
+		ctx._traverseOrder.pushBack(parentVar)
 	}
-
-	childElem, found := ctx.traverseVars[reachableVar]
-	if found {
-		ctx.traverseOrder.MoveAfter(childElem, parentElem)
+	if ctx._traverseOrder.has(reachableVar) {
+		ctx._traverseOrder.moveAfter(reachableVar, parentVar)
 	} else {
-		elem := ctx.traverseOrder.InsertAfter(reachableVar, parentElem)
-		ctx.traverseVars[reachableVar] = elem
+		ctx._traverseOrder.insertAfter(reachableVar, parentVar)
 	}
 }
 
@@ -249,104 +229,9 @@ func (ctx *queryContext) entityHasFollowers(ent *Entity) bool {
 
 func (ctx *queryContext) expandTuples() [][]turtle.URI {
 	var (
-		startvar string
-		results  [][]turtle.URI
-		tuples   []map[string]turtle.URI
+		results [][]turtle.URI
 	)
-	// choose first variable
-	for v, state := range ctx.vars {
-		if state == RESOLVED {
-			startvar = v
-			break
-		}
-	}
-	if len(startvar) == 0 {
-		// need to choose the "parent" if there is no RESOLVED variable
-		for _, parent := range ctx.vars {
-			if _, exists := ctx.vars[parent]; !exists {
-				startvar = parent
-				break
-			}
-		}
-	}
-
-	topVarTree := ctx.candidates[startvar]
-	if topVarTree == nil {
-		return results // fail early
-	}
-	max := topVarTree.Max()
-	iter := func(ent *Entity) bool {
-		newtups := ctx._getTuplesFromTree(startvar, ent)
-		tuples = append(tuples, newtups...)
-		return ent != max
-	}
-	topVarTree.Iter(iter)
-tupleLoop:
-	for _, tup := range tuples {
-		var row []turtle.URI
-		for _, varname := range ctx.selectVars {
-			if _, found := tup[varname]; !found {
-				if ctx.query.Select.Partial {
-					continue
-				} else {
-					continue tupleLoop
-				}
-			}
-			row = append(row, tup[varname])
-		}
-		results = append(results, row)
-		if ctx.query.Select.Limit > 0 && len(results) == ctx.query.Select.Limit {
-			return results
-		}
-	}
 	return results
-}
-
-func (ctx *queryContext) _getTuplesFromTree(name string, ent *Entity) []map[string]turtle.URI {
-	var ret []map[string]turtle.URI
-	if ent == nil || ent.PK == emptyHash {
-		return ret
-	}
-	uri := ctx.db.MustGetURI(ent.PK)
-	if ret, found := ctx.tupleCache[name+ent.PK.String()]; found {
-		return ret
-	}
-
-	vars := make(map[string]turtle.URI)
-	vars[name] = uri
-	if !ctx.entityHasFollowers(ent) {
-		ret = append(ret, map[string]turtle.URI{name: uri})
-	} else {
-		// loop through the values of the child var
-		for childName, _links := range ctx.chains[ent.PK] {
-			if len(_links.links) == 0 {
-				continue
-			}
-			if childName == name {
-				ret = append(ret, map[string]turtle.URI{name: uri})
-				continue
-			}
-			childValues := ctx.getLinkedValues(childName, ent)
-			max := childValues.Max()
-			iter := func(child *Entity) bool {
-				for _, m := range ctx._getTuplesFromTree(childName, child) {
-					for k, v := range m {
-						vars[k] = v
-					}
-					// when we want to append, make sure to allocate a new map
-					newvar := make(map[string]turtle.URI)
-					for k, v := range vars {
-						newvar[k] = v
-					}
-					ret = append(ret, newvar)
-				}
-				return child != max
-			}
-			childValues.Iter(iter)
-		}
-	}
-	ctx.tupleCache[name+ent.PK.String()] = ret
-	return ret
 }
 
 const (
@@ -473,15 +358,15 @@ func (ctx *queryContext) expandEntity(varname string, entity *Entity) [][]turtle
 	}
 
 	var varorder []string
-	//for _, val := range ctx._traverseOrder.list {
-	//	varorder = append(varorder, val.value)
-	//}
-
-	elem := ctx.traverseVars[varname]
-	for elem != nil {
-		varorder = append(varorder, elem.Value.(string))
-		elem = elem.Next()
+	for _, val := range ctx._traverseOrder.list {
+		varorder = append(varorder, val.value)
 	}
+
+	//elem := ctx.traverseVars[varname]
+	//for elem != nil {
+	//	varorder = append(varorder, elem.Value.(string))
+	//	elem = elem.Next()
+	//}
 
 	lastFilledIndex := func(row []Key) int {
 		for i := len(varorder) - 1; i >= 0; i-- {
@@ -521,6 +406,12 @@ func (ctx *queryContext) expandEntity(varname string, entity *Entity) [][]turtle
 		}
 		// get the position of last filled element
 		lastIdx := lastFilledIndex(row)
+		log.Error(ctx._traverseOrder.buildVarOrder())
+		if lastIdx+1 == len(varorder) {
+			log.Error("on", varorder[lastIdx], lastIdx, varorder)
+			log.Error("row is", expand(row))
+			continue
+		}
 		nextVariable = varorder[lastIdx+1]
 		// varorder[lastIdx] is which variable we are "on" right now
 		// varorder[lastIdx+1] is the variable we want to traverse next. Follow this link
@@ -533,11 +424,11 @@ func (ctx *queryContext) expandEntity(varname string, entity *Entity) [][]turtle
 
 		// get all of the links
 		children := ctx.chains[row[lastIdx]]
-		log.Debug(varorder)
-		log.Debug("at", varorder[lastIdx])
-		for v, l := range children {
-			log.Debug(v, len(l.links))
-		}
+		//log.Debug(varorder)
+		//log.Debug("at", varorder[lastIdx])
+		//for v, l := range children {
+		//	log.Debug(v, len(l.links))
+		//}
 		//log.Debug("at", lastIdx, varorder[lastIdx])
 		//log.Debug("next", lastIdx+1, varorder[lastIdx+1])
 
@@ -546,6 +437,7 @@ func (ctx *queryContext) expandEntity(varname string, entity *Entity) [][]turtle
 		// up the list of traversed variables to check for downward links for the variable
 		// we want to traverse next
 		_tmpidx := lastIdx
+		log.Debug(varorder)
 		for !found && _tmpidx > 0 {
 			log.Debug("could not find", nextVariable, "from", varorder[_tmpidx])
 			_tmpidx--
@@ -577,16 +469,3 @@ func (ctx *queryContext) expandEntity(varname string, entity *Entity) [][]turtle
 
 	return rows
 }
-
-type entityStack struct {
-	l *list.List
-}
-
-func newEntityStack() *entityStack {
-	e := &entityStack{
-		l: list.New(),
-	}
-	return e
-}
-
-//func (s *entityStack) Add(
