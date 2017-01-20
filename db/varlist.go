@@ -86,8 +86,6 @@ func (vl *varlist) remove(value string) {
 // take [value] and all of its subsequent children up until the mark and append it after mark
 func (vl *varlist) moveAfter(value, mark string) {
 	var last_link *varentry
-	//log.Warning("val nexts", value, vl.lookup[value]._prev)
-	//log.Warning("mark nexts", mark, vl.lookup[mark]._prev)
 
 	// NEW STUFF
 	vv := vl.lookup[value]
@@ -106,9 +104,6 @@ func (vl *varlist) moveAfter(value, mark string) {
 	}
 	//mm.next = vv
 	//vl.addNext(mm, vv)
-	log.Notice(mm)
-	log.Notice(vv)
-	log.Notice(vl.lookup)
 	vv._prev = mm
 	vl.lookup[value] = vv
 	if vl.lookup[mark]._prev != nil {
@@ -156,7 +151,7 @@ func (vl *varlist) moveAfter(value, mark string) {
 }
 
 func (vl *varlist) pushBack(value string) {
-	log.Error("ADDING", value)
+	//log.Error("adding", value)
 	newentry := &varentry{
 		value: value,
 	}
@@ -194,16 +189,18 @@ func (vl *varlist) buildVarOrder() []string {
 	var varorder = make([]string, len(vl.list))
 	var start *varentry
 	for _, entry := range vl.lookup {
-		if entry._prev == nil {
+		if entry._prev != nil && entry._prev._prev == nil {
 			start = entry
 			break
 		}
 	}
-	i := len(vl.lookup)
-	for e := start; e != nil; e = e._prev {
-		log.Debug(e)
+	varorder[len(varorder)-1] = start._prev.value
+	i := len(varorder) - 1
+
+	for e := start._prev; e != nil; e = e._prev {
 		i--
 		varorder[i] = e.value
 	}
+
 	return varorder
 }

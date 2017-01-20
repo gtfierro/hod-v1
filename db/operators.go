@@ -185,6 +185,11 @@ func (rso *restrictSubjectObjectByPredicate) run(ctx *queryContext) error {
 	} else {
 		log.Fatal("unfamiliar situation")
 	}
+	//log.Debug(rso)
+	//for varname, tree := range ctx.candidates {
+	//	log.Debug(varname, tree.Len())
+	//}
+	//	ctx.dumpChildren()
 
 	return nil
 }
