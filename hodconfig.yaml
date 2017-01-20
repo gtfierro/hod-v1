@@ -39,6 +39,10 @@
 # Show the full latency of the query (and its larger components)
 #ShowQueryLatencies: true
 
+# Set log level. In order of increasing verbosity:
+# Debug, Info, Notice, Warning, Error, Critical
+#LogLevel: Notice
+
 
 ####
 # HTTP Server Configuration
