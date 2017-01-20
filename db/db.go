@@ -71,6 +71,7 @@ type DB struct {
 
 func NewDB(cfg *config.Config) (*DB, error) {
 	path := strings.TrimSuffix(cfg.DBPath, "/")
+	logging.SetLevel(cfg.LogLevel, "hod")
 
 	options := &opt.Options{
 		Filter: filter.NewBloomFilter(32),
