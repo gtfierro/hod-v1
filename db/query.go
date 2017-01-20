@@ -48,6 +48,8 @@ func (db *DB) getQueryResults(q query.Query) [][]turtle.URI {
 		log.Infof("Ran query in %s", time.Since(runStart))
 	}
 
+	//ctx.dumpTraverseOrder()
+
 	runStart = time.Now()
 	results := ctx.expandTuples()
 	if db.showQueryLatencies {

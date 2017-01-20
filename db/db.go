@@ -71,6 +71,7 @@ type DB struct {
 
 func NewDB(cfg *config.Config) (*DB, error) {
 	path := strings.TrimSuffix(cfg.DBPath, "/")
+	logging.SetLevel(cfg.LogLevel, "hod")
 
 	options := &opt.Options{
 		Filter: filter.NewBloomFilter(32),
@@ -548,6 +549,9 @@ func (db *DB) GetURI(hash Key) (turtle.URI, error) {
 }
 
 func (db *DB) MustGetURI(hash Key) turtle.URI {
+	if hash == emptyHash {
+		return turtle.URI{}
+	}
 	uri, err := db.GetURI(hash)
 	if err != nil {
 		panic(errors.Wrapf(err, "Could not get URI for %v", hash))

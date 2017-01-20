@@ -209,3 +209,12 @@ func compareLink(l1, l2 *Link) bool {
 		bytes.Equal(l1.Key, l2.Key) &&
 		bytes.Equal(l1.Value, l2.Value)
 }
+
+func rowIsFull(row []Key) bool {
+	for _, entry := range row {
+		if entry == emptyHash {
+			return false
+		}
+	}
+	return true
+}

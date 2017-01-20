@@ -5,3 +5,4 @@ ShowDependencyGraph: false
 ShowQueryPlanLatencies: false
 ShowOperationLatencies: false
 ShowQueryLatencies: false
+LogLevel: Critical

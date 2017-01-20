@@ -3,6 +3,7 @@ package config
 import (
 	"os"
 
+	"github.com/op/go-logging"
 	"github.com/spf13/viper"
 )
 
@@ -18,6 +19,7 @@ type Config struct {
 	ShowQueryPlanLatencies bool
 	ShowOperationLatencies bool
 	ShowQueryLatencies     bool
+	LogLevel               logging.Level
 
 	ServerPort    string
 	UseIPv6       bool
@@ -44,6 +46,7 @@ func init() {
 	viper.SetDefault("ShowQueryPlanLatencies", false)
 	viper.SetDefault("ShowOperationLatencies", false)
 	viper.SetDefault("ShowQueryLatencies", true)
+	viper.SetDefault("LogLevel", "notice")
 
 	viper.SetDefault("ServerPort", "47808")
 	viper.SetDefault("UseIPv6", false)
@@ -71,6 +74,12 @@ func ReadConfig(file string) (*Config, error) {
 	}
 	viper.SetEnvPrefix("HOD")
 	viper.AutomaticEnv()
+
+	level, err := logging.LogLevel(viper.GetString("LogLevel"))
+	if err != nil {
+		level = logging.DEBUG
+	}
+
 	c := &Config{
 		DBPath:                 viper.GetString("DBPath"),
 		BrickFrameTTL:          viper.GetString("BrickFrameTTL"),
@@ -82,6 +91,7 @@ func ReadConfig(file string) (*Config, error) {
 		ShowQueryPlanLatencies: viper.GetBool("ShowQueryPlanLatencies"),
 		ShowOperationLatencies: viper.GetBool("ShowOperationLatencies"),
 		ShowQueryLatencies:     viper.GetBool("ShowQueryLatencies"),
+		LogLevel:               level,
 		ServerPort:             viper.GetString("ServerPort"),
 		UseIPv6:                viper.GetBool("UseIPv6"),
 		ListenAddress:          viper.GetString("ListenAddress"),
