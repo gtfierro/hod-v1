@@ -11,6 +11,7 @@ A database for [Brick](http://brickschema.org/)
 
 Look at the [issue tracker](https://github.com/gtfierro/hod/issues) for anything that isn't already assigned
 
+**Warning: `master` branch is likely to be broken occasionally. For stability, look at the [releases](https://github.com/gtfierro/hod/releases)**
 
 ---
 
