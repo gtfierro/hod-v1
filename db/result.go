@@ -2,6 +2,7 @@ package db
 
 import (
 	"encoding/csv"
+	"encoding/json"
 	"fmt"
 	"io"
 
@@ -67,6 +68,14 @@ func (qr QueryResult) DumpToCSV(usePrefixes bool, db *DB, w io.Writer) error {
 
 type ResultMap map[string]turtle.URI
 type LinkResultMap map[turtle.URI]map[string]string
+
+func (m LinkResultMap) MarshalJSON() ([]byte, error) {
+	var n = make(map[string]map[string]string)
+	for k, v := range m {
+		n[k.String()] = v
+	}
+	return json.Marshal(n)
+}
 
 type ResultRow []turtle.URI
 
