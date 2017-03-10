@@ -1,0 +1,8 @@
+{
+    "http://buildsys.org/ontologies/building_example#room_R465H": {
+        "URI": "TwMwEkCRO-Cg3m1RBlgCQUeJPwRttSiLHppLhuHUDeU=/sensors/s.hamilton/00126d0700000040/i.temperature/signal/operative"
+    },
+    "http://buildsys.org/ontologies/building_example#room_R465E": {
+        "URI": "TwMwEkCRO-Cg3m1RBlgCQUeJPwRttSiLHppLhuHUDeU=/sensors/s.hamilton/00126d070000004d/i.temperature/signal/operative"
+    }
+}
