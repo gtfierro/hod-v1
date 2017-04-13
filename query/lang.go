@@ -135,7 +135,7 @@ func newlexer(r io.Reader) *lexer {
 			{Token: PARTIAL, Pattern: "PARTIAL"},
 			{Token: LIMIT, Pattern: "LIMIT"},
 			{Token: NUMBER, Pattern: "[0-9]+"},
-			{Token: URI, Pattern: "[a-zA-Z_]+:[a-zA-Z0-9_\\-#%$@]+"},
+			{Token: URI, Pattern: "[a-zA-Z0-9_]+:[a-zA-Z0-9_\\-#%$@]+"},
 			{Token: VAR, Pattern: "\\?[a-zA-Z0-9_]+"},
 			{Token: LINK, Pattern: "[a-zA-Z][a-zA-Z0-9_-]*"},
 			{Token: QUESTION, Pattern: "\\?"},
@@ -179,11 +179,7 @@ var yyExca = [...]int{
 	-2, 0,
 }
 
-const yyNprod = 38
 const yyPrivate = 57344
-
-var yyTokenNames []string
-var yyStates []string
 
 const yyLast = 79
 
