@@ -49,6 +49,7 @@ func TestDBQuery(t *testing.T) {
 				{"?x": turtle.ParseURI("http://buildsys.org/ontologies/BrickFrame#isPartOf"), "?y": turtle.ParseURI("http://buildsys.org/ontologies/building_example#floor_1")},
 				{"?x": turtle.ParseURI("http://buildsys.org/ontologies/BrickFrame#isPartOf"), "?y": turtle.ParseURI("http://buildsys.org/ontologies/building_example#hvaczone_1")},
 				{"?x": turtle.ParseURI("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"), "?y": turtle.ParseURI("http://buildsys.org/ontologies/Brick#Room")},
+				{"?x": turtle.ParseURI("http://www.w3.org/2000/01/rdf-schema#label"), "?y": turtle.URI{Value: "Room 1"}},
 			},
 		},
 		{
@@ -57,6 +58,7 @@ func TestDBQuery(t *testing.T) {
 				{"?x": turtle.ParseURI("http://buildsys.org/ontologies/BrickFrame#isPartOf"), "?y": turtle.ParseURI("http://buildsys.org/ontologies/building_example#floor_1")},
 				{"?x": turtle.ParseURI("http://buildsys.org/ontologies/BrickFrame#isPartOf"), "?y": turtle.ParseURI("http://buildsys.org/ontologies/building_example#hvaczone_1")},
 				{"?x": turtle.ParseURI("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"), "?y": turtle.ParseURI("http://buildsys.org/ontologies/Brick#Room")},
+				{"?x": turtle.ParseURI("http://www.w3.org/2000/01/rdf-schema#label"), "?y": turtle.URI{Value: "Room 1"}},
 			},
 		},
 		{
