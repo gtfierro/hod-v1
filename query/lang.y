@@ -30,7 +30,7 @@ import (
 
 %token SELECT COUNT DISTINCT WHERE OR UNION PARTIAL LIMIT
 %token COMMA LBRACE RBRACE LPAREN RPAREN DOT SEMICOLON SLASH PLUS QUESTION ASTERISK BAR
-%token LINK VAR URI FULLURI LBRACK RBRACK NUMBER
+%token LINK VAR URI FULLURI LBRACK RBRACK NUMBER LABEL
 
 %%
 
@@ -294,6 +294,10 @@ term         : VAR
              {
                 $$.val = turtle.ParseURI($1.str)
              }
+             | LABEL
+             {
+                $$.val = turtle.ParseURI($1.str)
+             }
              ;
 %%
 
@@ -337,6 +341,7 @@ func newlexer(r io.Reader) *lexer {
             {Token: URI,  Pattern: "[a-zA-Z0-9_]+:[a-zA-Z0-9_\\-#%$@]+"},
             {Token: VAR,  Pattern: "\\?[a-zA-Z0-9_]+"},
             {Token: LINK,  Pattern: "[a-zA-Z][a-zA-Z0-9_-]*"},
+            {Token: LABEL, Pattern: "\"[a-zA-Z0-9_\\-:(). ]*\""},
             {Token: QUESTION,  Pattern: "\\?"},
             {Token: SLASH,  Pattern: "/"},
             {Token: PLUS,  Pattern: "\\+"},
@@ -364,7 +369,7 @@ func (l *lexer) Lex(lval *yySymType) int {
 }
 
 func (l *lexer) Error(s string) {
-    l.error = fmt.Errorf("Error parsing: %s. Current line %d:%d. Recent token '%s'", s, l.scanner.lineNumber, l.pos, l.scanner.tokenizer.Text())
+    l.error = fmt.Errorf("Error parsing: %s. Current pos %d. Recent token '%s'", s, l.pos, l.scanner.tokenizer.Text())
 }
 
 func TokenName(t Token) string {
