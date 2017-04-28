@@ -57,7 +57,7 @@ const FULLURI = 57369
 const LBRACK = 57370
 const RBRACK = 57371
 const NUMBER = 57372
-const LABEL = 57373
+const LITERAL = 57373
 
 var yyToknames = [...]string{
 	"$end",
@@ -90,7 +90,7 @@ var yyToknames = [...]string{
 	"LBRACK",
 	"RBRACK",
 	"NUMBER",
-	"LABEL",
+	"LITERAL",
 }
 var yyStatenames = [...]string{}
 
@@ -140,7 +140,7 @@ func newlexer(r io.Reader) *lexer {
 			{Token: URI, Pattern: "[a-zA-Z0-9_]+:[a-zA-Z0-9_\\-#%$@]+"},
 			{Token: VAR, Pattern: "\\?[a-zA-Z0-9_]+"},
 			{Token: LINK, Pattern: "[a-zA-Z][a-zA-Z0-9_-]*"},
-			{Token: LABEL, Pattern: "\"[a-zA-Z0-9_\\-:(). ]*\""},
+			{Token: LITERAL, Pattern: "\"[a-zA-Z0-9_\\-:(). ]*\""},
 			{Token: QUESTION, Pattern: "\\?"},
 			{Token: SLASH, Pattern: "/"},
 			{Token: PLUS, Pattern: "\\+"},
