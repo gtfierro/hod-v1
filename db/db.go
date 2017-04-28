@@ -424,7 +424,9 @@ func (db *DB) LoadDataset(dataset turtle.DataSet) error {
 	start := time.Now()
 	// merge, don't set outright
 	for abbr, full := range dataset.Namespaces {
-		db.namespaces[abbr] = full
+		if abbr != "" {
+			db.namespaces[abbr] = full
+		}
 	}
 	// start transactions
 	enttx, err := db.entityDB.OpenTransaction()

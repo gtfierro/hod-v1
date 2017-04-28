@@ -37,7 +37,10 @@ func (u URI) String() string {
 }
 
 func (u URI) Bytes() []byte {
-	return []byte(u.Namespace + "#" + u.Value)
+	if u.Namespace != "" {
+		return []byte(u.Namespace + "#" + u.Value)
+	}
+	return []byte(u.Value)
 }
 
 func (u URI) IsVariable() bool {
