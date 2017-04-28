@@ -1,4 +1,4 @@
-//go:generate go tool yacc -o lang.go lang.y
+//go:generate goyacc -o lang.go lang.y
 package query
 
 import (
