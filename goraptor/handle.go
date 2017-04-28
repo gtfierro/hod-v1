@@ -55,6 +55,8 @@ func ParseURI(uri string) URI {
 		if len(parts) > 1 {
 			return URI{Namespace: parts[0], Value: parts[1]}
 		}
+		uri = strings.TrimLeft(uri, "\"")
+		uri = strings.TrimRight(uri, "\"@en")
 		return URI{Value: uri}
 	}
 	return URI{Namespace: parts[0], Value: parts[1]}
