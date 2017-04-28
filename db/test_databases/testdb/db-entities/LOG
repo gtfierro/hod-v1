@@ -1,27 +1,31 @@
-=============== Jan 16, 2017 (PST) ===============
-14:29:40.344193 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
-14:29:40.344422 db@open opening
-14:29:40.345179 version@stat F·[] S·0B[] Sc·[]
-14:29:40.354379 db@janitor F·2 G·0
-14:29:40.354402 db@open done T·9.97404ms
-14:29:40.695925 transaction@flush created L0@2 N·66 S·1KiB "#,v2":"htt..rom,v61"
-14:29:40.695949 version@stat F·[1] S·1KiB[1KiB] Sc·[0.25]
-14:29:41.096873 transaction@flush created L0@3 N·3091 S·67KiB "\"Av..@en,v2623":"htt..ion,v75"
-14:29:41.096907 version@stat F·[2] S·69KiB[69KiB] Sc·[0.50]
-14:29:41.108988 table@compaction L0·2 -> L1·0 S·69KiB Q·3157
-14:29:41.124522 table@build created L1@4 N·3157 S·68KiB "\"Av..@en,v2623":"htt..ion,v75"
-14:29:41.124568 version@stat F·[0 1] S·68KiB[0B 68KiB] Sc·[0.00 0.00]
-14:29:41.130582 table@compaction committed F-1 S-227B Ke·0 D·0 T·21.559603ms
-14:29:41.130648 table@remove removed @3
-14:29:41.130687 table@remove removed @2
-14:29:41.620291 transaction@flush created L0@5 N·6 S·343B "htt..u_1,v3158":"htt..p_1,v3163"
-14:29:41.620331 version@stat F·[1 1] S·69KiB[343B 68KiB] Sc·[0.25 0.00]
-=============== Jan 16, 2017 (PST) ===============
-14:29:43.458090 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
-14:29:43.458237 version@stat F·[1 1] S·69KiB[343B 68KiB] Sc·[0.25 0.00]
-14:29:43.458247 db@open opening
-14:29:43.458285 journal@recovery F·1
-14:29:43.458617 journal@recovery recovering @1
-14:29:43.461349 version@stat F·[1 1] S·69KiB[343B 68KiB] Sc·[0.25 0.00]
-14:29:43.461566 db@janitor F·4 G·0
-14:29:43.461582 db@open done T·3.329242ms
+=============== Apr 28, 2017 (PDT) ===============
+09:40:35.926729 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+09:40:35.926865 db@open opening
+09:40:35.927982 version@stat F·[] S·0B[] Sc·[]
+09:40:35.929728 db@janitor F·2 G·0
+09:40:35.929746 db@open done T·2.87445ms
+09:40:36.274362 transaction@flush created L0@2 N·66 S·1KiB ",v2":"htt..rom,v61"
+09:40:36.274391 version@stat F·[1] S·1KiB[1KiB] Sc·[0.25]
+09:40:36.639588 transaction@flush created L0@3 N·3090 S·66KiB "\"Av..@en,v2622":"vir..ols,v2884"
+09:40:36.639624 version@stat F·[2] S·68KiB[68KiB] Sc·[0.50]
+09:40:36.659963 table@compaction L0·2 -> L1·0 S·68KiB Q·3156
+09:40:36.664978 table@build created L1@4 N·3156 S·67KiB ",v2":"vir..ols,v2884"
+09:40:36.665026 version@stat F·[0 1] S·67KiB[0B 67KiB] Sc·[0.00 0.00]
+09:40:36.668743 table@compaction committed F-1 S-272B Ke·0 D·0 T·8.745322ms
+09:40:36.668814 table@remove removed @3
+09:40:36.668849 table@remove removed @2
+09:40:37.155994 transaction@flush created L0@5 N·7 S·365B "Room 1,v3160":"htt..p_1,v3163"
+09:40:37.156059 version@stat F·[1 1] S·68KiB[365B 67KiB] Sc·[0.25 0.00]
+09:40:37.189677 db@close closing
+09:40:37.189751 db@close done T·72.227µs
+=============== Apr 28, 2017 (PDT) ===============
+09:40:47.637129 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+09:40:47.637261 version@stat F·[1 1] S·68KiB[365B 67KiB] Sc·[0.25 0.00]
+09:40:47.637270 db@open opening
+09:40:47.637319 journal@recovery F·1
+09:40:47.637892 journal@recovery recovering @1
+09:40:47.639089 version@stat F·[1 1] S·68KiB[365B 67KiB] Sc·[0.25 0.00]
+09:40:47.639331 db@janitor F·4 G·0
+09:40:47.639366 db@open done T·2.08112ms
+09:40:47.662549 db@close closing
+09:40:47.662601 db@close done T·50.629µs
