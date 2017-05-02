@@ -12,11 +12,21 @@ import (
 	"github.com/google/btree"
 )
 
+var emptyResultMapList = []ResultMap{}
+var emptyLinkResultmapList = []LinkResultMap{}
+
 type QueryResult struct {
 	selectVars []query.SelectVar
 	Rows       []ResultMap
 	Links      []LinkResultMap
 	Count      int
+}
+
+func newQueryResult() QueryResult {
+	return QueryResult{
+		Rows:  emptyResultMapList,
+		Links: emptyLinkResultmapList,
+	}
 }
 
 func (qr QueryResult) Dump() {

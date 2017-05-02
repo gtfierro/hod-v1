@@ -65,7 +65,7 @@ func (db *DB) RunQuery(q query.Query) QueryResult {
 		log.Noticef("Full Query took %s", time.Since(fullQueryStart))
 	}
 
-	var result QueryResult
+	var result = newQueryResult()
 	result.selectVars = q.Select.Variables
 
 	if q.Select.Count {
