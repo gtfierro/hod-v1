@@ -387,7 +387,9 @@ func (ctx *queryContext) expandEntity(varname string, entity *Entity) [][]turtle
 			childVarName string
 			childLinks   *linkRecord
 		)
-		for childVarName, childLinks = range children {
+		for varidx := 0; varidx < len(ctx.varpos); varidx++ {
+			childVarName = row.vars[varidx]
+			childLinks = children[childVarName]
 			if row.isSet(childVarName) {
 				continue
 			}
@@ -415,7 +417,7 @@ func (ctx *queryContext) expandEntity(varname string, entity *Entity) [][]turtle
 			// check prev for any links
 			children, found := ctx.chains[row.entries[ctx.varpos[prev]]]
 			if !found {
-				continue
+				break
 			}
 			for childVarName, childLinks = range children {
 				if row.isSet(childVarName) {
@@ -439,7 +441,6 @@ func (ctx *queryContext) expandEntity(varname string, entity *Entity) [][]turtle
 		for _, child := range childLinks.links {
 			newrow := newRow()
 			copy(newrow.entries, row.entries)
-			log.Debug(ctx.varpos, "now add", childVarName)
 			newrow.addVar(childVarName, ctx.varpos[childVarName], child.me)
 
 			stack.PushBack(newrow)
