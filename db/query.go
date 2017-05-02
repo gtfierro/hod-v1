@@ -30,6 +30,10 @@ func (db *DB) getQueryResults(q query.Query) [][]turtle.URI {
 	dg := db.sortQueryTerms(q)
 	qp := db.formQueryPlan(dg, q)
 
+	if db.showDependencyGraph {
+		dg.dump()
+	}
+
 	if db.showQueryPlan {
 		for _, op := range qp.operations {
 			log.Notice("op", op)
