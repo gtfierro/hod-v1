@@ -3,6 +3,7 @@ package db
 import (
 	"container/list"
 	"fmt"
+	"time"
 
 	turtle "github.com/gtfierro/hod/goraptor"
 	"github.com/gtfierro/hod/query"
@@ -298,24 +299,9 @@ func (ctx *queryContext) expandTuples() [][]turtle.URI {
 		}
 	}
 
-	//idx := 0
-	//startidx := ctx._traverseOrder.indexes[startvar]
-	//for i := startidx; i < len(ctx._traverseOrder.list); i++ {
-	//	ctx.varpos[ctx._traverseOrder.list[i].value] = i
-	//	idx++
-	//}
 	for idx, ve := range ctx._traverseOrder.list {
 		ctx.varpos[ve.value] = idx
 	}
-
-	//// determine the position in the results row for the given variable
-	//i := 0
-	//elem := ctx.traverseVars[startvar]
-	//for elem != nil {
-	//	ctx.varpos[elem.Value.(string)] = i
-	//	i++
-	//	elem = elem.Next()
-	//}
 
 	topVarTree := ctx.candidates[startvar]
 	if topVarTree == nil {
@@ -324,7 +310,7 @@ func (ctx *queryContext) expandTuples() [][]turtle.URI {
 
 	max := topVarTree.Max()
 	iter := func(ent *Entity) bool {
-		results = append(results, ctx.expandEntity(startvar, ent)...)
+		results = append(results, ctx.expandEntity2(startvar, ent)...)
 		return ent != max
 	}
 	topVarTree.Iter(iter)
@@ -360,6 +346,8 @@ func (ctx *queryContext) expandEntity(varname string, entity *Entity) [][]turtle
 		return row
 	}
 
+	ctx.dumpChildren()
+
 	stack := list.New()
 	stack.PushFront(newRow())
 	for stack.Len() > 0 {
@@ -387,25 +375,52 @@ func (ctx *queryContext) expandEntity(varname string, entity *Entity) [][]turtle
 			childVarName string
 			childLinks   *linkRecord
 		)
-		for varidx := 0; varidx < len(ctx.varpos); varidx++ {
+		var varidx int
+		for varidx = 0; varidx < len(ctx.varpos); varidx++ {
 			childVarName = row.vars[varidx]
-			childLinks = children[childVarName]
+			log.Debugf("checking %s. Is set? %v", childVarName, row.isSet(childVarName))
 			if row.isSet(childVarName) {
 				continue
 			}
+			childLinks = children[childVarName]
+			log.Debugf("%s has empty children? %v", childVarName, childLinks == nil)
 			// if no children, then skip this var
 			if childLinks == nil {
 				continue
 			}
 			break
 		}
+		searchvar := row.lastVar()
+
+		// if this is true, then none of the later variables had a set of results,
+		// so we have to backtrack to the "earliest" unset variable
+		if varidx == len(ctx.varpos) {
+			log.Notice("Need to backtrack")
+			for varidx = 0; varidx < len(ctx.varpos)-1; varidx++ {
+				childVarName = row.vars[varidx]
+				nextVar := row.vars[varidx+1]
+				if row.isSet(childVarName) {
+					if !row.isSet(nextVar) {
+						childLinks = children[childVarName]
+						searchvar = nextVar
+						break
+					}
+					continue
+				}
+			}
+		}
+		log.Warning(ctx.varpos)
+		log.Warning(row.expandFull(ctx), row.vars)
+		log.Warning(childVarName)
 
 		// if we have no links to follow from the current row, then we backtrack through the dependency
-		// graph to find an earlier variable entry and see if it has any untraversed links
+		// graph to find an earlier variable entry and see if it has any untraversed links.
+		//
+		// childVarName is the next unfilled variable in this row that we need to resolve.
 
 		// here, we abandon this row if it has no children
-		searchvar := row.lastVar()
 		for childLinks == nil {
+			log.Error("search var", searchvar, childVarName, childLinks, ctx.varpos)
 			idx := ctx._traverseOrder.indexes[searchvar]
 			cur := ctx._traverseOrder.list[idx]
 			if cur.prev == nil {
@@ -414,10 +429,20 @@ func (ctx *queryContext) expandEntity(varname string, entity *Entity) [][]turtle
 			// previous var (the var that maybe had a link to us)
 			prev := cur.prev.value
 			searchvar = prev
-			// check prev for any links
+			// check prev for any links:
+			// X = ctx.varpos[prev] is the index into the row of the variable "prev"
+			// Y = row.entries[X] is the value of variable "prev"
+			// ctx.chains[Y] is the set of variables that were found linked from
+			//  the value Y
 			children, found := ctx.chains[row.entries[ctx.varpos[prev]]]
 			if !found {
-				break
+				log.Debugf("No entries for var %s (val %s)", prev, ctx.db.MustGetURI(row.entries[ctx.varpos[prev]]))
+				//pos := ctx.varpos[childVarName]
+				//log.Debug(prev, pos, row.vars[pos], "prev", row.vars[pos-1])
+				//childVarName = prev
+				//searchvar = row.vars[pos-2]
+				time.Sleep(1 * time.Second)
+				continue
 			}
 			for childVarName, childLinks = range children {
 				if row.isSet(childVarName) {
@@ -444,6 +469,65 @@ func (ctx *queryContext) expandEntity(varname string, entity *Entity) [][]turtle
 			newrow.addVar(childVarName, ctx.varpos[childVarName], child.me)
 
 			stack.PushBack(newrow)
+		}
+	}
+
+	log.Debug("DONE")
+	return rows
+}
+
+// for each Entity E, representing an actual node in the graph, we have a set of other nodes
+// that are reachable from E. We need to enumerate all of these paths in order to get the list of results
+// node = ctx._traverseOrder.lookup[ var name ] : gives the node in the dependency graph
+// node.next : variables reachable from us
+// node.prev : the variable to reach us from
+func (ctx *queryContext) expandEntity2(varname string, entity *Entity) [][]turtle.URI {
+	var (
+		rows [][]turtle.URI
+	)
+
+	if entity == nil || entity.PK == emptyHash {
+		return rows
+	}
+
+	var varorder []string
+	for _, val := range ctx._traverseOrder.list {
+		varorder = append(varorder, val.value)
+	}
+
+	newRow := func() *row {
+		row := newrow(varorder)
+		row.addVar(varname, ctx.varpos[varname], entity.PK)
+		return row
+	}
+
+	ctx.dumpTraverseOrder()
+	log.Debugf("traverseorder %+v", ctx._traverseOrder)
+
+	stack := list.New()
+	stack.PushFront(newRow())
+	for stack.Len() > 0 {
+		// get the row
+		row := stack.Remove(stack.Front()).(*row)
+		// if it is full, then we add it to the list to be returned
+		// because it is complete
+		if row.isFull() {
+			rows = append(rows, row.expand(ctx))
+			continue
+		}
+		log.Debug(row)
+
+		// we want to search from the last variable that we populated. That variable name is row.lastValue().
+		// The actual entity that was populated is row.lastKey(). ctx.chains gives us the children (other entities)
+		// reachable from that entity value.
+		lastValue := row.lastKey()
+		children, found := ctx.chains[lastValue]
+		if found {
+			for varname, links := range children {
+				for _, child := range links.links {
+					log.Debugf("%s: %+v", varname, child)
+				}
+			}
 		}
 	}
 
