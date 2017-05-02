@@ -122,6 +122,7 @@ func (db *DB) RunQuery(q query.Query) QueryResult {
 			return row.Less(max)
 		}
 		unionedRows.Ascend(iter)
+		result.Count = len(result.Rows)
 	} else {
 		// return the rows
 		max := unionedRows.Max()
@@ -135,6 +136,7 @@ func (db *DB) RunQuery(q query.Query) QueryResult {
 			return row.Less(max)
 		}
 		unionedRows.Ascend(iter)
+		result.Count = len(result.Rows)
 	}
 	return result
 }
