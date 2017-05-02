@@ -210,15 +210,12 @@ func (vl *varlist) buildVarOrder() []string {
 		}
 		elem := elements[name]
 		prev := elements[entry._prev.value]
-		log.Debugf("move %v before %v", prev.Value, elem.Value)
 		l.MoveBefore(prev, elem)
 	}
 	l.MoveToFront(first)
-	//l.Insert(vl
 	i := l.Front()
 	idx := 0
 	for i != nil {
-		log.Notice(i.Value.(*varentry).value)
 		varorder[idx] = i.Value.(*varentry).value
 		i = i.Next()
 		idx += 1
@@ -226,3 +223,21 @@ func (vl *varlist) buildVarOrder() []string {
 
 	return varorder
 }
+
+//func (vl *varlist) buildVarOrder() []string {
+//	var varorder = make([]string, len(vl.list))
+//	var first *list.Element
+//	for name, entry := range vl.lookup {
+//		if entry._prev == nil {
+//			elements[name] = l.PushFront(entry)
+//			break
+//		}
+//	}
+//
+//	for stack.Len() > 0 {
+//		v := stack.Remove(stack.Front()).(*varentry)
+//		log.Debugf("%v", v.value)
+//	}
+//
+//	return varorder
+//}
