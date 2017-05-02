@@ -1,5 +1,9 @@
 package db
 
+import (
+	"container/list"
+)
+
 type varlist struct {
 	list    []*varentry
 	indexes map[string]int
@@ -184,22 +188,40 @@ func (vl *varlist) addNext(ve, new *varentry) {
 	ve.nexts = append(ve.nexts, new)
 }
 
-// build based on PREV rather than NEXT?
 func (vl *varlist) buildVarOrder() []string {
 	var varorder = make([]string, len(vl.list))
-	var start *varentry
-	for _, entry := range vl.lookup {
-		if entry._prev != nil && entry._prev._prev == nil {
-			start = entry
-			break
+
+	elements := make(map[string]*list.Element)
+
+	l := list.New()
+	var first *list.Element
+	for name, entry := range vl.lookup {
+		if entry._prev == nil {
+			elements[name] = l.PushFront(entry)
+			first = elements[name]
+		} else {
+			elements[name] = l.PushBack(entry)
 		}
 	}
-	varorder[len(varorder)-1] = start._prev.value
-	i := len(varorder) - 1
 
-	for e := start._prev; e != nil; e = e._prev {
-		i--
-		varorder[i] = e.value
+	for name, entry := range vl.lookup {
+		if entry._prev == nil {
+			continue
+		}
+		elem := elements[name]
+		prev := elements[entry._prev.value]
+		log.Debugf("move %v before %v", prev.Value, elem.Value)
+		l.MoveBefore(prev, elem)
+	}
+	l.MoveToFront(first)
+	//l.Insert(vl
+	i := l.Front()
+	idx := 0
+	for i != nil {
+		log.Notice(i.Value.(*varentry).value)
+		varorder[idx] = i.Value.(*varentry).value
+		i = i.Next()
+		idx += 1
 	}
 
 	return varorder
