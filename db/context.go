@@ -299,9 +299,9 @@ func (ctx *queryContext) expandTuples() [][]turtle.URI {
 		}
 	}
 
-	for idx, ve := range ctx._traverseOrder.list {
-		ctx.varpos[ve.value] = idx
-	}
+	//for idx, ve := range ctx._traverseOrder.list {
+	//	ctx.varpos[ve.value] = idx
+	//}
 
 	topVarTree := ctx.candidates[startvar]
 	if topVarTree == nil {
@@ -310,7 +310,7 @@ func (ctx *queryContext) expandTuples() [][]turtle.URI {
 
 	max := topVarTree.Max()
 	iter := func(ent *Entity) bool {
-		results = append(results, ctx.expandEntity2(startvar, ent)...)
+		results = append(results, ctx.expandEntity3(startvar, ent)...)
 		return ent != max
 	}
 	topVarTree.Iter(iter)
@@ -506,6 +506,10 @@ func (ctx *queryContext) expandEntity2(varname string, entity *Entity) [][]turtl
 
 	stack := list.New()
 	stack.PushFront(newRow())
+
+	// we want to search from the last variable that we populated. That variable name is row.lastVar().
+	// The actual entity that was populated is row.lastKey(). ctx.chains gives us the children (other entities)
+	// reachable from that entity value.
 	for stack.Len() > 0 {
 		// get the row
 		row := stack.Remove(stack.Front()).(*row)
@@ -515,12 +519,12 @@ func (ctx *queryContext) expandEntity2(varname string, entity *Entity) [][]turtl
 			rows = append(rows, row.expand(ctx))
 			continue
 		}
-		log.Debug(row)
-
-		// we want to search from the last variable that we populated. That variable name is row.lastValue().
-		// The actual entity that was populated is row.lastKey(). ctx.chains gives us the children (other entities)
-		// reachable from that entity value.
 		lastValue := row.lastKey()
+		lastVarname := row.lastVar()
+		log.Debug(row)
+		log.Debug(ctx.varpos)
+		log.Debugf("currently looking at %s", lastVarname)
+
 		children, found := ctx.chains[lastValue]
 		if found {
 			for varname, links := range children {
@@ -532,4 +536,123 @@ func (ctx *queryContext) expandEntity2(varname string, entity *Entity) [][]turtl
 	}
 
 	return rows
+}
+
+func (ctx *queryContext) expandEntity3(varname string, entity *Entity) [][]turtle.URI {
+	var (
+		rows [][]turtle.URI
+	)
+
+	if entity == nil || entity.PK == emptyHash {
+		return rows
+	}
+	varorder, parents := ctx.buildVarOrder(entity.PK, varname, len(ctx._traverseOrder.list))
+	//for _, val := range ctx._traverseOrder.list {
+	//	varorder = append(varorder, val.value)
+	//}
+	for idx, varname := range varorder {
+		ctx.varpos[varname] = idx
+	}
+	newRow := func() *row {
+		row := newrow(varorder)
+		row.addVar(varname, ctx.varpos[varname], entity.PK)
+		return row
+	}
+
+	log.Errorf("%+v, %+v %+v", varorder, ctx.varpos, parents)
+	stack := list.New()
+	stack.PushFront(newRow())
+	for stack.Len() > 0 {
+		// get the row
+		row := stack.Remove(stack.Front()).(*row)
+		// if it is full, then we add it to the list to be returned
+		// because it is complete
+		if row.isFull() {
+			rows = append(rows, row.expand(ctx))
+			continue
+		}
+		popVarIdx := row.numFilled
+
+		// get the variable name we want to populate in this row3
+		varToPopulate := row.vars[popVarIdx]
+		log.Warningf("look at idx %d (%s) %v", popVarIdx, varToPopulate, ctx.varpos)
+		log.Warningf("%+v %v", row.expandFull(ctx), row.vars)
+		log.Warningf("%+v", parents)
+		// if its already filled in, continue
+		if row.isSet(varToPopulate) {
+			stack.PushBack(row)
+			continue
+		}
+		// get the variable node so that we can look up what its parent is.
+		// This is the entry that will have "children" links to varToPopulate
+		// and we can traverse that set of children to populate the rows
+		//node := ctx._traverseOrder.lookup[varToPopulate]
+		parentVar := parents[varToPopulate]
+		if parentVar == varToPopulate {
+			continue
+		}
+		log.Warningf("PREV of %s is %s", varToPopulate, parentVar)
+		parentValue := row.getValue(parentVar)
+
+		children, found := ctx.chains[parentValue]
+		if !found {
+			log.Debugf("No children found for parent %s of var %s", parentVar, varToPopulate)
+			continue
+		}
+
+		childValues, found := children[varToPopulate]
+		if !found {
+			log.Debugf("No values found for %s from var %s", varToPopulate, parentVar)
+		}
+		if childValues == nil {
+			continue
+		}
+		log.Debugf("Found %d values for %s (pos %d)", len(childValues.links), varToPopulate, ctx.varpos[varToPopulate])
+		for _, val := range childValues.links {
+			newrow := newRow()
+			copy(newrow.entries, row.entries)
+			newrow.numFilled = row.numFilled
+			newrow.addVar(varToPopulate, ctx.varpos[varToPopulate], val.me)
+			stack.PushBack(newrow)
+		}
+	}
+
+	return rows
+}
+
+func (ctx *queryContext) buildVarOrder(value Key, varname string, numvars int) ([]string, map[string]string) {
+	var varorder = make([]string, numvars)
+	var parents = make(map[string]string)
+
+	stack := list.New()
+	stack.PushFront(varname)
+
+	values := make(map[string]Key)
+	values[varname] = value
+	parents[varname] = varname
+
+	idx := -1
+	for stack.Len() > 0 {
+		idx += 1
+		v := stack.Remove(stack.Front()).(string)
+		val := values[v]
+		log.Warning(varorder, idx, v)
+		varorder[idx] = v
+		children, found := ctx.chains[val]
+		if !found {
+			continue
+		}
+		for vname, links := range children {
+			parents[vname] = v
+			log.Debug("adding", vname, len(links.links))
+			if _, found := values[vname]; !found {
+				stack.PushBack(vname)
+			}
+			if len(links.links) > 0 {
+				values[vname] = links.links[0].me
+			}
+		}
+	}
+
+	return varorder, parents
 }

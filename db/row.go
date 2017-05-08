@@ -6,16 +6,18 @@ import (
 
 type row struct {
 	// entries in this row
-	entries []Key
-	vars    []string
-	lastvar string
-	lastidx int
+	entries   []Key
+	vars      []string
+	lastvar   string
+	lastidx   int
+	numFilled int
 }
 
 func newrow(vars []string) *row {
 	return &row{
-		entries: make([]Key, len(vars)),
-		vars:    vars,
+		entries:   make([]Key, len(vars)),
+		vars:      vars,
+		numFilled: 0,
 	}
 }
 
@@ -32,6 +34,7 @@ func (r *row) addVar(name string, index int, value Key) {
 	r.lastvar = name
 	r.lastidx = index
 	r.entries[index] = value
+	r.numFilled += 1
 }
 
 func (r *row) expand(ctx *queryContext) []turtle.URI {
@@ -68,4 +71,16 @@ func (r *row) isSet(varname string) bool {
 		}
 	}
 	return false
+}
+
+func (r *row) getValue(varname string) Key {
+	if varname == r.lastvar {
+		return r.entries[r.lastidx]
+	}
+	for idx, name := range r.vars {
+		if name == varname {
+			return r.entries[idx]
+		}
+	}
+	return emptyHash
 }
