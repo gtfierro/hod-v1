@@ -282,13 +282,13 @@ func classGraph(c *cli.Context) error {
 	edges := make(map[string]struct{})
 	for _, triple := range ds.Triples {
 		if triple.Predicate.String() == "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" && triple.Object.String() == "http://www.w3.org/2002/07/owl#Class" {
-			x := fmt.Sprintf("%s;\n", triple.Subject.Value)
+			x := fmt.Sprintf("\"%s\";\n", triple.Subject.Value)
 			nodes[x] = struct{}{}
 		} else if triple.Predicate.String() == "http://www.w3.org/2000/01/rdf-schema#subClassOf" {
 			if strings.HasPrefix(triple.Object.Value, "genid") || strings.HasPrefix(triple.Subject.Value, "genid") {
 				continue
 			}
-			x := fmt.Sprintf("%s -> %s [label=\"%s\"];\n", triple.Object.Value, triple.Subject.Value, "hasSubclass")
+			x := fmt.Sprintf("\"%s\" -> \"%s\" [label=\"%s\"];\n", triple.Object.Value, triple.Subject.Value, "hasSubclass")
 			edges[x] = struct{}{}
 		}
 	}
@@ -340,9 +340,9 @@ func dumpGraph(c *cli.Context) error {
 	nodes := make(map[string]struct{})
 	edges := make(map[string]struct{})
 	for _, triple := range ds.Triples {
-		x := fmt.Sprintf("%s;\n", triple.Subject.Value)
+		x := fmt.Sprintf("\"%s\";\n", triple.Subject.Value)
 		nodes[x] = struct{}{}
-		x = fmt.Sprintf("%s -> %s [label=\"%s\"];\n", triple.Subject.Value, triple.Object.Value, triple.Predicate.Value)
+		x = fmt.Sprintf("\"%s\" -> \"%s\" [label=\"%s\"];\n", triple.Subject.Value, triple.Object.Value, triple.Predicate.Value)
 		edges[x] = struct{}{}
 	}
 
