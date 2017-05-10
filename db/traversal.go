@@ -214,10 +214,15 @@ func (db *DB) getSubjectFromPredObject(objectHash Key, path []query.PathPattern)
 
 	var traversed = traversedBTreePool.Get()
 	defer traversedBTreePool.Put(traversed)
+	// reverse the path because we are getting from the object
+	reversePath(path)
 
 	for idx, segment := range path {
+		// clear out the tree
+		for traversed.Max() != nil {
+			traversed.DeleteMax()
+		}
 		reachable := btree.New(2)
-		log.Debug("following path", segment)
 		for stack.Len() > 0 {
 			entity := stack.Remove(stack.Front()).(*Entity)
 			// if we have already traversed this entity, skip it
@@ -265,6 +270,10 @@ func (db *DB) getObjectFromSubjectPred(subjectHash Key, path []query.PathPattern
 	// we have our starting entity; follow the first segment of the path and save everything we can reach from there.
 	// Then, from that set, search the second segment of the path, etc. We save the last reachable set
 	for idx, segment := range path {
+		// clear out the tree
+		for traversed.Max() != nil {
+			traversed.DeleteMax()
+		}
 		reachable := btree.New(2)
 		for stack.Len() > 0 {
 			entity := stack.Remove(stack.Front()).(*Entity)
