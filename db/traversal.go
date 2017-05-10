@@ -51,6 +51,7 @@ func (db *DB) followPathFromObject(object *Entity, results *btree.BTree, searchs
 		traversed.ReplaceOrInsert(entity.PK)
 		switch pattern.Pattern {
 		case query.PATTERN_SINGLE:
+			log.Warning(db.MustGetURI(entity.PK), " ")
 			// [found] indicates whether or not we have any edges with the given pattern
 			edges, found := entity.InEdges[string(predHash[:])]
 			// this requires the pattern to exist, so we skip if we have no edges of that name
@@ -63,6 +64,7 @@ func (db *DB) followPathFromObject(object *Entity, results *btree.BTree, searchs
 			}
 			// because this is one hop, we don't add any new entities to the stack
 		case query.PATTERN_ZERO_ONE:
+			log.Warning(db.MustGetURI(entity.PK), "?")
 			results.ReplaceOrInsert(entity.PK)
 			endpoints, found := entity.InEdges[string(predHash[:])]
 			// this requires the pattern to exist, so we skip if we have no edges of that name
@@ -75,6 +77,7 @@ func (db *DB) followPathFromObject(object *Entity, results *btree.BTree, searchs
 			}
 			// because this is one hop, we don't add any new entities to the stack
 		case query.PATTERN_ZERO_PLUS:
+			log.Warning(db.MustGetURI(entity.PK), "*")
 			results.ReplaceOrInsert(entity.PK)
 			endpoints, found := entity.InEdges[string(predHash[:])]
 			// this requires the pattern to exist, so we skip if we have no edges of that name
@@ -91,6 +94,7 @@ func (db *DB) followPathFromObject(object *Entity, results *btree.BTree, searchs
 				stack.PushBack(nextEntity)
 			}
 		case query.PATTERN_ONE_PLUS:
+			log.Debug(db.MustGetURI(entity.PK), "+")
 			edges, found := entity.InEdges[string(predHash[:])]
 			// this requires the pattern to exist, so we skip if we have no edges of that name
 			if !found {
@@ -155,6 +159,7 @@ func (db *DB) followPathFromSubject(subject *Entity, results *btree.BTree, searc
 			}
 			// because this is one hop, we don't add any new entities to the stack
 		case query.PATTERN_ZERO_PLUS:
+			log.Debug(db.MustGetURI(entity.PK), "*")
 			results.ReplaceOrInsert(entity.PK)
 			endpoints, found := entity.OutEdges[string(predHash[:])]
 			// this requires the pattern to exist, so we skip if we have no edges of that name
@@ -195,6 +200,7 @@ func (db *DB) getSubjectFromPredObject(objectHash Key, path []query.PathPattern)
 
 	// So how does this traversal actually work?
 	// At each 'step', we are looking at an entity and some offset into the path.
+	log.Debug("get subject from", db.MustGetURI(objectHash))
 
 	// get the object, look in its "in" edges for the path pattern
 	objEntity, err := db.GetEntityFromHash(objectHash)
@@ -210,6 +216,7 @@ func (db *DB) getSubjectFromPredObject(objectHash Key, path []query.PathPattern)
 
 	for idx, segment := range path {
 		reachable := btree.New(2)
+		log.Debug("following path", segment)
 		for stack.Len() > 0 {
 			entity := stack.Remove(stack.Front()).(*Entity)
 			// if we have already traversed this entity, skip it
