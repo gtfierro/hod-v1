@@ -41,7 +41,7 @@
 
 # Set log level. In order of increasing verbosity:
 # Debug, Info, Notice, Warning, Error, Critical
-#LogLevel: Notice
+LogLevel: Debug
 
 
 ####
