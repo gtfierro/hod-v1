@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/google/btree"
+	"github.com/gtfierro/hod/query"
 )
 
 // merges all the keys from 'src' into 'dst'
@@ -217,4 +218,10 @@ func rowIsFull(row []Key) bool {
 		}
 	}
 	return true
+}
+
+func reversePath(path []query.PathPattern) {
+	for i, j := 0, len(path)-1; i < j; i, j = i+1, j-1 {
+		path[i], path[j] = path[j], path[i]
+	}
 }

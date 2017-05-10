@@ -21,6 +21,7 @@ func (db *DB) reversePathPattern(path []query.PathPattern) []query.PathPattern {
 			return nil
 		}
 	}
+	reversePath(reverse)
 	return reverse
 }
 
