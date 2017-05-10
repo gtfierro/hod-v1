@@ -298,14 +298,6 @@ func (ctx *queryContext) expandTuples() [][]turtle.URI {
 		}
 	}
 
-	//for idx, ve := range ctx._traverseOrder.list {
-	//	ctx.varpos[ve.value] = idx
-	//}
-	log.Debug("Dump children")
-	ctx.dumpChildren()
-	log.Debug("Dump counts")
-	ctx.dumpVarCounts()
-
 	topVarTree := ctx.candidates[startvar]
 	if topVarTree == nil {
 		return results // fail early
