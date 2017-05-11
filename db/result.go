@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"time"
 
 	turtle "github.com/gtfierro/hod/goraptor"
 	"github.com/gtfierro/hod/query"
@@ -20,6 +21,7 @@ type QueryResult struct {
 	Rows       []ResultMap
 	Links      []LinkResultMap
 	Count      int
+	Elapsed    time.Duration
 }
 
 func newQueryResult() QueryResult {

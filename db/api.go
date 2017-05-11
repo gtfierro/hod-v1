@@ -67,6 +67,7 @@ func (db *DB) RunQuery(q query.Query) QueryResult {
 
 	var result = newQueryResult()
 	result.selectVars = q.Select.Variables
+	result.Elapsed = time.Since(fullQueryStart)
 
 	if q.Select.Count {
 		// return the count of results
