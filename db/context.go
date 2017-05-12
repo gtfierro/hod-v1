@@ -344,11 +344,12 @@ func (ctx *queryContext) expandEntity(varname string, entity *Entity) [][]turtle
 		// because it is complete
 		if row.isFull() {
 			rows = append(rows, row.expand(ctx))
+			finishrow(row)
 			continue
 		}
 		popVarIdx := row.numFilled
 
-		// get the variable name we want to populate in this row3
+		// get the variable name we want to populate in this row
 		varToPopulate := row.vars[popVarIdx]
 		// if its already filled in, continue
 		if row.isSet(varToPopulate) {

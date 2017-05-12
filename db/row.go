@@ -1,8 +1,23 @@
 package db
 
 import (
+	"sync"
+
 	turtle "github.com/gtfierro/hod/goraptor"
 )
+
+const emptyVar = ""
+
+var emptyEntries = make([]Key, 16)
+
+var _ROWPOOL = sync.Pool{
+	New: func() interface{} {
+		return &row{
+			entries:   make([]Key, 16),
+			numFilled: 0,
+		}
+	},
+}
 
 type row struct {
 	// entries in this row
@@ -14,15 +29,24 @@ type row struct {
 }
 
 func newrow(vars []string) *row {
-	return &row{
-		entries:   make([]Key, len(vars)),
-		vars:      vars,
-		numFilled: 0,
+	r := _ROWPOOL.Get().(*row)
+	if len(vars) > len(r.entries) {
+		r.entries = make([]Key, len(vars))
 	}
+	r.vars = vars
+	return r
+}
+
+func finishrow(r *row) {
+	r.numFilled = 0
+	r.lastvar = emptyVar
+	r.lastidx = 0
+	copy(r.entries, emptyEntries)
+	_ROWPOOL.Put(r)
 }
 
 func (r *row) isFull() bool {
-	for _, entry := range r.entries {
+	for _, entry := range r.entries[:len(r.vars)] {
 		if entry == emptyHash {
 			return false
 		}
