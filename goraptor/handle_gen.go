@@ -14,37 +14,37 @@ import (
 func (z *Triple) DecodeMsg(dc *msgp.Reader) (err error) {
 	var field []byte
 	_ = field
-	var isz uint32
-	isz, err = dc.ReadMapHeader()
+	var xvk uint32
+	xvk, err = dc.ReadMapHeader()
 	if err != nil {
 		return
 	}
-	for isz > 0 {
-		isz--
+	for xvk > 0 {
+		xvk--
 		field, err = dc.ReadMapKeyPtr()
 		if err != nil {
 			return
 		}
 		switch msgp.UnsafeString(field) {
 		case "s":
-			var isz uint32
-			isz, err = dc.ReadMapHeader()
+			var bzg uint32
+			bzg, err = dc.ReadMapHeader()
 			if err != nil {
 				return
 			}
-			for isz > 0 {
-				isz--
+			for bzg > 0 {
+				bzg--
 				field, err = dc.ReadMapKeyPtr()
 				if err != nil {
 					return
 				}
 				switch msgp.UnsafeString(field) {
-				case "Namespace":
+				case "n":
 					z.Subject.Namespace, err = dc.ReadString()
 					if err != nil {
 						return
 					}
-				case "Value":
+				case "v":
 					z.Subject.Value, err = dc.ReadString()
 					if err != nil {
 						return
@@ -57,24 +57,24 @@ func (z *Triple) DecodeMsg(dc *msgp.Reader) (err error) {
 				}
 			}
 		case "p":
-			var isz uint32
-			isz, err = dc.ReadMapHeader()
+			var bai uint32
+			bai, err = dc.ReadMapHeader()
 			if err != nil {
 				return
 			}
-			for isz > 0 {
-				isz--
+			for bai > 0 {
+				bai--
 				field, err = dc.ReadMapKeyPtr()
 				if err != nil {
 					return
 				}
 				switch msgp.UnsafeString(field) {
-				case "Namespace":
+				case "n":
 					z.Predicate.Namespace, err = dc.ReadString()
 					if err != nil {
 						return
 					}
-				case "Value":
+				case "v":
 					z.Predicate.Value, err = dc.ReadString()
 					if err != nil {
 						return
@@ -87,24 +87,24 @@ func (z *Triple) DecodeMsg(dc *msgp.Reader) (err error) {
 				}
 			}
 		case "o":
-			var isz uint32
-			isz, err = dc.ReadMapHeader()
+			var cmr uint32
+			cmr, err = dc.ReadMapHeader()
 			if err != nil {
 				return
 			}
-			for isz > 0 {
-				isz--
+			for cmr > 0 {
+				cmr--
 				field, err = dc.ReadMapKeyPtr()
 				if err != nil {
 					return
 				}
 				switch msgp.UnsafeString(field) {
-				case "Namespace":
+				case "n":
 					z.Object.Namespace, err = dc.ReadString()
 					if err != nil {
 						return
 					}
-				case "Value":
+				case "v":
 					z.Object.Value, err = dc.ReadString()
 					if err != nil {
 						return
@@ -131,8 +131,8 @@ func (z *Triple) EncodeMsg(en *msgp.Writer) (err error) {
 	// map header, size 3
 	// write "s"
 	// map header, size 2
-	// write "Namespace"
-	err = en.Append(0x83, 0xa1, 0x73, 0x82, 0xa9, 0x4e, 0x61, 0x6d, 0x65, 0x73, 0x70, 0x61, 0x63, 0x65)
+	// write "n"
+	err = en.Append(0x83, 0xa1, 0x73, 0x82, 0xa1, 0x6e)
 	if err != nil {
 		return err
 	}
@@ -140,8 +140,8 @@ func (z *Triple) EncodeMsg(en *msgp.Writer) (err error) {
 	if err != nil {
 		return
 	}
-	// write "Value"
-	err = en.Append(0xa5, 0x56, 0x61, 0x6c, 0x75, 0x65)
+	// write "v"
+	err = en.Append(0xa1, 0x76)
 	if err != nil {
 		return err
 	}
@@ -151,8 +151,8 @@ func (z *Triple) EncodeMsg(en *msgp.Writer) (err error) {
 	}
 	// write "p"
 	// map header, size 2
-	// write "Namespace"
-	err = en.Append(0xa1, 0x70, 0x82, 0xa9, 0x4e, 0x61, 0x6d, 0x65, 0x73, 0x70, 0x61, 0x63, 0x65)
+	// write "n"
+	err = en.Append(0xa1, 0x70, 0x82, 0xa1, 0x6e)
 	if err != nil {
 		return err
 	}
@@ -160,8 +160,8 @@ func (z *Triple) EncodeMsg(en *msgp.Writer) (err error) {
 	if err != nil {
 		return
 	}
-	// write "Value"
-	err = en.Append(0xa5, 0x56, 0x61, 0x6c, 0x75, 0x65)
+	// write "v"
+	err = en.Append(0xa1, 0x76)
 	if err != nil {
 		return err
 	}
@@ -171,8 +171,8 @@ func (z *Triple) EncodeMsg(en *msgp.Writer) (err error) {
 	}
 	// write "o"
 	// map header, size 2
-	// write "Namespace"
-	err = en.Append(0xa1, 0x6f, 0x82, 0xa9, 0x4e, 0x61, 0x6d, 0x65, 0x73, 0x70, 0x61, 0x63, 0x65)
+	// write "n"
+	err = en.Append(0xa1, 0x6f, 0x82, 0xa1, 0x6e)
 	if err != nil {
 		return err
 	}
@@ -180,8 +180,8 @@ func (z *Triple) EncodeMsg(en *msgp.Writer) (err error) {
 	if err != nil {
 		return
 	}
-	// write "Value"
-	err = en.Append(0xa5, 0x56, 0x61, 0x6c, 0x75, 0x65)
+	// write "v"
+	err = en.Append(0xa1, 0x76)
 	if err != nil {
 		return err
 	}
@@ -198,27 +198,27 @@ func (z *Triple) MarshalMsg(b []byte) (o []byte, err error) {
 	// map header, size 3
 	// string "s"
 	// map header, size 2
-	// string "Namespace"
-	o = append(o, 0x83, 0xa1, 0x73, 0x82, 0xa9, 0x4e, 0x61, 0x6d, 0x65, 0x73, 0x70, 0x61, 0x63, 0x65)
+	// string "n"
+	o = append(o, 0x83, 0xa1, 0x73, 0x82, 0xa1, 0x6e)
 	o = msgp.AppendString(o, z.Subject.Namespace)
-	// string "Value"
-	o = append(o, 0xa5, 0x56, 0x61, 0x6c, 0x75, 0x65)
+	// string "v"
+	o = append(o, 0xa1, 0x76)
 	o = msgp.AppendString(o, z.Subject.Value)
 	// string "p"
 	// map header, size 2
-	// string "Namespace"
-	o = append(o, 0xa1, 0x70, 0x82, 0xa9, 0x4e, 0x61, 0x6d, 0x65, 0x73, 0x70, 0x61, 0x63, 0x65)
+	// string "n"
+	o = append(o, 0xa1, 0x70, 0x82, 0xa1, 0x6e)
 	o = msgp.AppendString(o, z.Predicate.Namespace)
-	// string "Value"
-	o = append(o, 0xa5, 0x56, 0x61, 0x6c, 0x75, 0x65)
+	// string "v"
+	o = append(o, 0xa1, 0x76)
 	o = msgp.AppendString(o, z.Predicate.Value)
 	// string "o"
 	// map header, size 2
-	// string "Namespace"
-	o = append(o, 0xa1, 0x6f, 0x82, 0xa9, 0x4e, 0x61, 0x6d, 0x65, 0x73, 0x70, 0x61, 0x63, 0x65)
+	// string "n"
+	o = append(o, 0xa1, 0x6f, 0x82, 0xa1, 0x6e)
 	o = msgp.AppendString(o, z.Object.Namespace)
-	// string "Value"
-	o = append(o, 0xa5, 0x56, 0x61, 0x6c, 0x75, 0x65)
+	// string "v"
+	o = append(o, 0xa1, 0x76)
 	o = msgp.AppendString(o, z.Object.Value)
 	return
 }
@@ -227,37 +227,37 @@ func (z *Triple) MarshalMsg(b []byte) (o []byte, err error) {
 func (z *Triple) UnmarshalMsg(bts []byte) (o []byte, err error) {
 	var field []byte
 	_ = field
-	var isz uint32
-	isz, bts, err = msgp.ReadMapHeaderBytes(bts)
+	var ajw uint32
+	ajw, bts, err = msgp.ReadMapHeaderBytes(bts)
 	if err != nil {
 		return
 	}
-	for isz > 0 {
-		isz--
+	for ajw > 0 {
+		ajw--
 		field, bts, err = msgp.ReadMapKeyZC(bts)
 		if err != nil {
 			return
 		}
 		switch msgp.UnsafeString(field) {
 		case "s":
-			var isz uint32
-			isz, bts, err = msgp.ReadMapHeaderBytes(bts)
+			var wht uint32
+			wht, bts, err = msgp.ReadMapHeaderBytes(bts)
 			if err != nil {
 				return
 			}
-			for isz > 0 {
-				isz--
+			for wht > 0 {
+				wht--
 				field, bts, err = msgp.ReadMapKeyZC(bts)
 				if err != nil {
 					return
 				}
 				switch msgp.UnsafeString(field) {
-				case "Namespace":
+				case "n":
 					z.Subject.Namespace, bts, err = msgp.ReadStringBytes(bts)
 					if err != nil {
 						return
 					}
-				case "Value":
+				case "v":
 					z.Subject.Value, bts, err = msgp.ReadStringBytes(bts)
 					if err != nil {
 						return
@@ -270,24 +270,24 @@ func (z *Triple) UnmarshalMsg(bts []byte) (o []byte, err error) {
 				}
 			}
 		case "p":
-			var isz uint32
-			isz, bts, err = msgp.ReadMapHeaderBytes(bts)
+			var hct uint32
+			hct, bts, err = msgp.ReadMapHeaderBytes(bts)
 			if err != nil {
 				return
 			}
-			for isz > 0 {
-				isz--
+			for hct > 0 {
+				hct--
 				field, bts, err = msgp.ReadMapKeyZC(bts)
 				if err != nil {
 					return
 				}
 				switch msgp.UnsafeString(field) {
-				case "Namespace":
+				case "n":
 					z.Predicate.Namespace, bts, err = msgp.ReadStringBytes(bts)
 					if err != nil {
 						return
 					}
-				case "Value":
+				case "v":
 					z.Predicate.Value, bts, err = msgp.ReadStringBytes(bts)
 					if err != nil {
 						return
@@ -300,24 +300,24 @@ func (z *Triple) UnmarshalMsg(bts []byte) (o []byte, err error) {
 				}
 			}
 		case "o":
-			var isz uint32
-			isz, bts, err = msgp.ReadMapHeaderBytes(bts)
+			var cua uint32
+			cua, bts, err = msgp.ReadMapHeaderBytes(bts)
 			if err != nil {
 				return
 			}
-			for isz > 0 {
-				isz--
+			for cua > 0 {
+				cua--
 				field, bts, err = msgp.ReadMapKeyZC(bts)
 				if err != nil {
 					return
 				}
 				switch msgp.UnsafeString(field) {
-				case "Namespace":
+				case "n":
 					z.Object.Namespace, bts, err = msgp.ReadStringBytes(bts)
 					if err != nil {
 						return
 					}
-				case "Value":
+				case "v":
 					z.Object.Value, bts, err = msgp.ReadStringBytes(bts)
 					if err != nil {
 						return
@@ -341,7 +341,7 @@ func (z *Triple) UnmarshalMsg(bts []byte) (o []byte, err error) {
 }
 
 func (z *Triple) Msgsize() (s int) {
-	s = 1 + 2 + 1 + 10 + msgp.StringPrefixSize + len(z.Subject.Namespace) + 6 + msgp.StringPrefixSize + len(z.Subject.Value) + 2 + 1 + 10 + msgp.StringPrefixSize + len(z.Predicate.Namespace) + 6 + msgp.StringPrefixSize + len(z.Predicate.Value) + 2 + 1 + 10 + msgp.StringPrefixSize + len(z.Object.Namespace) + 6 + msgp.StringPrefixSize + len(z.Object.Value)
+	s = 1 + 2 + 1 + 2 + msgp.StringPrefixSize + len(z.Subject.Namespace) + 2 + msgp.StringPrefixSize + len(z.Subject.Value) + 2 + 1 + 2 + msgp.StringPrefixSize + len(z.Predicate.Namespace) + 2 + msgp.StringPrefixSize + len(z.Predicate.Value) + 2 + 1 + 2 + msgp.StringPrefixSize + len(z.Object.Namespace) + 2 + msgp.StringPrefixSize + len(z.Object.Value)
 	return
 }
 
@@ -349,24 +349,24 @@ func (z *Triple) Msgsize() (s int) {
 func (z *URI) DecodeMsg(dc *msgp.Reader) (err error) {
 	var field []byte
 	_ = field
-	var isz uint32
-	isz, err = dc.ReadMapHeader()
+	var xhx uint32
+	xhx, err = dc.ReadMapHeader()
 	if err != nil {
 		return
 	}
-	for isz > 0 {
-		isz--
+	for xhx > 0 {
+		xhx--
 		field, err = dc.ReadMapKeyPtr()
 		if err != nil {
 			return
 		}
 		switch msgp.UnsafeString(field) {
-		case "Namespace":
+		case "n":
 			z.Namespace, err = dc.ReadString()
 			if err != nil {
 				return
 			}
-		case "Value":
+		case "v":
 			z.Value, err = dc.ReadString()
 			if err != nil {
 				return
@@ -384,8 +384,8 @@ func (z *URI) DecodeMsg(dc *msgp.Reader) (err error) {
 // EncodeMsg implements msgp.Encodable
 func (z URI) EncodeMsg(en *msgp.Writer) (err error) {
 	// map header, size 2
-	// write "Namespace"
-	err = en.Append(0x82, 0xa9, 0x4e, 0x61, 0x6d, 0x65, 0x73, 0x70, 0x61, 0x63, 0x65)
+	// write "n"
+	err = en.Append(0x82, 0xa1, 0x6e)
 	if err != nil {
 		return err
 	}
@@ -393,8 +393,8 @@ func (z URI) EncodeMsg(en *msgp.Writer) (err error) {
 	if err != nil {
 		return
 	}
-	// write "Value"
-	err = en.Append(0xa5, 0x56, 0x61, 0x6c, 0x75, 0x65)
+	// write "v"
+	err = en.Append(0xa1, 0x76)
 	if err != nil {
 		return err
 	}
@@ -409,11 +409,11 @@ func (z URI) EncodeMsg(en *msgp.Writer) (err error) {
 func (z URI) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.Require(b, z.Msgsize())
 	// map header, size 2
-	// string "Namespace"
-	o = append(o, 0x82, 0xa9, 0x4e, 0x61, 0x6d, 0x65, 0x73, 0x70, 0x61, 0x63, 0x65)
+	// string "n"
+	o = append(o, 0x82, 0xa1, 0x6e)
 	o = msgp.AppendString(o, z.Namespace)
-	// string "Value"
-	o = append(o, 0xa5, 0x56, 0x61, 0x6c, 0x75, 0x65)
+	// string "v"
+	o = append(o, 0xa1, 0x76)
 	o = msgp.AppendString(o, z.Value)
 	return
 }
@@ -422,24 +422,24 @@ func (z URI) MarshalMsg(b []byte) (o []byte, err error) {
 func (z *URI) UnmarshalMsg(bts []byte) (o []byte, err error) {
 	var field []byte
 	_ = field
-	var isz uint32
-	isz, bts, err = msgp.ReadMapHeaderBytes(bts)
+	var lqf uint32
+	lqf, bts, err = msgp.ReadMapHeaderBytes(bts)
 	if err != nil {
 		return
 	}
-	for isz > 0 {
-		isz--
+	for lqf > 0 {
+		lqf--
 		field, bts, err = msgp.ReadMapKeyZC(bts)
 		if err != nil {
 			return
 		}
 		switch msgp.UnsafeString(field) {
-		case "Namespace":
+		case "n":
 			z.Namespace, bts, err = msgp.ReadStringBytes(bts)
 			if err != nil {
 				return
 			}
-		case "Value":
+		case "v":
 			z.Value, bts, err = msgp.ReadStringBytes(bts)
 			if err != nil {
 				return
@@ -456,6 +456,6 @@ func (z *URI) UnmarshalMsg(bts []byte) (o []byte, err error) {
 }
 
 func (z URI) Msgsize() (s int) {
-	s = 1 + 10 + msgp.StringPrefixSize + len(z.Namespace) + 6 + msgp.StringPrefixSize + len(z.Value)
+	s = 1 + 2 + msgp.StringPrefixSize + len(z.Namespace) + 2 + msgp.StringPrefixSize + len(z.Value)
 	return
 }

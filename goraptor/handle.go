@@ -25,8 +25,8 @@ type Parser struct {
 }
 
 type URI struct {
-	Namespace string
-	Value     string
+	Namespace string `msg:"n"`
+	Value     string `msg:"v"`
 }
 
 func (u URI) String() string {
