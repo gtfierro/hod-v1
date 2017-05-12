@@ -61,10 +61,10 @@ func (r *row) addVar(name string, index int, value Key) {
 	r.numFilled += 1
 }
 
-func (r *row) expand(ctx *queryContext) []turtle.URI {
-	newrow := make([]turtle.URI, len(ctx.selectVars))
+func (r *row) expand(ctx *queryContext) *ResultRow {
+	newrow := getResultRow(len(ctx.selectVars))
 	for i, v := range ctx.selectVars {
-		newrow[i] = ctx.db.MustGetURI(r.entries[ctx.varpos[v]])
+		newrow.row[i] = ctx.db.MustGetURI(r.entries[ctx.varpos[v]])
 	}
 	return newrow
 }

@@ -274,11 +274,10 @@ func (plan *queryPlan) addLink(parent, child string) {
 	plan.vars[child] = parent
 }
 
-func (ctx *queryContext) expandTuples() [][]turtle.URI {
+func (ctx *queryContext) expandTuples() []*ResultRow {
 	var (
 		startvar string
-		results  [][]turtle.URI
-		//tuples   []map[string]turtle.URI
+		results  []*ResultRow
 	)
 
 	// choose first variable
@@ -317,9 +316,9 @@ func (ctx *queryContext) expandTuples() [][]turtle.URI {
 // If this is recursive, then we are going to have a LOT of mini-allocations. Ideally, we can just do this
 // top-level method on the first tree and then be "done".
 
-func (ctx *queryContext) expandEntity(varname string, entity *Entity) [][]turtle.URI {
+func (ctx *queryContext) expandEntity(varname string, entity *Entity) []*ResultRow {
 	var (
-		rows [][]turtle.URI
+		rows []*ResultRow
 	)
 
 	if entity == nil || entity.PK == emptyHash {

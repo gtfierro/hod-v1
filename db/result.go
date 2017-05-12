@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"sync"
 	"time"
 
 	turtle "github.com/gtfierro/hod/goraptor"
@@ -89,18 +90,51 @@ func (m LinkResultMap) MarshalJSON() ([]byte, error) {
 	return json.Marshal(n)
 }
 
-type ResultRow []turtle.URI
+type ResultRow struct {
+	row   []turtle.URI
+	count int
+}
 
 func (rr ResultRow) Less(than btree.Item) bool {
-	row := than.(ResultRow)
-	if len(rr) < len(row) {
+	row := than.(*ResultRow)
+	if rr.count < row.count {
 		return true
-	} else if len(row) < len(rr) {
+	} else if row.count < rr.count {
 		return false
 	}
 	before := false
-	for idx, item := range rr {
-		before = before || item.Value < row[idx].Value || item.Namespace < row[idx].Namespace
+	for idx, item := range rr.row[:rr.count] {
+		before = before || item.Value < row.row[idx].Value || item.Namespace < row.row[idx].Namespace
 	}
 	return before
+}
+
+var _emptyResultRow = make([]turtle.URI, 16)
+var _RESULTROWPOOL = sync.Pool{
+	New: func() interface{} {
+		return &ResultRow{
+			row:   make([]turtle.URI, 16),
+			count: 0,
+		}
+	},
+}
+
+func getResultRow(num int) *ResultRow {
+	r := _RESULTROWPOOL.Get().(*ResultRow)
+	r.count = num
+	return r
+}
+
+func finishResultRow(r *ResultRow) {
+	r.count = 0
+	_RESULTROWPOOL.Put(r)
+}
+
+func cleanResultRows(b *btree.BTree) {
+	i := b.DeleteMax()
+	for i != nil {
+		row := i.(*ResultRow)
+		finishResultRow(row)
+		i = b.DeleteMax()
+	}
 }

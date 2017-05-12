@@ -5,7 +5,6 @@ import (
 	"sort"
 	"time"
 
-	turtle "github.com/gtfierro/hod/goraptor"
 	"github.com/gtfierro/hod/query"
 )
 
@@ -19,7 +18,7 @@ import (
 // First we "clean" these by making sure that they have their full
 // namespaces rather than the prefix
 
-func (db *DB) getQueryResults(q query.Query) [][]turtle.URI {
+func (db *DB) getQueryResults(q query.Query) []*ResultRow {
 	if db.showQueryPlan {
 		fmt.Println("-------------- start query plan -------------")
 	}
