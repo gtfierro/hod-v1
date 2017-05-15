@@ -29,7 +29,7 @@ import (
     selectAllLinks bool
 }
 
-%token SELECT COUNT DISTINCT WHERE OR UNION PARTIAL LIMIT
+%token SELECT COUNT DISTINCT WHERE OR UNION PARTIAL LIMIT PREFIX NAMESPACE
 %token COMMA LBRACE RBRACE LPAREN RPAREN DOT SEMICOLON SLASH PLUS QUESTION ASTERISK BAR
 %token LINK VAR URI FULLURI LBRACK RBRACK NUMBER LITERAL
 
@@ -46,7 +46,26 @@ query        : selectClause WHERE LBRACE whereTriples RBRACE limitClause SEMICOL
                yylex.(*lexer).orclauses = $4.orclauses
                yylex.(*lexer).limit = $6.limit
              }
+             | prefixes selectClause WHERE LBRACE whereTriples RBRACE limitClause SEMICOLON
+             {
+               yylex.(*lexer).varlist = $2.varlist
+               yylex.(*lexer).distinct = $2.distinct
+               yylex.(*lexer).triples = $5.triples
+               yylex.(*lexer).distinct = $2.distinct
+               yylex.(*lexer).partial = $2.partial
+               yylex.(*lexer).count = $2.count
+               yylex.(*lexer).orclauses = $5.orclauses
+               yylex.(*lexer).limit = $7.limit
+             }
              ;
+
+prefixes     : prefix
+             | prefixes prefix
+             ;
+
+prefix       : PREFIX NAMESPACE FULLURI
+             ;
+
 
 selectClause : SELECT varList
              {
@@ -85,7 +104,7 @@ selectClause : SELECT varList
              }
              ;
 
-limitClause  : 
+limitClause  :
              {
                 $$.limit = 0
              }
@@ -326,8 +345,10 @@ var lexerpool = sync.Pool{
                 {Token: UNION,  Pattern: "UNION"},
                 {Token: PARTIAL,  Pattern: "PARTIAL"},
                 {Token: LIMIT,  Pattern: "LIMIT"},
+                {Token: PREFIX,  Pattern: "PREFIX"},
                 {Token: NUMBER,  Pattern: "[0-9]+"},
                 {Token: URI,  Pattern: "[a-zA-Z0-9_]+:[a-zA-Z0-9_\\-#%$@]+"},
+                {Token: NAMESPACE, Pattern: "[a-zA-Z0-9_]+:"},
                 {Token: VAR,  Pattern: "\\?[a-zA-Z0-9_]+"},
                 {Token: LINK,  Pattern: "[a-zA-Z][a-zA-Z0-9_-]*"},
                 {Token: LITERAL, Pattern: "\"[a-zA-Z0-9_\\-:(). ]*\""},
