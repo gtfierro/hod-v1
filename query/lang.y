@@ -6,6 +6,7 @@ import (
     "strconv"
     turtle "github.com/gtfierro/hod/goraptor"
     "fmt"
+    "sync"
 )
 
 %}
@@ -28,7 +29,7 @@ import (
     selectAllLinks bool
 }
 
-%token SELECT COUNT DISTINCT WHERE OR UNION PARTIAL LIMIT
+%token SELECT COUNT DISTINCT WHERE OR UNION PARTIAL LIMIT PREFIX NAMESPACE
 %token COMMA LBRACE RBRACE LPAREN RPAREN DOT SEMICOLON SLASH PLUS QUESTION ASTERISK BAR
 %token LINK VAR URI FULLURI LBRACK RBRACK NUMBER LITERAL
 
@@ -45,7 +46,26 @@ query        : selectClause WHERE LBRACE whereTriples RBRACE limitClause SEMICOL
                yylex.(*lexer).orclauses = $4.orclauses
                yylex.(*lexer).limit = $6.limit
              }
+             | prefixes selectClause WHERE LBRACE whereTriples RBRACE limitClause SEMICOLON
+             {
+               yylex.(*lexer).varlist = $2.varlist
+               yylex.(*lexer).distinct = $2.distinct
+               yylex.(*lexer).triples = $5.triples
+               yylex.(*lexer).distinct = $2.distinct
+               yylex.(*lexer).partial = $2.partial
+               yylex.(*lexer).count = $2.count
+               yylex.(*lexer).orclauses = $5.orclauses
+               yylex.(*lexer).limit = $7.limit
+             }
              ;
+
+prefixes     : prefix
+             | prefixes prefix
+             ;
+
+prefix       : PREFIX NAMESPACE FULLURI
+             ;
+
 
 selectClause : SELECT varList
              {
@@ -84,7 +104,7 @@ selectClause : SELECT varList
              }
              ;
 
-limitClause  : 
+limitClause  :
              {
                 $$.limit = 0
              }
@@ -303,6 +323,56 @@ term         : VAR
 
 const eof = 0
 
+var lexerpool = sync.Pool{
+    New: func() interface{} {
+        scanner := NewScanner(
+            []Definition{
+                {Token: LBRACE,  Pattern: "\\{"},
+                {Token: RBRACE,  Pattern: "\\}"},
+                {Token: LPAREN,  Pattern: "\\("},
+                {Token: RPAREN,  Pattern: "\\)"},
+                {Token: LBRACK,  Pattern: "\\["},
+                {Token: RBRACK,  Pattern: "\\]"},
+                {Token: COMMA,  Pattern: "\\,"},
+                {Token: SEMICOLON,  Pattern: ";"},
+                {Token: DOT,  Pattern: "\\."},
+                {Token: BAR,  Pattern: "\\|"},
+                {Token: SELECT,  Pattern: "(SELECT)|(select)"},
+                {Token: COUNT,  Pattern: "COUNT"},
+                {Token: DISTINCT,  Pattern: "DISTINCT"},
+                {Token: WHERE,  Pattern: "WHERE"},
+                {Token: OR,  Pattern: "OR"},
+                {Token: UNION,  Pattern: "UNION"},
+                {Token: PARTIAL,  Pattern: "PARTIAL"},
+                {Token: LIMIT,  Pattern: "LIMIT"},
+                {Token: PREFIX,  Pattern: "PREFIX"},
+                {Token: NUMBER,  Pattern: "[0-9]+"},
+                {Token: URI,  Pattern: "[a-zA-Z0-9_]+:[a-zA-Z0-9_\\-#%$@]+"},
+                {Token: NAMESPACE, Pattern: "[a-zA-Z0-9_]+:"},
+                {Token: VAR,  Pattern: "\\?[a-zA-Z0-9_]+"},
+                {Token: LINK,  Pattern: "[a-zA-Z][a-zA-Z0-9_-]*"},
+                {Token: LITERAL, Pattern: "\"[a-zA-Z0-9_\\-:(). ]*\""},
+                {Token: QUESTION,  Pattern: "\\?"},
+                {Token: SLASH,  Pattern: "/"},
+                {Token: PLUS,  Pattern: "\\+"},
+                {Token: ASTERISK,  Pattern: "\\*"},
+                {Token: FULLURI,  Pattern: "<[^<>\"{}|^`\\\\]*>"},
+            })
+        return &lexer{
+            scanner: scanner,
+            error: nil,
+            varlist: []SelectVar{},
+            triples: []Filter{},
+            orclauses: []OrClause{},
+            pos: 0,
+            distinct: false,
+            count: false,
+            partial: false,
+            limit: -1,
+        }
+    },
+}
+
 type lexer struct {
     scanner *Scanner
     error   error
@@ -317,42 +387,9 @@ type lexer struct {
 }
 
 func newlexer(r io.Reader) *lexer {
-	scanner := NewScanner(
-		[]Definition{
-            {Token: LBRACE,  Pattern: "\\{"},
-            {Token: RBRACE,  Pattern: "\\}"},
-            {Token: LPAREN,  Pattern: "\\("},
-            {Token: RPAREN,  Pattern: "\\)"},
-            {Token: LBRACK,  Pattern: "\\["},
-            {Token: RBRACK,  Pattern: "\\]"},
-            {Token: COMMA,  Pattern: "\\,"},
-            {Token: SEMICOLON,  Pattern: ";"},
-            {Token: DOT,  Pattern: "\\."},
-            {Token: BAR,  Pattern: "\\|"},
-            {Token: SELECT,  Pattern: "(SELECT)|(select)"},
-            {Token: COUNT,  Pattern: "COUNT"},
-            {Token: DISTINCT,  Pattern: "DISTINCT"},
-            {Token: WHERE,  Pattern: "WHERE"},
-            {Token: OR,  Pattern: "OR"},
-            {Token: UNION,  Pattern: "UNION"},
-            {Token: PARTIAL,  Pattern: "PARTIAL"},
-            {Token: LIMIT,  Pattern: "LIMIT"},
-            {Token: NUMBER,  Pattern: "[0-9]+"},
-            {Token: URI,  Pattern: "[a-zA-Z0-9_]+:[a-zA-Z0-9_\\-#%$@]+"},
-            {Token: VAR,  Pattern: "\\?[a-zA-Z0-9_]+"},
-            {Token: LINK,  Pattern: "[a-zA-Z][a-zA-Z0-9_-]*"},
-            {Token: LITERAL, Pattern: "\"[a-zA-Z0-9_\\-:(). ]*\""},
-            {Token: QUESTION,  Pattern: "\\?"},
-            {Token: SLASH,  Pattern: "/"},
-            {Token: PLUS,  Pattern: "\\+"},
-            {Token: ASTERISK,  Pattern: "\\*"},
-            {Token: FULLURI,  Pattern: "<[^<>\"{}|^`\\\\]*>"},
-        })
-	scanner.SetInput(r)
-    return &lexer{
-        scanner: scanner,
-        pos: 0,
-    }
+    lex := lexerpool.Get().(*lexer)
+    lex.scanner.SetInput(r)
+    return lex
 }
 
 func (l *lexer) Lex(lval *yySymType) int {

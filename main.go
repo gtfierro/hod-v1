@@ -27,40 +27,9 @@ func main() {
 
 	app.Commands = []cli.Command{
 		{
-			Name:   "benchload",
-			Usage:  "Benchmark loading a turtle file",
-			Action: benchLoad,
-		},
-		{
-			Name:   "dump",
-			Usage:  "Dump contents of turtle file",
-			Action: dump,
-		},
-		{
-			Name:   "viewclass",
-			Usage:  "PDF visualization of class structure of file",
-			Action: classGraph,
-		},
-		{
-			Name:   "dumpgraph",
-			Usage:  "PDF visualization of TTL file. WARNING this can get really big",
-			Action: dumpGraph,
-		},
-		{
 			Name:   "load",
 			Usage:  "Load dataset into hoddb",
 			Action: load,
-			Flags: []cli.Flag{
-				cli.StringFlag{
-					Name:  "config, c",
-					Usage: "Path to hoddb config file",
-				},
-			},
-		},
-		{
-			Name:   "loadLinks",
-			Usage:  "Load link json file into hoddb",
-			Action: loadLinks,
 			Flags: []cli.Flag{
 				cli.StringFlag{
 					Name:  "config, c",
@@ -139,6 +108,31 @@ func main() {
 					EnvVar: "BW2_AGENT",
 				},
 			},
+		},
+		{
+			Name:   "benchload",
+			Usage:  "Benchmark loading a turtle file",
+			Action: benchLoad,
+		},
+		{
+			Name:   "dump",
+			Usage:  "Dump contents of turtle file",
+			Action: dump,
+		},
+		{
+			Name:   "viewclass",
+			Usage:  "PDF visualization of class structure of file",
+			Action: classGraph,
+		},
+		{
+			Name:   "dumpgraph",
+			Usage:  "PDF visualization of TTL file. WARNING this can get really big",
+			Action: dumpGraph,
+		},
+		{
+			Name:   "ttlstat",
+			Usage:  "Outputs statistics on the provided TTL file. Loads all file provided as arguments",
+			Action: ttlStat,
 		},
 	}
 	app.Run(os.Args)

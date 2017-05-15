@@ -19,6 +19,7 @@ import (
 
 	"github.com/chzyer/readline"
 	"github.com/fatih/color"
+	"github.com/montanaflynn/stats"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli"
 	"gopkg.in/immesys/bw2bind.v5"
@@ -431,5 +432,79 @@ func runInteractiveQuery(db *hod.DB) error {
 		}
 		bufQuery = ""
 	}
+	return nil
+}
+
+type uniqCounter map[string]struct{}
+
+func (uc *uniqCounter) Add(item string) {
+	(*uc)[item] = struct{}{}
+}
+func (uc *uniqCounter) GetCount() float64 {
+	return float64(len(*uc))
+}
+
+// We load all turtle files into a unified graph and compute
+// the following statistics, recording the following
+// - in-degree per node
+// - out-degree per node
+// - # of nodes
+// - # of edges
+// - # of triples
+func ttlStat(c *cli.Context) error {
+	if c.NArg() == 0 {
+		log.Fatal("Need to provide at least one TTL file")
+	}
+	numTriples := 0
+	uniqueEdges := make(uniqCounter)
+	uniqueNodes := make(uniqCounter)
+	inDegree := make(map[string]int)
+	outDegree := make(map[string]int)
+	for fileidx := 0; fileidx < c.NArg(); fileidx++ {
+		filename := c.Args().Get(fileidx)
+		p := turtle.GetParser()
+		ds, _ := p.Parse(filename)
+		numTriples += ds.NumTriples()
+		for _, triple := range ds.Triples {
+			uniqueEdges.Add(triple.Predicate.String())
+			uniqueNodes.Add(triple.Subject.String())
+			uniqueNodes.Add(triple.Object.String())
+
+			//outedge := triple.Predicate.String() + triple.Object.String()
+			if cur, found := outDegree[triple.Subject.String()]; found {
+				outDegree[triple.Subject.String()] = cur + 1
+			} else {
+				outDegree[triple.Subject.String()] = 1
+			}
+			//inedge := triple.Subject.String() + triple.Predicate.String()
+			if cur, found := inDegree[triple.Object.String()]; found {
+				inDegree[triple.Object.String()] = cur + 1
+			} else {
+				inDegree[triple.Object.String()] = 1
+			}
+		}
+	}
+	// load into arrays so we can do stats
+	var inDegreeCounts stats.Float64Data
+	for _, count := range inDegree {
+		inDegreeCounts = append(inDegreeCounts, float64(count))
+	}
+	var outDegreeCounts stats.Float64Data
+	for _, count := range outDegree {
+		outDegreeCounts = append(outDegreeCounts, float64(count))
+	}
+	fmt.Printf("# Triples: %d\n", numTriples)
+	fmt.Printf("# Unique Nodes: %0.2f\n", uniqueNodes.GetCount())
+	fmt.Printf("# Unique Edges: %0.2f\n", uniqueEdges.GetCount())
+	min_in, _ := inDegreeCounts.Min()
+	max_in, _ := inDegreeCounts.Max()
+	mean_in, _ := inDegreeCounts.Mean()
+	std_in, _ := inDegreeCounts.StandardDeviation()
+	fmt.Printf("In degree: Min %0.2f, Max %0.2f, Mean %0.2f, Std Dev %0.2f\n", min_in, max_in, mean_in, std_in)
+	min_out, _ := outDegreeCounts.Min()
+	max_out, _ := outDegreeCounts.Max()
+	mean_out, _ := outDegreeCounts.Mean()
+	std_out, _ := outDegreeCounts.StandardDeviation()
+	fmt.Printf("Out degree: Min %0.2f, Max %0.2f, Mean %0.2f, Std Dev %0.2f\n", min_out, max_out, mean_out, std_out)
 	return nil
 }
