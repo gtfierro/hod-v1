@@ -115,7 +115,7 @@ func NewDB(cfg *config.Config) (*DB, error) {
 		showQueryPlanLatencies: cfg.ShowQueryPlanLatencies,
 		showOperationLatencies: cfg.ShowOperationLatencies,
 		showQueryLatencies:     cfg.ShowQueryLatencies,
-		entityHashCache:        freecache.NewCache(4 * 10000),
+		entityHashCache:        freecache.NewCache(16 * 1024 * 1024), // 16 MB
 		entityObjectCache:      make(map[Key]*Entity),
 		uriCache:               make(map[Key]turtle.URI),
 		policy:                 bluemonday.StrictPolicy(),
@@ -513,7 +513,7 @@ func (db *DB) GetHash(entity turtle.URI) (Key, error) {
 			if rethash == emptyHash {
 				return emptyHash, errors.New("Got bad hash")
 			}
-			db.entityHashCache.Set(entity.Bytes(), rethash[:], 3600) // expire 1 hour
+			db.entityHashCache.Set(entity.Bytes(), rethash[:], -1) // no expiry
 			return rethash, nil
 		} else {
 			return emptyHash, errors.Wrapf(err, "Could not get Entity for %s", entity)
@@ -568,20 +568,11 @@ func (db *DB) MustGetURIStringHash(hash string) turtle.URI {
 }
 
 func (db *DB) GetEntity(uri turtle.URI) (*Entity, error) {
-	var entity = NewEntity()
 	hash, err := db.GetHash(uri)
 	if err != nil {
 		return nil, err
 	}
-	bytes, err := db.graphDB.Get(hash[:], nil)
-	if err != nil {
-		return nil, errors.Wrapf(err, "Could not get Entity from graph for %s", uri)
-	}
-	_, err = entity.UnmarshalMsg(bytes)
-	if err != nil {
-		return nil, errors.Wrapf(err, "Could not unmarshal Entity for %s", uri)
-	}
-	return entity, nil
+	return db.GetEntityFromHash(hash)
 }
 
 func (db *DB) GetEntityFromHash(hash Key) (*Entity, error) {
