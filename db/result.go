@@ -1,3 +1,5 @@
+//go:generate msgp
+//msgp:ignore LinkResultMap
 package db
 
 import (
@@ -20,9 +22,9 @@ var emptyLinkResultmapList = []LinkResultMap{}
 type QueryResult struct {
 	selectVars []query.SelectVar
 	Rows       []ResultMap
-	Links      []LinkResultMap
+	Links      []LinkResultMap `msg:"-"`
 	Count      int
-	Elapsed    time.Duration
+	Elapsed    time.Duration `msg:"-"`
 }
 
 func newQueryResult() QueryResult {

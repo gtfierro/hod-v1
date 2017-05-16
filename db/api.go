@@ -10,7 +10,9 @@ import (
 	turtle "github.com/gtfierro/hod/goraptor"
 	"github.com/gtfierro/hod/query"
 
+	"github.com/coocood/freecache"
 	"github.com/google/btree"
+	"github.com/pkg/errors"
 )
 
 func (db *DB) RunQuery(q query.Query) QueryResult {
@@ -27,6 +29,21 @@ func (db *DB) RunQuery(q query.Query) QueryResult {
 	// to run and then merge
 	orTerms := query.FlattenOrClauseList(q.Where.Ors)
 	oldFilters := q.Where.Filters
+
+	// check query hash
+	queryhash := q.Hash(orTerms)
+	if ans, err := db.queryCache.Get(queryhash); err == nil {
+		var res QueryResult
+		if _, err := res.UnmarshalMsg(ans); err != nil {
+			log.Error(errors.Wrap(err, "Could not fetch query from cache. Running..."))
+		} else {
+			return res
+		}
+	} else if err != nil && err == freecache.ErrNotFound {
+		log.Notice("Could not fetch query from cache")
+	} else if err != nil {
+		log.Error(errors.Wrap(err, "Could not access query cache"))
+	}
 
 	unionedRows := btree.New(3)
 	defer cleanResultRows(unionedRows)
@@ -140,6 +157,16 @@ func (db *DB) RunQuery(q query.Query) QueryResult {
 		unionedRows.Ascend(iter)
 		result.Count = len(result.Rows)
 	}
+
+	// set this in the cache
+	marshalled, err := result.MarshalMsg(nil)
+	if err != nil {
+		log.Error(errors.Wrap(err, "Could not marshal results"))
+	}
+	if err := db.queryCache.Set(queryhash, marshalled, -1); err != nil {
+		log.Error(errors.Wrap(err, "Could not cache results"))
+	}
+
 	return result
 }
 

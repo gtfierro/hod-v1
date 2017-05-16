@@ -65,6 +65,8 @@ type DB struct {
 	showQueryPlanLatencies bool
 	showOperationLatencies bool
 	showQueryLatencies     bool
+	// cache for query results
+	queryCache *freecache.Cache
 	// policy for sanitizing user links
 	policy *bluemonday.Policy
 }
@@ -118,6 +120,7 @@ func NewDB(cfg *config.Config) (*DB, error) {
 		entityHashCache:        freecache.NewCache(16 * 1024 * 1024), // 16 MB
 		entityObjectCache:      make(map[Key]*Entity),
 		uriCache:               make(map[Key]turtle.URI),
+		queryCache:             freecache.NewCache(64 * 1024 * 1024), // 64 MB
 		policy:                 bluemonday.StrictPolicy(),
 	}
 
