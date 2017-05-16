@@ -1,13 +1,53 @@
 package query
 
 import (
-	turtle "github.com/gtfierro/hod/goraptor"
 	"io"
+	"sort"
+
+	turtle "github.com/gtfierro/hod/goraptor"
+	"hash/fnv"
 )
 
 type Query struct {
 	Select SelectClause
 	Where  WhereClause
+}
+
+// generate a unique hash for this query.
+// To do this, we SORT the components (Select.Variables, Where.Filters, Where.Ors),
+// and then append them together to create the hash
+func (q Query) Hash(orTerms [][]Filter) []byte {
+	h := fnv.New64a()
+	var selectVars = make(sort.StringSlice, len(q.Select.Variables))
+	for idx, varname := range q.Select.Variables {
+		selectVars[idx] = varname.Var.String()
+	}
+	selectVars.Sort()
+	for _, hv := range selectVars {
+		h.Write([]byte(hv))
+	}
+
+	var whereFilters = make(sort.StringSlice, len(q.Where.Filters))
+	for idx, filter := range q.Where.Filters {
+		whereFilters[idx] = filter.String()
+	}
+	whereFilters.Sort()
+	for _, hv := range whereFilters {
+		h.Write([]byte(hv))
+	}
+
+	var fullOrFilters sort.StringSlice
+	for _, termlist := range orTerms {
+		for _, term := range termlist {
+			fullOrFilters = append(fullOrFilters, term.String())
+		}
+	}
+	fullOrFilters.Sort()
+	for _, hv := range fullOrFilters {
+		h.Write([]byte(hv))
+	}
+
+	return h.Sum(nil)
 }
 
 func (q Query) Copy() Query {
@@ -95,6 +135,14 @@ func (f Filter) NumVars() int {
 	return num
 }
 
+func (f Filter) String() string {
+	s := f.Subject.String()
+	for _, pp := range f.Path {
+		s += pp.String()
+	}
+	return s + f.Object.String()
+}
+
 type OrClause struct {
 	// a component of an OR clause
 	Terms []Filter
@@ -179,6 +227,10 @@ func FilterListToOrClause(filters []Filter) OrClause {
 type PathPattern struct {
 	Predicate turtle.URI
 	Pattern   Pattern
+}
+
+func (pp PathPattern) String() string {
+	return pp.Predicate.String() + string(pp.Pattern)
 }
 
 type Pattern uint
