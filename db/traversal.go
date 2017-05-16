@@ -7,6 +7,7 @@ import (
 	"github.com/gtfierro/hod/query"
 
 	"github.com/google/btree"
+	"github.com/pkg/errors"
 	"github.com/syndtr/goleveldb/leveldb"
 )
 
@@ -38,7 +39,8 @@ func (db *DB) followPathFromObject(object *Entity, results *btree.BTree, searchs
 			panic(fmt.Errorf("Could not insert entity %s (%v)", pattern.Predicate, err))
 		}
 	} else if err != nil {
-		panic(fmt.Errorf("Not found: %v (%s)", pattern.Predicate, err))
+		log.Error(errors.Wrapf(err, "Not found: %v", pattern.Predicate))
+		return
 	}
 
 	var traversed = traversedBTreePool.Get()
@@ -116,7 +118,8 @@ func (db *DB) followPathFromSubject(subject *Entity, results *btree.BTree, searc
 
 	predHash, err := db.GetHash(pattern.Predicate)
 	if err != nil {
-		panic(err)
+		log.Error(errors.Wrapf(err, "Not found: %v", pattern.Predicate))
+		return
 	}
 
 	var traversed = traversedBTreePool.Get()
@@ -200,7 +203,8 @@ func (db *DB) getSubjectFromPredObject(objectHash Key, path []query.PathPattern)
 	// get the object, look in its "in" edges for the path pattern
 	objEntity, err := db.GetEntityFromHash(objectHash)
 	if err != nil {
-		panic(err)
+		log.Error(errors.Wrapf(err, "Not found: %v", objectHash))
+		return nil
 	}
 
 	stack := list.New()
@@ -252,7 +256,8 @@ func (db *DB) getSubjectFromPredObject(objectHash Key, path []query.PathPattern)
 func (db *DB) getObjectFromSubjectPred(subjectHash Key, path []query.PathPattern) *btree.BTree {
 	subEntity, err := db.GetEntityFromHash(subjectHash)
 	if err != nil {
-		panic(err)
+		log.Error(errors.Wrapf(err, "Not found: %v", subjectHash))
+		return nil
 	}
 
 	// stack of entities to search
@@ -304,7 +309,8 @@ func (db *DB) getObjectFromSubjectPred(subjectHash Key, path []query.PathPattern
 func (db *DB) getSubjectObjectFromPred(path []query.PathPattern) (soPair [][]Key) {
 	pe, found := db.predIndex[path[0].Predicate]
 	if !found {
-		panic(fmt.Sprintf("Cannot find predicate %s", path[0].Predicate))
+		log.Errorf("Can't find predicate: %v", path[0].Predicate)
+		return
 	}
 	for subject, objectMap := range pe.Subjects {
 		for object := range objectMap {
