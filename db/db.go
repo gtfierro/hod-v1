@@ -66,7 +66,8 @@ type DB struct {
 	showOperationLatencies bool
 	showQueryLatencies     bool
 	// cache for query results
-	queryCache *freecache.Cache
+	queryCache        *freecache.Cache
+	queryCacheEnabled bool
 	// policy for sanitizing user links
 	policy *bluemonday.Policy
 }
@@ -120,7 +121,7 @@ func NewDB(cfg *config.Config) (*DB, error) {
 		entityHashCache:        freecache.NewCache(16 * 1024 * 1024), // 16 MB
 		entityObjectCache:      make(map[Key]*Entity),
 		uriCache:               make(map[Key]turtle.URI),
-		queryCache:             freecache.NewCache(64 * 1024 * 1024), // 64 MB
+		queryCacheEnabled:      !cfg.DisableQueryCache,
 		policy:                 bluemonday.StrictPolicy(),
 	}
 
@@ -129,6 +130,10 @@ func NewDB(cfg *config.Config) (*DB, error) {
 		return nil, errors.Wrap(err, "Could not create linkDB")
 	}
 	db.linkDB = linkDB
+
+	if db.queryCacheEnabled {
+		db.queryCache = freecache.NewCache(64 * 1024 * 1024) // 64 MB
+	}
 
 	// load predIndex and relationships from database
 	predIndexPath := path + "/predIndex"

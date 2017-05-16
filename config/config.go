@@ -8,10 +8,11 @@ import (
 )
 
 type Config struct {
-	DBPath        string
-	BrickFrameTTL string
-	BrickClassTTL string
-	ReloadBrick   bool
+	DBPath            string
+	BrickFrameTTL     string
+	BrickClassTTL     string
+	ReloadBrick       bool
+	DisableQueryCache bool
 
 	ShowNamespaces         bool
 	ShowDependencyGraph    bool
@@ -39,6 +40,7 @@ func init() {
 	viper.SetDefault("BrickFrameTTL", prefix+"/src/github.com/gtfierro/hod/BrickFrame.ttl")
 	viper.SetDefault("BrickClassTTL", prefix+"/src/github.com/gtfierro/hod/Brick.ttl")
 	viper.SetDefault("ReloadBrick", true)
+	viper.SetDefault("DisableQueryCache", false)
 
 	viper.SetDefault("ShowNamespaces", true)
 	viper.SetDefault("ShowDependencyGraph", false)
@@ -85,6 +87,7 @@ func ReadConfig(file string) (*Config, error) {
 		BrickFrameTTL:          viper.GetString("BrickFrameTTL"),
 		BrickClassTTL:          viper.GetString("BrickClassTTL"),
 		ReloadBrick:            viper.GetBool("ReloadBrick"),
+		DisableQueryCache:      viper.GetBool("DisableQueryCache"),
 		ShowNamespaces:         viper.GetBool("ShowNamespaces"),
 		ShowDependencyGraph:    viper.GetBool("ShowDependencyGraph"),
 		ShowQueryPlan:          viper.GetBool("ShowQueryPlan"),

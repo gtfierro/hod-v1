@@ -31,18 +31,21 @@ func (db *DB) RunQuery(q query.Query) QueryResult {
 	oldFilters := q.Where.Filters
 
 	// check query hash
-	queryhash := q.Hash(orTerms)
-	if ans, err := db.queryCache.Get(queryhash); err == nil {
-		var res QueryResult
-		if _, err := res.UnmarshalMsg(ans); err != nil {
-			log.Error(errors.Wrap(err, "Could not fetch query from cache. Running..."))
-		} else {
-			return res
+	var queryhash []byte
+	if db.queryCacheEnabled {
+		queryhash = q.Hash(orTerms)
+		if ans, err := db.queryCache.Get(queryhash); err == nil {
+			var res QueryResult
+			if _, err := res.UnmarshalMsg(ans); err != nil {
+				log.Error(errors.Wrap(err, "Could not fetch query from cache. Running..."))
+			} else {
+				return res
+			}
+		} else if err != nil && err == freecache.ErrNotFound {
+			log.Notice("Could not fetch query from cache")
+		} else if err != nil {
+			log.Error(errors.Wrap(err, "Could not access query cache"))
 		}
-	} else if err != nil && err == freecache.ErrNotFound {
-		log.Notice("Could not fetch query from cache")
-	} else if err != nil {
-		log.Error(errors.Wrap(err, "Could not access query cache"))
 	}
 
 	unionedRows := btree.New(3)
@@ -158,13 +161,15 @@ func (db *DB) RunQuery(q query.Query) QueryResult {
 		result.Count = len(result.Rows)
 	}
 
-	// set this in the cache
-	marshalled, err := result.MarshalMsg(nil)
-	if err != nil {
-		log.Error(errors.Wrap(err, "Could not marshal results"))
-	}
-	if err := db.queryCache.Set(queryhash, marshalled, -1); err != nil {
-		log.Error(errors.Wrap(err, "Could not cache results"))
+	if db.queryCacheEnabled {
+		// set this in the cache
+		marshalled, err := result.MarshalMsg(nil)
+		if err != nil {
+			log.Error(errors.Wrap(err, "Could not marshal results"))
+		}
+		if err := db.queryCache.Set(queryhash, marshalled, -1); err != nil {
+			log.Error(errors.Wrap(err, "Could not cache results"))
+		}
 	}
 
 	return result

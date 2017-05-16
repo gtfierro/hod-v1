@@ -1,4 +1,5 @@
 ReloadBrick: false
+DisableQueryCache: true
 ShowNamespaces: false
 ShowQueryPlan: false
 ShowDependencyGraph: false

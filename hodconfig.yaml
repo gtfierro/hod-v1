@@ -17,6 +17,11 @@
 # whether or not to reload the Brick database files
 #ReloadBrick: true
 
+# By default, each query w/n a generation is cached (up to 64 MB)
+# If DisableQueryCache is flipped to true, then this cache is disabled
+# and all queries run directly against the database
+#DisableQueryCache: false
+
 ####
 # configuration for verbosity during operation
 ####
