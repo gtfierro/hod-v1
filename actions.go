@@ -458,8 +458,8 @@ func ttlStat(c *cli.Context) error {
 	numTriples := 0
 	uniqueEdges := make(uniqCounter)
 	uniqueNodes := make(uniqCounter)
-	inDegree := make(map[string]int)
-	outDegree := make(map[string]int)
+	degree := make(map[string]int)
+	predFreq := make(map[string]int)
 	for fileidx := 0; fileidx < c.NArg(); fileidx++ {
 		filename := c.Args().Get(fileidx)
 		p := turtle.GetParser()
@@ -470,41 +470,54 @@ func ttlStat(c *cli.Context) error {
 			uniqueNodes.Add(triple.Subject.String())
 			uniqueNodes.Add(triple.Object.String())
 
-			//outedge := triple.Predicate.String() + triple.Object.String()
-			if cur, found := outDegree[triple.Subject.String()]; found {
-				outDegree[triple.Subject.String()] = cur + 1
+			if cur, found := degree[triple.Subject.String()]; found {
+				degree[triple.Subject.String()] = cur + 1
 			} else {
-				outDegree[triple.Subject.String()] = 1
+				degree[triple.Subject.String()] = 1
 			}
-			//inedge := triple.Subject.String() + triple.Predicate.String()
-			if cur, found := inDegree[triple.Object.String()]; found {
-				inDegree[triple.Object.String()] = cur + 1
+			if cur, found := degree[triple.Object.String()]; found {
+				degree[triple.Object.String()] = cur + 1
 			} else {
-				inDegree[triple.Object.String()] = 1
+				degree[triple.Object.String()] = 1
+			}
+
+			if cur, found := predFreq[triple.Predicate.String()]; found {
+				predFreq[triple.Predicate.String()] = cur + 1
+			} else {
+				predFreq[triple.Predicate.String()] = 1
 			}
 		}
 	}
 	// load into arrays so we can do stats
-	var inDegreeCounts stats.Float64Data
-	for _, count := range inDegree {
-		inDegreeCounts = append(inDegreeCounts, float64(count))
+	var degreeCounts stats.Float64Data
+	for _, count := range degree {
+		degreeCounts = append(degreeCounts, float64(count))
 	}
-	var outDegreeCounts stats.Float64Data
-	for _, count := range outDegree {
-		outDegreeCounts = append(outDegreeCounts, float64(count))
+	var predFrequencyCounts stats.Float64Data
+	for _, count := range predFreq {
+		predFrequencyCounts = append(predFrequencyCounts, float64(count))
 	}
 	fmt.Printf("# Triples: %d\n", numTriples)
-	fmt.Printf("# Unique Nodes: %0.2f\n", uniqueNodes.GetCount())
-	fmt.Printf("# Unique Edges: %0.2f\n", uniqueEdges.GetCount())
-	min_in, _ := inDegreeCounts.Min()
-	max_in, _ := inDegreeCounts.Max()
-	mean_in, _ := inDegreeCounts.Mean()
-	std_in, _ := inDegreeCounts.StandardDeviation()
-	fmt.Printf("In degree: Min %0.2f, Max %0.2f, Mean %0.2f, Std Dev %0.2f\n", min_in, max_in, mean_in, std_in)
-	min_out, _ := outDegreeCounts.Min()
-	max_out, _ := outDegreeCounts.Max()
-	mean_out, _ := outDegreeCounts.Mean()
-	std_out, _ := outDegreeCounts.StandardDeviation()
-	fmt.Printf("Out degree: Min %0.2f, Max %0.2f, Mean %0.2f, Std Dev %0.2f\n", min_out, max_out, mean_out, std_out)
+	fmt.Printf("# Unique Nodes: %0.0f\n", uniqueNodes.GetCount())
+	fmt.Printf("# Unique Edges: %0.0f\n", uniqueEdges.GetCount())
+	// compute density
+	// for N nodes in the graph, max edges is N(N-1) for a directed graph with 1 type of edge.
+	// For M types of edges, this is M*N*(N-1)
+	// density is the number of edges we have out of this theoretical maximum. Each triple corresponds to 1 edge
+	maxEdges := uniqueNodes.GetCount() * (uniqueNodes.GetCount() - 1) * uniqueEdges.GetCount()
+	density := float64(numTriples) / maxEdges
+	fmt.Printf("Density: %f\n", density)
+	sum_deg, _ := degreeCounts.Sum()
+	min_deg, _ := degreeCounts.Min()
+	max_deg, _ := degreeCounts.Max()
+	mean_deg := sum_deg / uniqueNodes.GetCount()
+	std_deg, _ := degreeCounts.StandardDeviation()
+	fmt.Printf("Degree: Min %0.2f, Max %0.2f, Mean %0.2f, Std Dev %0.2f\n", min_deg, max_deg, mean_deg, std_deg)
+	sum_pred, _ := predFrequencyCounts.Sum()
+	min_pred, _ := predFrequencyCounts.Min()
+	max_pred, _ := predFrequencyCounts.Max()
+	mean_pred := sum_pred / uniqueEdges.GetCount()
+	std_pred, _ := predFrequencyCounts.StandardDeviation()
+	fmt.Printf("Pred Frequencies: Min %0.2f, Max %0.2f, Mean %0.2f, Std Dev %0.2f\n", min_pred, max_pred, mean_pred, std_pred)
 	return nil
 }
