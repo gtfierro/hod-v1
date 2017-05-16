@@ -199,11 +199,11 @@ func TestDBQueryBerkeley(t *testing.T) {
 		},
 		{
 			"COUNT ?x WHERE { ?ahu rdf:type brick:AHU . ?ahu bf:feeds* ?x .};",
-			485,
+			482,
 		},
 		{
 			"COUNT ?x WHERE { ?ahu rdf:type brick:AHU . ?x bf:isFedBy* ?ahu .};",
-			485,
+			482,
 		},
 		{
 			"COUNT ?vav ?room WHERE { ?vav rdf:type brick:VAV . ?room rdf:type brick:Room . ?zone rdf:type brick:HVAC_Zone . ?vav bf:feeds+ ?zone . ?room bf:isPartOf ?zone . }; ",
@@ -264,6 +264,7 @@ func BenchmarkQueryPerformance1(b *testing.B) {
 		{"SimpleSubjectVarTriple", "SELECT ?x WHERE { ?x rdf:type brick:Room . };"},
 		{"LongerQuery1", "SELECT ?vav ?room WHERE { ?vav rdf:type brick:VAV . ?room rdf:type brick:Room . ?zone rdf:type brick:HVAC_Zone . ?vav bf:feeds+ ?zone . ?room bf:isPartOf ?zone . }; "},
 		{"LooseQuery", "SELECT ?pred ?obj WHERE {   ?vav rdf:type brick:VAV .    ?vav ?pred ?obj .  } ;"},
+		{"LocQuery", " SELECT ?sensor ?room WHERE { ?sensor rdf:type/rdfs:subClassOf* brick:Zone_Temperature_Sensor . ?room rdf:type brick:Room . ?vav rdf:type brick:VAV . ?zone rdf:type brick:HVAC_Zone . ?vav bf:feeds+ ?zone . ?zone bf:hasPart ?room . {{?sensor bf:isPointOf ?vav . } UNION {?sensor bf:isPointOf ?room . }} };"},
 	}
 
 	for _, bm := range benchmarks {
