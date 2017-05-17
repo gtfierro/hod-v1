@@ -3,8 +3,8 @@ package db
 import (
 	"bytes"
 	"fmt"
-	"github.com/google/btree"
 	"github.com/gtfierro/hod/query"
+	"github.com/mitghi/btree"
 )
 
 // merges all the keys from 'src' into 'dst'
@@ -46,9 +46,9 @@ func hashTreeToPointerTree(db *DB, src *btree.BTree) *pointerTree {
 
 // takes the intersection of the two trees and returns it
 func intersectTrees(a, b *btree.BTree) *btree.BTree {
-	res := btree.New(3)
+	res := btree.New(3, "")
 	// early skip
-	if a.Len() == 0 || b.Len() == 0 || a.Max().Less(b.Min()) || b.Max().Less(a.Min()) {
+	if a.Len() == 0 || b.Len() == 0 || a.Max().Less(b.Min(), "") || b.Max().Less(a.Min(), "") {
 		return res
 	}
 	if a.Len() < b.Len() {
@@ -69,7 +69,7 @@ func intersectTrees(a, b *btree.BTree) *btree.BTree {
 func intersectPointerTrees(a, b *pointerTree) *pointerTree {
 	res := newPointerTree(3)
 	// early skip
-	if a.Len() == 0 || b.Len() == 0 || a.Max().Less(b.Min()) || b.Max().Less(a.Min()) {
+	if a.Len() == 0 || b.Len() == 0 || a.Max().Less(b.Min(), "") || b.Max().Less(a.Min(), "") {
 		return res
 	}
 	if a.Len() < b.Len() {

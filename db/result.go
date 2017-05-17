@@ -13,7 +13,7 @@ import (
 	turtle "github.com/gtfierro/hod/goraptor"
 	"github.com/gtfierro/hod/query"
 
-	"github.com/google/btree"
+	"github.com/mitghi/btree"
 )
 
 var emptyResultMapList = []ResultMap{}
@@ -97,7 +97,7 @@ type ResultRow struct {
 	count int
 }
 
-func (rr ResultRow) Less(than btree.Item) bool {
+func (rr ResultRow) Less(than btree.Item, ctx interface{}) bool {
 	row := than.(*ResultRow)
 	if rr.count < row.count {
 		return true

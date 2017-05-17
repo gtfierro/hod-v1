@@ -1,7 +1,7 @@
 package db
 
 import (
-	"github.com/google/btree"
+	"github.com/mitghi/btree"
 )
 
 type linkRecord struct {
@@ -15,7 +15,7 @@ type pointerTree struct {
 
 func newPointerTree(size int) *pointerTree {
 	return &pointerTree{
-		tree: btree.New(size),
+		tree: btree.New(size, ""),
 	}
 }
 

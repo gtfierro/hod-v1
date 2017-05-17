@@ -11,7 +11,7 @@ import (
 	"github.com/gtfierro/hod/query"
 
 	"github.com/coocood/freecache"
-	"github.com/google/btree"
+	"github.com/mitghi/btree"
 	"github.com/pkg/errors"
 )
 
@@ -48,7 +48,7 @@ func (db *DB) RunQuery(q query.Query) QueryResult {
 		}
 	}
 
-	unionedRows := btree.New(3)
+	unionedRows := btree.New(3, "")
 	defer cleanResultRows(unionedRows)
 	fullQueryStart := time.Now()
 
@@ -141,7 +141,7 @@ func (db *DB) RunQuery(q query.Query) QueryResult {
 			if hasContent {
 				result.Links = append(result.Links, links)
 			}
-			return row.Less(max)
+			return row.Less(max, "")
 		}
 		unionedRows.Ascend(iter)
 		result.Count = len(result.Rows)
@@ -155,7 +155,7 @@ func (db *DB) RunQuery(q query.Query) QueryResult {
 				m[vname.Var.String()] = row.row[idx]
 			}
 			result.Rows = append(result.Rows, m)
-			return row.Less(max)
+			return row.Less(max, "")
 		}
 		unionedRows.Ascend(iter)
 		result.Count = len(result.Rows)

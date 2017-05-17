@@ -3,7 +3,7 @@ package db
 import (
 	"sync"
 
-	"github.com/google/btree"
+	"github.com/mitghi/btree"
 )
 
 var (
@@ -24,7 +24,7 @@ func newBtreePool(size int) *btreePool {
 		size: size,
 		pool: sync.Pool{
 			New: func() interface{} {
-				return btree.New(size)
+				return btree.New(size, "")
 			},
 		},
 	}

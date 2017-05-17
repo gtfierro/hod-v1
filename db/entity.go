@@ -4,7 +4,7 @@ package db
 import (
 	"encoding/binary"
 
-	"github.com/google/btree"
+	"github.com/mitghi/btree"
 )
 
 type PredIndex map[string]*PredicateEntity
@@ -25,7 +25,7 @@ func NewEntity() *Entity {
 	}
 }
 
-func (e *Entity) Less(than btree.Item) bool {
+func (e *Entity) Less(than btree.Item, ctx interface{}) bool {
 	t := than.(*Entity)
 	return binary.LittleEndian.Uint32(e.PK[:]) < binary.LittleEndian.Uint32(t.PK[:])
 }
