@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
+	"math/big"
 	"os"
 	"os/exec"
 	"os/user"
@@ -504,9 +505,11 @@ func ttlStat(c *cli.Context) error {
 	// for N nodes in the graph, max edges is N(N-1) for a directed graph with 1 type of edge.
 	// For M types of edges, this is M*N*(N-1)
 	// density is the number of edges we have out of this theoretical maximum. Each triple corresponds to 1 edge
-	maxEdges := uniqueNodes.GetCount() * (uniqueNodes.GetCount() - 1) * uniqueEdges.GetCount()
-	density := float64(numTriples) / maxEdges
-	fmt.Printf("Density: %f\n", density)
+	maxEdges := big.NewFloat(uniqueNodes.GetCount() * (uniqueNodes.GetCount() - 1) * uniqueEdges.GetCount())
+	ntFloat := big.NewFloat(float64(numTriples))
+	density := new(big.Float)
+	density.Quo(ntFloat, maxEdges)
+	fmt.Printf("Density: %s\n", density.String())
 	sum_deg, _ := degreeCounts.Sum()
 	min_deg, _ := degreeCounts.Min()
 	max_deg, _ := degreeCounts.Max()
