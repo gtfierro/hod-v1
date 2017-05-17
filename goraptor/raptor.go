@@ -108,17 +108,127 @@ package turtle
 import "C"
 
 import (
+	"bufio"
+	"bytes"
+	"io"
+	"io/ioutil"
+	"log"
+	"os"
 	"path/filepath"
+	"strings"
 )
 
+var linecutoff = int64(5e6)
+var epsilon = int64(1000)
+
+// TODO: if the file is over a certain length, chunk it!
 func (p *Parser) parseFile(filename string) {
 	extension := filepath.Ext(filename)
+	files := chunkFile(filename)
+	log.Println(files)
 	switch extension {
 	case "ttl", "turtle":
-		C.parse_file_turtle(C.CString(filename))
+		for _, filename := range files {
+			C.parse_file_turtle(C.CString(filename))
+		}
 	case "n3", "ntriples":
-		C.parse_file_ntriples(C.CString(filename))
+		for _, filename := range files {
+			C.parse_file_ntriples(C.CString(filename))
+		}
 	default:
-		C.parse_file_guess(C.CString(filename))
+		for _, filename := range files {
+			C.parse_file_guess(C.CString(filename))
+		}
 	}
+}
+
+// Given a large source file, we need to chunk it into several smaller files.
+func chunkFile(filename string) []string {
+	numlines, numbytes := getFileSize(filename)
+	log.Println("Lines:", numlines, "Bytes:", numbytes)
+	// if more than 10 million lines, then we need to chunk
+	var numFiles = int64(-1)
+	if numlines > linecutoff+epsilon {
+		numFiles = numlines / linecutoff
+		log.Printf("Splitting %s into %d files", filename, numFiles)
+	} else {
+		// if not too many lines, then we just return the current filename
+		return []string{filename}
+	}
+
+	file, err := os.Open(filename)
+	defer file.Close()
+	if err != nil {
+		log.Fatal(err)
+	}
+	header := ""
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
+		if strings.HasPrefix(line, "@prefix") || strings.HasPrefix(line, "@PREFIX") {
+			header += line + "\n"
+		} else {
+			break
+		}
+	}
+	// now have the header. Need to read approximately linecutoff lines into 'numFiles' files
+	chunkedfiles := make([]string, numFiles+1)
+	suffix := []byte{'.'}
+	eol := []byte{'\n'}
+	for idx := int64(0); idx < numFiles+int64(1); idx++ {
+		chunkfile, err := ioutil.TempFile(".", "chunk")
+		if err != nil {
+			log.Fatal(err)
+		}
+		// write the header
+		if _, err := chunkfile.Write([]byte(header)); err != nil {
+			log.Fatal(err)
+		}
+
+		numread := int64(0)
+		for scanner.Scan() {
+			line := scanner.Bytes()
+			numread += 1
+			if _, err := chunkfile.Write(line); err != nil {
+				log.Fatal(err)
+			}
+			if _, err := chunkfile.Write(eol); err != nil {
+				log.Fatal(err)
+			}
+			if numread > linecutoff && bytes.HasSuffix(line, suffix) {
+				break
+			}
+		}
+		chunkedfiles[idx] = chunkfile.Name()
+	}
+	return chunkedfiles
+}
+
+func getFileSize(filename string) (numlines, numbytes int64) {
+	// get bytes
+	stats, err := os.Stat(filename)
+	if err != nil {
+		log.Fatal(err)
+	}
+	numbytes = stats.Size()
+
+	// get lines
+	file, err := os.Open(filename)
+	defer file.Close()
+	if err != nil {
+		log.Fatal(err)
+	}
+	buf := make([]byte, 32*1024)
+	sep := []byte{'\n'}
+	for {
+		n, err := file.Read(buf)
+		numlines += int64(bytes.Count(buf[:n], sep))
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			log.Println(err)
+		}
+	}
+	return
+
 }
