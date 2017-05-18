@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/md5"
 	"encoding/binary"
+	"encoding/csv"
 	"encoding/json"
 	"fmt"
 	"math/big"
@@ -522,5 +523,29 @@ func ttlStat(c *cli.Context) error {
 	mean_pred := sum_pred / uniqueEdges.GetCount()
 	std_pred, _ := predFrequencyCounts.StandardDeviation()
 	fmt.Printf("Pred Frequencies: Min %0.2f, Max %0.2f, Mean %0.2f, Std Dev %0.2f\n", min_pred, max_pred, mean_pred, std_pred)
+
+	// write the degree and predicate data to files; one entry per line
+	degreefile, err := os.Create("degree.csv")
+	if err != nil {
+		log.Fatal(errors.Wrap(err, "Could not create degree file"))
+	}
+	degreecsv := csv.NewWriter(degreefile)
+	for _, cnt := range degreeCounts {
+		if err := degreecsv.Write([]string{fmt.Sprintf("%d", int64(cnt))}); err != nil {
+			log.Fatal(errors.Wrap(err, "Could not write to CSV file"))
+		}
+	}
+	degreecsv.Flush()
+	edgefile, err := os.Create("edge.csv")
+	if err != nil {
+		log.Fatal(errors.Wrap(err, "Could not create edge file"))
+	}
+	edgecsv := csv.NewWriter(edgefile)
+	for _, cnt := range predFrequencyCounts {
+		if err := edgecsv.Write([]string{fmt.Sprintf("%d", int64(cnt))}); err != nil {
+			log.Fatal(errors.Wrap(err, "Could not write to CSV file"))
+		}
+	}
+	edgecsv.Flush()
 	return nil
 }
