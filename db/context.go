@@ -8,16 +8,16 @@ import (
 	"github.com/gtfierro/hod/query"
 )
 
-var emptyTree = newPointerTree(3)
+var emptyTree = newHashTree(3)
 
 // queryContext
 type queryContext struct {
-	candidates       map[string]*pointerTree
+	candidates       map[string]*hashTree
 	chains           map[Key]map[string]*linkRecord
 	db               *DB
 	_traverseOrder   *varlist
 	traverseVars     map[string]*list.Element
-	linkedValueCache map[Key]map[string]*pointerTree
+	linkedValueCache map[Key]map[string]*hashTree
 	tupleCache       map[string][]map[string]turtle.URI
 	vardepth         map[string]int
 	varpos           map[string]int
@@ -27,12 +27,12 @@ type queryContext struct {
 
 func newQueryContext(plan *queryPlan, db *DB) *queryContext {
 	ctx := &queryContext{
-		candidates:       make(map[string]*pointerTree),
+		candidates:       make(map[string]*hashTree),
 		chains:           make(map[Key]map[string]*linkRecord),
 		queryPlan:        plan,
 		_traverseOrder:   newvarlist(),
 		traverseVars:     make(map[string]*list.Element),
-		linkedValueCache: make(map[Key]map[string]*pointerTree),
+		linkedValueCache: make(map[Key]map[string]*hashTree),
 		tupleCache:       make(map[string][]map[string]turtle.URI),
 		vardepth:         make(map[string]int),
 		varpos:           make(map[string]int),
@@ -53,8 +53,8 @@ func (ctx *queryContext) dumpChildren() {
 			continue
 		}
 		fmt.Println("var ", varname, "has children")
-		i := tree.Max()
-		for varname, links := range ctx.chains[i.PK] {
+		pk := tree.Max()
+		for varname, links := range ctx.chains[pk] {
 			fmt.Println("   =>", varname, len(links.links))
 		}
 
@@ -85,14 +85,14 @@ func (ctx *queryContext) dumpTraverseOrder() {
 
 // returns the set of current guesses for the given variable
 // returns TRUE if the tree is known, FALSE otherwise
-func (ctx *queryContext) getValues(varname string) (*pointerTree, bool) {
+func (ctx *queryContext) getValues(varname string) (*hashTree, bool) {
 	if tree, found := ctx.candidates[varname]; found && tree != nil {
 		return tree, true
 	}
 	return emptyTree, false
 }
 
-func (ctx *queryContext) candidateHasValue(varname string, ent *Entity) bool {
+func (ctx *queryContext) candidateHasValue(varname string, ent Key) bool {
 	tree, found := ctx.candidates[varname]
 	if found {
 		return tree.Has(ent)
@@ -101,34 +101,34 @@ func (ctx *queryContext) candidateHasValue(varname string, ent *Entity) bool {
 }
 
 // returns the set of reachable values from the given entity
-func (ctx *queryContext) getLinkedValues(varname string, ent *Entity) *pointerTree {
-	if tree, found := ctx.linkedValueCache[ent.PK][varname]; found {
+func (ctx *queryContext) getLinkedValues(varname string, ent Key) *hashTree {
+	if tree, found := ctx.linkedValueCache[ent][varname]; found {
 		return tree
 	}
-	var res = newPointerTree(3)
-	chain := ctx.chains[ent.PK][varname]
+	var res = newHashTree(3)
+	chain := ctx.chains[ent][varname]
 	if chain != nil {
 		for _, link := range chain.links {
-			res.Add(ctx.db.MustGetEntityFromHash(link.me))
+			res.Add(link.me)
 		}
 	}
-	if _, found := ctx.linkedValueCache[ent.PK]; !found {
-		ctx.linkedValueCache[ent.PK] = make(map[string]*pointerTree)
+	if _, found := ctx.linkedValueCache[ent]; !found {
+		ctx.linkedValueCache[ent] = make(map[string]*hashTree)
 	}
-	ctx.linkedValueCache[ent.PK][varname] = res
+	ctx.linkedValueCache[ent][varname] = res
 	return res
 }
 
 // if we already have values for the given variable name, we filter the values given by those
 // (take the intersection). Else we just keep the provided values the same
-func (ctx *queryContext) filterIfDefined(varname string, values *pointerTree) *pointerTree {
+func (ctx *queryContext) filterIfDefined(varname string, values *hashTree) *hashTree {
 	if tree, found := ctx.getValues(varname); found {
-		values = intersectPointerTrees(tree, values)
+		values = intersectHashTrees(tree, values)
 	}
 	return values
 }
 
-func (ctx *queryContext) define(varname string, values *pointerTree) {
+func (ctx *queryContext) define(varname string, values *hashTree) {
 	ctx.candidates[varname] = values
 
 	if !ctx._traverseOrder.has(varname) {
@@ -139,9 +139,9 @@ func (ctx *queryContext) define(varname string, values *pointerTree) {
 
 // if values don't exist for the variable w/n this context, then we just add these values
 // if values DO already exist, then we take the intersection
-func (ctx *queryContext) addOrFilterVariable(varname string, values *pointerTree) {
+func (ctx *queryContext) addOrFilterVariable(varname string, values *hashTree) {
 	if oldValues, exists := ctx.candidates[varname]; exists {
-		ctx.candidates[varname] = intersectPointerTrees(oldValues, values)
+		ctx.candidates[varname] = intersectHashTrees(oldValues, values)
 		values = ctx.candidates[varname]
 	} else {
 		ctx.candidates[varname] = values
@@ -154,9 +154,9 @@ func (ctx *queryContext) addOrFilterVariable(varname string, values *pointerTree
 }
 
 // unions, not intersects
-func (ctx *queryContext) addOrMergeVariable(varname string, values *pointerTree) {
+func (ctx *queryContext) addOrMergeVariable(varname string, values *hashTree) {
 	if oldValues, exists := ctx.candidates[varname]; exists {
-		mergePointerTrees(oldValues, values)
+		mergeHashTrees(oldValues, values)
 		ctx.candidates[varname] = oldValues
 	} else {
 		ctx.candidates[varname] = values
@@ -166,16 +166,16 @@ func (ctx *queryContext) addOrMergeVariable(varname string, values *pointerTree)
 		ctx._traverseOrder.pushBack(varname)
 	}
 }
-func (ctx *queryContext) addReachable(parent *Entity, parentVar string, reachable *pointerTree, reachableVar string) {
-	chain, found := ctx.chains[parent.PK][reachableVar]
+func (ctx *queryContext) addReachable(parent Key, parentVar string, reachable *hashTree, reachableVar string) {
+	chain, found := ctx.chains[parent][reachableVar]
 	if !found {
-		chain = &linkRecord{me: parent.PK}
+		chain = &linkRecord{me: parent}
 	}
 	reachable.mergeOntoLinkRecord(chain)
-	if _, found := ctx.chains[parent.PK]; !found {
-		ctx.chains[parent.PK] = make(map[string]*linkRecord)
+	if _, found := ctx.chains[parent]; !found {
+		ctx.chains[parent] = make(map[string]*linkRecord)
 	}
-	ctx.chains[parent.PK][reachableVar] = chain
+	ctx.chains[parent][reachableVar] = chain
 
 	if !ctx._traverseOrder.has(parentVar) {
 		ctx._traverseOrder.pushBack(parentVar)
@@ -187,17 +187,17 @@ func (ctx *queryContext) addReachable(parent *Entity, parentVar string, reachabl
 	}
 }
 
-func (ctx *queryContext) addReachableSingle(parent *Entity, parentVar string, reachable *Entity, reachableVar string) {
-	chain, found := ctx.chains[parent.PK][reachableVar]
+func (ctx *queryContext) addReachableSingle(parent Key, parentVar string, reachable Key, reachableVar string) {
+	chain, found := ctx.chains[parent][reachableVar]
 	if !found {
-		chain = &linkRecord{me: parent.PK}
+		chain = &linkRecord{me: parent}
 	}
 	// add on this one record
-	chain.links = append(chain.links, &linkRecord{me: reachable.PK})
-	if _, found := ctx.chains[parent.PK]; !found {
-		ctx.chains[parent.PK] = make(map[string]*linkRecord)
+	chain.links = append(chain.links, &linkRecord{me: reachable})
+	if _, found := ctx.chains[parent]; !found {
+		ctx.chains[parent] = make(map[string]*linkRecord)
 	}
-	ctx.chains[parent.PK][reachableVar] = chain
+	ctx.chains[parent][reachableVar] = chain
 
 	if !ctx._traverseOrder.has(parentVar) {
 		ctx._traverseOrder.pushBack(parentVar)
@@ -303,9 +303,10 @@ func (ctx *queryContext) expandTuples() []*ResultRow {
 	}
 
 	max := topVarTree.Max()
-	iter := func(ent *Entity) bool {
+	iter := func(k Key) bool {
+		ent := ctx.db.MustGetEntityFromHash(k)
 		results = append(results, ctx.expandEntity(startvar, ent)...)
-		return ent != max
+		return ent.PK != max
 	}
 	topVarTree.Iter(iter)
 

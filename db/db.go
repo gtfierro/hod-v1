@@ -26,6 +26,7 @@ import (
 // logger
 var log *logging.Logger
 var emptyHash = Key{0, 0, 0, 0}
+var emptyKey = Key{0, 0, 0, 0}
 
 func init() {
 	log = logging.MustGetLogger("hod")
