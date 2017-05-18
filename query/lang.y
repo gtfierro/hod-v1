@@ -303,6 +303,43 @@ pathatom     : uri
              | LPAREN path RPAREN
              {
                 $$.pred = $2.pred
+                $$.multipred = $2.multipred
+             }
+             | LPAREN path RPAREN PLUS
+             {
+                for idx, patlist := range $2.multipred {
+                    for idx2, pat := range patlist {
+                        pat.Pattern = PATTERN_ONE_PLUS
+                        patlist[idx2] = pat
+                    }
+                    $2.multipred[idx] = patlist
+                }
+                $$.pred = $2.pred
+                $$.multipred = $2.multipred
+             }
+             | LPAREN path RPAREN QUESTION
+             {
+                for idx, patlist := range $2.multipred {
+                    for idx2, pat := range patlist {
+                        pat.Pattern = PATTERN_ZERO_ONE
+                        patlist[idx2] = pat
+                    }
+                    $2.multipred[idx] = patlist
+                }
+                $$.pred = $2.pred
+                $$.multipred = $2.multipred
+             }
+             | LPAREN path RPAREN ASTERISK
+             {
+                for idx, patlist := range $2.multipred {
+                    for idx2, pat := range patlist {
+                        pat.Pattern = PATTERN_ZERO_PLUS
+                        patlist[idx2] = pat
+                    }
+                    $2.multipred[idx] = patlist
+                }
+                $$.pred = $2.pred
+                $$.multipred = $2.multipred
              }
              ;
 

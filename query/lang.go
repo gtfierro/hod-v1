@@ -103,7 +103,7 @@ const yyEofCode = 1
 const yyErrCode = 2
 const yyInitialStackSize = 16
 
-//line lang.y:322
+//line lang.y:359
 
 const eof = 0
 
@@ -204,39 +204,43 @@ var yyExca = [...]int{
 	-2, 0,
 }
 
+const yyNprod = 46
 const yyPrivate = 57344
 
-const yyLast = 94
+var yyTokenNames []string
+var yyStates []string
+
+const yyLast = 97
 
 var yyAct = [...]int{
 
 	27, 54, 32, 37, 29, 42, 30, 31, 34, 35,
 	71, 46, 51, 33, 24, 26, 17, 15, 31, 34,
-	35, 45, 34, 35, 33, 39, 72, 38, 81, 41,
-	12, 49, 44, 15, 13, 47, 75, 50, 59, 60,
-	61, 57, 70, 80, 67, 58, 72, 56, 40, 44,
-	44, 15, 62, 63, 65, 66, 68, 69, 36, 11,
-	44, 44, 64, 73, 74, 16, 77, 78, 76, 79,
-	19, 53, 21, 22, 23, 52, 18, 25, 4, 5,
-	55, 6, 20, 8, 2, 10, 7, 43, 9, 48,
-	28, 14, 3, 1,
+	35, 45, 34, 35, 33, 39, 72, 38, 84, 41,
+	12, 49, 44, 15, 13, 47, 75, 50, 80, 81,
+	82, 59, 60, 61, 57, 70, 67, 56, 58, 44,
+	44, 15, 62, 63, 40, 83, 68, 69, 72, 11,
+	44, 44, 36, 73, 74, 16, 77, 78, 76, 79,
+	65, 66, 21, 22, 23, 19, 18, 25, 64, 53,
+	52, 4, 5, 55, 6, 20, 8, 2, 10, 7,
+	43, 9, 48, 28, 14, 3, 1,
 }
 var yyPact = [...]int{
 
-	74, -1000, 76, 74, 24, 6, -1000, 63, 55, 75,
+	77, -1000, 79, 77, 24, 6, -1000, 63, 60, 78,
 	-1000, -1000, -10, -10, -10, -16, -1000, -10, -14, -9,
-	43, -1000, -1000, -1000, 1, -1000, -1000, 32, -9, -6,
-	-9, -1000, -1000, -1000, -1000, -1000, -9, -19, 61, 57,
-	69, -1000, -20, 20, 16, -1000, -6, -6, 46, -1000,
-	28, -1000, 1, 1, 22, -22, 7, -6, -6, -1000,
-	-1000, -1000, 18, -20, -1000, -9, -9, 69, -1000, -1000,
-	-1000, -1000, -1000, -1000, -1000, -1000, 27, -1000, -1000, 8,
-	-1000, -1000,
+	47, -1000, -1000, -1000, 1, -1000, -1000, 38, -9, -6,
+	-9, -1000, -1000, -1000, -1000, -1000, -9, -19, 66, 65,
+	72, -1000, -20, 23, 19, -1000, -6, -6, 62, -1000,
+	30, -1000, 1, 1, 25, -22, 7, -6, -6, -1000,
+	-1000, -1000, 18, -20, -1000, -9, -9, 72, -1000, -1000,
+	-1000, -1000, -1000, -1000, -1000, 16, 39, -1000, -1000, 8,
+	-1000, -1000, -1000, -1000, -1000,
 }
 var yyPgo = [...]int{
 
-	0, 93, 84, 0, 1, 92, 81, 59, 91, 3,
-	90, 4, 5, 89, 87, 2,
+	0, 96, 87, 0, 1, 95, 84, 59, 94, 3,
+	93, 4, 5, 92, 90, 2,
 }
 var yyR1 = [...]int{
 
@@ -244,7 +248,7 @@ var yyR1 = [...]int{
 	2, 4, 4, 7, 7, 8, 8, 9, 9, 9,
 	9, 3, 3, 10, 10, 10, 13, 13, 13, 12,
 	12, 12, 15, 15, 14, 14, 14, 14, 14, 14,
-	11, 11, 11,
+	14, 14, 14, 11, 11, 11,
 }
 var yyR2 = [...]int{
 
@@ -252,7 +256,7 @@ var yyR2 = [...]int{
 	3, 0, 2, 1, 2, 4, 1, 1, 1, 3,
 	3, 1, 2, 4, 5, 3, 1, 3, 3, 1,
 	3, 3, 1, 1, 1, 1, 2, 2, 2, 3,
-	1, 1, 1,
+	4, 4, 4, 1, 1, 1,
 }
 var yyChk = [...]int{
 
@@ -264,19 +268,19 @@ var yyChk = [...]int{
 	-3, 31, 14, 14, -4, 11, -11, 21, 25, 22,
 	23, 24, -12, -12, 16, 8, 9, 16, -9, -9,
 	20, 32, 19, -12, -12, 18, -11, -3, -3, -4,
-	16, 20,
+	22, 23, 24, 16, 20,
 }
 var yyDef = [...]int{
 
 	0, -2, 0, 0, 0, 0, 3, 0, 0, 0,
 	4, 6, 0, 0, 13, 16, 9, 0, 0, 0,
 	0, 7, 8, 14, 0, 10, 5, 0, 21, 0,
-	0, 40, 41, 42, 32, 33, 0, 0, 17, 18,
+	0, 43, 44, 45, 32, 33, 0, 0, 17, 18,
 	11, 22, 0, 29, 34, 35, 0, 0, 0, 26,
 	0, 15, 0, 0, 0, 0, 0, 0, 0, 36,
 	37, 38, 0, 0, 25, 0, 0, 11, 19, 20,
 	1, 12, 23, 30, 31, 39, 0, 27, 28, 0,
-	24, 2,
+	40, 41, 42, 24, 2,
 }
 var yyTok1 = [...]int{
 
@@ -939,22 +943,65 @@ yydefault:
 		//line lang.y:304
 		{
 			yyVAL.pred = yyDollar[2].pred
+			yyVAL.multipred = yyDollar[2].multipred
 		}
 	case 40:
-		yyDollar = yyS[yypt-1 : yypt+1]
-		//line lang.y:310
+		yyDollar = yyS[yypt-4 : yypt+1]
+		//line lang.y:309
 		{
-			yyVAL.val = turtle.ParseURI(yyDollar[1].str)
+			for idx, patlist := range yyDollar[2].multipred {
+				for idx2, pat := range patlist {
+					pat.Pattern = PATTERN_ONE_PLUS
+					patlist[idx2] = pat
+				}
+				yyDollar[2].multipred[idx] = patlist
+			}
+			yyVAL.pred = yyDollar[2].pred
+			yyVAL.multipred = yyDollar[2].multipred
 		}
 	case 41:
+		yyDollar = yyS[yypt-4 : yypt+1]
+		//line lang.y:321
+		{
+			for idx, patlist := range yyDollar[2].multipred {
+				for idx2, pat := range patlist {
+					pat.Pattern = PATTERN_ZERO_ONE
+					patlist[idx2] = pat
+				}
+				yyDollar[2].multipred[idx] = patlist
+			}
+			yyVAL.pred = yyDollar[2].pred
+			yyVAL.multipred = yyDollar[2].multipred
+		}
+	case 42:
+		yyDollar = yyS[yypt-4 : yypt+1]
+		//line lang.y:333
+		{
+			for idx, patlist := range yyDollar[2].multipred {
+				for idx2, pat := range patlist {
+					pat.Pattern = PATTERN_ZERO_PLUS
+					patlist[idx2] = pat
+				}
+				yyDollar[2].multipred[idx] = patlist
+			}
+			yyVAL.pred = yyDollar[2].pred
+			yyVAL.multipred = yyDollar[2].multipred
+		}
+	case 43:
 		yyDollar = yyS[yypt-1 : yypt+1]
-		//line lang.y:314
+		//line lang.y:347
 		{
 			yyVAL.val = turtle.ParseURI(yyDollar[1].str)
 		}
-	case 42:
+	case 44:
 		yyDollar = yyS[yypt-1 : yypt+1]
-		//line lang.y:318
+		//line lang.y:351
+		{
+			yyVAL.val = turtle.ParseURI(yyDollar[1].str)
+		}
+	case 45:
+		yyDollar = yyS[yypt-1 : yypt+1]
+		//line lang.y:355
 		{
 			yyVAL.val = turtle.ParseURI(yyDollar[1].str)
 		}
