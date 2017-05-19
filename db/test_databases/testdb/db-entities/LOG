@@ -1,31 +1,48 @@
-=============== Apr 28, 2017 (PDT) ===============
-09:40:35.926729 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
-09:40:35.926865 db@open opening
-09:40:35.927982 version@stat F·[] S·0B[] Sc·[]
-09:40:35.929728 db@janitor F·2 G·0
-09:40:35.929746 db@open done T·2.87445ms
-09:40:36.274362 transaction@flush created L0@2 N·66 S·1KiB ",v2":"htt..rom,v61"
-09:40:36.274391 version@stat F·[1] S·1KiB[1KiB] Sc·[0.25]
-09:40:36.639588 transaction@flush created L0@3 N·3090 S·66KiB "\"Av..@en,v2622":"vir..ols,v2884"
-09:40:36.639624 version@stat F·[2] S·68KiB[68KiB] Sc·[0.50]
-09:40:36.659963 table@compaction L0·2 -> L1·0 S·68KiB Q·3156
-09:40:36.664978 table@build created L1@4 N·3156 S·67KiB ",v2":"vir..ols,v2884"
-09:40:36.665026 version@stat F·[0 1] S·67KiB[0B 67KiB] Sc·[0.00 0.00]
-09:40:36.668743 table@compaction committed F-1 S-272B Ke·0 D·0 T·8.745322ms
-09:40:36.668814 table@remove removed @3
-09:40:36.668849 table@remove removed @2
-09:40:37.155994 transaction@flush created L0@5 N·7 S·365B "Room 1,v3160":"htt..p_1,v3163"
-09:40:37.156059 version@stat F·[1 1] S·68KiB[365B 67KiB] Sc·[0.25 0.00]
-09:40:37.189677 db@close closing
-09:40:37.189751 db@close done T·72.227µs
-=============== Apr 28, 2017 (PDT) ===============
-09:40:47.637129 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
-09:40:47.637261 version@stat F·[1 1] S·68KiB[365B 67KiB] Sc·[0.25 0.00]
-09:40:47.637270 db@open opening
-09:40:47.637319 journal@recovery F·1
-09:40:47.637892 journal@recovery recovering @1
-09:40:47.639089 version@stat F·[1 1] S·68KiB[365B 67KiB] Sc·[0.25 0.00]
-09:40:47.639331 db@janitor F·4 G·0
-09:40:47.639366 db@open done T·2.08112ms
-09:40:47.662549 db@close closing
-09:40:47.662601 db@close done T·50.629µs
+=============== May 18, 2017 (PDT) ===============
+18:42:04.908715 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+18:42:04.908845 db@open opening
+18:42:04.909641 version@stat F·[] S·0B[] Sc·[]
+18:42:04.913974 db@janitor F·2 G·0
+18:42:04.914000 db@open done T·5.148473ms
+18:42:05.175161 transaction@flush created L0@2 N·66 S·1KiB ",v2":"htt..rom,v61"
+18:42:05.175211 version@stat F·[1] S·1KiB[1KiB] Sc·[0.25]
+18:42:05.488980 transaction@flush created L0@3 N·2782 S·61KiB "\"Av..@en,v2314":"vir..ls\",v2576"
+18:42:05.489036 version@stat F·[2] S·63KiB[63KiB] Sc·[0.50]
+18:42:05.507632 table@compaction L0·2 -> L1·0 S·63KiB Q·2848
+18:42:05.516765 table@build created L1@4 N·2848 S·63KiB ",v2":"vir..ls\",v2576"
+18:42:05.516833 version@stat F·[0 1] S·63KiB[0B 63KiB] Sc·[0.00 0.00]
+18:42:05.525823 table@compaction committed F-1 S-264B Ke·0 D·0 T·18.140871ms
+18:42:05.525933 table@remove removed @3
+18:42:05.525987 table@remove removed @2
+18:42:06.036477 transaction@flush created L0@5 N·7 S·366B "Room 1,v2852":"htt..p_1,v2855"
+18:42:06.036518 version@stat F·[1 1] S·63KiB[366B 63KiB] Sc·[0.25 0.00]
+18:42:06.079291 db@close closing
+18:42:06.079362 db@close done T·71.828µs
+=============== May 18, 2017 (PDT) ===============
+18:42:07.300462 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+18:42:07.300606 version@stat F·[1 1] S·63KiB[366B 63KiB] Sc·[0.25 0.00]
+18:42:07.300615 db@open opening
+18:42:07.300656 journal@recovery F·1
+18:42:07.302625 journal@recovery recovering @1
+18:42:07.303668 version@stat F·[1 1] S·63KiB[366B 63KiB] Sc·[0.25 0.00]
+18:42:07.303994 db@janitor F·4 G·0
+18:42:07.304014 db@open done T·3.391667ms
+18:42:21.856454 db@close closing
+18:42:21.856559 db@close done T·95.753µs
+=============== May 18, 2017 (PDT) ===============
+18:44:21.914991 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+18:44:21.915121 version@stat F·[1 1] S·63KiB[366B 63KiB] Sc·[0.25 0.00]
+18:44:21.915130 db@open opening
+18:44:21.915167 journal@recovery F·1
+18:44:21.915546 journal@recovery recovering @6
+18:44:21.916648 version@stat F·[1 1] S·63KiB[366B 63KiB] Sc·[0.25 0.00]
+18:44:21.916913 db@janitor F·4 G·0
+18:44:21.916927 db@open done T·1.792163ms
+18:44:22.282565 table@compaction L0·1 -> L1·1 S·63KiB Q·2855
+18:44:22.346703 table@build created L1@10 N·2855 S·63KiB ",v2":"vir..ls\",v2576"
+18:44:22.348891 version@stat F·[0 1] S·63KiB[0B 63KiB] Sc·[0.00 0.00]
+18:44:22.352033 table@compaction committed F-1 S-190B Ke·0 D·0 T·67.36637ms
+18:44:22.352122 table@remove removed @5
+18:44:22.352159 table@remove removed @4
+18:44:23.924148 db@close closing
+18:44:23.924226 db@close done T·77.004µs
