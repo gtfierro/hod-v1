@@ -176,6 +176,10 @@ func (db *DB) buildGraph(dataset turtle.DataSet) error {
 	}
 
 	// third pass
+	extendtx, err := db.extendedDB.OpenTransaction()
+	if err != nil {
+		return errors.Wrap(err, "Could not open transaction on extended index")
+	}
 	forwardPath := query.PathPattern{Pattern: query.PATTERN_ONE_PLUS}
 	results := btree.New(2, "")
 	for predicate, predent := range db.predIndex {
@@ -183,21 +187,94 @@ func (db *DB) buildGraph(dataset turtle.DataSet) error {
 			continue
 		}
 		forwardPath.Predicate = predicate
-		// TODO: use gethash to get the new hash of the predicate using "+" added to the value, and then 'addoutedge', 'addinedge'
-		predicate.Value += "+"
 		extendedPred := db.MustGetHash(predicate)
 		for subjectStringHash := range predent.Subjects {
 			var subjectHash Key
 			subjectHash.FromSlice([]byte(subjectStringHash))
+			if exists, err := extendtx.Has(subjectHash[:], nil); err == nil && !exists {
+				subjectIndex := NewEntityExtendedIndex()
+				subjectIndex.PK = subjectHash
+				bytes, err := subjectIndex.MarshalMsg(nil)
+				if err != nil {
+					return err
+				}
+				if err := extendtx.Put(subjectHash[:], bytes, nil); err != nil {
+					return err
+				}
+			} else if err != nil {
+				return err
+			}
+			subjectIndex, err := db.GetEntityIndexFromHashTx(extendtx, subjectHash)
+			if err != nil {
+				return err
+			}
+
+			subject, err := db.GetEntityFromHash(subjectHash)
+			if err != nil {
+				return err
+			}
 			stack := list.New()
-			subject := db.MustGetEntityFromHash(subjectHash)
 			db.followPathFromSubject(subject, results, stack, forwardPath)
 			//log.Debug(db.MustGetURI(subjectHash).Value, predicate.Value, results.Len())
 			for results.Len() > 0 {
 				i := results.DeleteMax()
-				subject.AddOutEdge(extendedPred, i.(Key))
+				subjectIndex.AddOutPlusEdge(extendedPred, i.(Key))
+			}
+			bytes, err := subjectIndex.MarshalMsg(nil)
+			if err != nil {
+				return err
+			}
+			if err := extendtx.Put(subjectIndex.PK[:], bytes, nil); err != nil {
+				return err
 			}
 		}
+		if reversePredicate, hasReverse := db.relationships[predicate]; hasReverse {
+			forwardPath.Predicate = reversePredicate
+			extendedPred = db.MustGetHash(predicate)
+			for objectStringHash := range predent.Objects {
+				var objectHash Key
+				objectHash.FromSlice([]byte(objectStringHash))
+				if exists, err := extendtx.Has(objectHash[:], nil); err == nil && !exists {
+					objectIndex := NewEntityExtendedIndex()
+					objectIndex.PK = objectHash
+					bytes, err := objectIndex.MarshalMsg(nil)
+					if err != nil {
+						return err
+					}
+					if err := extendtx.Put(objectHash[:], bytes, nil); err != nil {
+						return err
+					}
+				} else if err != nil {
+					return err
+				}
+				objectIndex, err := db.GetEntityIndexFromHashTx(extendtx, objectHash)
+				if err != nil {
+					return err
+				}
+
+				object, err := db.GetEntityFromHash(objectHash)
+				if err != nil {
+					return err
+				}
+				stack := list.New()
+				db.followPathFromObject(object, results, stack, forwardPath)
+				//log.Debug(db.MustGetURI(objectHash).Value, predicate.Value, results.Len())
+				for results.Len() > 0 {
+					i := results.DeleteMax()
+					objectIndex.AddOutPlusEdge(extendedPred, i.(Key))
+				}
+				bytes, err := objectIndex.MarshalMsg(nil)
+				if err != nil {
+					return err
+				}
+				if err := extendtx.Put(objectIndex.PK[:], bytes, nil); err != nil {
+					return err
+				}
+			}
+		}
+	}
+	if err = extendtx.Commit(); err != nil {
+		return errors.Wrap(err, "Could not commit transaction")
 	}
 
 	return nil
