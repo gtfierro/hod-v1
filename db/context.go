@@ -304,9 +304,8 @@ func (ctx *queryContext) expandTuples() []*ResultRow {
 
 	max := topVarTree.Max()
 	iter := func(k Key) bool {
-		ent := ctx.db.MustGetEntityFromHash(k)
-		results = append(results, ctx.expandEntity(startvar, ent)...)
-		return ent.PK != max
+		results = append(results, ctx.expandEntity(startvar, k)...)
+		return k != max
 	}
 	topVarTree.Iter(iter)
 
@@ -317,21 +316,21 @@ func (ctx *queryContext) expandTuples() []*ResultRow {
 // If this is recursive, then we are going to have a LOT of mini-allocations. Ideally, we can just do this
 // top-level method on the first tree and then be "done".
 
-func (ctx *queryContext) expandEntity(varname string, entity *Entity) []*ResultRow {
+func (ctx *queryContext) expandEntity(varname string, entity Key) []*ResultRow {
 	var (
 		rows []*ResultRow
 	)
 
-	if entity == nil || entity.PK == emptyHash {
+	if entity == emptyHash {
 		return rows
 	}
-	varorder, parents := ctx.buildVarOrder(entity.PK, varname, len(ctx._traverseOrder.list))
+	varorder, parents := ctx.buildVarOrder(entity, varname, len(ctx._traverseOrder.list))
 	for idx, varname := range varorder {
 		ctx.varpos[varname] = idx
 	}
 	newRow := func() *row {
 		row := newrow(varorder)
-		row.addVar(varname, ctx.varpos[varname], entity.PK)
+		row.addVar(varname, ctx.varpos[varname], entity)
 		return row
 	}
 
