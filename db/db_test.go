@@ -265,6 +265,13 @@ func BenchmarkQueryPerformance1(b *testing.B) {
 		{"LongerQuery1", "SELECT ?vav ?room WHERE { ?vav rdf:type brick:VAV . ?room rdf:type brick:Room . ?zone rdf:type brick:HVAC_Zone . ?vav bf:feeds+ ?zone . ?room bf:isPartOf ?zone . }; "},
 		{"LooseQuery", "SELECT ?pred ?obj WHERE {   ?vav rdf:type brick:VAV .    ?vav ?pred ?obj .  } ;"},
 		{"LocQuery", " SELECT ?sensor ?room WHERE { ?sensor rdf:type/rdfs:subClassOf* brick:Zone_Temperature_Sensor . ?room rdf:type brick:Room . ?vav rdf:type brick:VAV . ?zone rdf:type brick:HVAC_Zone . ?vav bf:feeds+ ?zone . ?zone bf:hasPart ?room . {{?sensor bf:isPointOf ?vav . } UNION {?sensor bf:isPointOf ?room . }} };"},
+		{"RoomEnum", "COUNT ?x WHERE { ?x rdf:type brick:Room . };"},
+		{"AHUFeed0", "COUNT ?x WHERE { ?ahu rdf:type brick:AHU . ?ahu bf:feeds ?x .};"},
+		{"AHUFeed1", "COUNT ?x WHERE { ?ahu rdf:type brick:AHU . ?ahu bf:feeds+ ?x .};"},
+		{"AHUFeed2", "COUNT ?x WHERE { ?ahu rdf:type brick:AHU . ?ahu bf:feeds* ?x .};"},
+		{"AHUFeed1Reverse", "COUNT ?x WHERE { ?ahu rdf:type brick:AHU . ?x bf:isFedBy+ ?ahu .};"},
+		{"SensorSubclass", "COUNT ?sensor WHERE { ?sensor rdf:type/rdfs:subClassOf* brick:Zone_Temperature_Sensor . };"},
+		{"VAVExplore", "COUNT ?vav ?x ?y WHERE { ?vav rdf:type brick:VAV . ?vav bf:hasPoint ?x . ?vav bf:isFedBy ?y . };"},
 	}
 
 	for _, bm := range benchmarks {
