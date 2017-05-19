@@ -171,5 +171,17 @@ func (db *DB) buildGraph(dataset turtle.DataSet) error {
 		return errors.Wrap(err, "Could not commit transaction")
 	}
 
+	//// third pass
+	//for predicate, predent := range db.predIndex {
+	//	if _, found := db.transitiveEdges[predicate]; !found {
+	//		continue
+	//	}
+	//	for subject, objectMap := range predent.Subjects {
+	//		var subjectHash Key
+	//		subjectHash.FromUint32(subject)
+	//		//for
+	//	}
+	//}
+
 	return nil
 }

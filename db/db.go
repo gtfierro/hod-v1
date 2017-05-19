@@ -17,7 +17,7 @@ import (
 	"github.com/op/go-logging"
 	"github.com/pkg/errors"
 	"github.com/syndtr/goleveldb/leveldb"
-	"github.com/syndtr/goleveldb/leveldb/filter"
+	//"github.com/syndtr/goleveldb/leveldb/filter"
 	"github.com/syndtr/goleveldb/leveldb/opt"
 	"github.com/tinylib/msgp/msgp"
 	"github.com/zhangxinngang/murmur"
@@ -52,6 +52,8 @@ type DB struct {
 	linkDB *linkDB
 	// store relationships and their inverses
 	relationships map[turtle.URI]turtle.URI
+	// stores which edges can be 'rolled forward' in the index
+	transitiveEdges map[turtle.URI]struct{}
 	// store the namespace prefixes as strings
 	namespaces map[string]string
 	// cache for entity hashes
@@ -78,7 +80,7 @@ func NewDB(cfg *config.Config) (*DB, error) {
 	logging.SetLevel(cfg.LogLevel, "hod")
 
 	options := &opt.Options{
-		Filter: filter.NewBloomFilter(32),
+	//Filter: filter.NewBloomFilter(32),
 	}
 
 	// set up entity, pk databases
@@ -113,6 +115,7 @@ func NewDB(cfg *config.Config) (*DB, error) {
 		predDB:                 predDB,
 		predIndex:              make(map[turtle.URI]*PredicateEntity),
 		relationships:          make(map[turtle.URI]turtle.URI),
+		transitiveEdges:        make(map[turtle.URI]struct{}),
 		namespaces:             make(map[string]string),
 		showDependencyGraph:    cfg.ShowDependencyGraph,
 		showQueryPlan:          cfg.ShowQueryPlan,
@@ -424,6 +427,13 @@ func (db *DB) loadRelationships(dataset turtle.DataSet) error {
 			db.relationships[triple.Subject] = triple.Object
 			db.relationships[triple.Object] = triple.Subject
 		}
+
+		// check if a relationship is transitive
+		if triple.Predicate.Namespace == owl_namespace && triple.Predicate.Value == "a" &&
+			triple.Object.Namespace == owl_namespace && triple.Object.Value == "TransitiveProperty" {
+			db.transitiveEdges[triple.Subject] = struct{}{}
+		}
+
 	}
 
 	return nil
@@ -613,14 +623,17 @@ func (db *DB) MustGetEntityFromHash(hash Key) *Entity {
 
 func (db *DB) DumpEntity(ent *Entity) {
 	fmt.Println("DUMPING", db.MustGetURI(ent.PK))
+	var edgeHash Key
 	for edge, list := range ent.OutEdges {
-		fmt.Printf(" OUT: %s \n", db.MustGetURIStringHash(edge).Value)
+		edgeHash.FromUint32(edge)
+		fmt.Printf(" OUT: %s \n", db.MustGetURI(edgeHash).Value)
 		for _, l := range list {
 			fmt.Printf("     -> %s\n", db.MustGetURI(l).Value)
 		}
 	}
 	for edge, list := range ent.InEdges {
-		fmt.Printf(" In: %s \n", db.MustGetURIStringHash(edge).Value)
+		edgeHash.FromUint32(edge)
+		fmt.Printf(" IN: %s \n", db.MustGetURI(edgeHash).Value)
 		for _, l := range list {
 			fmt.Printf("     <- %s\n", db.MustGetURI(l).Value)
 		}

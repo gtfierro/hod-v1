@@ -54,7 +54,7 @@ func (db *DB) followPathFromObject(object *Entity, results *hashTree, searchstac
 		switch pattern.Pattern {
 		case query.PATTERN_SINGLE:
 			// [found] indicates whether or not we have any edges with the given pattern
-			edges, found := entity.InEdges[string(predHash[:])]
+			edges, found := entity.InEdges[predHash.Uint32()]
 			// this requires the pattern to exist, so we skip if we have no edges of that name
 			if !found {
 				continue
@@ -66,7 +66,7 @@ func (db *DB) followPathFromObject(object *Entity, results *hashTree, searchstac
 			// because this is one hop, we don't add any new entities to the stack
 		case query.PATTERN_ZERO_ONE:
 			results.Add(entity.PK)
-			endpoints, found := entity.InEdges[string(predHash[:])]
+			endpoints, found := entity.InEdges[predHash.Uint32()]
 			// this requires the pattern to exist, so we skip if we have no edges of that name
 			if !found {
 				continue
@@ -78,7 +78,7 @@ func (db *DB) followPathFromObject(object *Entity, results *hashTree, searchstac
 			// because this is one hop, we don't add any new entities to the stack
 		case query.PATTERN_ZERO_PLUS:
 			results.Add(entity.PK)
-			endpoints, found := entity.InEdges[string(predHash[:])]
+			endpoints, found := entity.InEdges[predHash.Uint32()]
 			// this requires the pattern to exist, so we skip if we have no edges of that name
 			if !found {
 				continue
@@ -93,7 +93,7 @@ func (db *DB) followPathFromObject(object *Entity, results *hashTree, searchstac
 				stack.PushBack(nextEntity)
 			}
 		case query.PATTERN_ONE_PLUS:
-			edges, found := entity.InEdges[string(predHash[:])]
+			edges, found := entity.InEdges[predHash.Uint32()]
 			// this requires the pattern to exist, so we skip if we have no edges of that name
 			if !found {
 				continue
@@ -133,7 +133,7 @@ func (db *DB) followPathFromSubject(subject *Entity, results *hashTree, searchst
 		switch pattern.Pattern {
 		case query.PATTERN_SINGLE:
 			// [found] indicates whether or not we have any edges with the given pattern
-			endpoints, found := entity.OutEdges[string(predHash[:])]
+			endpoints, found := entity.OutEdges[predHash.Uint32()]
 			// this requires the pattern to exist, so we skip if we have no edges of that name
 			if !found {
 				continue
@@ -147,7 +147,7 @@ func (db *DB) followPathFromSubject(subject *Entity, results *hashTree, searchst
 			// this does not require the pattern to exist, so we add the current entity plus any
 			// connected by the appropriate edge
 			results.Add(entity.PK)
-			endpoints, found := entity.OutEdges[string(predHash[:])]
+			endpoints, found := entity.OutEdges[predHash.Uint32()]
 			// this requires the pattern to exist, so we skip if we have no edges of that name
 			if !found {
 				continue
@@ -159,7 +159,7 @@ func (db *DB) followPathFromSubject(subject *Entity, results *hashTree, searchst
 			// because this is one hop, we don't add any new entities to the stack
 		case query.PATTERN_ZERO_PLUS:
 			results.Add(entity.PK)
-			endpoints, found := entity.OutEdges[string(predHash[:])]
+			endpoints, found := entity.OutEdges[predHash.Uint32()]
 			// this requires the pattern to exist, so we skip if we have no edges of that name
 			if !found {
 				continue
@@ -174,7 +174,7 @@ func (db *DB) followPathFromSubject(subject *Entity, results *hashTree, searchst
 				stack.PushBack(nextEntity)
 			}
 		case query.PATTERN_ONE_PLUS:
-			edges, found := entity.OutEdges[string(predHash[:])]
+			edges, found := entity.OutEdges[predHash.Uint32()]
 			// this requires the pattern to exist, so we skip if we have no edges of that name
 			if !found {
 				continue
@@ -314,8 +314,8 @@ func (db *DB) getSubjectObjectFromPred(path []query.PathPattern) (soPair [][]Key
 	for subject, objectMap := range pe.Subjects {
 		for object := range objectMap {
 			var sh, oh Key
-			sh.FromSlice([]byte(subject))
-			oh.FromSlice([]byte(object))
+			sh.FromUint32(subject)
+			oh.FromUint32(object)
 			soPair = append(soPair, []Key{sh, oh})
 		}
 	}
@@ -330,7 +330,7 @@ func (db *DB) getPredicateFromSubjectObject(subject, object *Entity) *hashTree {
 			if edgeObject == object.PK {
 				// matches!
 				var edgepk Key
-				edgepk.FromSlice([]byte(edge))
+				edgepk.FromUint32(edge)
 				reachable.Add(edgepk)
 			}
 		}
@@ -340,7 +340,7 @@ func (db *DB) getPredicateFromSubjectObject(subject, object *Entity) *hashTree {
 			if edgeObject == object.PK {
 				// matches!
 				var edgepk Key
-				edgepk.FromSlice([]byte(edge))
+				edgepk.FromUint32(edge)
 				reachable.Add(edgepk)
 			}
 		}
@@ -353,7 +353,7 @@ func (db *DB) getPredicatesFromObject(object *Entity) *hashTree {
 	reachable := newHashTree(2)
 	var edgepk Key
 	for edge := range object.InEdges {
-		edgepk.FromSlice([]byte(edge))
+		edgepk.FromUint32(edge)
 		reachable.Add(edgepk)
 	}
 
@@ -364,7 +364,7 @@ func (db *DB) getPredicatesFromSubject(subject *Entity) *hashTree {
 	reachable := newHashTree(2)
 	var edgepk Key
 	for edge := range subject.OutEdges {
-		edgepk.FromSlice([]byte(edge))
+		edgepk.FromUint32(edge)
 		reachable.Add(edgepk)
 	}
 

@@ -481,7 +481,7 @@ func (op *resolveVarTripleFromSubject) run(ctx *queryContext) error {
 		linkedPredicates := newHashTree(2)
 		subject := ctx.db.MustGetEntityFromHash(subjecthash)
 		for edge, objectList := range subject.OutEdges {
-			predKey.FromSlice([]byte(edge))
+			predKey.FromUint32(edge)
 			predicate := predKey
 			if hadPredicates && !knownPredicates.Has(predicate) {
 				continue // skip
@@ -539,7 +539,7 @@ func (op *resolveVarTripleFromObject) run(ctx *queryContext) error {
 		linkedPredicates := newHashTree(2)
 		object := ctx.db.MustGetEntityFromHash(objecthash)
 		for edge, subjectList := range object.InEdges {
-			predKey.FromSlice([]byte(edge))
+			predKey.FromUint32(edge)
 			predicate := predKey
 			if hadPredicates && !knownPredicates.Has(predicate) {
 				continue // skip
@@ -596,17 +596,17 @@ func (op *resolveVarTripleFromPredicate) run(ctx *queryContext) error {
 		predicate := ctx.db.predIndex[uri]
 		// iter through subjects
 		linkedSubjects := newHashTree(2)
-		for subStrHash, subjectMap := range predicate.Subjects {
+		for subuint, subjectMap := range predicate.Subjects {
 			var subjectHash Key
-			copy(subjectHash[:], []byte(subStrHash))
+			subjectHash.FromUint32(subuint)
 			subject := subjectHash
 			candidateSubjects.Add(subject)
 			linkedSubjects.Add(subject)
 			linkedObjects := newHashTree(2)
 			// link objects to subject
-			for objStrHash := range subjectMap {
+			for objuint := range subjectMap {
 				var objectHash Key
-				copy(objectHash[:], []byte(objStrHash))
+				objectHash.FromUint32(objuint)
 				object := objectHash
 				candidateObjects.Add(object)
 				linkedObjects.Add(object)

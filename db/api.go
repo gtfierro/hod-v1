@@ -265,10 +265,9 @@ func (db *DB) QueryToClassDOT(querystring io.Reader) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	typeKeyString := typeKey.String()
 
 	getClass := func(ent *Entity) (classes []turtle.URI, err error) {
-		_classes := ent.OutEdges[typeKeyString]
+		_classes := ent.OutEdges[typeKey.Uint32()]
 		for _, class := range _classes {
 			classes = append(classes, db.MustGetURI(class))
 		}
@@ -277,8 +276,8 @@ func (db *DB) QueryToClassDOT(querystring io.Reader) (string, error) {
 
 	getEdges := func(ent *Entity) (predicates, objects []turtle.URI, reterr error) {
 		var predKey Key
-		for predKeyString, objectList := range ent.OutEdges {
-			predKey.FromSlice([]byte(predKeyString))
+		for predKeyUint, objectList := range ent.OutEdges {
+			predKey.FromUint32(predKeyUint)
 			predURI, err := db.GetURI(predKey)
 			if err != nil {
 				reterr = err

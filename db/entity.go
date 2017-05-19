@@ -7,21 +7,17 @@ import (
 	"github.com/mitghi/btree"
 )
 
-type PredIndex map[string]*PredicateEntity
-type RelshipIndex map[string]string
-type NamespaceIndex map[string]string
-
 type Entity struct {
 	PK Key `msg:"p"`
 	// note: we have to use string keys to get msgp to work
-	InEdges  map[string][]Key `msg:"ein"`
-	OutEdges map[string][]Key `msg:"eout"`
+	InEdges  map[uint32][]Key `msg:"ein"`
+	OutEdges map[uint32][]Key `msg:"eout"`
 }
 
 func NewEntity() *Entity {
 	return &Entity{
-		InEdges:  make(map[string][]Key),
-		OutEdges: make(map[string][]Key),
+		InEdges:  make(map[uint32][]Key),
+		OutEdges: make(map[uint32][]Key),
 	}
 }
 
@@ -37,10 +33,10 @@ func (e *Entity) AddInEdge(predicate, endpoint Key) bool {
 		found    bool
 	)
 	// check if we already have an edgelist for the given predicate
-	if edgeList, found = e.InEdges[string(predicate[:])]; !found {
+	if edgeList, found = e.InEdges[predicate.Uint32()]; !found {
 		// if we don't, then create a new one and put the endpoint in it
 		edgeList = []Key{endpoint}
-		e.InEdges[string(predicate[:])] = edgeList
+		e.InEdges[predicate.Uint32()] = edgeList
 		return true
 	}
 	// else, we check if our endpoint is already in the edge list
@@ -52,7 +48,7 @@ func (e *Entity) AddInEdge(predicate, endpoint Key) bool {
 	}
 	// else, we add it into the edge list and return
 	edgeList = append(edgeList, endpoint)
-	e.InEdges[string(predicate[:])] = edgeList
+	e.InEdges[predicate.Uint32()] = edgeList
 	return true
 }
 
@@ -63,10 +59,10 @@ func (e *Entity) AddOutEdge(predicate, endpoint Key) bool {
 		found    bool
 	)
 	// check if we already have an edgelist for the given predicate
-	if edgeList, found = e.OutEdges[string(predicate[:])]; !found {
+	if edgeList, found = e.OutEdges[predicate.Uint32()]; !found {
 		// if we don't, then create a new one and put the endpoint in it
 		edgeList = []Key{endpoint}
-		e.OutEdges[string(predicate[:])] = edgeList
+		e.OutEdges[predicate.Uint32()] = edgeList
 		return true
 	}
 	// else, we check if our endpoint is already in the edge list
@@ -78,37 +74,39 @@ func (e *Entity) AddOutEdge(predicate, endpoint Key) bool {
 	}
 	// else, we add it into the edge list and return
 	edgeList = append(edgeList, endpoint)
-	e.OutEdges[string(predicate[:])] = edgeList
+	e.OutEdges[predicate.Uint32()] = edgeList
 	return true
 }
 
 type PredicateEntity struct {
 	PK Key `msg:"p"`
-	// note: we have to use string keys to get msgp to work
-	Subjects map[string]map[string]uint32 `msg:"s"`
-	Objects  map[string]map[string]uint32 `msg:"o"`
+	// note: we have to use uint32 keys to get msgp to work
+	Subjects map[uint32]map[uint32]uint32 `msg:"s"`
+	Objects  map[uint32]map[uint32]uint32 `msg:"o"`
 }
 
 func NewPredicateEntity() *PredicateEntity {
 	return &PredicateEntity{
-		Subjects: make(map[string]map[string]uint32),
-		Objects:  make(map[string]map[string]uint32),
+		Subjects: make(map[uint32]map[uint32]uint32),
+		Objects:  make(map[uint32]map[uint32]uint32),
 	}
 }
 
 func (e *PredicateEntity) AddSubjectObject(subject, object Key) {
 	// if we have the subject
-	if ms, found := e.Subjects[string(subject[:])]; found {
+	subjKey := subject.Uint32()
+	objKey := object.Uint32()
+	if ms, found := e.Subjects[subjKey]; found {
 		// find the map of related objects
-		ms[string(object[:])] = 0
+		ms[objKey] = 0
 	} else {
-		e.Subjects[string(subject[:])] = map[string]uint32{string(object[:]): 0}
+		e.Subjects[subjKey] = map[uint32]uint32{objKey: 0}
 	}
 
-	if ms, found := e.Objects[string(object[:])]; found {
+	if ms, found := e.Objects[objKey]; found {
 		// find the map of related objects
-		ms[string(subject[:])] = 0
+		ms[subjKey] = 0
 	} else {
-		e.Objects[string(object[:])] = map[string]uint32{string(subject[:]): 0}
+		e.Objects[objKey] = map[uint32]uint32{subjKey: 0}
 	}
 }
