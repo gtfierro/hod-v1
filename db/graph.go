@@ -5,6 +5,7 @@ import (
 
 	turtle "github.com/gtfierro/hod/goraptor"
 	"github.com/gtfierro/hod/query"
+	"github.com/mitghi/btree"
 	"github.com/pkg/errors"
 )
 
@@ -176,7 +177,7 @@ func (db *DB) buildGraph(dataset turtle.DataSet) error {
 
 	// third pass
 	forwardPath := query.PathPattern{Pattern: query.PATTERN_ONE_PLUS}
-	results := newHashTree(2)
+	results := btree.New(2, "")
 	for predicate, predent := range db.predIndex {
 		if _, found := db.transitiveEdges[predicate]; !found {
 			continue
@@ -194,7 +195,7 @@ func (db *DB) buildGraph(dataset turtle.DataSet) error {
 			//log.Debug(db.MustGetURI(subjectHash).Value, predicate.Value, results.Len())
 			for results.Len() > 0 {
 				i := results.DeleteMax()
-				subject.AddOutEdge(extendedPred, i)
+				subject.AddOutEdge(extendedPred, i.(Key))
 			}
 		}
 	}

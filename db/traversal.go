@@ -94,6 +94,13 @@ func (db *DB) followPathFromObject(object *Entity, results *btree.BTree, searchs
 				stack.PushBack(nextEntity)
 			}
 		case query.PATTERN_ONE_PLUS:
+			// faster index
+			if endpoints, found := entity.InPlusEdges[string(predHash[:])]; found {
+				for _, entityHash := range endpoints {
+					results.ReplaceOrInsert(entityHash)
+				}
+				return
+			}
 			edges, found := entity.InEdges[string(predHash[:])]
 			// this requires the pattern to exist, so we skip if we have no edges of that name
 			if !found {
@@ -160,13 +167,6 @@ func (db *DB) followPathFromSubject(subject *Entity, results *btree.BTree, searc
 			// because this is one hop, we don't add any new entities to the stack
 		case query.PATTERN_ZERO_PLUS:
 			results.ReplaceOrInsert(entity.PK)
-			// faster index
-			if endpoints, found := entity.OutPlusEdges[string(predHash[:])]; found {
-				for _, entityHash := range endpoints {
-					results.Add(entityHash)
-				}
-				return
-			}
 
 			endpoints, found := entity.OutEdges[string(predHash[:])]
 			// this requires the pattern to exist, so we skip if we have no edges of that name
@@ -183,6 +183,13 @@ func (db *DB) followPathFromSubject(subject *Entity, results *btree.BTree, searc
 				stack.PushBack(nextEntity)
 			}
 		case query.PATTERN_ONE_PLUS:
+			// faster index
+			if endpoints, found := entity.OutPlusEdges[string(predHash[:])]; found {
+				for _, entityHash := range endpoints {
+					results.ReplaceOrInsert(entityHash)
+				}
+				return
+			}
 			edges, found := entity.OutEdges[string(predHash[:])]
 			// this requires the pattern to exist, so we skip if we have no edges of that name
 			if !found {
