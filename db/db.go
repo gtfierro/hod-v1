@@ -52,6 +52,8 @@ type DB struct {
 	linkDB *linkDB
 	// store relationships and their inverses
 	relationships map[turtle.URI]turtle.URI
+	// stores which edges can be 'rolled forward' in the index
+	transitiveEdges map[turtle.URI]struct{}
 	// store the namespace prefixes as strings
 	namespaces map[string]string
 	// cache for entity hashes
@@ -113,6 +115,7 @@ func NewDB(cfg *config.Config) (*DB, error) {
 		predDB:                 predDB,
 		predIndex:              make(map[turtle.URI]*PredicateEntity),
 		relationships:          make(map[turtle.URI]turtle.URI),
+		transitiveEdges:        make(map[turtle.URI]struct{}),
 		namespaces:             make(map[string]string),
 		showDependencyGraph:    cfg.ShowDependencyGraph,
 		showQueryPlan:          cfg.ShowQueryPlan,
@@ -409,6 +412,7 @@ func (db *DB) loadRelationships(dataset turtle.DataSet) error {
 			triple.Object.Namespace == owl_namespace &&
 			triple.Object.Value == "ObjectProperty" {
 			relationships[triple.Subject] = struct{}{}
+			db.transitiveEdges[triple.Subject] = struct{}{}
 		}
 	}
 
@@ -423,7 +427,13 @@ func (db *DB) loadRelationships(dataset turtle.DataSet) error {
 			}
 			db.relationships[triple.Subject] = triple.Object
 			db.relationships[triple.Object] = triple.Subject
+			db.transitiveEdges[triple.Subject] = struct{}{}
+			db.transitiveEdges[triple.Object] = struct{}{}
 		}
+		// check if a relationship is transitive
+		//if triple.Predicate.Namespace == owl_namespace && triple.Predicate.Value == "a" &&
+		//	triple.Object.Namespace == owl_namespace && triple.Object.Value == "TransitiveProperty" {
+		//}
 	}
 
 	return nil
@@ -475,6 +485,10 @@ func (db *DB) LoadDataset(dataset turtle.DataSet) error {
 	}
 
 	for pred, _ := range db.relationships {
+		if err := db.insertEntityTx(pred, predicateHash, enttx, pktx); err != nil {
+			return err
+		}
+		pred.Value += "+"
 		if err := db.insertEntityTx(pred, predicateHash, enttx, pktx); err != nil {
 			return err
 		}

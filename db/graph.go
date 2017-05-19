@@ -1,7 +1,10 @@
 package db
 
 import (
+	"container/list"
+
 	turtle "github.com/gtfierro/hod/goraptor"
+	"github.com/gtfierro/hod/query"
 	"github.com/pkg/errors"
 )
 
@@ -169,6 +172,31 @@ func (db *DB) buildGraph(dataset turtle.DataSet) error {
 	}
 	if err = graphtx.Commit(); err != nil {
 		return errors.Wrap(err, "Could not commit transaction")
+	}
+
+	// third pass
+	forwardPath := query.PathPattern{Pattern: query.PATTERN_ONE_PLUS}
+	results := newHashTree(2)
+	for predicate, predent := range db.predIndex {
+		if _, found := db.transitiveEdges[predicate]; !found {
+			continue
+		}
+		forwardPath.Predicate = predicate
+		// TODO: use gethash to get the new hash of the predicate using "+" added to the value, and then 'addoutedge', 'addinedge'
+		predicate.Value += "+"
+		extendedPred := db.MustGetHash(predicate)
+		for subjectStringHash := range predent.Subjects {
+			var subjectHash Key
+			subjectHash.FromSlice([]byte(subjectStringHash))
+			stack := list.New()
+			subject := db.MustGetEntityFromHash(subjectHash)
+			db.followPathFromSubject(subject, results, stack, forwardPath)
+			//log.Debug(db.MustGetURI(subjectHash).Value, predicate.Value, results.Len())
+			for results.Len() > 0 {
+				i := results.DeleteMax()
+				subject.AddOutEdge(extendedPred, i)
+			}
+		}
 	}
 
 	return nil

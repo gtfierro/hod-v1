@@ -159,6 +159,14 @@ func (db *DB) followPathFromSubject(subject *Entity, results *hashTree, searchst
 			// because this is one hop, we don't add any new entities to the stack
 		case query.PATTERN_ZERO_PLUS:
 			results.Add(entity.PK)
+			// faster index
+			if endpoints, found := entity.OutPlusEdges[string(predHash[:])]; found {
+				for _, entityHash := range endpoints {
+					results.Add(entityHash)
+				}
+				return
+			}
+
 			endpoints, found := entity.OutEdges[string(predHash[:])]
 			// this requires the pattern to exist, so we skip if we have no edges of that name
 			if !found {

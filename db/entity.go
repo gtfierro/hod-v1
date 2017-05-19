@@ -14,14 +14,18 @@ type NamespaceIndex map[string]string
 type Entity struct {
 	PK Key `msg:"p"`
 	// note: we have to use string keys to get msgp to work
-	InEdges  map[string][]Key `msg:"ein"`
-	OutEdges map[string][]Key `msg:"eout"`
+	InEdges      map[string][]Key `msg:"i"`
+	OutEdges     map[string][]Key `msg:"o"`
+	InPlusEdges  map[string][]Key `msg:"i+"`
+	OutPlusEdges map[string][]Key `msg:"o+"`
 }
 
 func NewEntity() *Entity {
 	return &Entity{
-		InEdges:  make(map[string][]Key),
-		OutEdges: make(map[string][]Key),
+		InEdges:      make(map[string][]Key),
+		OutEdges:     make(map[string][]Key),
+		InPlusEdges:  make(map[string][]Key),
+		OutPlusEdges: make(map[string][]Key),
 	}
 }
 
@@ -79,6 +83,58 @@ func (e *Entity) AddOutEdge(predicate, endpoint Key) bool {
 	// else, we add it into the edge list and return
 	edgeList = append(edgeList, endpoint)
 	e.OutEdges[string(predicate[:])] = edgeList
+	return true
+}
+
+// returns true if we added an endpoint; false if it was already there
+func (e *Entity) AddOutPlusEdge(predicate, endpoint Key) bool {
+	var (
+		edgeList []Key
+		found    bool
+	)
+	// check if we already have an edgelist for the given predicate
+	if edgeList, found = e.OutPlusEdges[string(predicate[:])]; !found {
+		// if we don't, then create a new one and put the endpoint in it
+		edgeList = []Key{endpoint}
+		e.OutEdges[string(predicate[:])] = edgeList
+		return true
+	}
+	// else, we check if our endpoint is already in the edge list
+	for _, edge := range edgeList {
+		// if it is, return
+		if edge == endpoint {
+			return false
+		}
+	}
+	// else, we add it into the edge list and return
+	edgeList = append(edgeList, endpoint)
+	e.OutPlusEdges[string(predicate[:])] = edgeList
+	return true
+}
+
+// returns true if we added an endpoint; false if it was already there
+func (e *Entity) AddInPlusEdge(predicate, endpoint Key) bool {
+	var (
+		edgeList []Key
+		found    bool
+	)
+	// check if we already have an edgelist for the given predicate
+	if edgeList, found = e.InPlusEdges[string(predicate[:])]; !found {
+		// if we don't, then create a new one and put the endpoint in it
+		edgeList = []Key{endpoint}
+		e.InEdges[string(predicate[:])] = edgeList
+		return true
+	}
+	// else, we check if our endpoint is already in the edge list
+	for _, edge := range edgeList {
+		// if it is, return
+		if edge == endpoint {
+			return false
+		}
+	}
+	// else, we add it into the edge list and return
+	edgeList = append(edgeList, endpoint)
+	e.InPlusEdges[string(predicate[:])] = edgeList
 	return true
 }
 
