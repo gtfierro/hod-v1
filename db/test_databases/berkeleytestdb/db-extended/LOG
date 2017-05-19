@@ -1,0 +1,10 @@
+=============== May 19, 2017 (PDT) ===============
+12:44:34.766143 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+12:44:34.766262 db@open opening
+12:44:34.766675 version@stat F·[] S·0B[] Sc·[]
+12:44:34.772781 db@janitor F·2 G·0
+12:44:34.772804 db@open done T·6.535964ms
+12:44:36.380244 transaction@flush created L0@2 N·1279 S·26KiB "\x02\xa8d\xab,v1082":"\xff9\x1d/,v33"
+12:44:36.380269 version@stat F·[1] S·26KiB[26KiB] Sc·[0.25]
+12:44:36.390380 db@close closing
+12:44:36.390397 db@close done T·16.921µs

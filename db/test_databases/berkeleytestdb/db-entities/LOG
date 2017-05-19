@@ -1,33 +1,20 @@
-=============== Jan 9, 2017 (PST) ===============
-21:28:15.531222 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
-21:28:15.531336 db@open opening
-21:28:15.531956 version@stat F·[] S·0B[] Sc·[]
-21:28:15.536056 db@janitor F·2 G·0
-21:28:15.536077 db@open done T·4.73469ms
-21:28:16.025053 transaction@flush created L0@2 N·3127 S·68KiB "\"Av..@en,v2572":"htt..ion,v16"
-21:28:16.025093 version@stat F·[1] S·68KiB[68KiB] Sc·[0.25]
-21:28:16.664240 transaction@flush created L0@3 N·1711 S·29KiB "#\"S..ll\",v4838":"htt..Tag,v4835"
-21:28:16.664282 version@stat F·[2] S·97KiB[97KiB] Sc·[0.50]
-21:28:16.674221 table@compaction L0·2 -> L1·0 S·97KiB Q·4838
-21:28:16.684370 table@build created L1@4 N·4838 S·97KiB "\"Av..@en,v2572":"htt..ion,v16"
-21:28:16.684424 version@stat F·[0 1] S·97KiB[0B 97KiB] Sc·[0.00 0.00]
-21:28:16.689988 table@compaction committed F-1 S-382B Ke·0 D·0 T·15.726639ms
-21:28:16.690112 table@remove removed @3
-21:28:16.690163 table@remove removed @2
-=============== Jan 13, 2017 (PST) ===============
-09:23:47.401254 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
-09:23:47.401369 version@stat F·[0 1] S·97KiB[0B 97KiB] Sc·[0.00 0.00]
-09:23:47.401376 db@open opening
-09:23:47.401408 journal@recovery F·1
-09:23:47.402721 journal@recovery recovering @1
-09:23:47.403921 version@stat F·[0 1] S·97KiB[0B 97KiB] Sc·[0.00 0.00]
-09:23:47.404292 db@janitor F·3 G·0
-09:23:47.404320 db@open done T·2.935793ms
-09:23:47.761264 transaction@flush created L0@7 N·30 S·975B "htt..ent,v4865":"htt..eOf,v4853"
-09:23:47.761296 version@stat F·[1 1] S·98KiB[975B 97KiB] Sc·[0.25 0.00]
-09:23:47.810688 table@compaction L0·1 -> L1·1 S·98KiB Q·4868
-09:23:47.824205 table@build created L1@8 N·4868 S·98KiB "\"Av..@en,v2572":"htt..ion,v16"
-09:23:47.824254 version@stat F·[0 1] S·98KiB[0B 98KiB] Sc·[0.00 0.00]
-09:23:47.825948 table@compaction committed F-1 S-331B Ke·0 D·0 T·15.219669ms
-09:23:47.826070 table@remove removed @7
-09:23:47.826112 table@remove removed @4
+=============== May 19, 2017 (PDT) ===============
+12:44:34.752968 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+12:44:34.753126 db@open opening
+12:44:34.753590 version@stat F·[] S·0B[] Sc·[]
+12:44:34.759649 db@janitor F·2 G·0
+12:44:34.759668 db@open done T·6.534755ms
+12:44:35.110554 transaction@flush created L0@2 N·88 S·2KiB ",v2":"htt..rom,v61"
+12:44:35.110582 version@stat F·[1] S·2KiB[2KiB] Sc·[0.25]
+12:44:35.492076 transaction@flush created L0@3 N·3090 S·66KiB "\"Av..@en,v2644":"vir..ls\",v2906"
+12:44:35.492125 version@stat F·[2] S·68KiB[68KiB] Sc·[0.50]
+12:44:35.504140 table@compaction L0·2 -> L1·0 S·68KiB Q·3178
+12:44:35.516835 table@build created L1@4 N·3178 S·68KiB ",v2":"vir..ls\",v2906"
+12:44:35.516889 version@stat F·[0 1] S·68KiB[0B 68KiB] Sc·[0.00 0.00]
+12:44:35.522434 table@compaction committed F-1 S-73B Ke·0 D·0 T·18.265165ms
+12:44:35.522501 table@remove removed @3
+12:44:35.522537 table@remove removed @2
+12:44:36.163531 transaction@flush created L0@5 N·1711 S·29KiB "Sod..all,v4889":"htt..Tag,v4886"
+12:44:36.163577 version@stat F·[1 1] S·97KiB[29KiB 68KiB] Sc·[0.25 0.00]
+12:44:36.390190 db@close closing
+12:44:36.390263 db@close done T·72.669µs
