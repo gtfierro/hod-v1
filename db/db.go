@@ -49,6 +49,8 @@ type DB struct {
 	graphDB *leveldb.DB
 	// node link structure
 	linkDB *linkDB
+	// extended index DB
+	extendedDB *leveldb.DB
 	// store relationships and their inverses
 	relationships map[turtle.URI]turtle.URI
 	// stores which edges can be 'rolled forward' in the index
@@ -59,6 +61,8 @@ type DB struct {
 	entityHashCache   *freecache.Cache
 	entityObjectCache map[Key]*Entity
 	eocLock           sync.RWMutex
+	entityIndexCache  map[Key]*EntityExtendedIndex
+	eicLock           sync.RWMutex
 	uriCache          map[Key]turtle.URI
 	uriLock           sync.RWMutex
 	// config options for output
@@ -71,7 +75,8 @@ type DB struct {
 	queryCache        *freecache.Cache
 	queryCacheEnabled bool
 	// policy for sanitizing user links
-	policy *bluemonday.Policy
+	policy  *bluemonday.Policy
+	loading bool
 }
 
 func NewDB(cfg *config.Config) (*DB, error) {
@@ -95,6 +100,13 @@ func NewDB(cfg *config.Config) (*DB, error) {
 		return nil, errors.Wrapf(err, "Could not open pkDB file %s", pkDBPath)
 	}
 
+	// set up entity, pk databases
+	extendedDBPath := path + "/db-extended"
+	extendedDB, err := leveldb.OpenFile(extendedDBPath, options)
+	if err != nil {
+		return nil, errors.Wrapf(err, "Could not open extendedDB file %s", extendedDBPath)
+	}
+
 	graphDBPath := path + "/db-graph"
 	graphDB, err := leveldb.OpenFile(graphDBPath, options)
 	if err != nil {
@@ -109,6 +121,7 @@ func NewDB(cfg *config.Config) (*DB, error) {
 	db := &DB{
 		path:                   path,
 		entityDB:               entityDB,
+		extendedDB:             extendedDB,
 		pkDB:                   pkDB,
 		graphDB:                graphDB,
 		predDB:                 predDB,
@@ -123,9 +136,11 @@ func NewDB(cfg *config.Config) (*DB, error) {
 		showQueryLatencies:     cfg.ShowQueryLatencies,
 		entityHashCache:        freecache.NewCache(16 * 1024 * 1024), // 16 MB
 		entityObjectCache:      make(map[Key]*Entity),
+		entityIndexCache:       make(map[Key]*EntityExtendedIndex),
 		uriCache:               make(map[Key]turtle.URI),
 		queryCacheEnabled:      !cfg.DisableQueryCache,
 		policy:                 bluemonday.StrictPolicy(),
+		loading:                false,
 	}
 
 	linkDB, err := newLinkDB(db, cfg)
@@ -225,6 +240,7 @@ func (db *DB) Close() {
 	checkError(db.predDB.Close())
 	checkError(db.graphDB.Close())
 	checkError(db.linkDB.Close())
+	checkError(db.extendedDB.Close())
 }
 
 // hashes the given URI into the byte array
@@ -439,6 +455,7 @@ func (db *DB) loadRelationships(dataset turtle.DataSet) error {
 }
 
 func (db *DB) LoadDataset(dataset turtle.DataSet) error {
+	db.loading = true
 	start := time.Now()
 	// merge, don't set outright
 	for abbr, full := range dataset.Namespaces {
@@ -519,6 +536,7 @@ func (db *DB) LoadDataset(dataset turtle.DataSet) error {
 	if err != nil {
 		return err
 	}
+	db.loading = false
 	return nil
 }
 
@@ -624,6 +642,14 @@ func (db *DB) MustGetEntityFromHash(hash Key) *Entity {
 	return e
 }
 
+func (db *DB) MustGetEntityIndexFromHash(hash Key) *EntityExtendedIndex {
+	e, err := db.GetEntityIndexFromHash(hash)
+	if err != nil {
+		panic(fmt.Sprint(hash, err))
+	}
+	return e
+}
+
 func (db *DB) DumpEntity(ent *Entity) {
 	fmt.Println("DUMPING", db.MustGetURI(ent.PK))
 	for edge, list := range ent.OutEdges {
@@ -664,6 +690,38 @@ func (db *DB) GetEntityFromHashTx(graphtx *leveldb.Transaction, hash Key) (*Enti
 	}
 	ent := NewEntity()
 	_, err = ent.UnmarshalMsg(bytes)
+	return ent, err
+}
+
+func (db *DB) GetEntityIndexFromHashTx(extendtx *leveldb.Transaction, hash Key) (*EntityExtendedIndex, error) {
+	bytes, err := extendtx.Get(hash[:], nil)
+	if err != nil {
+		return nil, err
+	}
+	ent := NewEntityExtendedIndex()
+	_, err = ent.UnmarshalMsg(bytes)
+	return ent, err
+}
+
+func (db *DB) GetEntityIndexFromHash(hash Key) (*EntityExtendedIndex, error) {
+	db.eicLock.RLock()
+	if ent, found := db.entityIndexCache[hash]; found {
+		db.eicLock.RUnlock()
+		return ent, nil
+	}
+	db.eicLock.RUnlock()
+	db.eicLock.Lock()
+	defer db.eicLock.Unlock()
+	bytes, err := db.extendedDB.Get(hash[:], nil)
+	if err != nil && err != leveldb.ErrNotFound {
+		return nil, errors.Wrapf(err, "Could not get EntityIndex from graph for %s", db.MustGetURI(hash))
+	} else if err == leveldb.ErrNotFound {
+		db.entityIndexCache[hash] = nil
+		return nil, nil
+	}
+	ent := NewEntityExtendedIndex()
+	_, err = ent.UnmarshalMsg(bytes)
+	db.entityIndexCache[hash] = ent
 	return ent, err
 }
 
