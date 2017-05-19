@@ -4,19 +4,21 @@ package db
 // MSGP CODE GENERATION TOOL (github.com/tinylib/msgp)
 // DO NOT EDIT
 
-import "github.com/tinylib/msgp/msgp"
+import (
+	"github.com/tinylib/msgp/msgp"
+)
 
 // DecodeMsg implements msgp.Decodable
 func (z *Entity) DecodeMsg(dc *msgp.Reader) (err error) {
 	var field []byte
 	_ = field
-	var hct uint32
-	hct, err = dc.ReadMapHeader()
+	var zjfb uint32
+	zjfb, err = dc.ReadMapHeader()
 	if err != nil {
 		return
 	}
-	for hct > 0 {
-		hct--
+	for zjfb > 0 {
+		zjfb--
 		field, err = dc.ReadMapKeyPtr()
 		if err != nil {
 			return
@@ -27,83 +29,161 @@ func (z *Entity) DecodeMsg(dc *msgp.Reader) (err error) {
 			if err != nil {
 				return
 			}
-		case "ein":
-			var cua uint32
-			cua, err = dc.ReadMapHeader()
+		case "i":
+			var zcxo uint32
+			zcxo, err = dc.ReadMapHeader()
 			if err != nil {
 				return
 			}
-			if z.InEdges == nil && cua > 0 {
-				z.InEdges = make(map[string][]Key, cua)
+			if z.InEdges == nil && zcxo > 0 {
+				z.InEdges = make(map[string][]Key, zcxo)
 			} else if len(z.InEdges) > 0 {
 				for key, _ := range z.InEdges {
 					delete(z.InEdges, key)
 				}
 			}
-			for cua > 0 {
-				cua--
-				var xvk string
-				var bzg []Key
-				xvk, err = dc.ReadString()
+			for zcxo > 0 {
+				zcxo--
+				var zxvk string
+				var zbzg []Key
+				zxvk, err = dc.ReadString()
 				if err != nil {
 					return
 				}
-				var xhx uint32
-				xhx, err = dc.ReadArrayHeader()
+				var zeff uint32
+				zeff, err = dc.ReadArrayHeader()
 				if err != nil {
 					return
 				}
-				if cap(bzg) >= int(xhx) {
-					bzg = bzg[:xhx]
+				if cap(zbzg) >= int(zeff) {
+					zbzg = (zbzg)[:zeff]
 				} else {
-					bzg = make([]Key, xhx)
+					zbzg = make([]Key, zeff)
 				}
-				for bai := range bzg {
-					err = bzg[bai].DecodeMsg(dc)
+				for zbai := range zbzg {
+					err = zbzg[zbai].DecodeMsg(dc)
 					if err != nil {
 						return
 					}
 				}
-				z.InEdges[xvk] = bzg
+				z.InEdges[zxvk] = zbzg
 			}
-		case "eout":
-			var lqf uint32
-			lqf, err = dc.ReadMapHeader()
+		case "o":
+			var zrsw uint32
+			zrsw, err = dc.ReadMapHeader()
 			if err != nil {
 				return
 			}
-			if z.OutEdges == nil && lqf > 0 {
-				z.OutEdges = make(map[string][]Key, lqf)
+			if z.OutEdges == nil && zrsw > 0 {
+				z.OutEdges = make(map[string][]Key, zrsw)
 			} else if len(z.OutEdges) > 0 {
 				for key, _ := range z.OutEdges {
 					delete(z.OutEdges, key)
 				}
 			}
-			for lqf > 0 {
-				lqf--
-				var cmr string
-				var ajw []Key
-				cmr, err = dc.ReadString()
+			for zrsw > 0 {
+				zrsw--
+				var zcmr string
+				var zajw []Key
+				zcmr, err = dc.ReadString()
 				if err != nil {
 					return
 				}
-				var daf uint32
-				daf, err = dc.ReadArrayHeader()
+				var zxpk uint32
+				zxpk, err = dc.ReadArrayHeader()
 				if err != nil {
 					return
 				}
-				if cap(ajw) >= int(daf) {
-					ajw = ajw[:daf]
+				if cap(zajw) >= int(zxpk) {
+					zajw = (zajw)[:zxpk]
 				} else {
-					ajw = make([]Key, daf)
+					zajw = make([]Key, zxpk)
 				}
-				for wht := range ajw {
-					err = ajw[wht].DecodeMsg(dc)
+				for zwht := range zajw {
+					err = zajw[zwht].DecodeMsg(dc)
 					if err != nil {
 						return
 					}
 				}
-				z.OutEdges[cmr] = ajw
+				z.OutEdges[zcmr] = zajw
+			}
+		case "i+":
+			var zdnj uint32
+			zdnj, err = dc.ReadMapHeader()
+			if err != nil {
+				return
+			}
+			if z.InPlusEdges == nil && zdnj > 0 {
+				z.InPlusEdges = make(map[string][]Key, zdnj)
+			} else if len(z.InPlusEdges) > 0 {
+				for key, _ := range z.InPlusEdges {
+					delete(z.InPlusEdges, key)
+				}
+			}
+			for zdnj > 0 {
+				zdnj--
+				var zhct string
+				var zcua []Key
+				zhct, err = dc.ReadString()
+				if err != nil {
+					return
+				}
+				var zobc uint32
+				zobc, err = dc.ReadArrayHeader()
+				if err != nil {
+					return
+				}
+				if cap(zcua) >= int(zobc) {
+					zcua = (zcua)[:zobc]
+				} else {
+					zcua = make([]Key, zobc)
+				}
+				for zxhx := range zcua {
+					err = zcua[zxhx].DecodeMsg(dc)
+					if err != nil {
+						return
+					}
+				}
+				z.InPlusEdges[zhct] = zcua
+			}
+		case "o+":
+			var zsnv uint32
+			zsnv, err = dc.ReadMapHeader()
+			if err != nil {
+				return
+			}
+			if z.OutPlusEdges == nil && zsnv > 0 {
+				z.OutPlusEdges = make(map[string][]Key, zsnv)
+			} else if len(z.OutPlusEdges) > 0 {
+				for key, _ := range z.OutPlusEdges {
+					delete(z.OutPlusEdges, key)
+				}
+			}
+			for zsnv > 0 {
+				zsnv--
+				var zlqf string
+				var zdaf []Key
+				zlqf, err = dc.ReadString()
+				if err != nil {
+					return
+				}
+				var zkgt uint32
+				zkgt, err = dc.ReadArrayHeader()
+				if err != nil {
+					return
+				}
+				if cap(zdaf) >= int(zkgt) {
+					zdaf = (zdaf)[:zkgt]
+				} else {
+					zdaf = make([]Key, zkgt)
+				}
+				for zpks := range zdaf {
+					err = zdaf[zpks].DecodeMsg(dc)
+					if err != nil {
+						return
+					}
+				}
+				z.OutPlusEdges[zlqf] = zdaf
 			}
 		default:
 			err = dc.Skip()
@@ -117,9 +197,9 @@ func (z *Entity) DecodeMsg(dc *msgp.Reader) (err error) {
 
 // EncodeMsg implements msgp.Encodable
 func (z *Entity) EncodeMsg(en *msgp.Writer) (err error) {
-	// map header, size 3
+	// map header, size 5
 	// write "p"
-	err = en.Append(0x83, 0xa1, 0x70)
+	err = en.Append(0x85, 0xa1, 0x70)
 	if err != nil {
 		return err
 	}
@@ -127,8 +207,8 @@ func (z *Entity) EncodeMsg(en *msgp.Writer) (err error) {
 	if err != nil {
 		return
 	}
-	// write "ein"
-	err = en.Append(0xa3, 0x65, 0x69, 0x6e)
+	// write "i"
+	err = en.Append(0xa1, 0x69)
 	if err != nil {
 		return err
 	}
@@ -136,24 +216,24 @@ func (z *Entity) EncodeMsg(en *msgp.Writer) (err error) {
 	if err != nil {
 		return
 	}
-	for xvk, bzg := range z.InEdges {
-		err = en.WriteString(xvk)
+	for zxvk, zbzg := range z.InEdges {
+		err = en.WriteString(zxvk)
 		if err != nil {
 			return
 		}
-		err = en.WriteArrayHeader(uint32(len(bzg)))
+		err = en.WriteArrayHeader(uint32(len(zbzg)))
 		if err != nil {
 			return
 		}
-		for bai := range bzg {
-			err = bzg[bai].EncodeMsg(en)
+		for zbai := range zbzg {
+			err = zbzg[zbai].EncodeMsg(en)
 			if err != nil {
 				return
 			}
 		}
 	}
-	// write "eout"
-	err = en.Append(0xa4, 0x65, 0x6f, 0x75, 0x74)
+	// write "o"
+	err = en.Append(0xa1, 0x6f)
 	if err != nil {
 		return err
 	}
@@ -161,17 +241,67 @@ func (z *Entity) EncodeMsg(en *msgp.Writer) (err error) {
 	if err != nil {
 		return
 	}
-	for cmr, ajw := range z.OutEdges {
-		err = en.WriteString(cmr)
+	for zcmr, zajw := range z.OutEdges {
+		err = en.WriteString(zcmr)
 		if err != nil {
 			return
 		}
-		err = en.WriteArrayHeader(uint32(len(ajw)))
+		err = en.WriteArrayHeader(uint32(len(zajw)))
 		if err != nil {
 			return
 		}
-		for wht := range ajw {
-			err = ajw[wht].EncodeMsg(en)
+		for zwht := range zajw {
+			err = zajw[zwht].EncodeMsg(en)
+			if err != nil {
+				return
+			}
+		}
+	}
+	// write "i+"
+	err = en.Append(0xa2, 0x69, 0x2b)
+	if err != nil {
+		return err
+	}
+	err = en.WriteMapHeader(uint32(len(z.InPlusEdges)))
+	if err != nil {
+		return
+	}
+	for zhct, zcua := range z.InPlusEdges {
+		err = en.WriteString(zhct)
+		if err != nil {
+			return
+		}
+		err = en.WriteArrayHeader(uint32(len(zcua)))
+		if err != nil {
+			return
+		}
+		for zxhx := range zcua {
+			err = zcua[zxhx].EncodeMsg(en)
+			if err != nil {
+				return
+			}
+		}
+	}
+	// write "o+"
+	err = en.Append(0xa2, 0x6f, 0x2b)
+	if err != nil {
+		return err
+	}
+	err = en.WriteMapHeader(uint32(len(z.OutPlusEdges)))
+	if err != nil {
+		return
+	}
+	for zlqf, zdaf := range z.OutPlusEdges {
+		err = en.WriteString(zlqf)
+		if err != nil {
+			return
+		}
+		err = en.WriteArrayHeader(uint32(len(zdaf)))
+		if err != nil {
+			return
+		}
+		for zpks := range zdaf {
+			err = zdaf[zpks].EncodeMsg(en)
 			if err != nil {
 				return
 			}
@@ -183,34 +313,60 @@ func (z *Entity) EncodeMsg(en *msgp.Writer) (err error) {
 // MarshalMsg implements msgp.Marshaler
 func (z *Entity) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.Require(b, z.Msgsize())
-	// map header, size 3
+	// map header, size 5
 	// string "p"
-	o = append(o, 0x83, 0xa1, 0x70)
+	o = append(o, 0x85, 0xa1, 0x70)
 	o, err = z.PK.MarshalMsg(o)
 	if err != nil {
 		return
 	}
-	// string "ein"
-	o = append(o, 0xa3, 0x65, 0x69, 0x6e)
+	// string "i"
+	o = append(o, 0xa1, 0x69)
 	o = msgp.AppendMapHeader(o, uint32(len(z.InEdges)))
-	for xvk, bzg := range z.InEdges {
-		o = msgp.AppendString(o, xvk)
-		o = msgp.AppendArrayHeader(o, uint32(len(bzg)))
-		for bai := range bzg {
-			o, err = bzg[bai].MarshalMsg(o)
+	for zxvk, zbzg := range z.InEdges {
+		o = msgp.AppendString(o, zxvk)
+		o = msgp.AppendArrayHeader(o, uint32(len(zbzg)))
+		for zbai := range zbzg {
+			o, err = zbzg[zbai].MarshalMsg(o)
 			if err != nil {
 				return
 			}
 		}
 	}
-	// string "eout"
-	o = append(o, 0xa4, 0x65, 0x6f, 0x75, 0x74)
+	// string "o"
+	o = append(o, 0xa1, 0x6f)
 	o = msgp.AppendMapHeader(o, uint32(len(z.OutEdges)))
-	for cmr, ajw := range z.OutEdges {
-		o = msgp.AppendString(o, cmr)
-		o = msgp.AppendArrayHeader(o, uint32(len(ajw)))
-		for wht := range ajw {
-			o, err = ajw[wht].MarshalMsg(o)
+	for zcmr, zajw := range z.OutEdges {
+		o = msgp.AppendString(o, zcmr)
+		o = msgp.AppendArrayHeader(o, uint32(len(zajw)))
+		for zwht := range zajw {
+			o, err = zajw[zwht].MarshalMsg(o)
+			if err != nil {
+				return
+			}
+		}
+	}
+	// string "i+"
+	o = append(o, 0xa2, 0x69, 0x2b)
+	o = msgp.AppendMapHeader(o, uint32(len(z.InPlusEdges)))
+	for zhct, zcua := range z.InPlusEdges {
+		o = msgp.AppendString(o, zhct)
+		o = msgp.AppendArrayHeader(o, uint32(len(zcua)))
+		for zxhx := range zcua {
+			o, err = zcua[zxhx].MarshalMsg(o)
+			if err != nil {
+				return
+			}
+		}
+	}
+	// string "o+"
+	o = append(o, 0xa2, 0x6f, 0x2b)
+	o = msgp.AppendMapHeader(o, uint32(len(z.OutPlusEdges)))
+	for zlqf, zdaf := range z.OutPlusEdges {
+		o = msgp.AppendString(o, zlqf)
+		o = msgp.AppendArrayHeader(o, uint32(len(zdaf)))
+		for zpks := range zdaf {
+			o, err = zdaf[zpks].MarshalMsg(o)
 			if err != nil {
 				return
 			}
@@ -223,13 +379,13 @@ func (z *Entity) MarshalMsg(b []byte) (o []byte, err error) {
 func (z *Entity) UnmarshalMsg(bts []byte) (o []byte, err error) {
 	var field []byte
 	_ = field
-	var pks uint32
-	pks, bts, err = msgp.ReadMapHeaderBytes(bts)
+	var zema uint32
+	zema, bts, err = msgp.ReadMapHeaderBytes(bts)
 	if err != nil {
 		return
 	}
-	for pks > 0 {
-		pks--
+	for zema > 0 {
+		zema--
 		field, bts, err = msgp.ReadMapKeyZC(bts)
 		if err != nil {
 			return
@@ -240,83 +396,161 @@ func (z *Entity) UnmarshalMsg(bts []byte) (o []byte, err error) {
 			if err != nil {
 				return
 			}
-		case "ein":
-			var jfb uint32
-			jfb, bts, err = msgp.ReadMapHeaderBytes(bts)
+		case "i":
+			var zpez uint32
+			zpez, bts, err = msgp.ReadMapHeaderBytes(bts)
 			if err != nil {
 				return
 			}
-			if z.InEdges == nil && jfb > 0 {
-				z.InEdges = make(map[string][]Key, jfb)
+			if z.InEdges == nil && zpez > 0 {
+				z.InEdges = make(map[string][]Key, zpez)
 			} else if len(z.InEdges) > 0 {
 				for key, _ := range z.InEdges {
 					delete(z.InEdges, key)
 				}
 			}
-			for jfb > 0 {
-				var xvk string
-				var bzg []Key
-				jfb--
-				xvk, bts, err = msgp.ReadStringBytes(bts)
+			for zpez > 0 {
+				var zxvk string
+				var zbzg []Key
+				zpez--
+				zxvk, bts, err = msgp.ReadStringBytes(bts)
 				if err != nil {
 					return
 				}
-				var cxo uint32
-				cxo, bts, err = msgp.ReadArrayHeaderBytes(bts)
+				var zqke uint32
+				zqke, bts, err = msgp.ReadArrayHeaderBytes(bts)
 				if err != nil {
 					return
 				}
-				if cap(bzg) >= int(cxo) {
-					bzg = bzg[:cxo]
+				if cap(zbzg) >= int(zqke) {
+					zbzg = (zbzg)[:zqke]
 				} else {
-					bzg = make([]Key, cxo)
+					zbzg = make([]Key, zqke)
 				}
-				for bai := range bzg {
-					bts, err = bzg[bai].UnmarshalMsg(bts)
+				for zbai := range zbzg {
+					bts, err = zbzg[zbai].UnmarshalMsg(bts)
 					if err != nil {
 						return
 					}
 				}
-				z.InEdges[xvk] = bzg
+				z.InEdges[zxvk] = zbzg
 			}
-		case "eout":
-			var eff uint32
-			eff, bts, err = msgp.ReadMapHeaderBytes(bts)
+		case "o":
+			var zqyh uint32
+			zqyh, bts, err = msgp.ReadMapHeaderBytes(bts)
 			if err != nil {
 				return
 			}
-			if z.OutEdges == nil && eff > 0 {
-				z.OutEdges = make(map[string][]Key, eff)
+			if z.OutEdges == nil && zqyh > 0 {
+				z.OutEdges = make(map[string][]Key, zqyh)
 			} else if len(z.OutEdges) > 0 {
 				for key, _ := range z.OutEdges {
 					delete(z.OutEdges, key)
 				}
 			}
-			for eff > 0 {
-				var cmr string
-				var ajw []Key
-				eff--
-				cmr, bts, err = msgp.ReadStringBytes(bts)
+			for zqyh > 0 {
+				var zcmr string
+				var zajw []Key
+				zqyh--
+				zcmr, bts, err = msgp.ReadStringBytes(bts)
 				if err != nil {
 					return
 				}
-				var rsw uint32
-				rsw, bts, err = msgp.ReadArrayHeaderBytes(bts)
+				var zyzr uint32
+				zyzr, bts, err = msgp.ReadArrayHeaderBytes(bts)
 				if err != nil {
 					return
 				}
-				if cap(ajw) >= int(rsw) {
-					ajw = ajw[:rsw]
+				if cap(zajw) >= int(zyzr) {
+					zajw = (zajw)[:zyzr]
 				} else {
-					ajw = make([]Key, rsw)
+					zajw = make([]Key, zyzr)
 				}
-				for wht := range ajw {
-					bts, err = ajw[wht].UnmarshalMsg(bts)
+				for zwht := range zajw {
+					bts, err = zajw[zwht].UnmarshalMsg(bts)
 					if err != nil {
 						return
 					}
 				}
-				z.OutEdges[cmr] = ajw
+				z.OutEdges[zcmr] = zajw
+			}
+		case "i+":
+			var zywj uint32
+			zywj, bts, err = msgp.ReadMapHeaderBytes(bts)
+			if err != nil {
+				return
+			}
+			if z.InPlusEdges == nil && zywj > 0 {
+				z.InPlusEdges = make(map[string][]Key, zywj)
+			} else if len(z.InPlusEdges) > 0 {
+				for key, _ := range z.InPlusEdges {
+					delete(z.InPlusEdges, key)
+				}
+			}
+			for zywj > 0 {
+				var zhct string
+				var zcua []Key
+				zywj--
+				zhct, bts, err = msgp.ReadStringBytes(bts)
+				if err != nil {
+					return
+				}
+				var zjpj uint32
+				zjpj, bts, err = msgp.ReadArrayHeaderBytes(bts)
+				if err != nil {
+					return
+				}
+				if cap(zcua) >= int(zjpj) {
+					zcua = (zcua)[:zjpj]
+				} else {
+					zcua = make([]Key, zjpj)
+				}
+				for zxhx := range zcua {
+					bts, err = zcua[zxhx].UnmarshalMsg(bts)
+					if err != nil {
+						return
+					}
+				}
+				z.InPlusEdges[zhct] = zcua
+			}
+		case "o+":
+			var zzpf uint32
+			zzpf, bts, err = msgp.ReadMapHeaderBytes(bts)
+			if err != nil {
+				return
+			}
+			if z.OutPlusEdges == nil && zzpf > 0 {
+				z.OutPlusEdges = make(map[string][]Key, zzpf)
+			} else if len(z.OutPlusEdges) > 0 {
+				for key, _ := range z.OutPlusEdges {
+					delete(z.OutPlusEdges, key)
+				}
+			}
+			for zzpf > 0 {
+				var zlqf string
+				var zdaf []Key
+				zzpf--
+				zlqf, bts, err = msgp.ReadStringBytes(bts)
+				if err != nil {
+					return
+				}
+				var zrfe uint32
+				zrfe, bts, err = msgp.ReadArrayHeaderBytes(bts)
+				if err != nil {
+					return
+				}
+				if cap(zdaf) >= int(zrfe) {
+					zdaf = (zdaf)[:zrfe]
+				} else {
+					zdaf = make([]Key, zrfe)
+				}
+				for zpks := range zdaf {
+					bts, err = zdaf[zpks].UnmarshalMsg(bts)
+					if err != nil {
+						return
+					}
+				}
+				z.OutPlusEdges[zlqf] = zdaf
 			}
 		default:
 			bts, err = msgp.Skip(bts)
@@ -329,24 +563,45 @@ func (z *Entity) UnmarshalMsg(bts []byte) (o []byte, err error) {
 	return
 }
 
+// Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
 func (z *Entity) Msgsize() (s int) {
-	s = 1 + 2 + z.PK.Msgsize() + 4 + msgp.MapHeaderSize
+	s = 1 + 2 + z.PK.Msgsize() + 2 + msgp.MapHeaderSize
 	if z.InEdges != nil {
-		for xvk, bzg := range z.InEdges {
-			_ = bzg
-			s += msgp.StringPrefixSize + len(xvk) + msgp.ArrayHeaderSize
-			for bai := range bzg {
-				s += bzg[bai].Msgsize()
+		for zxvk, zbzg := range z.InEdges {
+			_ = zbzg
+			s += msgp.StringPrefixSize + len(zxvk) + msgp.ArrayHeaderSize
+			for zbai := range zbzg {
+				s += zbzg[zbai].Msgsize()
 			}
 		}
 	}
-	s += 5 + msgp.MapHeaderSize
+	s += 2 + msgp.MapHeaderSize
 	if z.OutEdges != nil {
-		for cmr, ajw := range z.OutEdges {
-			_ = ajw
-			s += msgp.StringPrefixSize + len(cmr) + msgp.ArrayHeaderSize
-			for wht := range ajw {
-				s += ajw[wht].Msgsize()
+		for zcmr, zajw := range z.OutEdges {
+			_ = zajw
+			s += msgp.StringPrefixSize + len(zcmr) + msgp.ArrayHeaderSize
+			for zwht := range zajw {
+				s += zajw[zwht].Msgsize()
+			}
+		}
+	}
+	s += 3 + msgp.MapHeaderSize
+	if z.InPlusEdges != nil {
+		for zhct, zcua := range z.InPlusEdges {
+			_ = zcua
+			s += msgp.StringPrefixSize + len(zhct) + msgp.ArrayHeaderSize
+			for zxhx := range zcua {
+				s += zcua[zxhx].Msgsize()
+			}
+		}
+	}
+	s += 3 + msgp.MapHeaderSize
+	if z.OutPlusEdges != nil {
+		for zlqf, zdaf := range z.OutPlusEdges {
+			_ = zdaf
+			s += msgp.StringPrefixSize + len(zlqf) + msgp.ArrayHeaderSize
+			for zpks := range zdaf {
+				s += zdaf[zpks].Msgsize()
 			}
 		}
 	}
@@ -355,31 +610,31 @@ func (z *Entity) Msgsize() (s int) {
 
 // DecodeMsg implements msgp.Decodable
 func (z *NamespaceIndex) DecodeMsg(dc *msgp.Reader) (err error) {
-	var kgt uint32
-	kgt, err = dc.ReadMapHeader()
+	var zrjx uint32
+	zrjx, err = dc.ReadMapHeader()
 	if err != nil {
 		return
 	}
-	if (*z) == nil && kgt > 0 {
-		(*z) = make(NamespaceIndex, kgt)
+	if (*z) == nil && zrjx > 0 {
+		(*z) = make(NamespaceIndex, zrjx)
 	} else if len((*z)) > 0 {
 		for key, _ := range *z {
 			delete((*z), key)
 		}
 	}
-	for kgt > 0 {
-		kgt--
-		var obc string
-		var snv string
-		obc, err = dc.ReadString()
+	for zrjx > 0 {
+		zrjx--
+		var zeth string
+		var zsbz string
+		zeth, err = dc.ReadString()
 		if err != nil {
 			return
 		}
-		snv, err = dc.ReadString()
+		zsbz, err = dc.ReadString()
 		if err != nil {
 			return
 		}
-		(*z)[obc] = snv
+		(*z)[zeth] = zsbz
 	}
 	return
 }
@@ -390,12 +645,12 @@ func (z NamespaceIndex) EncodeMsg(en *msgp.Writer) (err error) {
 	if err != nil {
 		return
 	}
-	for ema, pez := range z {
-		err = en.WriteString(ema)
+	for zawn, zwel := range z {
+		err = en.WriteString(zawn)
 		if err != nil {
 			return
 		}
-		err = en.WriteString(pez)
+		err = en.WriteString(zwel)
 		if err != nil {
 			return
 		}
@@ -407,51 +662,52 @@ func (z NamespaceIndex) EncodeMsg(en *msgp.Writer) (err error) {
 func (z NamespaceIndex) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.Require(b, z.Msgsize())
 	o = msgp.AppendMapHeader(o, uint32(len(z)))
-	for ema, pez := range z {
-		o = msgp.AppendString(o, ema)
-		o = msgp.AppendString(o, pez)
+	for zawn, zwel := range z {
+		o = msgp.AppendString(o, zawn)
+		o = msgp.AppendString(o, zwel)
 	}
 	return
 }
 
 // UnmarshalMsg implements msgp.Unmarshaler
 func (z *NamespaceIndex) UnmarshalMsg(bts []byte) (o []byte, err error) {
-	var yzr uint32
-	yzr, bts, err = msgp.ReadMapHeaderBytes(bts)
+	var zzdc uint32
+	zzdc, bts, err = msgp.ReadMapHeaderBytes(bts)
 	if err != nil {
 		return
 	}
-	if (*z) == nil && yzr > 0 {
-		(*z) = make(NamespaceIndex, yzr)
+	if (*z) == nil && zzdc > 0 {
+		(*z) = make(NamespaceIndex, zzdc)
 	} else if len((*z)) > 0 {
 		for key, _ := range *z {
 			delete((*z), key)
 		}
 	}
-	for yzr > 0 {
-		var qke string
-		var qyh string
-		yzr--
-		qke, bts, err = msgp.ReadStringBytes(bts)
+	for zzdc > 0 {
+		var zrbe string
+		var zmfd string
+		zzdc--
+		zrbe, bts, err = msgp.ReadStringBytes(bts)
 		if err != nil {
 			return
 		}
-		qyh, bts, err = msgp.ReadStringBytes(bts)
+		zmfd, bts, err = msgp.ReadStringBytes(bts)
 		if err != nil {
 			return
 		}
-		(*z)[qke] = qyh
+		(*z)[zrbe] = zmfd
 	}
 	o = bts
 	return
 }
 
+// Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
 func (z NamespaceIndex) Msgsize() (s int) {
 	s = msgp.MapHeaderSize
 	if z != nil {
-		for ywj, jpj := range z {
-			_ = jpj
-			s += msgp.StringPrefixSize + len(ywj) + msgp.StringPrefixSize + len(jpj)
+		for zelx, zbal := range z {
+			_ = zbal
+			s += msgp.StringPrefixSize + len(zelx) + msgp.StringPrefixSize + len(zbal)
 		}
 	}
 	return
@@ -459,23 +715,23 @@ func (z NamespaceIndex) Msgsize() (s int) {
 
 // DecodeMsg implements msgp.Decodable
 func (z *PredIndex) DecodeMsg(dc *msgp.Reader) (err error) {
-	var eth uint32
-	eth, err = dc.ReadMapHeader()
+	var zana uint32
+	zana, err = dc.ReadMapHeader()
 	if err != nil {
 		return
 	}
-	if (*z) == nil && eth > 0 {
-		(*z) = make(PredIndex, eth)
+	if (*z) == nil && zana > 0 {
+		(*z) = make(PredIndex, zana)
 	} else if len((*z)) > 0 {
 		for key, _ := range *z {
 			delete((*z), key)
 		}
 	}
-	for eth > 0 {
-		eth--
-		var gmo string
-		var taf *PredicateEntity
-		gmo, err = dc.ReadString()
+	for zana > 0 {
+		zana--
+		var ztmt string
+		var ztco *PredicateEntity
+		ztmt, err = dc.ReadString()
 		if err != nil {
 			return
 		}
@@ -484,17 +740,17 @@ func (z *PredIndex) DecodeMsg(dc *msgp.Reader) (err error) {
 			if err != nil {
 				return
 			}
-			taf = nil
+			ztco = nil
 		} else {
-			if taf == nil {
-				taf = new(PredicateEntity)
+			if ztco == nil {
+				ztco = new(PredicateEntity)
 			}
-			err = taf.DecodeMsg(dc)
+			err = ztco.DecodeMsg(dc)
 			if err != nil {
 				return
 			}
 		}
-		(*z)[gmo] = taf
+		(*z)[ztmt] = ztco
 	}
 	return
 }
@@ -505,18 +761,18 @@ func (z PredIndex) EncodeMsg(en *msgp.Writer) (err error) {
 	if err != nil {
 		return
 	}
-	for sbz, rjx := range z {
-		err = en.WriteString(sbz)
+	for ztyy, zinl := range z {
+		err = en.WriteString(ztyy)
 		if err != nil {
 			return
 		}
-		if rjx == nil {
+		if zinl == nil {
 			err = en.WriteNil()
 			if err != nil {
 				return
 			}
 		} else {
-			err = rjx.EncodeMsg(en)
+			err = zinl.EncodeMsg(en)
 			if err != nil {
 				return
 			}
@@ -529,12 +785,12 @@ func (z PredIndex) EncodeMsg(en *msgp.Writer) (err error) {
 func (z PredIndex) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.Require(b, z.Msgsize())
 	o = msgp.AppendMapHeader(o, uint32(len(z)))
-	for sbz, rjx := range z {
-		o = msgp.AppendString(o, sbz)
-		if rjx == nil {
+	for ztyy, zinl := range z {
+		o = msgp.AppendString(o, ztyy)
+		if zinl == nil {
 			o = msgp.AppendNil(o)
 		} else {
-			o, err = rjx.MarshalMsg(o)
+			o, err = zinl.MarshalMsg(o)
 			if err != nil {
 				return
 			}
@@ -545,23 +801,23 @@ func (z PredIndex) MarshalMsg(b []byte) (o []byte, err error) {
 
 // UnmarshalMsg implements msgp.Unmarshaler
 func (z *PredIndex) UnmarshalMsg(bts []byte) (o []byte, err error) {
-	var rbe uint32
-	rbe, bts, err = msgp.ReadMapHeaderBytes(bts)
+	var zixj uint32
+	zixj, bts, err = msgp.ReadMapHeaderBytes(bts)
 	if err != nil {
 		return
 	}
-	if (*z) == nil && rbe > 0 {
-		(*z) = make(PredIndex, rbe)
+	if (*z) == nil && zixj > 0 {
+		(*z) = make(PredIndex, zixj)
 	} else if len((*z)) > 0 {
 		for key, _ := range *z {
 			delete((*z), key)
 		}
 	}
-	for rbe > 0 {
-		var awn string
-		var wel *PredicateEntity
-		rbe--
-		awn, bts, err = msgp.ReadStringBytes(bts)
+	for zixj > 0 {
+		var zare string
+		var zljy *PredicateEntity
+		zixj--
+		zare, bts, err = msgp.ReadStringBytes(bts)
 		if err != nil {
 			return
 		}
@@ -570,32 +826,33 @@ func (z *PredIndex) UnmarshalMsg(bts []byte) (o []byte, err error) {
 			if err != nil {
 				return
 			}
-			wel = nil
+			zljy = nil
 		} else {
-			if wel == nil {
-				wel = new(PredicateEntity)
+			if zljy == nil {
+				zljy = new(PredicateEntity)
 			}
-			bts, err = wel.UnmarshalMsg(bts)
+			bts, err = zljy.UnmarshalMsg(bts)
 			if err != nil {
 				return
 			}
 		}
-		(*z)[awn] = wel
+		(*z)[zare] = zljy
 	}
 	o = bts
 	return
 }
 
+// Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
 func (z PredIndex) Msgsize() (s int) {
 	s = msgp.MapHeaderSize
 	if z != nil {
-		for mfd, zdc := range z {
-			_ = zdc
-			s += msgp.StringPrefixSize + len(mfd)
-			if zdc == nil {
+		for zrsc, zctn := range z {
+			_ = zctn
+			s += msgp.StringPrefixSize + len(zrsc)
+			if zctn == nil {
 				s += msgp.NilSize
 			} else {
-				s += zdc.Msgsize()
+				s += zctn.Msgsize()
 			}
 		}
 	}
@@ -606,13 +863,13 @@ func (z PredIndex) Msgsize() (s int) {
 func (z *PredicateEntity) DecodeMsg(dc *msgp.Reader) (err error) {
 	var field []byte
 	_ = field
-	var inl uint32
-	inl, err = dc.ReadMapHeader()
+	var zqgz uint32
+	zqgz, err = dc.ReadMapHeader()
 	if err != nil {
 		return
 	}
-	for inl > 0 {
-		inl--
+	for zqgz > 0 {
+		zqgz--
 		field, err = dc.ReadMapKeyPtr()
 		if err != nil {
 			return
@@ -624,102 +881,102 @@ func (z *PredicateEntity) DecodeMsg(dc *msgp.Reader) (err error) {
 				return
 			}
 		case "s":
-			var are uint32
-			are, err = dc.ReadMapHeader()
+			var zsnw uint32
+			zsnw, err = dc.ReadMapHeader()
 			if err != nil {
 				return
 			}
-			if z.Subjects == nil && are > 0 {
-				z.Subjects = make(map[string]map[string]uint32, are)
+			if z.Subjects == nil && zsnw > 0 {
+				z.Subjects = make(map[string]map[string]uint32, zsnw)
 			} else if len(z.Subjects) > 0 {
 				for key, _ := range z.Subjects {
 					delete(z.Subjects, key)
 				}
 			}
-			for are > 0 {
-				are--
-				var elx string
-				var bal map[string]uint32
-				elx, err = dc.ReadString()
+			for zsnw > 0 {
+				zsnw--
+				var zswy string
+				var znsg map[string]uint32
+				zswy, err = dc.ReadString()
 				if err != nil {
 					return
 				}
-				var ljy uint32
-				ljy, err = dc.ReadMapHeader()
+				var ztls uint32
+				ztls, err = dc.ReadMapHeader()
 				if err != nil {
 					return
 				}
-				if bal == nil && ljy > 0 {
-					bal = make(map[string]uint32, ljy)
-				} else if len(bal) > 0 {
-					for key, _ := range bal {
-						delete(bal, key)
+				if znsg == nil && ztls > 0 {
+					znsg = make(map[string]uint32, ztls)
+				} else if len(znsg) > 0 {
+					for key, _ := range znsg {
+						delete(znsg, key)
 					}
 				}
-				for ljy > 0 {
-					ljy--
-					var jqz string
-					var kct uint32
-					jqz, err = dc.ReadString()
+				for ztls > 0 {
+					ztls--
+					var zrus string
+					var zsvm uint32
+					zrus, err = dc.ReadString()
 					if err != nil {
 						return
 					}
-					kct, err = dc.ReadUint32()
+					zsvm, err = dc.ReadUint32()
 					if err != nil {
 						return
 					}
-					bal[jqz] = kct
+					znsg[zrus] = zsvm
 				}
-				z.Subjects[elx] = bal
+				z.Subjects[zswy] = znsg
 			}
 		case "o":
-			var ixj uint32
-			ixj, err = dc.ReadMapHeader()
+			var zmvo uint32
+			zmvo, err = dc.ReadMapHeader()
 			if err != nil {
 				return
 			}
-			if z.Objects == nil && ixj > 0 {
-				z.Objects = make(map[string]map[string]uint32, ixj)
+			if z.Objects == nil && zmvo > 0 {
+				z.Objects = make(map[string]map[string]uint32, zmvo)
 			} else if len(z.Objects) > 0 {
 				for key, _ := range z.Objects {
 					delete(z.Objects, key)
 				}
 			}
-			for ixj > 0 {
-				ixj--
-				var tmt string
-				var tco map[string]uint32
-				tmt, err = dc.ReadString()
+			for zmvo > 0 {
+				zmvo--
+				var zaoz string
+				var zfzb map[string]uint32
+				zaoz, err = dc.ReadString()
 				if err != nil {
 					return
 				}
-				var rsc uint32
-				rsc, err = dc.ReadMapHeader()
+				var zigk uint32
+				zigk, err = dc.ReadMapHeader()
 				if err != nil {
 					return
 				}
-				if tco == nil && rsc > 0 {
-					tco = make(map[string]uint32, rsc)
-				} else if len(tco) > 0 {
-					for key, _ := range tco {
-						delete(tco, key)
+				if zfzb == nil && zigk > 0 {
+					zfzb = make(map[string]uint32, zigk)
+				} else if len(zfzb) > 0 {
+					for key, _ := range zfzb {
+						delete(zfzb, key)
 					}
 				}
-				for rsc > 0 {
-					rsc--
-					var ana string
-					var tyy uint32
-					ana, err = dc.ReadString()
+				for zigk > 0 {
+					zigk--
+					var zsbo string
+					var zjif uint32
+					zsbo, err = dc.ReadString()
 					if err != nil {
 						return
 					}
-					tyy, err = dc.ReadUint32()
+					zjif, err = dc.ReadUint32()
 					if err != nil {
 						return
 					}
-					tco[ana] = tyy
+					zfzb[zsbo] = zjif
 				}
-				z.Objects[tmt] = tco
+				z.Objects[zaoz] = zfzb
 			}
 		default:
 			err = dc.Skip()
@@ -752,21 +1009,21 @@ func (z *PredicateEntity) EncodeMsg(en *msgp.Writer) (err error) {
 	if err != nil {
 		return
 	}
-	for elx, bal := range z.Subjects {
-		err = en.WriteString(elx)
+	for zswy, znsg := range z.Subjects {
+		err = en.WriteString(zswy)
 		if err != nil {
 			return
 		}
-		err = en.WriteMapHeader(uint32(len(bal)))
+		err = en.WriteMapHeader(uint32(len(znsg)))
 		if err != nil {
 			return
 		}
-		for jqz, kct := range bal {
-			err = en.WriteString(jqz)
+		for zrus, zsvm := range znsg {
+			err = en.WriteString(zrus)
 			if err != nil {
 				return
 			}
-			err = en.WriteUint32(kct)
+			err = en.WriteUint32(zsvm)
 			if err != nil {
 				return
 			}
@@ -781,21 +1038,21 @@ func (z *PredicateEntity) EncodeMsg(en *msgp.Writer) (err error) {
 	if err != nil {
 		return
 	}
-	for tmt, tco := range z.Objects {
-		err = en.WriteString(tmt)
+	for zaoz, zfzb := range z.Objects {
+		err = en.WriteString(zaoz)
 		if err != nil {
 			return
 		}
-		err = en.WriteMapHeader(uint32(len(tco)))
+		err = en.WriteMapHeader(uint32(len(zfzb)))
 		if err != nil {
 			return
 		}
-		for ana, tyy := range tco {
-			err = en.WriteString(ana)
+		for zsbo, zjif := range zfzb {
+			err = en.WriteString(zsbo)
 			if err != nil {
 				return
 			}
-			err = en.WriteUint32(tyy)
+			err = en.WriteUint32(zjif)
 			if err != nil {
 				return
 			}
@@ -817,23 +1074,23 @@ func (z *PredicateEntity) MarshalMsg(b []byte) (o []byte, err error) {
 	// string "s"
 	o = append(o, 0xa1, 0x73)
 	o = msgp.AppendMapHeader(o, uint32(len(z.Subjects)))
-	for elx, bal := range z.Subjects {
-		o = msgp.AppendString(o, elx)
-		o = msgp.AppendMapHeader(o, uint32(len(bal)))
-		for jqz, kct := range bal {
-			o = msgp.AppendString(o, jqz)
-			o = msgp.AppendUint32(o, kct)
+	for zswy, znsg := range z.Subjects {
+		o = msgp.AppendString(o, zswy)
+		o = msgp.AppendMapHeader(o, uint32(len(znsg)))
+		for zrus, zsvm := range znsg {
+			o = msgp.AppendString(o, zrus)
+			o = msgp.AppendUint32(o, zsvm)
 		}
 	}
 	// string "o"
 	o = append(o, 0xa1, 0x6f)
 	o = msgp.AppendMapHeader(o, uint32(len(z.Objects)))
-	for tmt, tco := range z.Objects {
-		o = msgp.AppendString(o, tmt)
-		o = msgp.AppendMapHeader(o, uint32(len(tco)))
-		for ana, tyy := range tco {
-			o = msgp.AppendString(o, ana)
-			o = msgp.AppendUint32(o, tyy)
+	for zaoz, zfzb := range z.Objects {
+		o = msgp.AppendString(o, zaoz)
+		o = msgp.AppendMapHeader(o, uint32(len(zfzb)))
+		for zsbo, zjif := range zfzb {
+			o = msgp.AppendString(o, zsbo)
+			o = msgp.AppendUint32(o, zjif)
 		}
 	}
 	return
@@ -843,13 +1100,13 @@ func (z *PredicateEntity) MarshalMsg(b []byte) (o []byte, err error) {
 func (z *PredicateEntity) UnmarshalMsg(bts []byte) (o []byte, err error) {
 	var field []byte
 	_ = field
-	var ctn uint32
-	ctn, bts, err = msgp.ReadMapHeaderBytes(bts)
+	var zopb uint32
+	zopb, bts, err = msgp.ReadMapHeaderBytes(bts)
 	if err != nil {
 		return
 	}
-	for ctn > 0 {
-		ctn--
+	for zopb > 0 {
+		zopb--
 		field, bts, err = msgp.ReadMapKeyZC(bts)
 		if err != nil {
 			return
@@ -861,102 +1118,102 @@ func (z *PredicateEntity) UnmarshalMsg(bts []byte) (o []byte, err error) {
 				return
 			}
 		case "s":
-			var swy uint32
-			swy, bts, err = msgp.ReadMapHeaderBytes(bts)
+			var zuop uint32
+			zuop, bts, err = msgp.ReadMapHeaderBytes(bts)
 			if err != nil {
 				return
 			}
-			if z.Subjects == nil && swy > 0 {
-				z.Subjects = make(map[string]map[string]uint32, swy)
+			if z.Subjects == nil && zuop > 0 {
+				z.Subjects = make(map[string]map[string]uint32, zuop)
 			} else if len(z.Subjects) > 0 {
 				for key, _ := range z.Subjects {
 					delete(z.Subjects, key)
 				}
 			}
-			for swy > 0 {
-				var elx string
-				var bal map[string]uint32
-				swy--
-				elx, bts, err = msgp.ReadStringBytes(bts)
+			for zuop > 0 {
+				var zswy string
+				var znsg map[string]uint32
+				zuop--
+				zswy, bts, err = msgp.ReadStringBytes(bts)
 				if err != nil {
 					return
 				}
-				var nsg uint32
-				nsg, bts, err = msgp.ReadMapHeaderBytes(bts)
+				var zedl uint32
+				zedl, bts, err = msgp.ReadMapHeaderBytes(bts)
 				if err != nil {
 					return
 				}
-				if bal == nil && nsg > 0 {
-					bal = make(map[string]uint32, nsg)
-				} else if len(bal) > 0 {
-					for key, _ := range bal {
-						delete(bal, key)
+				if znsg == nil && zedl > 0 {
+					znsg = make(map[string]uint32, zedl)
+				} else if len(znsg) > 0 {
+					for key, _ := range znsg {
+						delete(znsg, key)
 					}
 				}
-				for nsg > 0 {
-					var jqz string
-					var kct uint32
-					nsg--
-					jqz, bts, err = msgp.ReadStringBytes(bts)
+				for zedl > 0 {
+					var zrus string
+					var zsvm uint32
+					zedl--
+					zrus, bts, err = msgp.ReadStringBytes(bts)
 					if err != nil {
 						return
 					}
-					kct, bts, err = msgp.ReadUint32Bytes(bts)
+					zsvm, bts, err = msgp.ReadUint32Bytes(bts)
 					if err != nil {
 						return
 					}
-					bal[jqz] = kct
+					znsg[zrus] = zsvm
 				}
-				z.Subjects[elx] = bal
+				z.Subjects[zswy] = znsg
 			}
 		case "o":
-			var rus uint32
-			rus, bts, err = msgp.ReadMapHeaderBytes(bts)
+			var zupd uint32
+			zupd, bts, err = msgp.ReadMapHeaderBytes(bts)
 			if err != nil {
 				return
 			}
-			if z.Objects == nil && rus > 0 {
-				z.Objects = make(map[string]map[string]uint32, rus)
+			if z.Objects == nil && zupd > 0 {
+				z.Objects = make(map[string]map[string]uint32, zupd)
 			} else if len(z.Objects) > 0 {
 				for key, _ := range z.Objects {
 					delete(z.Objects, key)
 				}
 			}
-			for rus > 0 {
-				var tmt string
-				var tco map[string]uint32
-				rus--
-				tmt, bts, err = msgp.ReadStringBytes(bts)
+			for zupd > 0 {
+				var zaoz string
+				var zfzb map[string]uint32
+				zupd--
+				zaoz, bts, err = msgp.ReadStringBytes(bts)
 				if err != nil {
 					return
 				}
-				var svm uint32
-				svm, bts, err = msgp.ReadMapHeaderBytes(bts)
+				var zome uint32
+				zome, bts, err = msgp.ReadMapHeaderBytes(bts)
 				if err != nil {
 					return
 				}
-				if tco == nil && svm > 0 {
-					tco = make(map[string]uint32, svm)
-				} else if len(tco) > 0 {
-					for key, _ := range tco {
-						delete(tco, key)
+				if zfzb == nil && zome > 0 {
+					zfzb = make(map[string]uint32, zome)
+				} else if len(zfzb) > 0 {
+					for key, _ := range zfzb {
+						delete(zfzb, key)
 					}
 				}
-				for svm > 0 {
-					var ana string
-					var tyy uint32
-					svm--
-					ana, bts, err = msgp.ReadStringBytes(bts)
+				for zome > 0 {
+					var zsbo string
+					var zjif uint32
+					zome--
+					zsbo, bts, err = msgp.ReadStringBytes(bts)
 					if err != nil {
 						return
 					}
-					tyy, bts, err = msgp.ReadUint32Bytes(bts)
+					zjif, bts, err = msgp.ReadUint32Bytes(bts)
 					if err != nil {
 						return
 					}
-					tco[ana] = tyy
+					zfzb[zsbo] = zjif
 				}
-				z.Objects[tmt] = tco
+				z.Objects[zaoz] = zfzb
 			}
 		default:
 			bts, err = msgp.Skip(bts)
@@ -969,29 +1226,30 @@ func (z *PredicateEntity) UnmarshalMsg(bts []byte) (o []byte, err error) {
 	return
 }
 
+// Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
 func (z *PredicateEntity) Msgsize() (s int) {
 	s = 1 + 2 + z.PK.Msgsize() + 2 + msgp.MapHeaderSize
 	if z.Subjects != nil {
-		for elx, bal := range z.Subjects {
-			_ = bal
-			s += msgp.StringPrefixSize + len(elx) + msgp.MapHeaderSize
-			if bal != nil {
-				for jqz, kct := range bal {
-					_ = kct
-					s += msgp.StringPrefixSize + len(jqz) + msgp.Uint32Size
+		for zswy, znsg := range z.Subjects {
+			_ = znsg
+			s += msgp.StringPrefixSize + len(zswy) + msgp.MapHeaderSize
+			if znsg != nil {
+				for zrus, zsvm := range znsg {
+					_ = zsvm
+					s += msgp.StringPrefixSize + len(zrus) + msgp.Uint32Size
 				}
 			}
 		}
 	}
 	s += 2 + msgp.MapHeaderSize
 	if z.Objects != nil {
-		for tmt, tco := range z.Objects {
-			_ = tco
-			s += msgp.StringPrefixSize + len(tmt) + msgp.MapHeaderSize
-			if tco != nil {
-				for ana, tyy := range tco {
-					_ = tyy
-					s += msgp.StringPrefixSize + len(ana) + msgp.Uint32Size
+		for zaoz, zfzb := range z.Objects {
+			_ = zfzb
+			s += msgp.StringPrefixSize + len(zaoz) + msgp.MapHeaderSize
+			if zfzb != nil {
+				for zsbo, zjif := range zfzb {
+					_ = zjif
+					s += msgp.StringPrefixSize + len(zsbo) + msgp.Uint32Size
 				}
 			}
 		}
@@ -1001,31 +1259,31 @@ func (z *PredicateEntity) Msgsize() (s int) {
 
 // DecodeMsg implements msgp.Decodable
 func (z *RelshipIndex) DecodeMsg(dc *msgp.Reader) (err error) {
-	var qgz uint32
-	qgz, err = dc.ReadMapHeader()
+	var zucw uint32
+	zucw, err = dc.ReadMapHeader()
 	if err != nil {
 		return
 	}
-	if (*z) == nil && qgz > 0 {
-		(*z) = make(RelshipIndex, qgz)
+	if (*z) == nil && zucw > 0 {
+		(*z) = make(RelshipIndex, zucw)
 	} else if len((*z)) > 0 {
 		for key, _ := range *z {
 			delete((*z), key)
 		}
 	}
-	for qgz > 0 {
-		qgz--
-		var sbo string
-		var jif string
-		sbo, err = dc.ReadString()
+	for zucw > 0 {
+		zucw--
+		var zknt string
+		var zxye string
+		zknt, err = dc.ReadString()
 		if err != nil {
 			return
 		}
-		jif, err = dc.ReadString()
+		zxye, err = dc.ReadString()
 		if err != nil {
 			return
 		}
-		(*z)[sbo] = jif
+		(*z)[zknt] = zxye
 	}
 	return
 }
@@ -1036,12 +1294,12 @@ func (z RelshipIndex) EncodeMsg(en *msgp.Writer) (err error) {
 	if err != nil {
 		return
 	}
-	for snw, tls := range z {
-		err = en.WriteString(snw)
+	for zlsx, zbgy := range z {
+		err = en.WriteString(zlsx)
 		if err != nil {
 			return
 		}
-		err = en.WriteString(tls)
+		err = en.WriteString(zbgy)
 		if err != nil {
 			return
 		}
@@ -1053,51 +1311,52 @@ func (z RelshipIndex) EncodeMsg(en *msgp.Writer) (err error) {
 func (z RelshipIndex) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.Require(b, z.Msgsize())
 	o = msgp.AppendMapHeader(o, uint32(len(z)))
-	for snw, tls := range z {
-		o = msgp.AppendString(o, snw)
-		o = msgp.AppendString(o, tls)
+	for zlsx, zbgy := range z {
+		o = msgp.AppendString(o, zlsx)
+		o = msgp.AppendString(o, zbgy)
 	}
 	return
 }
 
 // UnmarshalMsg implements msgp.Unmarshaler
 func (z *RelshipIndex) UnmarshalMsg(bts []byte) (o []byte, err error) {
-	var opb uint32
-	opb, bts, err = msgp.ReadMapHeaderBytes(bts)
+	var zvls uint32
+	zvls, bts, err = msgp.ReadMapHeaderBytes(bts)
 	if err != nil {
 		return
 	}
-	if (*z) == nil && opb > 0 {
-		(*z) = make(RelshipIndex, opb)
+	if (*z) == nil && zvls > 0 {
+		(*z) = make(RelshipIndex, zvls)
 	} else if len((*z)) > 0 {
 		for key, _ := range *z {
 			delete((*z), key)
 		}
 	}
-	for opb > 0 {
-		var mvo string
-		var igk string
-		opb--
-		mvo, bts, err = msgp.ReadStringBytes(bts)
+	for zvls > 0 {
+		var zrao string
+		var zmbt string
+		zvls--
+		zrao, bts, err = msgp.ReadStringBytes(bts)
 		if err != nil {
 			return
 		}
-		igk, bts, err = msgp.ReadStringBytes(bts)
+		zmbt, bts, err = msgp.ReadStringBytes(bts)
 		if err != nil {
 			return
 		}
-		(*z)[mvo] = igk
+		(*z)[zrao] = zmbt
 	}
 	o = bts
 	return
 }
 
+// Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
 func (z RelshipIndex) Msgsize() (s int) {
 	s = msgp.MapHeaderSize
 	if z != nil {
-		for uop, edl := range z {
-			_ = edl
-			s += msgp.StringPrefixSize + len(uop) + msgp.StringPrefixSize + len(edl)
+		for zjfj, zzak := range z {
+			_ = zzak
+			s += msgp.StringPrefixSize + len(zjfj) + msgp.StringPrefixSize + len(zzak)
 		}
 	}
 	return

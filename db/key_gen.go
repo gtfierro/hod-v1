@@ -4,7 +4,9 @@ package db
 // MSGP CODE GENERATION TOOL (github.com/tinylib/msgp)
 // DO NOT EDIT
 
-import "github.com/tinylib/msgp/msgp"
+import (
+	"github.com/tinylib/msgp/msgp"
+)
 
 // DecodeMsg implements msgp.Decodable
 func (z *Key) DecodeMsg(dc *msgp.Reader) (err error) {
@@ -41,6 +43,7 @@ func (z *Key) UnmarshalMsg(bts []byte) (o []byte, err error) {
 	return
 }
 
+// Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
 func (z *Key) Msgsize() (s int) {
 	s = msgp.ArrayHeaderSize + (4 * (msgp.ByteSize))
 	return

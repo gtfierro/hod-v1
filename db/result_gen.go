@@ -13,55 +13,55 @@ import (
 func (z *QueryResult) DecodeMsg(dc *msgp.Reader) (err error) {
 	var field []byte
 	_ = field
-	var cmr uint32
-	cmr, err = dc.ReadMapHeader()
+	var zcmr uint32
+	zcmr, err = dc.ReadMapHeader()
 	if err != nil {
 		return
 	}
-	for cmr > 0 {
-		cmr--
+	for zcmr > 0 {
+		zcmr--
 		field, err = dc.ReadMapKeyPtr()
 		if err != nil {
 			return
 		}
 		switch msgp.UnsafeString(field) {
 		case "Rows":
-			var ajw uint32
-			ajw, err = dc.ReadArrayHeader()
+			var zajw uint32
+			zajw, err = dc.ReadArrayHeader()
 			if err != nil {
 				return
 			}
-			if cap(z.Rows) >= int(ajw) {
-				z.Rows = z.Rows[:ajw]
+			if cap(z.Rows) >= int(zajw) {
+				z.Rows = (z.Rows)[:zajw]
 			} else {
-				z.Rows = make([]ResultMap, ajw)
+				z.Rows = make([]ResultMap, zajw)
 			}
-			for xvk := range z.Rows {
-				var wht uint32
-				wht, err = dc.ReadMapHeader()
+			for zxvk := range z.Rows {
+				var zwht uint32
+				zwht, err = dc.ReadMapHeader()
 				if err != nil {
 					return
 				}
-				if z.Rows[xvk] == nil && wht > 0 {
-					z.Rows[xvk] = make(ResultMap, wht)
-				} else if len(z.Rows[xvk]) > 0 {
-					for key, _ := range z.Rows[xvk] {
-						delete(z.Rows[xvk], key)
+				if z.Rows[zxvk] == nil && zwht > 0 {
+					z.Rows[zxvk] = make(ResultMap, zwht)
+				} else if len(z.Rows[zxvk]) > 0 {
+					for key, _ := range z.Rows[zxvk] {
+						delete(z.Rows[zxvk], key)
 					}
 				}
-				for wht > 0 {
-					wht--
-					var bzg string
-					var bai turtle.URI
-					bzg, err = dc.ReadString()
+				for zwht > 0 {
+					zwht--
+					var zbzg string
+					var zbai turtle.URI
+					zbzg, err = dc.ReadString()
 					if err != nil {
 						return
 					}
-					err = bai.DecodeMsg(dc)
+					err = zbai.DecodeMsg(dc)
 					if err != nil {
 						return
 					}
-					z.Rows[xvk][bzg] = bai
+					z.Rows[zxvk][zbzg] = zbai
 				}
 			}
 		case "Count":
@@ -91,17 +91,17 @@ func (z *QueryResult) EncodeMsg(en *msgp.Writer) (err error) {
 	if err != nil {
 		return
 	}
-	for xvk := range z.Rows {
-		err = en.WriteMapHeader(uint32(len(z.Rows[xvk])))
+	for zxvk := range z.Rows {
+		err = en.WriteMapHeader(uint32(len(z.Rows[zxvk])))
 		if err != nil {
 			return
 		}
-		for bzg, bai := range z.Rows[xvk] {
-			err = en.WriteString(bzg)
+		for zbzg, zbai := range z.Rows[zxvk] {
+			err = en.WriteString(zbzg)
 			if err != nil {
 				return
 			}
-			err = bai.EncodeMsg(en)
+			err = zbai.EncodeMsg(en)
 			if err != nil {
 				return
 			}
@@ -126,11 +126,11 @@ func (z *QueryResult) MarshalMsg(b []byte) (o []byte, err error) {
 	// string "Rows"
 	o = append(o, 0x82, 0xa4, 0x52, 0x6f, 0x77, 0x73)
 	o = msgp.AppendArrayHeader(o, uint32(len(z.Rows)))
-	for xvk := range z.Rows {
-		o = msgp.AppendMapHeader(o, uint32(len(z.Rows[xvk])))
-		for bzg, bai := range z.Rows[xvk] {
-			o = msgp.AppendString(o, bzg)
-			o, err = bai.MarshalMsg(o)
+	for zxvk := range z.Rows {
+		o = msgp.AppendMapHeader(o, uint32(len(z.Rows[zxvk])))
+		for zbzg, zbai := range z.Rows[zxvk] {
+			o = msgp.AppendString(o, zbzg)
+			o, err = zbai.MarshalMsg(o)
 			if err != nil {
 				return
 			}
@@ -146,55 +146,55 @@ func (z *QueryResult) MarshalMsg(b []byte) (o []byte, err error) {
 func (z *QueryResult) UnmarshalMsg(bts []byte) (o []byte, err error) {
 	var field []byte
 	_ = field
-	var hct uint32
-	hct, bts, err = msgp.ReadMapHeaderBytes(bts)
+	var zhct uint32
+	zhct, bts, err = msgp.ReadMapHeaderBytes(bts)
 	if err != nil {
 		return
 	}
-	for hct > 0 {
-		hct--
+	for zhct > 0 {
+		zhct--
 		field, bts, err = msgp.ReadMapKeyZC(bts)
 		if err != nil {
 			return
 		}
 		switch msgp.UnsafeString(field) {
 		case "Rows":
-			var cua uint32
-			cua, bts, err = msgp.ReadArrayHeaderBytes(bts)
+			var zcua uint32
+			zcua, bts, err = msgp.ReadArrayHeaderBytes(bts)
 			if err != nil {
 				return
 			}
-			if cap(z.Rows) >= int(cua) {
-				z.Rows = z.Rows[:cua]
+			if cap(z.Rows) >= int(zcua) {
+				z.Rows = (z.Rows)[:zcua]
 			} else {
-				z.Rows = make([]ResultMap, cua)
+				z.Rows = make([]ResultMap, zcua)
 			}
-			for xvk := range z.Rows {
-				var xhx uint32
-				xhx, bts, err = msgp.ReadMapHeaderBytes(bts)
+			for zxvk := range z.Rows {
+				var zxhx uint32
+				zxhx, bts, err = msgp.ReadMapHeaderBytes(bts)
 				if err != nil {
 					return
 				}
-				if z.Rows[xvk] == nil && xhx > 0 {
-					z.Rows[xvk] = make(ResultMap, xhx)
-				} else if len(z.Rows[xvk]) > 0 {
-					for key, _ := range z.Rows[xvk] {
-						delete(z.Rows[xvk], key)
+				if z.Rows[zxvk] == nil && zxhx > 0 {
+					z.Rows[zxvk] = make(ResultMap, zxhx)
+				} else if len(z.Rows[zxvk]) > 0 {
+					for key, _ := range z.Rows[zxvk] {
+						delete(z.Rows[zxvk], key)
 					}
 				}
-				for xhx > 0 {
-					var bzg string
-					var bai turtle.URI
-					xhx--
-					bzg, bts, err = msgp.ReadStringBytes(bts)
+				for zxhx > 0 {
+					var zbzg string
+					var zbai turtle.URI
+					zxhx--
+					zbzg, bts, err = msgp.ReadStringBytes(bts)
 					if err != nil {
 						return
 					}
-					bts, err = bai.UnmarshalMsg(bts)
+					bts, err = zbai.UnmarshalMsg(bts)
 					if err != nil {
 						return
 					}
-					z.Rows[xvk][bzg] = bai
+					z.Rows[zxvk][zbzg] = zbai
 				}
 			}
 		case "Count":
@@ -213,14 +213,15 @@ func (z *QueryResult) UnmarshalMsg(bts []byte) (o []byte, err error) {
 	return
 }
 
+// Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
 func (z *QueryResult) Msgsize() (s int) {
 	s = 1 + 5 + msgp.ArrayHeaderSize
-	for xvk := range z.Rows {
+	for zxvk := range z.Rows {
 		s += msgp.MapHeaderSize
-		if z.Rows[xvk] != nil {
-			for bzg, bai := range z.Rows[xvk] {
-				_ = bai
-				s += msgp.StringPrefixSize + len(bzg) + bai.Msgsize()
+		if z.Rows[zxvk] != nil {
+			for zbzg, zbai := range z.Rows[zxvk] {
+				_ = zbai
+				s += msgp.StringPrefixSize + len(zbzg) + zbai.Msgsize()
 			}
 		}
 	}
@@ -230,31 +231,31 @@ func (z *QueryResult) Msgsize() (s int) {
 
 // DecodeMsg implements msgp.Decodable
 func (z *ResultMap) DecodeMsg(dc *msgp.Reader) (err error) {
-	var cxo uint32
-	cxo, err = dc.ReadMapHeader()
+	var zcxo uint32
+	zcxo, err = dc.ReadMapHeader()
 	if err != nil {
 		return
 	}
-	if (*z) == nil && cxo > 0 {
-		(*z) = make(ResultMap, cxo)
+	if (*z) == nil && zcxo > 0 {
+		(*z) = make(ResultMap, zcxo)
 	} else if len((*z)) > 0 {
 		for key, _ := range *z {
 			delete((*z), key)
 		}
 	}
-	for cxo > 0 {
-		cxo--
-		var pks string
-		var jfb turtle.URI
-		pks, err = dc.ReadString()
+	for zcxo > 0 {
+		zcxo--
+		var zpks string
+		var zjfb turtle.URI
+		zpks, err = dc.ReadString()
 		if err != nil {
 			return
 		}
-		err = jfb.DecodeMsg(dc)
+		err = zjfb.DecodeMsg(dc)
 		if err != nil {
 			return
 		}
-		(*z)[pks] = jfb
+		(*z)[zpks] = zjfb
 	}
 	return
 }
@@ -265,12 +266,12 @@ func (z ResultMap) EncodeMsg(en *msgp.Writer) (err error) {
 	if err != nil {
 		return
 	}
-	for eff, rsw := range z {
-		err = en.WriteString(eff)
+	for zeff, zrsw := range z {
+		err = en.WriteString(zeff)
 		if err != nil {
 			return
 		}
-		err = rsw.EncodeMsg(en)
+		err = zrsw.EncodeMsg(en)
 		if err != nil {
 			return
 		}
@@ -282,9 +283,9 @@ func (z ResultMap) EncodeMsg(en *msgp.Writer) (err error) {
 func (z ResultMap) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.Require(b, z.Msgsize())
 	o = msgp.AppendMapHeader(o, uint32(len(z)))
-	for eff, rsw := range z {
-		o = msgp.AppendString(o, eff)
-		o, err = rsw.MarshalMsg(o)
+	for zeff, zrsw := range z {
+		o = msgp.AppendString(o, zeff)
+		o, err = zrsw.MarshalMsg(o)
 		if err != nil {
 			return
 		}
@@ -294,42 +295,43 @@ func (z ResultMap) MarshalMsg(b []byte) (o []byte, err error) {
 
 // UnmarshalMsg implements msgp.Unmarshaler
 func (z *ResultMap) UnmarshalMsg(bts []byte) (o []byte, err error) {
-	var obc uint32
-	obc, bts, err = msgp.ReadMapHeaderBytes(bts)
+	var zobc uint32
+	zobc, bts, err = msgp.ReadMapHeaderBytes(bts)
 	if err != nil {
 		return
 	}
-	if (*z) == nil && obc > 0 {
-		(*z) = make(ResultMap, obc)
+	if (*z) == nil && zobc > 0 {
+		(*z) = make(ResultMap, zobc)
 	} else if len((*z)) > 0 {
 		for key, _ := range *z {
 			delete((*z), key)
 		}
 	}
-	for obc > 0 {
-		var xpk string
-		var dnj turtle.URI
-		obc--
-		xpk, bts, err = msgp.ReadStringBytes(bts)
+	for zobc > 0 {
+		var zxpk string
+		var zdnj turtle.URI
+		zobc--
+		zxpk, bts, err = msgp.ReadStringBytes(bts)
 		if err != nil {
 			return
 		}
-		bts, err = dnj.UnmarshalMsg(bts)
+		bts, err = zdnj.UnmarshalMsg(bts)
 		if err != nil {
 			return
 		}
-		(*z)[xpk] = dnj
+		(*z)[zxpk] = zdnj
 	}
 	o = bts
 	return
 }
 
+// Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
 func (z ResultMap) Msgsize() (s int) {
 	s = msgp.MapHeaderSize
 	if z != nil {
-		for snv, kgt := range z {
-			_ = kgt
-			s += msgp.StringPrefixSize + len(snv) + kgt.Msgsize()
+		for zsnv, zkgt := range z {
+			_ = zkgt
+			s += msgp.StringPrefixSize + len(zsnv) + zkgt.Msgsize()
 		}
 	}
 	return
