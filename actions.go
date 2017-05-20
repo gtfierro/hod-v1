@@ -46,6 +46,7 @@ func load(c *cli.Context) error {
 	filename := c.Args().Get(0)
 	cfg, err := config.ReadConfig(c.String("config"))
 	if err != nil {
+		log.Error(err)
 		return err
 	}
 	p := turtle.GetParser()
@@ -57,11 +58,13 @@ func load(c *cli.Context) error {
 
 	db, err := hod.NewDB(cfg)
 	if err != nil {
+		log.Error(err)
 		return err
 	}
 	defer db.Close()
 	err = db.LoadDataset(ds)
 	if err != nil {
+		log.Error(err)
 		return err
 	}
 
@@ -75,21 +78,25 @@ func loadLinks(c *cli.Context) error {
 	filename := c.Args().Get(0)
 	cfg, err := config.ReadConfig(c.String("config"))
 	if err != nil {
+		log.Error(err)
 		return err
 	}
 	cfg.ReloadBrick = false
 	db, err := hod.NewDB(cfg)
 	if err != nil {
+		log.Error(err)
 		return err
 	}
 	defer db.Close()
 	file, err := os.Open(filename)
 	if err != nil {
+		log.Error(err)
 		return err
 	}
 	var updates = new(hod.LinkUpdates)
 	decoder := json.NewDecoder(file)
 	if err := decoder.Decode(updates); err != nil {
+		log.Error(err)
 		return err
 	}
 	log.Noticef("Adding %d links, Removing %d links", len(updates.Adding), len(updates.Removing))
@@ -99,11 +106,13 @@ func loadLinks(c *cli.Context) error {
 func startCLI(c *cli.Context) error {
 	cfg, err := config.ReadConfig(c.String("config"))
 	if err != nil {
+		log.Error(err)
 		return err
 	}
 	cfg.ReloadBrick = false
 	db, err := hod.NewDB(cfg)
 	if err != nil {
+		log.Error(err)
 		return err
 	}
 	defer db.Close()
@@ -113,11 +122,13 @@ func startCLI(c *cli.Context) error {
 func startHTTP(c *cli.Context) error {
 	cfg, err := config.ReadConfig(c.String("config"))
 	if err != nil {
+		log.Error(err)
 		return err
 	}
 	cfg.ReloadBrick = false
 	db, err := hod.NewDB(cfg)
 	if err != nil {
+		log.Error(err)
 		return err
 	}
 	defer db.Close()
@@ -128,11 +139,13 @@ func startHTTP(c *cli.Context) error {
 func startBOSSWAVE(c *cli.Context) error {
 	cfg, err := config.ReadConfig(c.String("config"))
 	if err != nil {
+		log.Error(err)
 		return err
 	}
 	cfg.ReloadBrick = false
 	db, err := hod.NewDB(cfg)
 	if err != nil {
+		log.Error(err)
 		return err
 	}
 	defer db.Close()
@@ -209,11 +222,13 @@ func startBOSSWAVE(c *cli.Context) error {
 func doQuery(c *cli.Context) error {
 	cfg, err := config.ReadConfig(c.String("config"))
 	if err != nil {
+		log.Error(err)
 		return err
 	}
 	cfg.ReloadBrick = false
 	db, err := hod.NewDB(cfg)
 	if err != nil {
+		log.Error(err)
 		return err
 	}
 	defer db.Close()
@@ -278,6 +293,7 @@ func classGraph(c *cli.Context) error {
 	name := gethash() + ".gv"
 	f, err := os.Create(name)
 	if err != nil {
+		log.Error(err)
 		return err
 	}
 
@@ -310,14 +326,17 @@ func classGraph(c *cli.Context) error {
 	cmd := exec.Command("dot", "-Tpdf", name)
 	pdf, err := cmd.Output()
 	if err != nil {
+		log.Error(err)
 		return err
 	}
 	f2, err := os.Create(filename + ".pdf")
 	if err != nil {
+		log.Error(err)
 		return err
 	}
 	_, err = f2.Write(pdf)
 	if err != nil {
+		log.Error(err)
 		return err
 	}
 
@@ -337,6 +356,7 @@ func dumpGraph(c *cli.Context) error {
 	name := gethash() + ".gv"
 	f, err := os.Create(name)
 	if err != nil {
+		log.Error(err)
 		return err
 	}
 
@@ -367,15 +387,18 @@ func dumpGraph(c *cli.Context) error {
 		cmd = exec.Command("dot", "-Tpdf", name)
 		pdf, err = cmd.Output()
 		if err != nil {
+			log.Error(err)
 			return err
 		}
 	}
 	f2, err := os.Create(filename + ".pdf")
 	if err != nil {
+		log.Error(err)
 		return err
 	}
 	_, err = f2.Write(pdf)
 	if err != nil {
+		log.Error(err)
 		return err
 	}
 
@@ -395,6 +418,7 @@ func gethash() string {
 func runInteractiveQuery(db *hod.DB) error {
 	currentUser, err := user.Current()
 	if err != nil {
+		log.Error(err)
 		return err
 	}
 	fmt.Println("Successfully loaded dataset!")
