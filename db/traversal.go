@@ -79,6 +79,18 @@ func (db *DB) followPathFromObject(object *Entity, results *btree.BTree, searchs
 			// because this is one hop, we don't add any new entities to the stack
 		case query.PATTERN_ZERO_PLUS:
 			results.ReplaceOrInsert(entity.PK)
+			// faster index
+			if !db.loading {
+				index := db.MustGetEntityIndexFromHash(entity.PK)
+				if index != nil {
+					if endpoints, found := index.InPlusEdges[string(predHash[:])]; found {
+						for _, entityHash := range endpoints {
+							results.ReplaceOrInsert(entityHash)
+						}
+						return
+					}
+				}
+			}
 			endpoints, found := entity.InEdges[string(predHash[:])]
 			// this requires the pattern to exist, so we skip if we have no edges of that name
 			if !found {
@@ -94,18 +106,18 @@ func (db *DB) followPathFromObject(object *Entity, results *btree.BTree, searchs
 				stack.PushBack(nextEntity)
 			}
 		case query.PATTERN_ONE_PLUS:
-			//// faster index
-			//if db.HasExtendedIndex(entity.PK) {
-			//	log.Debug("has ext")
-			//	index := db.MustGetEntityIndexFromHash(entity.PK)
-			//	if endpoints, found := index.InPlusEdges[string(predHash[:])]; found {
-			//		log.Warning("inplus")
-			//		for _, entityHash := range endpoints {
-			//			results.ReplaceOrInsert(entityHash)
-			//		}
-			//		return
-			//	}
-			//}
+			// faster index
+			if !db.loading {
+				index := db.MustGetEntityIndexFromHash(entity.PK)
+				if index != nil {
+					if endpoints, found := index.InPlusEdges[string(predHash[:])]; found {
+						for _, entityHash := range endpoints {
+							results.ReplaceOrInsert(entityHash)
+						}
+						return
+					}
+				}
+			}
 			edges, found := entity.InEdges[string(predHash[:])]
 			// this requires the pattern to exist, so we skip if we have no edges of that name
 			if !found {

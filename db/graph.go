@@ -7,6 +7,7 @@ import (
 	"github.com/gtfierro/hod/query"
 	"github.com/mitghi/btree"
 	"github.com/pkg/errors"
+	"github.com/syndtr/goleveldb/leveldb"
 )
 
 // make sure to call this after we've populated the entity and publickey databases
@@ -175,20 +176,117 @@ func (db *DB) buildGraph(dataset turtle.DataSet) error {
 		return errors.Wrap(err, "Could not commit transaction")
 	}
 
+	log.Notice("Starting third pass")
+
 	// third pass
-	extendtx, err := db.extendedDB.OpenTransaction()
-	if err != nil {
-		return errors.Wrap(err, "Could not open transaction on extended index")
+	for predicate, predent := range db.predIndex {
+		extendtx, err := db.extendedDB.OpenTransaction()
+		if err != nil {
+			return errors.Wrap(err, "Could not open transaction on extended index")
+		}
+		if err := db.populateIndex(predicate, predent, extendtx); err != nil {
+			return err
+		}
+		if err = extendtx.Commit(); err != nil {
+			return errors.Wrap(err, "Could not commit transaction")
+		}
 	}
+	return nil
+}
+
+func (db *DB) populateIndex(predicateURI turtle.URI, predicate *PredicateEntity, extendtx *leveldb.Transaction) error {
 	forwardPath := query.PathPattern{Pattern: query.PATTERN_ONE_PLUS}
 	results := btree.New(2, "")
-	for predicate, predent := range db.predIndex {
-		if _, found := db.transitiveEdges[predicate]; !found {
-			continue
+	if _, found := db.transitiveEdges[predicateURI]; !found {
+		return nil
+	}
+	forwardPath.Predicate = predicateURI
+	extendedPred := db.MustGetHash(predicateURI)
+	for subjectStringHash := range predicate.Subjects {
+		var subjectHash Key
+		subjectHash.FromSlice([]byte(subjectStringHash))
+		if exists, err := extendtx.Has(subjectHash[:], nil); err == nil && !exists {
+			subjectIndex := NewEntityExtendedIndex()
+			subjectIndex.PK = subjectHash
+			bytes, err := subjectIndex.MarshalMsg(nil)
+			if err != nil {
+				return err
+			}
+			if err := extendtx.Put(subjectHash[:], bytes, nil); err != nil {
+				return err
+			}
+		} else if err != nil {
+			return err
 		}
-		forwardPath.Predicate = predicate
-		extendedPred := db.MustGetHash(predicate)
-		for subjectStringHash := range predent.Subjects {
+		subjectIndex, err := db.GetEntityIndexFromHashTx(extendtx, subjectHash)
+		if err != nil {
+			return err
+		}
+
+		subject, err := db.GetEntityFromHash(subjectHash)
+		if err != nil {
+			return err
+		}
+		stack := list.New()
+		db.followPathFromSubject(subject, results, stack, forwardPath)
+		//log.Debug(db.MustGetURI(subjectHash).Value, predicate.Value, results.Len())
+		for results.Len() > 0 {
+			i := results.DeleteMax()
+			subjectIndex.AddOutPlusEdge(extendedPred, i.(Key))
+		}
+		bytes, err := subjectIndex.MarshalMsg(nil)
+		if err != nil {
+			return err
+		}
+		if err := extendtx.Put(subjectIndex.PK[:], bytes, nil); err != nil {
+			return err
+		}
+	}
+	for objectStringHash := range predicate.Objects {
+		var objectHash Key
+		objectHash.FromSlice([]byte(objectStringHash))
+		if exists, err := extendtx.Has(objectHash[:], nil); err == nil && !exists {
+			objectIndex := NewEntityExtendedIndex()
+			objectIndex.PK = objectHash
+			bytes, err := objectIndex.MarshalMsg(nil)
+			if err != nil {
+				return err
+			}
+			if err := extendtx.Put(objectHash[:], bytes, nil); err != nil {
+				return err
+			}
+		} else if err != nil {
+			return err
+		}
+		objectIndex, err := db.GetEntityIndexFromHashTx(extendtx, objectHash)
+		if err != nil {
+			return err
+		}
+
+		object, err := db.GetEntityFromHash(objectHash)
+		if err != nil {
+			return err
+		}
+		stack := list.New()
+		db.followPathFromObject(object, results, stack, forwardPath)
+		//log.Debug(db.MustGetURI(objectHash).Value, predicate.Value, results.Len())
+		for results.Len() > 0 {
+			i := results.DeleteMax()
+			objectIndex.AddInPlusEdge(extendedPred, i.(Key))
+		}
+		bytes, err := objectIndex.MarshalMsg(nil)
+		if err != nil {
+			return err
+		}
+		if err := extendtx.Put(objectIndex.PK[:], bytes, nil); err != nil {
+			return err
+		}
+	}
+
+	if reversePredicate, hasReverse := db.relationships[predicateURI]; hasReverse {
+		forwardPath.Predicate = reversePredicate
+		extendedPred = db.MustGetHash(predicateURI)
+		for subjectStringHash := range predicate.Subjects {
 			var subjectHash Key
 			subjectHash.FromSlice([]byte(subjectStringHash))
 			if exists, err := extendtx.Has(subjectHash[:], nil); err == nil && !exists {
@@ -218,7 +316,7 @@ func (db *DB) buildGraph(dataset turtle.DataSet) error {
 			//log.Debug(db.MustGetURI(subjectHash).Value, predicate.Value, results.Len())
 			for results.Len() > 0 {
 				i := results.DeleteMax()
-				subjectIndex.AddOutPlusEdge(extendedPred, i.(Key))
+				subjectIndex.AddInPlusEdge(extendedPred, i.(Key))
 			}
 			bytes, err := subjectIndex.MarshalMsg(nil)
 			if err != nil {
@@ -228,53 +326,46 @@ func (db *DB) buildGraph(dataset turtle.DataSet) error {
 				return err
 			}
 		}
-		if reversePredicate, hasReverse := db.relationships[predicate]; hasReverse {
-			forwardPath.Predicate = reversePredicate
-			extendedPred = db.MustGetHash(predicate)
-			for objectStringHash := range predent.Objects {
-				var objectHash Key
-				objectHash.FromSlice([]byte(objectStringHash))
-				if exists, err := extendtx.Has(objectHash[:], nil); err == nil && !exists {
-					objectIndex := NewEntityExtendedIndex()
-					objectIndex.PK = objectHash
-					bytes, err := objectIndex.MarshalMsg(nil)
-					if err != nil {
-						return err
-					}
-					if err := extendtx.Put(objectHash[:], bytes, nil); err != nil {
-						return err
-					}
-				} else if err != nil {
-					return err
-				}
-				objectIndex, err := db.GetEntityIndexFromHashTx(extendtx, objectHash)
-				if err != nil {
-					return err
-				}
-
-				object, err := db.GetEntityFromHash(objectHash)
-				if err != nil {
-					return err
-				}
-				stack := list.New()
-				db.followPathFromObject(object, results, stack, forwardPath)
-				//log.Debug(db.MustGetURI(objectHash).Value, predicate.Value, results.Len())
-				for results.Len() > 0 {
-					i := results.DeleteMax()
-					objectIndex.AddOutPlusEdge(extendedPred, i.(Key))
-				}
+		for objectStringHash := range predicate.Objects {
+			var objectHash Key
+			objectHash.FromSlice([]byte(objectStringHash))
+			if exists, err := extendtx.Has(objectHash[:], nil); err == nil && !exists {
+				objectIndex := NewEntityExtendedIndex()
+				objectIndex.PK = objectHash
 				bytes, err := objectIndex.MarshalMsg(nil)
 				if err != nil {
 					return err
 				}
-				if err := extendtx.Put(objectIndex.PK[:], bytes, nil); err != nil {
+				if err := extendtx.Put(objectHash[:], bytes, nil); err != nil {
 					return err
 				}
+			} else if err != nil {
+				return err
+			}
+			objectIndex, err := db.GetEntityIndexFromHashTx(extendtx, objectHash)
+			if err != nil {
+				return err
+			}
+
+			object, err := db.GetEntityFromHash(objectHash)
+			if err != nil {
+				return err
+			}
+			stack := list.New()
+			db.followPathFromObject(object, results, stack, forwardPath)
+			//log.Debug(db.MustGetURI(objectHash).Value, predicate.Value, results.Len())
+			for results.Len() > 0 {
+				i := results.DeleteMax()
+				objectIndex.AddOutPlusEdge(extendedPred, i.(Key))
+			}
+			bytes, err := objectIndex.MarshalMsg(nil)
+			if err != nil {
+				return err
+			}
+			if err := extendtx.Put(objectIndex.PK[:], bytes, nil); err != nil {
+				return err
 			}
 		}
-	}
-	if err = extendtx.Commit(); err != nil {
-		return errors.Wrap(err, "Could not commit transaction")
 	}
 
 	return nil
