@@ -1,20 +1,20 @@
 =============== May 19, 2017 (PDT) ===============
-12:44:34.759775 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
-12:44:34.759884 db@open opening
-12:44:34.760155 version@stat F·[] S·0B[] Sc·[]
-12:44:34.766001 db@janitor F·2 G·0
-12:44:34.766025 db@open done T·6.134651ms
-12:44:35.116044 transaction@flush created L0@2 N·88 S·2KiB "\x02\xcb*\xc1,v7":"\xfc\xb2\x0f\xc8,v18"
-12:44:35.116061 version@stat F·[1] S·2KiB[2KiB] Sc·[0.25]
-12:44:35.498302 transaction@flush created L0@3 N·3090 S·89KiB "\x00+\xd4Y,v2783":"\xff\xbd\xa8\xec,v465"
-12:44:35.498326 version@stat F·[2] S·91KiB[91KiB] Sc·[0.50]
-12:44:36.017516 table@compaction L0·2 -> L1·0 S·91KiB Q·3178
-12:44:36.028287 table@build created L1@4 N·3178 S·92KiB "\x00+\xd4Y,v2783":"\xff\xbd\xa8\xec,v465"
-12:44:36.028335 version@stat F·[0 1] S·92KiB[0B 92KiB] Sc·[0.00 0.00]
-12:44:36.029839 table@compaction committed F-1 S+799B Ke·0 D·0 T·12.28277ms
-12:44:36.029911 table@remove removed @3
-12:44:36.029937 table@remove removed @2
-12:44:36.176368 transaction@flush created L0@5 N·1711 S·42KiB "\x00\r%\xb6,v4347":"\xff\xfe\xe9,,v4596"
-12:44:36.176406 version@stat F·[1 1] S·135KiB[42KiB 92KiB] Sc·[0.25 0.00]
-12:44:36.390272 db@close closing
-12:44:36.390295 db@close done T·23.076µs
+17:56:22.884114 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+17:56:22.884235 db@open opening
+17:56:22.884501 version@stat F·[] S·0B[] Sc·[]
+17:56:22.886289 db@janitor F·2 G·0
+17:56:22.886306 db@open done T·2.06516ms
+17:56:23.248390 transaction@flush created L0@2 N·88 S·2KiB "\x02\xcb*\xc1,v7":"\xfc\xb2\x0f\xc8,v18"
+17:56:23.248414 version@stat F·[1] S·2KiB[2KiB] Sc·[0.25]
+17:56:23.616369 transaction@flush created L0@3 N·3090 S·89KiB "\x00+\xd4Y,v2783":"\xff\xbd\xa8\xec,v465"
+17:56:23.616393 version@stat F·[2] S·91KiB[91KiB] Sc·[0.50]
+17:56:24.161519 table@compaction L0·2 -> L1·0 S·91KiB Q·3178
+17:56:24.172942 table@build created L1@4 N·3178 S·92KiB "\x00+\xd4Y,v2783":"\xff\xbd\xa8\xec,v465"
+17:56:24.172993 version@stat F·[0 1] S·92KiB[0B 92KiB] Sc·[0.00 0.00]
+17:56:24.180865 table@compaction committed F-1 S+799B Ke·0 D·0 T·19.307225ms
+17:56:24.180973 table@remove removed @3
+17:56:24.181011 table@remove removed @2
+17:56:24.302199 transaction@flush created L0@5 N·1711 S·42KiB "\x00\r%\xb6,v4347":"\xff\xfe\xe9,,v4596"
+17:56:24.302225 version@stat F·[1 1] S·135KiB[42KiB 92KiB] Sc·[0.25 0.00]
+17:56:24.568643 db@close closing
+17:56:24.568667 db@close done T·23.704µs
