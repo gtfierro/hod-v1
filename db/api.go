@@ -123,29 +123,6 @@ func (db *DB) RunQuery(q query.Query) QueryResult {
 	return result
 }
 
-func (db *DB) UpdateLinks(updates *LinkUpdates) error {
-	tx, err := db.linkDB.startTx()
-	if err != nil {
-		return err
-	}
-	for _, linkAdd := range updates.Adding {
-		linkAdd.Key = db.policy.SanitizeBytes(linkAdd.Key)
-		linkAdd.Value = db.policy.SanitizeBytes(linkAdd.Value)
-		db.linkDB.set(tx, linkAdd)
-	}
-	for _, linkRm := range updates.Removing {
-		linkRm.Key = db.policy.SanitizeBytes(linkRm.Key)
-		linkRm.Value = db.policy.SanitizeBytes(linkRm.Value)
-		db.linkDB.delete(tx, linkRm)
-	}
-	return tx.Commit()
-}
-
-// TODO: add api call for getting links for entities
-// for getting links from entities, we probably want to adopt a more generator-based approach
-// to actually getting the rows from the database; as we get each row, we get the associated links,
-// pipe that out to our accumulator (probably just appending to a list).
-
 // takes a query and returns a DOT representation to visualize
 // the construction of the query
 func (db *DB) QueryToDOT(querystring io.Reader) (string, error) {

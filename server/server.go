@@ -3,7 +3,6 @@ package server
 import (
 	"crypto/tls"
 	"encoding/json"
-	"fmt"
 	"net"
 	"net/http"
 	"os"
@@ -50,7 +49,6 @@ func StartHodServer(db *hod.DB, cfg *config.Config) {
 	// concurrent buildings issue fixed first, but for now it is sufficient
 	// to just have one server per building
 	r.POST("/api/query", server.handleQuery)
-	r.POST("/api/loadlinks", server.handleLoadLinks)
 	r.POST("/api/querydot", server.handleQueryDot)
 	r.POST("/api/queryclassdot", server.handleQueryClassDot)
 	r.ServeFiles("/static/*filepath", http.Dir(cfg.StaticPath+"/static"))
@@ -130,29 +128,6 @@ func (srv *hodServer) handleQuery(rw http.ResponseWriter, req *http.Request, ps 
 	encoder := json.NewEncoder(rw)
 	rw.Header().Set("Content-Type", "application/json; charset=utf-8")
 	err = encoder.Encode(res)
-	if err != nil {
-		log.Error(err)
-		rw.WriteHeader(500)
-		rw.Write([]byte(err.Error()))
-		return
-	}
-	return
-}
-
-func (srv *hodServer) handleLoadLinks(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
-	defer req.Body.Close()
-	log.Infof("LoadLinks from %s", req.RemoteAddr)
-
-	var updates = new(hod.LinkUpdates)
-	decoder := json.NewDecoder(req.Body)
-	if err := decoder.Decode(updates); err != nil {
-		log.Error(err)
-		rw.WriteHeader(500)
-		rw.Write([]byte(err.Error()))
-		return
-	}
-
-	_, err := rw.Write([]byte(fmt.Sprintf("Adding %d links, Removing %d links", len(updates.Adding), len(updates.Removing))))
 	if err != nil {
 		log.Error(err)
 		rw.WriteHeader(500)

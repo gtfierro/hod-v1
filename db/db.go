@@ -47,8 +47,6 @@ type DB struct {
 	predIndex map[turtle.URI]*PredicateEntity
 	// graph structure
 	graphDB *leveldb.DB
-	// node link structure
-	linkDB *linkDB
 	// extended index DB
 	extendedDB *leveldb.DB
 	// store relationships and their inverses
@@ -143,12 +141,6 @@ func NewDB(cfg *config.Config) (*DB, error) {
 		loading:                false,
 	}
 
-	linkDB, err := newLinkDB(db, cfg)
-	if err != nil {
-		return nil, errors.Wrap(err, "Could not create linkDB")
-	}
-	db.linkDB = linkDB
-
 	if db.queryCacheEnabled {
 		db.queryCache = freecache.NewCache(64 * 1024 * 1024) // 64 MB
 	}
@@ -239,7 +231,6 @@ func (db *DB) Close() {
 	checkError(db.pkDB.Close())
 	checkError(db.predDB.Close())
 	checkError(db.graphDB.Close())
-	checkError(db.linkDB.Close())
 	checkError(db.extendedDB.Close())
 }
 

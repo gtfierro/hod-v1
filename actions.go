@@ -4,7 +4,6 @@ import (
 	"crypto/md5"
 	"encoding/binary"
 	"encoding/csv"
-	"encoding/json"
 	"fmt"
 	"math/big"
 	"os"
@@ -69,38 +68,6 @@ func load(c *cli.Context) error {
 	}
 
 	return nil
-}
-
-func loadLinks(c *cli.Context) error {
-	if c.NArg() == 0 {
-		return errors.New("Need to specify a JSON file to load")
-	}
-	filename := c.Args().Get(0)
-	cfg, err := config.ReadConfig(c.String("config"))
-	if err != nil {
-		log.Error(err)
-		return err
-	}
-	cfg.ReloadBrick = false
-	db, err := hod.NewDB(cfg)
-	if err != nil {
-		log.Error(err)
-		return err
-	}
-	defer db.Close()
-	file, err := os.Open(filename)
-	if err != nil {
-		log.Error(err)
-		return err
-	}
-	var updates = new(hod.LinkUpdates)
-	decoder := json.NewDecoder(file)
-	if err := decoder.Decode(updates); err != nil {
-		log.Error(err)
-		return err
-	}
-	log.Noticef("Adding %d links, Removing %d links", len(updates.Adding), len(updates.Removing))
-	return db.UpdateLinks(updates)
 }
 
 func startCLI(c *cli.Context) error {
