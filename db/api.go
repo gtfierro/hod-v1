@@ -93,58 +93,6 @@ func (db *DB) RunQuery(q query.Query) QueryResult {
 	if q.Select.Count {
 		// return the count of results
 		result.Count = unionedRows.Len()
-	} else if q.Select.HasLinks {
-		// resolve the links
-		max := unionedRows.Max()
-		iter := func(i btree.Item) bool {
-			row := i.(*ResultRow)
-			var links = make(LinkResultMap)
-			var hasContent = false
-			for idx, selectvar := range q.Select.Variables {
-				if len(selectvar.Links) == 0 && !selectvar.AllLinks {
-					continue
-				}
-				// check for select all
-				if selectvar.AllLinks {
-					hash, err := db.GetHash(row.row[idx])
-					if err != nil {
-						log.Fatal(err)
-					}
-					keys, values, err := db.linkDB.getAll(hash)
-					if err != nil {
-						log.Fatal(err)
-					}
-					if len(keys) > 0 {
-						hasContent = true
-						links[row.row[idx]] = make(map[string]string)
-					}
-					for i := 0; i < len(keys); i++ {
-						links[row.row[idx]][string(keys[i][:4])] = string(values[i])
-					}
-				} else {
-					for _, _link := range selectvar.Links {
-						link := &Link{URI: row.row[idx], Key: []byte(_link.Name)}
-						value, err := db.linkDB.get(link)
-						if err != nil {
-							log.Fatal(err)
-						}
-						if len(links[row.row[idx]]) == 0 {
-							links[row.row[idx]] = make(map[string]string)
-						}
-						if len(value) > 0 {
-							links[row.row[idx]][string(link.Key)] = string(value)
-							hasContent = true
-						}
-					}
-				}
-			}
-			if hasContent {
-				result.Links = append(result.Links, links)
-			}
-			return row.Less(max, "")
-		}
-		unionedRows.Ascend(iter)
-		result.Count = len(result.Rows)
 	} else {
 		// return the rows
 		max := unionedRows.Max()
