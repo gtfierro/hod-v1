@@ -52,6 +52,8 @@ func (r *row) isFull() bool {
 		}
 	}
 	return true
+
+	//	return r.numFilled == len(r.vars)
 }
 
 func (r *row) addVar(name string, index int, value Key) {
@@ -63,9 +65,11 @@ func (r *row) addVar(name string, index int, value Key) {
 
 func (r *row) expand(ctx *queryContext) *ResultRow {
 	newrow := getResultRow(len(ctx.selectVars))
+	ctx.RLock()
 	for i, v := range ctx.selectVars {
 		newrow.row[i] = ctx.db.MustGetURI(r.entries[ctx.varpos[v]])
 	}
+	ctx.RUnlock()
 	return newrow
 }
 

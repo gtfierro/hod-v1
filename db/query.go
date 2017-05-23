@@ -18,7 +18,7 @@ import (
 // First we "clean" these by making sure that they have their full
 // namespaces rather than the prefix
 
-func (db *DB) getQueryResults(q query.Query) []*ResultRow {
+func (db *DB) getQueryResults(q query.Query) chan *ResultRow {
 	if db.showQueryPlan {
 		fmt.Println("-------------- start query plan -------------")
 	}
@@ -57,7 +57,7 @@ func (db *DB) getQueryResults(q query.Query) []*ResultRow {
 	results := ctx.expandTuples()
 	if db.showQueryLatencies {
 		log.Infof("Expanded tuples in %s", time.Since(runStart))
-		log.Infof("Has %d results", len(results))
+		//log.Infof("Has %d results", len(results))
 	}
 	return results
 }

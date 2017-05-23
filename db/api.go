@@ -11,7 +11,7 @@ import (
 	"github.com/gtfierro/hod/query"
 
 	"github.com/coocood/freecache"
-	"github.com/mitghi/btree"
+	//"github.com/mitghi/btree"
 	"github.com/pkg/errors"
 )
 
@@ -48,8 +48,12 @@ func (db *DB) RunQuery(q query.Query) QueryResult {
 		}
 	}
 
-	unionedRows := btree.New(3, "")
-	defer cleanResultRows(unionedRows)
+	var rows []*ResultRow
+	defer func() {
+		for _, r := range rows {
+			_RESULTROWPOOL.Put(r)
+		}
+	}()
 	fullQueryStart := time.Now()
 
 	// if we have terms that are part of a set of OR statements, then we run
@@ -66,20 +70,18 @@ func (db *DB) RunQuery(q query.Query) QueryResult {
 			copy(tmpQuery.Where.Filters, oldFilters)
 			copy(tmpQuery.Where.Filters[len(oldFilters):], orTerm)
 			go func(q query.Query) {
-				results := db.getQueryResults(q)
-				rowLock.Lock()
-				for _, row := range results {
-					unionedRows.ReplaceOrInsert(row)
+				for row := range db.getQueryResults(q) {
+					rowLock.Lock()
+					rows = append(rows, row)
+					rowLock.Unlock()
 				}
-				rowLock.Unlock()
 				wg.Done()
 			}(tmpQuery)
 		}
 		wg.Wait()
 	} else {
-		results := db.getQueryResults(q)
-		for _, row := range results {
-			unionedRows.ReplaceOrInsert(row)
+		for row := range db.getQueryResults(q) {
+			rows = append(rows, row)
 		}
 	}
 	if db.showQueryLatencies {
@@ -89,25 +91,23 @@ func (db *DB) RunQuery(q query.Query) QueryResult {
 	var result = newQueryResult()
 	result.selectVars = q.Select.Variables
 	result.Elapsed = time.Since(fullQueryStart)
+	log.Debug(len(rows))
 
 	if q.Select.Count {
 		// return the count of results
-		result.Count = unionedRows.Len()
+		result.Count = len(rows)
 	} else {
 		// return the rows
-		max := unionedRows.Max()
-		iter := func(i btree.Item) bool {
-			row := i.(*ResultRow)
+		for _, row := range rows {
 			m := make(ResultMap)
 			for idx, vname := range q.Select.Variables {
 				m[vname.Var.String()] = row.row[idx]
 			}
 			result.Rows = append(result.Rows, m)
-			return row.Less(max, "")
 		}
-		unionedRows.Ascend(iter)
 		result.Count = len(result.Rows)
 	}
+	log.Infof("Has %d results", result.Count)
 
 	if db.queryCacheEnabled {
 		// set this in the cache

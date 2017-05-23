@@ -3,6 +3,7 @@ package db
 import (
 	"container/list"
 	"fmt"
+	"sync"
 
 	turtle "github.com/gtfierro/hod/goraptor"
 	"github.com/gtfierro/hod/query"
@@ -23,6 +24,7 @@ type queryContext struct {
 	varpos           map[string]int
 	// embedded query plan
 	*queryPlan
+	sync.RWMutex
 }
 
 func newQueryContext(plan *queryPlan, db *DB) *queryContext {
@@ -274,40 +276,56 @@ func (plan *queryPlan) addLink(parent, child string) {
 	plan.vars[child] = parent
 }
 
-func (ctx *queryContext) expandTuples() []*ResultRow {
+func (ctx *queryContext) expandTuples() chan *ResultRow {
 	var (
 		startvar string
-		results  []*ResultRow
+		results  = make(chan *ResultRow, 1000)
 	)
 
-	// choose first variable
-	for v, state := range ctx.vars {
-		if state == RESOLVED {
-			startvar = v
-			break
-		}
-	}
-	if len(startvar) == 0 {
-		// need to choose the "parent" if there is no RESOLVED variable
-		for _, parent := range ctx.vars {
-			if _, exists := ctx.vars[parent]; !exists {
-				startvar = parent
+	go func() {
+		// choose first variable
+		for v, state := range ctx.vars {
+			if state == RESOLVED {
+				startvar = v
 				break
 			}
 		}
-	}
+		if len(startvar) == 0 {
+			// need to choose the "parent" if there is no RESOLVED variable
+			for _, parent := range ctx.vars {
+				if _, exists := ctx.vars[parent]; !exists {
+					startvar = parent
+					break
+				}
+			}
+		}
 
-	topVarTree := ctx.candidates[startvar]
-	if topVarTree == nil {
-		return results // fail early
-	}
+		topVarTree := ctx.candidates[startvar]
+		if topVarTree == nil {
+			close(results)
+			return // fail early
+		}
 
-	max := topVarTree.Max()
-	iter := func(ent *Entity) bool {
-		results = append(results, ctx.expandEntity(startvar, ent)...)
-		return ent != max
-	}
-	topVarTree.Iter(iter)
+		max := topVarTree.Max()
+		var wg sync.WaitGroup
+		wg.Add(topVarTree.Len())
+		workchan := make(chan *Entity, 1000)
+		for w := 0; w < 10; w++ {
+			go func() {
+				for ent := range workchan {
+					ctx.expandEntity(startvar, ent, results)
+					wg.Done()
+				}
+			}()
+		}
+		iter := func(ent *Entity) bool {
+			workchan <- ent
+			return ent != max
+		}
+		topVarTree.Iter(iter)
+		wg.Wait()
+		close(results)
+	}()
 
 	return results
 }
@@ -316,21 +334,23 @@ func (ctx *queryContext) expandTuples() []*ResultRow {
 // If this is recursive, then we are going to have a LOT of mini-allocations. Ideally, we can just do this
 // top-level method on the first tree and then be "done".
 
-func (ctx *queryContext) expandEntity(varname string, entity *Entity) []*ResultRow {
-	var (
-		rows []*ResultRow
-	)
-
+func (ctx *queryContext) expandEntity(varname string, entity *Entity, results chan *ResultRow) {
 	if entity == nil || entity.PK == emptyHash {
-		return rows
+		return
 	}
 	varorder, parents := ctx.buildVarOrder(entity.PK, varname, len(ctx._traverseOrder.list))
 	for idx, varname := range varorder {
+		ctx.Lock()
 		ctx.varpos[varname] = idx
+		ctx.Unlock()
 	}
+
+	ctx.RLock()
+	varpos := ctx.varpos[varname]
+	ctx.RUnlock()
 	newRow := func() *row {
 		row := newrow(varorder)
-		row.addVar(varname, ctx.varpos[varname], entity.PK)
+		row.addVar(varname, varpos, entity.PK)
 		return row
 	}
 
@@ -342,7 +362,7 @@ func (ctx *queryContext) expandEntity(varname string, entity *Entity) []*ResultR
 		// if it is full, then we add it to the list to be returned
 		// because it is complete
 		if row.isFull() {
-			rows = append(rows, row.expand(ctx))
+			results <- row.expand(ctx)
 			finishrow(row)
 			continue
 		}
@@ -382,12 +402,14 @@ func (ctx *queryContext) expandEntity(varname string, entity *Entity) []*ResultR
 			newrow := newRow()
 			copy(newrow.entries, row.entries)
 			newrow.numFilled = row.numFilled
+			ctx.RLock()
 			newrow.addVar(varToPopulate, ctx.varpos[varToPopulate], val.me)
+			ctx.RUnlock()
 			stack.PushBack(newrow)
 		}
 	}
 
-	return rows
+	return
 }
 
 func (ctx *queryContext) buildVarOrder(value Key, varname string, numvars int) ([]string, map[string]string) {
