@@ -22,7 +22,7 @@ func init() {
 func main() {
 	app := cli.NewApp()
 	app.Name = "hod"
-	app.Version = "0.4.0"
+	app.Version = "0.4.2"
 	app.Usage = "BRICK database and query engine"
 
 	app.Commands = []cli.Command{
