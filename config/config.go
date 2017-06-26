@@ -1,7 +1,10 @@
 package config
 
 import (
+	"log"
 	"os"
+	"os/user"
+	"path/filepath"
 
 	"github.com/op/go-logging"
 	"github.com/spf13/viper"
@@ -35,6 +38,14 @@ type Config struct {
 
 func init() {
 	prefix := os.Getenv("GOPATH")
+	// switch prefix to default GOPATH /home/{user}/go
+	if prefix == "" {
+		u, err := user.Current()
+		if err != nil {
+			log.Fatal(err)
+		}
+		prefix = filepath.Join(u.HomeDir, "go")
+	}
 	// set defaults for config
 	viper.SetDefault("DBPath", "_hoddb")
 	viper.SetDefault("BrickFrameTTL", prefix+"/src/github.com/gtfierro/hod/BrickFrame.ttl")
