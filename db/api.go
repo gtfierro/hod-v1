@@ -48,7 +48,7 @@ func (db *DB) RunQuery(q query.Query) QueryResult {
 		}
 	}
 
-	unionedRows := btree.New(3, "")
+	unionedRows := btree.New(BTREE_DEGREE, "")
 	defer cleanResultRows(unionedRows)
 	fullQueryStart := time.Now()
 

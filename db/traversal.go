@@ -269,7 +269,7 @@ func (db *DB) getSubjectFromPredObject(objectHash Key, path []query.PathPattern)
 		for traversed.Max() != nil {
 			traversed.DeleteMax()
 		}
-		reachable := btree.New(2, "")
+		reachable := btree.New(BTREE_DEGREE, "")
 		for stack.Len() > 0 {
 			entity := stack.Remove(stack.Front()).(*Entity)
 			// if we have already traversed this entity, skip it
@@ -298,7 +298,7 @@ func (db *DB) getSubjectFromPredObject(objectHash Key, path []query.PathPattern)
 			return reachable
 		}
 	}
-	return btree.New(2, "")
+	return btree.New(BTREE_DEGREE, "")
 }
 
 // Given object and predicate, get all subjects
@@ -322,7 +322,7 @@ func (db *DB) getObjectFromSubjectPred(subjectHash Key, path []query.PathPattern
 		for traversed.Max() != nil {
 			traversed.DeleteMax()
 		}
-		reachable := btree.New(2, "")
+		reachable := btree.New(BTREE_DEGREE, "")
 		for stack.Len() > 0 {
 			entity := stack.Remove(stack.Front()).(*Entity)
 			// if we have already traversed this entity, skip it
@@ -351,7 +351,7 @@ func (db *DB) getObjectFromSubjectPred(subjectHash Key, path []query.PathPattern
 			return reachable
 		}
 	}
-	return btree.New(2, "")
+	return btree.New(BTREE_DEGREE, "")
 }
 
 // Given a predicate, it returns pairs of (subject, object) that are connected by that relationship
@@ -373,7 +373,7 @@ func (db *DB) getSubjectObjectFromPred(path []query.PathPattern) (soPair [][]Key
 }
 
 func (db *DB) getPredicateFromSubjectObject(subject, object *Entity) *btree.BTree {
-	reachable := btree.New(2, "")
+	reachable := btree.New(BTREE_DEGREE, "")
 
 	for edge, objects := range subject.InEdges {
 		for _, edgeObject := range objects {
@@ -400,7 +400,7 @@ func (db *DB) getPredicateFromSubjectObject(subject, object *Entity) *btree.BTre
 }
 
 func (db *DB) getPredicatesFromObject(object *Entity) *btree.BTree {
-	reachable := btree.New(2, "")
+	reachable := btree.New(BTREE_DEGREE, "")
 	var edgepk Key
 	for edge := range object.InEdges {
 		edgepk.FromSlice([]byte(edge))
@@ -411,7 +411,7 @@ func (db *DB) getPredicatesFromObject(object *Entity) *btree.BTree {
 }
 
 func (db *DB) getPredicatesFromSubject(subject *Entity) *btree.BTree {
-	reachable := btree.New(2, "")
+	reachable := btree.New(BTREE_DEGREE, "")
 	var edgepk Key
 	for edge := range subject.OutEdges {
 		edgepk.FromSlice([]byte(edge))

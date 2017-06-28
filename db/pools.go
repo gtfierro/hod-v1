@@ -11,7 +11,7 @@ var (
 )
 
 func init() {
-	traversedBTreePool = newBtreePool(3)
+	traversedBTreePool = newBtreePool(BTREE_DEGREE)
 }
 
 type btreePool struct {

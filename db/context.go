@@ -8,7 +8,7 @@ import (
 	"github.com/gtfierro/hod/query"
 )
 
-var emptyTree = newPointerTree(3)
+var emptyTree = newPointerTree(BTREE_DEGREE)
 
 // queryContext
 type queryContext struct {
@@ -105,7 +105,7 @@ func (ctx *queryContext) getLinkedValues(varname string, ent *Entity) *pointerTr
 	if tree, found := ctx.linkedValueCache[ent.PK][varname]; found {
 		return tree
 	}
-	var res = newPointerTree(3)
+	var res = newPointerTree(BTREE_DEGREE)
 	chain := ctx.chains[ent.PK][varname]
 	if chain != nil {
 		for _, link := range chain.links {

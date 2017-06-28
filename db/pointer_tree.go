@@ -4,6 +4,10 @@ import (
 	"github.com/mitghi/btree"
 )
 
+const BTREE_DEGREE = 4
+
+var fl = btree.NewFreeList(16384)
+
 type linkRecord struct {
 	me    Key
 	links []*linkRecord
@@ -15,7 +19,7 @@ type pointerTree struct {
 
 func newPointerTree(size int) *pointerTree {
 	return &pointerTree{
-		tree: btree.New(size, ""),
+		tree: btree.NewWithFreeList(size, fl, ""),
 	}
 }
 

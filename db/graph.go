@@ -196,7 +196,7 @@ func (db *DB) buildGraph(dataset turtle.DataSet) error {
 
 func (db *DB) populateIndex(predicateURI turtle.URI, predicate *PredicateEntity, extendtx *leveldb.Transaction) error {
 	forwardPath := query.PathPattern{Pattern: query.PATTERN_ONE_PLUS}
-	results := btree.New(2, "")
+	results := btree.New(BTREE_DEGREE, "")
 	if _, found := db.transitiveEdges[predicateURI]; !found {
 		return nil
 	}
