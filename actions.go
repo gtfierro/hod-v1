@@ -451,7 +451,8 @@ func ttlStat(c *cli.Context) error {
 	numTriples := 0
 	uniqueEdges := make(uniqCounter)
 	uniqueNodes := make(uniqCounter)
-	degree := make(map[string]int)
+	outdegree := make(map[string]int)
+	indegree := make(map[string]int)
 	predFreq := make(map[string]int)
 	for fileidx := 0; fileidx < c.NArg(); fileidx++ {
 		filename := c.Args().Get(fileidx)
@@ -463,15 +464,15 @@ func ttlStat(c *cli.Context) error {
 			uniqueNodes.Add(triple.Subject.String())
 			uniqueNodes.Add(triple.Object.String())
 
-			if cur, found := degree[triple.Subject.String()]; found {
-				degree[triple.Subject.String()] = cur + 1
+			if cur, found := outdegree[triple.Subject.String()]; found {
+				outdegree[triple.Subject.String()] = cur + 1
 			} else {
-				degree[triple.Subject.String()] = 1
+				outdegree[triple.Subject.String()] = 1
 			}
-			if cur, found := degree[triple.Object.String()]; found {
-				degree[triple.Object.String()] = cur + 1
+			if cur, found := indegree[triple.Object.String()]; found {
+				indegree[triple.Object.String()] = cur + 1
 			} else {
-				degree[triple.Object.String()] = 1
+				indegree[triple.Object.String()] = 1
 			}
 
 			if cur, found := predFreq[triple.Predicate.String()]; found {
@@ -482,9 +483,13 @@ func ttlStat(c *cli.Context) error {
 		}
 	}
 	// load into arrays so we can do stats
-	var degreeCounts stats.Float64Data
-	for _, count := range degree {
-		degreeCounts = append(degreeCounts, float64(count))
+	var outdegreeCounts stats.Float64Data
+	for _, count := range outdegree {
+		outdegreeCounts = append(outdegreeCounts, float64(count))
+	}
+	var indegreeCounts stats.Float64Data
+	for _, count := range indegree {
+		indegreeCounts = append(indegreeCounts, float64(count))
 	}
 	var predFrequencyCounts stats.Float64Data
 	for _, count := range predFreq {
@@ -502,12 +507,20 @@ func ttlStat(c *cli.Context) error {
 	density := new(big.Float)
 	density.Quo(ntFloat, maxEdges)
 	fmt.Printf("Density: %s\n", density.String())
-	sum_deg, _ := degreeCounts.Sum()
-	min_deg, _ := degreeCounts.Min()
-	max_deg, _ := degreeCounts.Max()
-	mean_deg := sum_deg / uniqueNodes.GetCount()
-	std_deg, _ := degreeCounts.StandardDeviation()
-	fmt.Printf("Degree: Min %0.2f, Max %0.2f, Mean %0.2f, Std Dev %0.2f\n", min_deg, max_deg, mean_deg, std_deg)
+	sum_outdeg, _ := outdegreeCounts.Sum()
+	min_outdeg, _ := outdegreeCounts.Min()
+	max_outdeg, _ := outdegreeCounts.Max()
+	mean_outdeg := sum_outdeg / uniqueNodes.GetCount()
+	med_outdeg, _ := outdegreeCounts.Median()
+	std_outdeg, _ := outdegreeCounts.StandardDeviation()
+	fmt.Printf("OutDegree: Min %0.2f, Max %0.2f, Mean %0.2f, Std Dev %0.2f, Median %0.2f, Avg Per Type %0.4f\n", min_outdeg, max_outdeg, mean_outdeg, std_outdeg, med_outdeg, mean_outdeg/uniqueEdges.GetCount())
+	sum_indeg, _ := indegreeCounts.Sum()
+	min_indeg, _ := indegreeCounts.Min()
+	max_indeg, _ := indegreeCounts.Max()
+	mean_indeg := sum_indeg / uniqueNodes.GetCount()
+	med_indeg, _ := indegreeCounts.Median()
+	std_indeg, _ := indegreeCounts.StandardDeviation()
+	fmt.Printf("InDegree: Min %0.2f, Max %0.2f, Mean %0.2f, Std Dev %0.2f, Median %0.2f, Avg Per Type %0.4f\n", min_indeg, max_indeg, mean_indeg, std_indeg, med_indeg, mean_indeg/uniqueEdges.GetCount())
 	sum_pred, _ := predFrequencyCounts.Sum()
 	min_pred, _ := predFrequencyCounts.Min()
 	max_pred, _ := predFrequencyCounts.Max()
@@ -515,18 +528,30 @@ func ttlStat(c *cli.Context) error {
 	std_pred, _ := predFrequencyCounts.StandardDeviation()
 	fmt.Printf("Pred Frequencies: Min %0.2f, Max %0.2f, Mean %0.2f, Std Dev %0.2f\n", min_pred, max_pred, mean_pred, std_pred)
 
-	// write the degree and predicate data to files; one entry per line
-	degreefile, err := os.Create("degree.csv")
+	// write the outdegree and predicate data to files; one entry per line
+	outdegreefile, err := os.Create("outdegree.csv")
 	if err != nil {
-		log.Fatal(errors.Wrap(err, "Could not create degree file"))
+		log.Fatal(errors.Wrap(err, "Could not create outdegree file"))
 	}
-	degreecsv := csv.NewWriter(degreefile)
-	for _, cnt := range degreeCounts {
-		if err := degreecsv.Write([]string{fmt.Sprintf("%d", int64(cnt))}); err != nil {
+	outdegreecsv := csv.NewWriter(outdegreefile)
+	for _, cnt := range outdegreeCounts {
+		if err := outdegreecsv.Write([]string{fmt.Sprintf("%d", int64(cnt))}); err != nil {
 			log.Fatal(errors.Wrap(err, "Could not write to CSV file"))
 		}
 	}
-	degreecsv.Flush()
+	outdegreecsv.Flush()
+	// write the indegree and predicate data to files; one entry per line
+	indegreefile, err := os.Create("indegree.csv")
+	if err != nil {
+		log.Fatal(errors.Wrap(err, "Could not create indegree file"))
+	}
+	indegreecsv := csv.NewWriter(indegreefile)
+	for _, cnt := range indegreeCounts {
+		if err := indegreecsv.Write([]string{fmt.Sprintf("%d", int64(cnt))}); err != nil {
+			log.Fatal(errors.Wrap(err, "Could not write to CSV file"))
+		}
+	}
+	indegreecsv.Flush()
 	edgefile, err := os.Create("edge.csv")
 	if err != nil {
 		log.Fatal(errors.Wrap(err, "Could not create edge file"))
