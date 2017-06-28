@@ -102,41 +102,38 @@ SELECT ?vav WHERE {
             var useFullURI = $("#fullURI")[0].checked;
             var showJSON = $("#showJSON")[0].checked;
             var html = "";
-            var begin = moment();
             $.post("/api/query", query, function(data) {
-                var end = moment();
-                var duration = moment.duration(end - begin);
-                $("#elapsed").text(duration.milliseconds() + " ms");
+                $("#elapsed").text((data.Elapsed / 1e6).toFixed(2) + " ms");
                 $("#resultsheader").show();
                 if (showJSON) {
                     $("#resultsjson").show();
                     html = "<code>" + JSON.stringify(data) + "</code>";
                     $("#resultsjson").html(html);
-                } else if (data.Rows.length > 0) {
+                } else {
                     $("#resultstable").show();
-                    var firstrow = data.Rows[0];
-                    var number = 0;
-                    html += "<thead><tr>";
-                    for (var key in firstrow) {
-                        html += "<td><b>" + key + "</b></td>";
-                    }
-                    html += "</tr></thead><tbody>";
-                    data.Rows.forEach(function(element) {
-                        html += "<tr>"
-                        for (var key in element) {
-                            if (useFullURI) {
-                                var newstuff = element[key].Namespace + "#" + element[key].Value;
-                            } else {
-                                var newstuff = element[key].Value;
-                            }
-                            html += "<td>" + newstuff + "</td>"
+                    if (data.Count > 0) {
+                        var firstrow = data.Rows[0];
+                        html += "<thead><tr>";
+                        for (var key in firstrow) {
+                            html += "<td><b>" + key + "</b></td>";
                         }
-                        html += "</tr>"
-                        number += 1
-                    });
-                    html += "</tbody>";
+                        html += "</tr></thead><tbody>";
+                        data.Rows.forEach(function(element) {
+                            html += "<tr>"
+                            for (var key in element) {
+                                if (useFullURI) {
+                                    var newstuff = element[key].Namespace + "#" + element[key].Value;
+                                } else {
+                                    var newstuff = element[key].Value;
+                                }
+                                html += "<td>" + newstuff + "</td>"
+                            }
+                            html += "</tr>"
+                        });
+                        html += "</tbody>";
+                    }
                     $("#resultstable").html(html);
-                    $("#resultsnum").text(number + " results");
+                    $("#resultsnum").text(data.Count + " results");
                 }
             }).fail(function(e) {
                 $("#errortext").show();
