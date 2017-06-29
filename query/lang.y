@@ -6,7 +6,6 @@ import (
     "strconv"
     turtle "github.com/gtfierro/hod/goraptor"
     "fmt"
-    "sync"
 )
 
 %}
@@ -360,56 +359,6 @@ term         : VAR
 
 const eof = 0
 
-var lexerpool = sync.Pool{
-    New: func() interface{} {
-        scanner := NewScanner(
-            []Definition{
-                {Token: LBRACE,  Pattern: "\\{"},
-                {Token: RBRACE,  Pattern: "\\}"},
-                {Token: LPAREN,  Pattern: "\\("},
-                {Token: RPAREN,  Pattern: "\\)"},
-                {Token: LBRACK,  Pattern: "\\["},
-                {Token: RBRACK,  Pattern: "\\]"},
-                {Token: COMMA,  Pattern: "\\,"},
-                {Token: SEMICOLON,  Pattern: ";"},
-                {Token: DOT,  Pattern: "\\."},
-                {Token: BAR,  Pattern: "\\|"},
-                {Token: SELECT,  Pattern: "(SELECT)|(select)"},
-                {Token: COUNT,  Pattern: "COUNT"},
-                {Token: DISTINCT,  Pattern: "DISTINCT"},
-                {Token: WHERE,  Pattern: "WHERE"},
-                {Token: OR,  Pattern: "OR"},
-                {Token: UNION,  Pattern: "UNION"},
-                {Token: PARTIAL,  Pattern: "PARTIAL"},
-                {Token: LIMIT,  Pattern: "LIMIT"},
-                {Token: PREFIX,  Pattern: "PREFIX"},
-                {Token: NUMBER,  Pattern: "[0-9]+"},
-                {Token: URI,  Pattern: "[a-zA-Z0-9_]+:[a-zA-Z0-9_\\-#%$@]+"},
-                {Token: NAMESPACE, Pattern: "[a-zA-Z0-9_]+:"},
-                {Token: VAR,  Pattern: "\\?[a-zA-Z0-9_]+"},
-                {Token: LINK,  Pattern: "[a-zA-Z][a-zA-Z0-9_-]*"},
-                {Token: LITERAL, Pattern: "\"[a-zA-Z0-9_\\-:(). ]*\""},
-                {Token: QUESTION,  Pattern: "\\?"},
-                {Token: SLASH,  Pattern: "/"},
-                {Token: PLUS,  Pattern: "\\+"},
-                {Token: ASTERISK,  Pattern: "\\*"},
-                {Token: FULLURI,  Pattern: "<[^<>\"{}|^`\\\\]*>"},
-            })
-        return &lexer{
-            scanner: scanner,
-            error: nil,
-            varlist: []SelectVar{},
-            triples: []Filter{},
-            orclauses: []OrClause{},
-            pos: 0,
-            distinct: false,
-            count: false,
-            partial: false,
-            limit: -1,
-        }
-    },
-}
-
 type lexer struct {
     scanner *Scanner
     error   error
@@ -424,7 +373,51 @@ type lexer struct {
 }
 
 func newlexer(r io.Reader) *lexer {
-    lex := lexerpool.Get().(*lexer)
+    scanner := NewScanner(
+        []Definition{
+            {Token: LBRACE,  Pattern: "\\{"},
+            {Token: RBRACE,  Pattern: "\\}"},
+            {Token: LPAREN,  Pattern: "\\("},
+            {Token: RPAREN,  Pattern: "\\)"},
+            {Token: LBRACK,  Pattern: "\\["},
+            {Token: RBRACK,  Pattern: "\\]"},
+            {Token: COMMA,  Pattern: "\\,"},
+            {Token: SEMICOLON,  Pattern: ";"},
+            {Token: DOT,  Pattern: "\\."},
+            {Token: BAR,  Pattern: "\\|"},
+            {Token: SELECT,  Pattern: "(SELECT)|(select)"},
+            {Token: COUNT,  Pattern: "COUNT"},
+            {Token: DISTINCT,  Pattern: "DISTINCT"},
+            {Token: WHERE,  Pattern: "WHERE"},
+            {Token: OR,  Pattern: "OR"},
+            {Token: UNION,  Pattern: "UNION"},
+            {Token: PARTIAL,  Pattern: "PARTIAL"},
+            {Token: LIMIT,  Pattern: "LIMIT"},
+            {Token: PREFIX,  Pattern: "PREFIX"},
+            {Token: NUMBER,  Pattern: "[0-9]+"},
+            {Token: URI,  Pattern: "[a-zA-Z0-9_]+:[a-zA-Z0-9_\\-#%$@]+"},
+            {Token: NAMESPACE, Pattern: "[a-zA-Z0-9_]+:"},
+            {Token: VAR,  Pattern: "\\?[a-zA-Z0-9_]+"},
+            {Token: LINK,  Pattern: "[a-zA-Z][a-zA-Z0-9_-]*"},
+            {Token: LITERAL, Pattern: "\"[a-zA-Z0-9_\\-:(). ]*\""},
+            {Token: QUESTION,  Pattern: "\\?"},
+            {Token: SLASH,  Pattern: "/"},
+            {Token: PLUS,  Pattern: "\\+"},
+            {Token: ASTERISK,  Pattern: "\\*"},
+            {Token: FULLURI,  Pattern: "<[^<>\"{}|^`\\\\]*>"},
+    })
+    lex := &lexer{
+        scanner: scanner,
+        error: nil,
+        varlist: []SelectVar{},
+        triples: []Filter{},
+        orclauses: []OrClause{},
+        pos: 0,
+        distinct: false,
+        count: false,
+        partial: false,
+        limit: -1,
+    }
     lex.scanner.SetInput(r)
     return lex
 }

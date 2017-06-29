@@ -258,7 +258,6 @@ func (p Pattern) String() string {
 
 func Parse(r io.Reader) (Query, error) {
 	l := newlexer(r)
-	defer lexerpool.Put(l)
 	yyParse(l)
 	if l.error != nil {
 		return Query{}, l.error
