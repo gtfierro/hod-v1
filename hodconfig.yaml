@@ -23,6 +23,16 @@
 #DisableQueryCache: false
 
 ####
+# Interface Enabling
+####
+#
+# Enable HTTP server
+#EnableHTTP: true
+#
+# Enable BOSSWAVE server
+#EnableBOSSWAVE: false
+
+####
 # configuration for verbosity during operation
 ####
 #
@@ -68,6 +78,19 @@ LogLevel: Debug
 # If specified, serve the frontend over HTTPS using golang.org/x/crypto/acme/autocert
 # If left blank (default), just serve over HTTP
 #TLSHost: ""
+
+####
+# BOSSWAVE Server Configuration
+####
+
+# BOSSWAVE agent
+#BW2_AGENT: $BW2_AGENT
+
+# BOSSWAVE entity
+#BW2_DEFAULT_ENTITY: $BW2_DEFAULT_ENTITY
+
+# Base URI
+#HodURI: scratch.ns/hod
 
 ####
 # Profiling Information for HTTP Server
