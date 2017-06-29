@@ -1,0 +1,18 @@
+[Unit]
+Description=HodDB
+
+[Service]
+Restart=always
+RestartSec=5s
+ExecStartPre=/usr/bin/docker pull gtfierro/hoddb
+ExecStart=/usr/bin/docker run \
+    --name %p \
+    -v /etc/hod:/etc/hod \
+    -p 80:80 \
+    gtfierro/hoddb
+
+ExecStop=/usr/bin/docker stop -t 5 %p ; /usr/bin/docker rm -f %p
+
+[X-Fleet]
+MachineMetadata=n=node0
+
