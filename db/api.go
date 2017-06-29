@@ -95,17 +95,16 @@ func (db *DB) RunQuery(q query.Query) QueryResult {
 		result.Count = unionedRows.Len()
 	} else {
 		// return the rows
-		max := unionedRows.Max()
-		iter := func(i btree.Item) bool {
+		i := unionedRows.DeleteMax()
+		for i != nil {
 			row := i.(*ResultRow)
 			m := make(ResultMap)
 			for idx, vname := range q.Select.Variables {
 				m[vname.Var.String()] = row.row[idx]
 			}
 			result.Rows = append(result.Rows, m)
-			return row.Less(max, "")
+			i = unionedRows.DeleteMax()
 		}
-		unionedRows.Ascend(iter)
 		result.Count = len(result.Rows)
 	}
 
