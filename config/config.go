@@ -17,6 +17,9 @@ type Config struct {
 	ReloadBrick       bool
 	DisableQueryCache bool
 
+	EnableHTTP     bool
+	EnableBOSSWAVE bool
+
 	ShowNamespaces         bool
 	ShowDependencyGraph    bool
 	ShowQueryPlan          bool
@@ -30,6 +33,10 @@ type Config struct {
 	ListenAddress string
 	StaticPath    string
 	TLSHost       string
+
+	BW2_AGENT          string
+	BW2_DEFAULT_ENTITY string
+	HodURI             string
 
 	EnableCPUProfile   bool
 	EnableMEMProfile   bool
@@ -53,6 +60,9 @@ func init() {
 	viper.SetDefault("ReloadBrick", true)
 	viper.SetDefault("DisableQueryCache", false)
 
+	viper.SetDefault("EnableHTTP", true)
+	viper.SetDefault("EnableBOSSWAVE", false)
+
 	viper.SetDefault("ShowNamespaces", true)
 	viper.SetDefault("ShowDependencyGraph", false)
 	viper.SetDefault("ShowQueryPlan", false)
@@ -66,6 +76,8 @@ func init() {
 	viper.SetDefault("ListenAddress", "127.0.0.1")
 	viper.SetDefault("StaticPath", prefix+"/src/github.com/gtfierro/hod/server")
 	viper.SetDefault("TLSHost", "") // disabled
+
+	viper.SetDefault("HodURI", "scratch.ns/hod")
 
 	viper.SetDefault("EnableCPUProfile", false)
 	viper.SetDefault("EnableMEMProfile", false)
@@ -85,7 +97,6 @@ func ReadConfig(file string) (*Config, error) {
 	if err := viper.ReadInConfig(); err != nil {
 		return nil, err
 	}
-	viper.SetEnvPrefix("HOD")
 	viper.AutomaticEnv()
 
 	level, err := logging.LogLevel(viper.GetString("LogLevel"))
@@ -98,6 +109,8 @@ func ReadConfig(file string) (*Config, error) {
 		BrickFrameTTL:          viper.GetString("BrickFrameTTL"),
 		BrickClassTTL:          viper.GetString("BrickClassTTL"),
 		ReloadBrick:            viper.GetBool("ReloadBrick"),
+		EnableHTTP:             viper.GetBool("EnableHTTP"),
+		EnableBOSSWAVE:         viper.GetBool("EnableBOSSWAVE"),
 		DisableQueryCache:      viper.GetBool("DisableQueryCache"),
 		ShowNamespaces:         viper.GetBool("ShowNamespaces"),
 		ShowDependencyGraph:    viper.GetBool("ShowDependencyGraph"),
@@ -111,6 +124,9 @@ func ReadConfig(file string) (*Config, error) {
 		ListenAddress:          viper.GetString("ListenAddress"),
 		StaticPath:             viper.GetString("StaticPath"),
 		TLSHost:                viper.GetString("TLSHost"),
+		BW2_AGENT:              viper.GetString("BW2_AGENT"),
+		BW2_DEFAULT_ENTITY:     viper.GetString("BW2_DEFAULT_ENTITY"),
+		HodURI:                 viper.GetString("HodURI"),
 		EnableCPUProfile:       viper.GetBool("EnableCPUProfile"),
 		EnableMEMProfile:       viper.GetBool("EnableMEMProfile"),
 		EnableBlockProfile:     viper.GetBool("EnableBlockProfile"),

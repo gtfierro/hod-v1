@@ -49,9 +49,9 @@ func main() {
 			},
 		},
 		{
-			Name:   "http",
-			Usage:  "Start hoddb HTTP server from existing database",
-			Action: startHTTP,
+			Name:   "server",
+			Usage:  "Start hoddb server from existing database. Default to HTTP server only, but can do both that and BOSSWAVE",
+			Action: startServer,
 			Flags: []cli.Flag{
 				cli.StringFlag{
 					Name:  "config, c",
@@ -79,33 +79,6 @@ func main() {
 				cli.BoolFlag{
 					Name:  "prefixes, p",
 					Usage: "If true, abbreviate all namespaces. Else, just print the full URI",
-				},
-			},
-		},
-		{
-			Name:   "bosswave",
-			Usage:  "Expose HodDB over BOSSWAVE",
-			Action: startBOSSWAVE,
-			Flags: []cli.Flag{
-				cli.StringFlag{
-					Name:  "uri, u",
-					Usage: "Base URI to expose the HodDB service on",
-				},
-				cli.StringFlag{
-					Name:  "config, c",
-					Usage: "Path to hoddb config file",
-				},
-				cli.StringFlag{
-					Name:   "entity, e",
-					Usage:  "Path to BOSSWAVE entity file to serve",
-					Value:  "",
-					EnvVar: "BW2_DEFAULT_ENTITY",
-				},
-				cli.StringFlag{
-					Name:   "agent, a",
-					Usage:  "Address of BOSSWAVE agent to use",
-					Value:  "127.0.0.1:28589",
-					EnvVar: "BW2_AGENT",
 				},
 			},
 		},

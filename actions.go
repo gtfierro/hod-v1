@@ -86,7 +86,7 @@ func startCLI(c *cli.Context) error {
 	return runInteractiveQuery(db)
 }
 
-func startHTTP(c *cli.Context) error {
+func startServer(c *cli.Context) error {
 	cfg, err := config.ReadConfig(c.String("config"))
 	if err != nil {
 		log.Error(err)
@@ -99,90 +99,79 @@ func startHTTP(c *cli.Context) error {
 		return err
 	}
 	defer db.Close()
-	server.StartHodServer(db, cfg)
-	return nil
-}
-
-func startBOSSWAVE(c *cli.Context) error {
-	cfg, err := config.ReadConfig(c.String("config"))
-	if err != nil {
-		log.Error(err)
-		return err
+	if cfg.EnableHTTP {
+		go server.StartHodServer(db, cfg)
 	}
-	cfg.ReloadBrick = false
-	db, err := hod.NewDB(cfg)
-	if err != nil {
-		log.Error(err)
-		return err
-	}
-	defer db.Close()
+	if cfg.EnableBOSSWAVE {
+		client := bw2bind.ConnectOrExit(cfg.BW2_AGENT)
+		client.SetEntityFileOrExit(cfg.BW2_DEFAULT_ENTITY)
+		client.OverrideAutoChainTo(true)
 
-	client := bw2bind.ConnectOrExit(c.String("agent"))
-	client.SetEntityFileOrExit(c.String("entity"))
-	client.OverrideAutoChainTo(true)
-
-	svc := client.RegisterService(c.String("uri"), "s.hod")
-	iface := svc.RegisterInterface("_", "i.hod")
-	queryChan, err := client.Subscribe(&bw2bind.SubscribeParams{
-		URI: iface.SlotURI("query"),
-	})
-	if err != nil {
-		return errors.Wrap(err, "Could not subscribe to HodDB query slot URI")
-	}
-
-	log.Notice("Serving query URI", iface.SlotURI("query"))
-
-	const QueryPIDString = "2.0.10.1"
-	//var QueryPID = bw2bind.FromDotForm(QueryPIDString)
-	const ResponsePIDString = "2.0.10.2"
-	var ResponsePID = bw2bind.FromDotForm(ResponsePIDString)
-	type hodQuery struct {
-		Query string
-		Nonce string
-	}
-	type hodResponse struct {
-		Result hod.QueryResult
-		Nonce  string
-	}
-
-	handleBOSSWAVEQuery := func(msg *bw2bind.SimpleMessage) {
-		var inq hodQuery
-		po := msg.GetOnePODF(QueryPIDString)
-		if po == nil {
-			return
-		}
-		if obj, ok := po.(bw2bind.MsgPackPayloadObject); !ok {
-			log.Error("Payload 2.0.10.1 was not MsgPack")
-			return
-		} else if err := obj.ValueInto(&inq); err != nil {
-			log.Error(errors.Wrap(err, "Could not unmarshal into a hod query"))
-			return
-		}
-		log.Info("Serving query", inq.Query)
-		q, err := query.Parse(strings.NewReader(inq.Query))
+		svc := client.RegisterService(cfg.HodURI, "s.hod")
+		iface := svc.RegisterInterface("_", "i.hod")
+		queryChan, err := client.Subscribe(&bw2bind.SubscribeParams{
+			URI: iface.SlotURI("query"),
+		})
 		if err != nil {
-			log.Error(errors.Wrap(err, "Could not parse hod query"))
-			return
+			return errors.Wrap(err, "Could not subscribe to HodDB query slot URI")
 		}
-		result := db.RunQuery(q)
-		response := hodResponse{
-			Result: result,
-			Nonce:  inq.Nonce,
-		}
-		responsePO, err := bw2bind.CreateMsgPackPayloadObject(ResponsePID, response)
-		if err != nil {
-			log.Error(errors.Wrap(err, "Could not serialize hod response"))
-			return
-		}
-		if err = iface.PublishSignal("result", responsePO); err != nil {
-			log.Error(errors.Wrap(err, "Could not send hod response"))
-			return
-		}
-	}
 
-	for msg := range queryChan {
-		go handleBOSSWAVEQuery(msg)
+		log.Notice("Serving query URI", iface.SlotURI("query"))
+
+		const QueryPIDString = "2.0.10.1"
+		//var QueryPID = bw2bind.FromDotForm(QueryPIDString)
+		const ResponsePIDString = "2.0.10.2"
+		var ResponsePID = bw2bind.FromDotForm(ResponsePIDString)
+		type hodQuery struct {
+			Query string
+			Nonce string
+		}
+		type hodResponse struct {
+			Result hod.QueryResult
+			Nonce  string
+		}
+
+		handleBOSSWAVEQuery := func(msg *bw2bind.SimpleMessage) {
+			var inq hodQuery
+			po := msg.GetOnePODF(QueryPIDString)
+			if po == nil {
+				return
+			}
+			if obj, ok := po.(bw2bind.MsgPackPayloadObject); !ok {
+				log.Error("Payload 2.0.10.1 was not MsgPack")
+				return
+			} else if err := obj.ValueInto(&inq); err != nil {
+				log.Error(errors.Wrap(err, "Could not unmarshal into a hod query"))
+				return
+			}
+			log.Info("Serving query", inq.Query)
+			q, err := query.Parse(strings.NewReader(inq.Query))
+			if err != nil {
+				log.Error(errors.Wrap(err, "Could not parse hod query"))
+				return
+			}
+			result := db.RunQuery(q)
+			response := hodResponse{
+				Result: result,
+				Nonce:  inq.Nonce,
+			}
+			responsePO, err := bw2bind.CreateMsgPackPayloadObject(ResponsePID, response)
+			if err != nil {
+				log.Error(errors.Wrap(err, "Could not serialize hod response"))
+				return
+			}
+			if err = iface.PublishSignal("result", responsePO); err != nil {
+				log.Error(errors.Wrap(err, "Could not send hod response"))
+				return
+			}
+		}
+
+		for msg := range queryChan {
+			go handleBOSSWAVEQuery(msg)
+		}
 	}
+	x := make(chan bool)
+	<-x
 	return nil
 }
 
