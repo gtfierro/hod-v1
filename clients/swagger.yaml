@@ -1,0 +1,61 @@
+swagger: '2.0'
+info:
+  description: This is a description of the HodDB API
+  version: 1.0.0
+  title: Swagger HodDB
+host: 'localhost:47808'
+basePath: /
+schemes:
+  - http
+  - https
+paths:
+  /api/query:
+    post:
+      summary: Perform a SPARQL query against HodDB
+      operationId: doQuery
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: body
+          description: SPARQL Query
+          required: true
+          schema:
+            $ref: '#/definitions/SPARQLQuery'
+      responses:
+        '200':
+          description: Query results
+          schema:
+            $ref: '#/definitions/TripleResponse'
+        '405':
+          description: Invalid input
+definitions:
+  SPARQLQuery:
+    type: object
+    properties:
+      query:
+        type: string
+  TripleResponse:
+    type: object
+    properties:
+      Rows:
+        type: array
+        description: Query results
+        items:
+          $ref: '#/definitions/Triple'
+      Count:
+        type: integer
+        format: int64
+        description: Number of rows returned
+      Elapsed:
+        type: integer
+        format: int64
+        description: Nanoseconds elapsed during evaluation
+  Triple:
+    type: object
+    description: key-value pairs of variable names and their values
+externalDocs:
+  description: Find out more about Swagger
+  url: 'http://swagger.io'
