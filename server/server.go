@@ -9,7 +9,6 @@ import (
 
 	"github.com/gtfierro/hod/config"
 	hod "github.com/gtfierro/hod/db"
-	"github.com/gtfierro/hod/query"
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/op/go-logging"
@@ -114,10 +113,11 @@ func (srv *hodServer) handleQuery(rw http.ResponseWriter, req *http.Request, ps 
 	defer req.Body.Close()
 
 	log.Infof("Query from %s", req.RemoteAddr)
-	parsed, err := query.Parse(req.Body)
+
+	parsed, err := parseQueryInRequest(req)
 	if err != nil {
 		log.Error(err)
-		rw.WriteHeader(400)
+		rw.WriteHeader(405)
 		rw.Write([]byte(err.Error()))
 		return
 	}
