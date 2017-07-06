@@ -22,15 +22,13 @@ var emptyLinkResultmapList = []LinkResultMap{}
 type QueryResult struct {
 	selectVars []query.SelectVar
 	Rows       []ResultMap
-	Links      []LinkResultMap `msg:"-"`
 	Count      int
 	Elapsed    time.Duration `msg:"-"`
 }
 
 func newQueryResult() QueryResult {
 	return QueryResult{
-		Rows:  emptyResultMapList,
-		Links: emptyLinkResultmapList,
+		Rows: emptyResultMapList,
 	}
 }
 
@@ -38,12 +36,6 @@ func (qr QueryResult) Dump() {
 	if len(qr.Rows) > 0 {
 		for _, row := range qr.Rows {
 			fmt.Println(row)
-		}
-		return
-	}
-	if len(qr.Links) > 0 {
-		for _, link := range qr.Links {
-			fmt.Println(link)
 		}
 		return
 	}
@@ -69,12 +61,6 @@ func (qr QueryResult) DumpToCSV(usePrefixes bool, db *DB, w io.Writer) error {
 			if err := csvwriter.Error(); err != nil {
 				return err
 			}
-		}
-		return nil
-	}
-	if len(qr.Links) > 0 {
-		for _, link := range qr.Links {
-			fmt.Println(link)
 		}
 		return nil
 	}
