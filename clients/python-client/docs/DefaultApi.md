@@ -22,7 +22,7 @@ from pprint import pprint
 
 # create an instance of the API class
 api_instance = swagger_client.DefaultApi()
-body = swagger_client.Body() # Body | SPARQL Query
+body = 'body_example' # str | SPARQL Query
 
 try: 
     # Perform a SPARQL query against HodDB
@@ -36,7 +36,7 @@ except ApiException as e:
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **body** | [**Body**](Body.md)| SPARQL Query | 
+ **body** | **str**| SPARQL Query | 
 
 ### Return type
 

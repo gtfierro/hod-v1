@@ -10,7 +10,6 @@
 
 package swagger
 
+// SPARQL query string
 type SparqlQuery struct {
-
-	Query string `json:"query,omitempty"`
 }

@@ -26,7 +26,6 @@ Class | Method | HTTP request | Description
 
 ## Documentation For Models
 
- - [Body](docs/Body.md)
  - [InlineResponse200](docs/InlineResponse200.md)
  - [SparqlQuery](docs/SparqlQuery.md)
  - [Triple](docs/Triple.md)

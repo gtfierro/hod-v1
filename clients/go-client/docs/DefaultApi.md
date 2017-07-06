@@ -17,7 +17,7 @@ Perform a SPARQL query against HodDB
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **body** | [**Body**](Body.md)| SPARQL Query | 
+ **body** | **string**| SPARQL Query | 
 
 ### Return type
 

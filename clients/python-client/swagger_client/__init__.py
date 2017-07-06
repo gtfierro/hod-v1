@@ -14,7 +14,6 @@
 from __future__ import absolute_import
 
 # import models into sdk package
-from .models.body import Body
 from .models.inline_response_200 import InlineResponse200
 from .models.sparql_query import SPARQLQuery
 from .models.triple import Triple

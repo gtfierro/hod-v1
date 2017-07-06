@@ -52,7 +52,7 @@ from swagger_client.rest import ApiException
 from pprint import pprint
 # create an instance of the API class
 api_instance = swagger_client.DefaultApi()
-body = swagger_client.Body() # Body | SPARQL Query
+body = 'body_example' # str | SPARQL Query
 
 try:
     # Perform a SPARQL query against HodDB
@@ -74,7 +74,6 @@ Class | Method | HTTP request | Description
 
 ## Documentation For Models
 
- - [Body](docs/Body.md)
  - [InlineResponse200](docs/InlineResponse200.md)
  - [SPARQLQuery](docs/SPARQLQuery.md)
  - [Triple](docs/Triple.md)

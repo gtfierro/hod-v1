@@ -53,7 +53,7 @@ class DefaultApi(object):
 
         :param callback function: The callback function
             for asynchronous request. (optional)
-        :param Body body: SPARQL Query (required)
+        :param str body: SPARQL Query (required)
         :return: InlineResponse200
                  If the method is called asynchronously,
                  returns the request thread.
@@ -78,7 +78,7 @@ class DefaultApi(object):
 
         :param callback function: The callback function
             for asynchronous request. (optional)
-        :param Body body: SPARQL Query (required)
+        :param str body: SPARQL Query (required)
         :return: InlineResponse200
                  If the method is called asynchronously,
                  returns the request thread.

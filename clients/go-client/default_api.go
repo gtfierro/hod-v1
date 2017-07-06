@@ -42,7 +42,7 @@ func NewDefaultApiWithBasePath(basePath string) *DefaultApi {
  * @param body SPARQL Query
  * @return *InlineResponse200
  */
-func (a DefaultApi) DoQuery(body Body) (*InlineResponse200, *APIResponse, error) {
+func (a DefaultApi) DoQuery(body string) (*InlineResponse200, *APIResponse, error) {
 
 	var localVarHttpMethod = strings.ToUpper("Post")
 	// create path and map variables
