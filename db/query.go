@@ -18,7 +18,7 @@ import (
 // First we "clean" these by making sure that they have their full
 // namespaces rather than the prefix
 
-func (db *DB) getQueryResults(q query.Query) []*ResultRow {
+func (db *DB) getQueryResults(q query.Query) ([]*ResultRow, error) {
 	if db.showQueryPlan {
 		fmt.Println("-------------- start query plan -------------")
 	}
@@ -27,7 +27,10 @@ func (db *DB) getQueryResults(q query.Query) []*ResultRow {
 
 	// form dependency graph and build query plan out of it
 	dg := db.sortQueryTerms(q)
-	qp := db.formQueryPlan(dg, q)
+	qp, err := db.formQueryPlan(dg, q)
+	if err != nil {
+		return nil, err
+	}
 
 	if db.showDependencyGraph {
 		dg.dump()
@@ -46,12 +49,13 @@ func (db *DB) getQueryResults(q query.Query) []*ResultRow {
 	}
 
 	runStart := time.Now()
-	ctx := db.executeQueryPlan(qp)
+	ctx, err := db.executeQueryPlan(qp)
+	if err != nil {
+		return nil, err
+	}
 	if db.showQueryLatencies {
 		log.Infof("Ran query in %s", time.Since(runStart))
 	}
-
-	//ctx.dumpTraverseOrder()
 
 	runStart = time.Now()
 	results := ctx.expandTuples()
@@ -59,10 +63,10 @@ func (db *DB) getQueryResults(q query.Query) []*ResultRow {
 		log.Infof("Expanded tuples in %s", time.Since(runStart))
 		log.Infof("Has %d results", len(results))
 	}
-	return results
+	return results, err
 }
 
-func (db *DB) executeQueryPlan(plan *queryPlan) *queryContext {
+func (db *DB) executeQueryPlan(plan *queryPlan) (*queryContext, error) {
 	ctx := newQueryContext(plan, db)
 
 	for _, op := range ctx.operations {
@@ -72,10 +76,10 @@ func (db *DB) executeQueryPlan(plan *queryPlan) *queryContext {
 			fmt.Println(op, time.Since(now))
 		}
 		if err != nil {
-			log.Fatal(err)
+			return ctx, err
 		}
 	}
-	return ctx
+	return ctx, nil
 }
 
 func (db *DB) sortQueryTerms(q query.Query) *dependencyGraph {

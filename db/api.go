@@ -15,7 +15,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (db *DB) RunQuery(q query.Query) QueryResult {
+func (db *DB) RunQuery(q query.Query) (QueryResult, error) {
 	// "clean" the query by expanding out the prefixes
 	// make sure to first do the Filters, then the Or clauses
 	for idx, filter := range q.Where.Filters {
@@ -39,7 +39,7 @@ func (db *DB) RunQuery(q query.Query) QueryResult {
 			if _, err := res.UnmarshalMsg(ans); err != nil {
 				log.Error(errors.Wrap(err, "Could not fetch query from cache. Running..."))
 			} else {
-				return res
+				return res, nil
 			}
 		} else if err != nil && err == freecache.ErrNotFound {
 			log.Notice("Could not fetch query from cache")
@@ -58,6 +58,7 @@ func (db *DB) RunQuery(q query.Query) QueryResult {
 	if len(orTerms) > 0 {
 		var rowLock sync.Mutex
 		var wg sync.WaitGroup
+		var queryErr error
 		wg.Add(len(orTerms))
 		for _, orTerm := range orTerms {
 			tmpQuery := q.Copy()
@@ -66,18 +67,28 @@ func (db *DB) RunQuery(q query.Query) QueryResult {
 			copy(tmpQuery.Where.Filters, oldFilters)
 			copy(tmpQuery.Where.Filters[len(oldFilters):], orTerm)
 			go func(q query.Query) {
-				results := db.getQueryResults(q)
+				results, err := db.getQueryResults(q)
 				rowLock.Lock()
-				for _, row := range results {
-					unionedRows.ReplaceOrInsert(row)
+				if err != nil {
+					queryErr = err
+				} else {
+					for _, row := range results {
+						unionedRows.ReplaceOrInsert(row)
+					}
 				}
 				rowLock.Unlock()
 				wg.Done()
 			}(tmpQuery)
 		}
 		wg.Wait()
+		if queryErr != nil {
+			return QueryResult{}, queryErr
+		}
 	} else {
-		results := db.getQueryResults(q)
+		results, err := db.getQueryResults(q)
+		if err != nil {
+			return QueryResult{}, err
+		}
 		for _, row := range results {
 			unionedRows.ReplaceOrInsert(row)
 		}
@@ -119,7 +130,7 @@ func (db *DB) RunQuery(q query.Query) QueryResult {
 		}
 	}
 
-	return result
+	return result, nil
 }
 
 // takes a query and returns a DOT representation to visualize
@@ -231,7 +242,10 @@ func (db *DB) QueryToClassDOT(querystring io.Reader) (string, error) {
 		return
 	}
 
-	result := db.RunQuery(q)
+	result, err := db.RunQuery(q)
+	if err != nil {
+		return "", err
+	}
 	for _, row := range result.Rows {
 		for _, uri := range row {
 			ent, err := db.GetEntity(uri)

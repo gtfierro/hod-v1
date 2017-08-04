@@ -123,7 +123,13 @@ func (srv *hodServer) handleQuery(rw http.ResponseWriter, req *http.Request, ps 
 	}
 
 	// evaluate query
-	res := srv.db.RunQuery(parsed)
+	res, err := srv.db.RunQuery(parsed)
+	if err != nil {
+		log.Error(err)
+		rw.WriteHeader(500)
+		rw.Write([]byte(err.Error()))
+		return
+	}
 
 	encoder := json.NewEncoder(rw)
 	rw.Header().Set("Content-Type", "application/json; charset=utf-8")

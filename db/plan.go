@@ -1,9 +1,10 @@
 package db
 
 import (
-	//	"sort"
+	"fmt"
 
 	"github.com/gtfierro/hod/query"
+	"github.com/pkg/errors"
 )
 
 // need operator types that go into the query plan
@@ -15,7 +16,7 @@ import (
 // the queryplanner. What we should do now is take that dependency graph and turn
 // it into a query plan
 
-func (db *DB) formQueryPlan(dg *dependencyGraph, q query.Query) *queryPlan {
+func (db *DB) formQueryPlan(dg *dependencyGraph, q query.Query) (*queryPlan, error) {
 	qp := newQueryPlan(dg, q)
 
 	for _, term := range dg.terms {
@@ -67,7 +68,7 @@ func (db *DB) formQueryPlan(dg *dependencyGraph, q query.Query) *queryPlan {
 				newop = &resolveVarTripleFromPredicate{term: term}
 			default: // all are vars
 				newop = &resolveVarTripleAll{term: term}
-				log.Fatal("?x ?y ?z queries not supported yet")
+				return qp, errors.New("?s ?p ?o queries not supported yet")
 			}
 		// subject/object variable terms
 		case subjectIsVariable && objectIsVariable && !predicateIsVariable:
@@ -102,10 +103,6 @@ func (db *DB) formQueryPlan(dg *dependencyGraph, q query.Query) *queryPlan {
 			default:
 				newop = &resolveSubjectObjectFromPred{term: term}
 				qp.addLink(subjectVar, objectVar)
-				//for _, op := range qp.operations {
-				//	log.Warning(op)
-				//}
-				//panic("HERE")
 			}
 		case !subjectIsVariable && !objectIsVariable && predicateIsVariable:
 			newop = &resolvePredicate{term: term}
@@ -133,11 +130,11 @@ func (db *DB) formQueryPlan(dg *dependencyGraph, q query.Query) *queryPlan {
 				qp.addTopLevel(objectVar)
 			}
 		default:
-			log.Fatal("Nothing chosen for", term)
+			return qp, errors.New(fmt.Sprintf("Nothing chosen for %s. This shouldn't happen", term))
 		}
 		qp.operations = append(qp.operations, newop)
 	}
 	// sort operations
 	// sort.Sort(qp)
-	return qp
+	return qp, nil
 }

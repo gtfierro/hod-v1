@@ -131,6 +131,7 @@ func startServer(c *cli.Context) error {
 			Nonce  string
 		}
 
+		//TODO: add error handling
 		handleBOSSWAVEQuery := func(msg *bw2bind.SimpleMessage) {
 			var inq hodQuery
 			po := msg.GetOnePODF(QueryPIDString)
@@ -150,7 +151,11 @@ func startServer(c *cli.Context) error {
 				log.Error(errors.Wrap(err, "Could not parse hod query"))
 				return
 			}
-			result := db.RunQuery(q)
+			result, err := db.RunQuery(q)
+			if err != nil {
+				log.Error(errors.Wrap(err, "Could not run query"))
+				return
+			}
 			response := hodResponse{
 				Result: result,
 				Nonce:  inq.Nonce,
@@ -207,7 +212,10 @@ func doQuery(c *cli.Context) error {
 			log.Fatal(err)
 		}
 	}
-	res = db.RunQuery(q)
+	res, err = db.RunQuery(q)
+	if err != nil {
+		log.Fatal(err)
+	}
 	return res.DumpToCSV(c.Bool("prefixes"), db, os.Stdout)
 }
 
@@ -408,8 +416,9 @@ func runInteractiveQuery(db *hod.DB) error {
 		q, err := query.Parse(strings.NewReader(bufQuery))
 		if err != nil {
 			log.Error(err)
+		} else if res, err := db.RunQuery(q); err != nil {
+			log.Error(err)
 		} else {
-			res := db.RunQuery(q)
 			res.Dump()
 		}
 		bufQuery = ""
