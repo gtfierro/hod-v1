@@ -95,6 +95,14 @@ SELECT ?vav WHERE {
           });
           cm.refresh();
 
+          var url = new URL(window.document.location);
+          var query = url.searchParams.get("query");
+          console.log(query);
+          if (query != null) {
+              cm.setValue(query);
+              cm.refresh();
+          }
+
           var submit_query = function(query) {
             $("#errortext").hide();
             $("#resultsjson").hide();
@@ -102,9 +110,14 @@ SELECT ?vav WHERE {
             var useFullURI = $("#fullURI")[0].checked;
             var showJSON = $("#showJSON")[0].checked;
             var html = "";
+
             $.post("/api/query", query, function(data) {
                 $("#elapsed").text((data.Elapsed / 1e6).toFixed(2) + " ms");
                 $("#resultsheader").show();
+                var url = new URL(window.document.location);
+                url.searchParams.set("query", query);
+                // replace URL without reloading
+                history.pushState(null,null,url);
                 if (showJSON) {
                     $("#resultsjson").show();
                     html = "<code>" + JSON.stringify(data) + "</code>";
