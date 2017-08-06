@@ -25,7 +25,7 @@ import (
 
 // logger
 var log *logging.Logger
-var emptyHash = Key{0, 0, 0, 0}
+var emptyKey = Key{0, 0, 0, 0}
 
 func init() {
 	log = logging.MustGetLogger("hod")
@@ -538,16 +538,16 @@ func (db *DB) GetHash(entity turtle.URI) (Key, error) {
 		if err == freecache.ErrNotFound {
 			val, err := db.entityDB.Get(entity.Bytes(), nil)
 			if err != nil {
-				return emptyHash, errors.Wrapf(err, "Could not get Entity for %s", entity)
+				return emptyKey, errors.Wrapf(err, "Could not get Entity for %s", entity)
 			}
 			copy(rethash[:], val)
-			if rethash == emptyHash {
-				return emptyHash, errors.New("Got bad hash")
+			if rethash == emptyKey {
+				return emptyKey, errors.New("Got bad hash")
 			}
 			db.entityHashCache.Set(entity.Bytes(), rethash[:], -1) // no expiry
 			return rethash, nil
 		} else {
-			return emptyHash, errors.Wrapf(err, "Could not get Entity for %s", entity)
+			return emptyKey, errors.Wrapf(err, "Could not get Entity for %s", entity)
 		}
 	} else {
 		copy(rethash[:], hash)
@@ -558,7 +558,8 @@ func (db *DB) GetHash(entity turtle.URI) (Key, error) {
 func (db *DB) MustGetHash(entity turtle.URI) Key {
 	val, err := db.GetHash(entity)
 	if err != nil {
-		panic(err)
+		log.Error(errors.Wrapf(err, "Could not get hash for %s", entity))
+		return emptyKey
 	}
 	return val
 }
@@ -582,12 +583,13 @@ func (db *DB) GetURI(hash Key) (turtle.URI, error) {
 }
 
 func (db *DB) MustGetURI(hash Key) turtle.URI {
-	if hash == emptyHash {
+	if hash == emptyKey {
 		return turtle.URI{}
 	}
 	uri, err := db.GetURI(hash)
 	if err != nil {
-		panic(errors.Wrapf(err, "Could not get URI for %v", hash))
+		log.Error(errors.Wrapf(err, "Could not get URI for %v", hash))
+		return turtle.URI{}
 	}
 	return uri
 }
@@ -628,7 +630,8 @@ func (db *DB) GetEntityFromHash(hash Key) (*Entity, error) {
 func (db *DB) MustGetEntityFromHash(hash Key) *Entity {
 	e, err := db.GetEntityFromHash(hash)
 	if err != nil {
-		panic(fmt.Sprint(hash, err))
+		log.Error(errors.Wrap(err, "Could not get entity"))
+		return nil
 	}
 	return e
 }
@@ -636,7 +639,8 @@ func (db *DB) MustGetEntityFromHash(hash Key) *Entity {
 func (db *DB) MustGetEntityIndexFromHash(hash Key) *EntityExtendedIndex {
 	e, err := db.GetEntityIndexFromHash(hash)
 	if err != nil {
-		panic(fmt.Sprint(hash, err))
+		log.Error(errors.Wrap(err, "Could not get entity index"))
+		return nil
 	}
 	return e
 }

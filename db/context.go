@@ -211,7 +211,7 @@ func (ctx *queryContext) addReachableSingle(parent *Entity, parentVar string, re
 
 // returns true if any vars are reachable from this entity
 func (ctx *queryContext) entityHasFollowers(ent *Entity) bool {
-	if ent == nil || ent.PK == emptyHash {
+	if ent == nil || ent.PK == emptyKey {
 		return false
 	}
 	if m, found := ctx.chains[ent.PK]; found && len(m) > 0 {
@@ -321,7 +321,7 @@ func (ctx *queryContext) expandEntity(varname string, entity *Entity) []*ResultR
 		rows []*ResultRow
 	)
 
-	if entity == nil || entity.PK == emptyHash {
+	if entity == nil || entity.PK == emptyKey {
 		return rows
 	}
 	varorder, parents := ctx.buildVarOrder(entity.PK, varname, len(ctx._traverseOrder.list))

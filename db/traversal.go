@@ -81,8 +81,7 @@ func (db *DB) followPathFromObject(object *Entity, results *btree.BTree, searchs
 			results.ReplaceOrInsert(entity.PK)
 			// faster index
 			if !db.loading {
-				index := db.MustGetEntityIndexFromHash(entity.PK)
-				if index != nil {
+				if index := db.MustGetEntityIndexFromHash(entity.PK); index != nil {
 					if endpoints, found := index.InPlusEdges[string(predHash[:])]; found {
 						for _, entityHash := range endpoints {
 							results.ReplaceOrInsert(entityHash)

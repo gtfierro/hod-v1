@@ -168,7 +168,7 @@ func compareResultMap(rm1, rm2 ResultMap) bool {
 
 func rowIsFull(row []Key) bool {
 	for _, entry := range row {
-		if entry == emptyHash {
+		if entry == emptyKey {
 			return false
 		}
 	}

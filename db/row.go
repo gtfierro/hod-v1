@@ -47,7 +47,7 @@ func finishrow(r *row) {
 
 func (r *row) isFull() bool {
 	for _, entry := range r.entries[:len(r.vars)] {
-		if entry == emptyHash {
+		if entry == emptyKey {
 			return false
 		}
 	}
@@ -91,7 +91,7 @@ func (r *row) isSet(varname string) bool {
 	}
 	for idx, name := range r.vars {
 		if name == varname {
-			return r.entries[idx] != emptyHash
+			return r.entries[idx] != emptyKey
 		}
 	}
 	return false
@@ -106,5 +106,5 @@ func (r *row) getValue(varname string) Key {
 			return r.entries[idx]
 		}
 	}
-	return emptyHash
+	return emptyKey
 }
