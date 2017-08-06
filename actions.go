@@ -26,6 +26,8 @@ import (
 	"gopkg.in/immesys/bw2bind.v5"
 )
 
+type ResultMap hod.ResultMap
+
 func benchLoad(c *cli.Context) error {
 	if c.NArg() == 0 {
 		log.Fatal("Need to specify a turtle file to load")
@@ -127,11 +129,13 @@ func startServer(c *cli.Context) error {
 			Nonce string
 		}
 		type hodResponse struct {
-			Result hod.QueryResult
-			Nonce  string
+			Count   int
+			Nonce   string
+			Elapsed int64
+			Rows    []ResultMap
+			Error   string
 		}
 
-		//TODO: add error handling
 		handleBOSSWAVEQuery := func(msg *bw2bind.SimpleMessage) {
 			var inq hodQuery
 			po := msg.GetOnePODF(QueryPIDString)
@@ -146,20 +150,31 @@ func startServer(c *cli.Context) error {
 				return
 			}
 			log.Info("Serving query", inq.Query)
-			q, err := query.Parse(strings.NewReader(inq.Query))
-			if err != nil {
+
+			var response hodResponse
+			if q, err := query.Parse(strings.NewReader(inq.Query)); err != nil {
 				log.Error(errors.Wrap(err, "Could not parse hod query"))
-				return
-			}
-			result, err := db.RunQuery(q)
-			if err != nil {
+				response = hodResponse{
+					Nonce: inq.Nonce,
+					Error: err.Error(),
+				}
+			} else if result, err := db.RunQuery(q); err != nil {
 				log.Error(errors.Wrap(err, "Could not run query"))
-				return
+				response = hodResponse{
+					Nonce: inq.Nonce,
+					Error: err.Error(),
+				}
+			} else {
+				response = hodResponse{
+					Count:   result.Count,
+					Elapsed: result.Elapsed.Nanoseconds(),
+					Nonce:   inq.Nonce,
+				}
+				for _, row := range result.Rows {
+					response.Rows = append(response.Rows, ResultMap(row))
+				}
 			}
-			response := hodResponse{
-				Result: result,
-				Nonce:  inq.Nonce,
-			}
+
 			responsePO, err := bw2bind.CreateMsgPackPayloadObject(ResponsePID, response)
 			if err != nil {
 				log.Error(errors.Wrap(err, "Could not serialize hod response"))
