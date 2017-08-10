@@ -177,6 +177,8 @@ func NewBW2Client(client *bw2.BW2Client, uri string) (*HodClientBW2, error) {
 
 			if err := po.(bw2.MsgPackPayloadObject).ValueInto(&res); err != nil {
 				res.Error = err
+			} else {
+				res.Error = nil
 			}
 			fmt.Printf("%+v", res)
 
@@ -184,9 +186,10 @@ func NewBW2Client(client *bw2.BW2Client, uri string) (*HodClientBW2, error) {
 			if replyChan, found := c.waiting[res.Nonce]; found {
 				select {
 				case replyChan <- res:
-					delete(c.waiting, res.Nonce)
 				default:
 				}
+			} else {
+				fmt.Println("non fond")
 			}
 			c.Unlock()
 		}
@@ -209,6 +212,7 @@ func (bc *HodClientBW2) DoQuery(query string, opts *Options) (res BW2Result, err
 		URI:            bc.uri + "/slot/query",
 		PayloadObjects: []bw2.PayloadObject{po},
 	}); err != nil {
+		err = err
 		return
 	}
 
@@ -227,12 +231,17 @@ func (bc *HodClientBW2) DoQuery(query string, opts *Options) (res BW2Result, err
 			err = ErrNoResponse
 			return
 		case res = <-replyChan:
+			bc.Lock()
+			delete(bc.waiting, nonce)
+			bc.Unlock()
 			if res.Error != nil {
 				err = res.Error
-				return
 			}
+			return
+
 		}
 	}
+	err = nil
 
 	return
 }
