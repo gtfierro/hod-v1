@@ -16,6 +16,8 @@ import (
 )
 
 func (db *DB) RunQuery(q query.Query) (QueryResult, error) {
+	fullQueryStart := time.Now()
+
 	// "clean" the query by expanding out the prefixes
 	// make sure to first do the Filters, then the Or clauses
 	for idx, filter := range q.Where.Filters {
@@ -39,6 +41,8 @@ func (db *DB) RunQuery(q query.Query) (QueryResult, error) {
 			if _, err := res.UnmarshalMsg(ans); err != nil {
 				log.Error(errors.Wrap(err, "Could not fetch query from cache. Running..."))
 			} else {
+				// successful!
+				res.Elapsed = time.Since(fullQueryStart)
 				return res, nil
 			}
 		} else if err != nil && err == freecache.ErrNotFound {
@@ -50,7 +54,6 @@ func (db *DB) RunQuery(q query.Query) (QueryResult, error) {
 
 	unionedRows := btree.New(BTREE_DEGREE, "")
 	defer cleanResultRows(unionedRows)
-	fullQueryStart := time.Now()
 
 	// if we have terms that are part of a set of OR statements, then we run
 	// parallel queries for each fully-elaborated "branch" or the OR statement,
