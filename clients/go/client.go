@@ -59,7 +59,6 @@ package hod
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"math/rand"
 	"net/http"
 	"strconv"
@@ -180,7 +179,6 @@ func NewBW2Client(client *bw2.BW2Client, uri string) (*HodClientBW2, error) {
 			} else {
 				res.Error = nil
 			}
-			fmt.Printf("%+v", res)
 
 			c.Lock()
 			if replyChan, found := c.waiting[res.Nonce]; found {
@@ -188,8 +186,6 @@ func NewBW2Client(client *bw2.BW2Client, uri string) (*HodClientBW2, error) {
 				case replyChan <- res:
 				default:
 				}
-			} else {
-				fmt.Println("non fond")
 			}
 			c.Unlock()
 		}
