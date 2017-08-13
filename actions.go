@@ -115,7 +115,9 @@ func startServer(c *cli.Context) error {
 			URI: iface.SlotURI("query"),
 		})
 		if err != nil {
-			return errors.Wrap(err, "Could not subscribe to HodDB query slot URI")
+			err = errors.Wrap(err, "Could not subscribe to HodDB query slot URI")
+			log.Error(err)
+			return err
 		}
 
 		log.Notice("Serving query URI", iface.SlotURI("query"))
