@@ -51,12 +51,14 @@ func StartHodServer(db *hod.DB, cfg *config.Config) {
 	r.POST("/api/query", server.handleQuery)
 	r.POST("/api/querydot", server.handleQueryDot)
 	r.POST("/api/queryclassdot", server.handleQueryClassDot)
+	r.POST("/api/search", server.handleSearch)
 	r.ServeFiles("/static/*filepath", http.Dir(cfg.StaticPath+"/static"))
 	r.GET("/", server.serveQuery)
 	r.GET("/query", server.serveQuery)
 	r.GET("/help", server.serveHelp)
 	r.GET("/plan", server.servePlanner)
 	r.GET("/explore", server.serveExplorer)
+	r.GET("/search", server.serveSearch)
 	server.router = r
 
 	// enable profiling if configured
@@ -143,6 +145,34 @@ func (srv *hodServer) handleQuery(rw http.ResponseWriter, req *http.Request, ps 
 	return
 }
 
+func (srv *hodServer) handleSearch(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
+	defer req.Body.Close()
+
+	var search = struct {
+		Query  string
+		Number int
+	}{}
+	log.Infof("Query from %s", req.RemoteAddr)
+	err := json.NewDecoder(req.Body).Decode(&search)
+	if err != nil {
+		log.Error(err)
+		rw.WriteHeader(500)
+		rw.Write([]byte(err.Error()))
+		return
+	}
+	res, err := srv.db.Search(search.Query, search.Number)
+	encoder := json.NewEncoder(rw)
+	rw.Header().Set("Content-Type", "application/json; charset=utf-8")
+	err = encoder.Encode(res)
+	if err != nil {
+		log.Error(err)
+		rw.WriteHeader(500)
+		rw.Write([]byte(err.Error()))
+		return
+	}
+	return
+}
+
 func (srv *hodServer) serveHelp(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
 	log.Infof("Serve help from %s", req.RemoteAddr)
 	defer req.Body.Close()
@@ -165,6 +195,12 @@ func (srv *hodServer) serveExplorer(rw http.ResponseWriter, req *http.Request, p
 	log.Infof("Serve explorer from %s", req.RemoteAddr)
 	defer req.Body.Close()
 	http.ServeFile(rw, req, srv.staticpath+"/explore.html")
+}
+
+func (srv *hodServer) serveSearch(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
+	log.Infof("Serve search from %s", req.RemoteAddr)
+	defer req.Body.Close()
+	http.ServeFile(rw, req, srv.staticpath+"/search.html")
 }
 
 func (srv *hodServer) handleQueryDot(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {

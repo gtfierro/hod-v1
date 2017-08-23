@@ -236,6 +236,33 @@ func doQuery(c *cli.Context) error {
 	return res.DumpToCSV(c.Bool("prefixes"), db, os.Stdout)
 }
 
+func doSearch(c *cli.Context) error {
+	cfg, err := config.ReadConfig(c.String("config"))
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+	cfg.ReloadBrick = false
+	db, err := hod.NewDB(cfg)
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+	defer db.Close()
+
+	query := c.String("query")
+	number := c.Int("number")
+	if query == "" {
+		query = strings.Join(c.Args(), " ")
+	}
+	res, err := db.Search(query, number)
+
+	for _, l := range res {
+		fmt.Println(">", l)
+	}
+	return err
+}
+
 func dump(c *cli.Context) error {
 	if c.NArg() == 0 {
 		return errors.New("Need to specify a turtle file to load")

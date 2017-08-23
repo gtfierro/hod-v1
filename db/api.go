@@ -10,6 +10,7 @@ import (
 	turtle "github.com/gtfierro/hod/goraptor"
 	"github.com/gtfierro/hod/query"
 
+	"github.com/blevesearch/bleve"
 	"github.com/coocood/freecache"
 	"github.com/mitghi/btree"
 	"github.com/pkg/errors"
@@ -292,4 +293,22 @@ func (db *DB) Abbreviate(uri turtle.URI) string {
 		}
 	}
 	return uri.Value
+}
+
+// Searches all of the values in the database; basic wildcard search
+func (db *DB) Search(q string, n int) ([]string, error) {
+	var res []string
+
+	fmt.Println("Displaying", n, "results")
+	query := bleve.NewMatchQuery(q)
+	search := bleve.NewSearchRequestOptions(query, n, 0, false)
+	searchResults, err := db.textidx.Search(search)
+	if err != nil {
+		fmt.Println(err)
+		return res, err
+	}
+	for _, doc := range searchResults.Hits {
+		res = append(res, db.Abbreviate(turtle.ParseURI(doc.ID)))
+	}
+	return res, nil
 }
