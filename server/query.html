@@ -96,14 +96,6 @@ SELECT ?vav WHERE {
           });
           cm.refresh();
 
-          var url = new URL(window.document.location);
-          var query = url.searchParams.get("query");
-          console.log(query);
-          if (query != null) {
-              cm.setValue(query);
-              cm.refresh();
-          }
-
           var submit_query = function(query) {
             $("#errortext").hide();
             $("#resultsjson").hide();
@@ -153,6 +145,15 @@ SELECT ?vav WHERE {
                 $("#errortext").show();
                 $("#errortext > p").text(e.responseText);
             });
+          }
+
+          var url = new URL(window.document.location);
+          var query = url.searchParams.get("query");
+          console.log(query);
+          if (query != null) {
+              cm.setValue(query);
+              submit_query(query);
+              cm.refresh();
           }
 
           // init collapsible parts

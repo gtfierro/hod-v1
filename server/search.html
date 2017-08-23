@@ -70,22 +70,25 @@
                     $("#errortext").show();
                     $("#errortext > p").text("No results");
                 } else {
-                    console.log(data);
                     $("#resultstable").show();
                     data.forEach(function(element) {
-                        console.log(element);
                         html += "<tr><td>"
-                        html += element;
+                        html += "<a href='/query?query=SELECT+%3Fx+WHERE+%7B%0A++++%3Fx+rdf%3Atype%2Frdfs%3AsubClassOf*+"+element+"+.%0A%7D%3B'>"+element+"</a>";
                         html += "</td></tr>"
                     });
                     html += "</tbody>";
-                    console.log(html);
                     $("#resultstable").html(html);
                 }
             }).fail(function(e) {
                 $("#errortext").show();
                 $("#errortext > p").text(e.responseText);
             });
+          }
+          var url = new URL(window.document.location);
+          var query = url.searchParams.get("query");
+          if (query != null) {
+              $("#searchtext").val(query);
+              submit_query({'Query':query, 'Number': 500});
           }
 
           // init collapsible parts
