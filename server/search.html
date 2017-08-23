@@ -99,12 +99,12 @@
           // handle querying
           $("#searchtext").on("input", function(event) {
             var querytext = $(this).val();
-            submit_query({'Query':querytext, 'Number': 10});
+            submit_query({'Query':querytext, 'Number': 500});
             event.preventDefault();
           });
           $("#queryform").submit(function(event) {
             var querytext = $("#searchtext").val();
-            submit_query({'Query':querytext, 'Number': 10});
+            submit_query({'Query':querytext, 'Number': 500});
             event.preventDefault();
           });
     </script>
