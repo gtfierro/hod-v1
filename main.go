@@ -83,6 +83,26 @@ func main() {
 			},
 		},
 		{
+			Name:   "search",
+			Usage:  "Query for triples using just text matching",
+			Action: doSearch,
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:  "config, c",
+					Usage: "Path to hoddb config file",
+				},
+				cli.StringFlag{
+					Name:  "query, q",
+					Usage: "Query string",
+				},
+				cli.IntFlag{
+					Name:  "number, n",
+					Usage: "Number of results to return",
+					Value: 20,
+				},
+			},
+		},
+		{
 			Name:   "benchload",
 			Usage:  "Benchmark loading a turtle file",
 			Action: benchLoad,

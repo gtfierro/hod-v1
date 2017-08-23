@@ -12,8 +12,8 @@ import (
 	turtle "github.com/gtfierro/hod/goraptor"
 	"github.com/gtfierro/hod/query"
 
+	"github.com/blevesearch/bleve"
 	"github.com/coocood/freecache"
-	"github.com/microcosm-cc/bluemonday"
 	"github.com/op/go-logging"
 	"github.com/pkg/errors"
 	"github.com/syndtr/goleveldb/leveldb"
@@ -72,9 +72,10 @@ type DB struct {
 	// cache for query results
 	queryCache        *freecache.Cache
 	queryCacheEnabled bool
-	// policy for sanitizing user links
-	policy  *bluemonday.Policy
-	loading bool
+	loading           bool
+
+	// text index
+	textidx bleve.Index
 }
 
 func NewDB(cfg *config.Config) (*DB, error) {
@@ -116,6 +117,16 @@ func NewDB(cfg *config.Config) (*DB, error) {
 		return nil, errors.Wrapf(err, "Could not open predDB file %s", predDBPath)
 	}
 
+	mapping := bleve.NewIndexMapping()
+	var index bleve.Index
+	index, err = bleve.New(path+"/myExampleIndex.bleve", mapping)
+	if err != nil && err == bleve.ErrorIndexPathExists {
+		index, err = bleve.Open(path + "/myExampleIndex.bleve")
+	}
+	if err != nil {
+		return nil, errors.Wrapf(err, "Could not open bleve index %s", path+"/myExampleIndex.bleve")
+	}
+
 	db := &DB{
 		path:                   path,
 		entityDB:               entityDB,
@@ -137,8 +148,8 @@ func NewDB(cfg *config.Config) (*DB, error) {
 		entityIndexCache:       make(map[Key]*EntityExtendedIndex),
 		uriCache:               make(map[Key]turtle.URI),
 		queryCacheEnabled:      !cfg.DisableQueryCache,
-		policy:                 bluemonday.StrictPolicy(),
 		loading:                false,
+		textidx:                index,
 	}
 
 	if db.queryCacheEnabled {
@@ -473,7 +484,24 @@ func (db *DB) LoadDataset(dataset turtle.DataSet) error {
 		predicateHash = make([]byte, 4)
 		objectHash    = make([]byte, 4)
 	)
+	b := db.textidx.NewBatch()
 	for _, triple := range dataset.Triples {
+		// add triples to text index
+		if triple.Predicate.String() != "http://www.w3.org/2004/02/skos/core#definition" && triple.Predicate.String() != "http://www.w3.org/2000/01/rdf-schema#label" {
+			sub := strings.Replace(triple.Subject.String(), "_", " ", -1)
+			if err := b.Index(triple.Subject.String(), sub); err != nil && len(triple.Subject.String()) > 0 {
+				return errors.Wrapf(err, "Could not add subject %s to text index (%s)", triple.Subject, triple)
+			}
+			pred := strings.Replace(triple.Predicate.String(), "_", " ", -1)
+			if err := b.Index(triple.Predicate.String(), pred); err != nil && len(triple.Predicate.String()) > 0 {
+				return errors.Wrapf(err, "Could not add predicate %s to text index (%s)", triple.Predicate, triple)
+			}
+			obj := strings.Replace(triple.Object.String(), "_", " ", -1)
+			if err := b.Index(triple.Object.String(), obj); err != nil && len(triple.Object.String()) > 0 {
+				return errors.Wrapf(err, "Could not add object %s to text index (%s)", triple.Object, triple)
+			}
+		}
+
 		if err := db.insertEntityTx(triple.Subject, subjectHash, enttx, pktx); err != nil {
 			return err
 		}
@@ -489,6 +517,11 @@ func (db *DB) LoadDataset(dataset turtle.DataSet) error {
 		if err := db.loadPredicateEntity(triple.Predicate, predicateHash, subjectHash, objectHash, predtx); err != nil {
 			return err
 		}
+	}
+
+	// batch the text index update
+	if err := db.textidx.Batch(b); err != nil {
+		return errors.Wrap(err, "Could not save batch text index")
 	}
 
 	for pred, _ := range db.relationships {
