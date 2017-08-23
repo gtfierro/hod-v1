@@ -3,7 +3,6 @@ package server
 import (
 	"crypto/tls"
 	"encoding/json"
-	"io/ioutil"
 	"net"
 	"net/http"
 	"os"
@@ -149,15 +148,28 @@ func (srv *hodServer) handleQuery(rw http.ResponseWriter, req *http.Request, ps 
 func (srv *hodServer) handleSearch(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
 	defer req.Body.Close()
 
+	var search = struct {
+		Query  string
+		Number int
+	}{}
 	log.Infof("Query from %s", req.RemoteAddr)
-	b, err := ioutil.ReadAll(req.Body)
+	err := json.NewDecoder(req.Body).Decode(&search)
 	if err != nil {
 		log.Error(err)
 		rw.WriteHeader(500)
 		rw.Write([]byte(err.Error()))
 		return
 	}
-	log.Debug(string(b))
+	res, err := srv.db.Search(search.Query, search.Number)
+	encoder := json.NewEncoder(rw)
+	rw.Header().Set("Content-Type", "application/json; charset=utf-8")
+	err = encoder.Encode(res)
+	if err != nil {
+		log.Error(err)
+		rw.WriteHeader(500)
+		rw.Write([]byte(err.Error()))
+		return
+	}
 	return
 }
 
