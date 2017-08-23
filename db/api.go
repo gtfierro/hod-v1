@@ -308,7 +308,7 @@ func (db *DB) Search(q string, n int) ([]string, error) {
 		return res, err
 	}
 	for _, doc := range searchResults.Hits {
-		res = append(res, doc.ID)
+		res = append(res, db.Abbreviate(turtle.ParseURI(doc.ID)))
 	}
 	return res, nil
 }
