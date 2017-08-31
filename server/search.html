@@ -22,7 +22,7 @@
   </head>
   <body>
     <!--Import jQuery before materialize.js-->
-    <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+    <script type="text/javascript" src="static/js/jquery-2.1.1.min.js"></script>
     <script type="text/javascript" src="static/js/materialize.min.js"></script>
     <main>
     <div class="container">
@@ -30,16 +30,38 @@
         <h5 class="col s12 center-align">Schema Search</h3>
       </div>
 
-      <div class="row">
-        <div class="col s12">
-          <form id="queryform" form="queryform" class="col s12">
-            <input type="text" id="searchtext" placeholder="static setpoint"></input>
-          </form>
-        </div>
-        <div class="row">
-          <div id="errortext" class="col s12 card-panel red lighten-2" hidden>
-          <p></p>
+      <form id="queryform" form="queryform" class="col s12">
+          <div class="row">
+            <div class="col s12">
+                <input type="text" id="searchtext" placeholder="static setpoint"></input>
+            </div>
           </div>
+          <div class="row">
+            <div class="col s2">
+                <input type="checkbox" id="uuid" class="filled-in" />
+                <label for="uuid">UUID</label>
+            </div>
+            <div class="col s2">
+                <input type="checkbox" id="uri" class="filled-in" />
+                <label for="uri">URI</label>
+            </div>
+            <div class="col s2">
+                <input type="checkbox" id="room" class="filled-in" />
+                <label for="room">Room</label>
+            </div>
+            <div class="col s2">
+                <input type="checkbox" id="HVACzone" class="filled-in" />
+                <label for="HVACzone">HVAC Zone</label>
+            </div>
+            <div class="col s3">
+                <input type="checkbox" id="Lightingzone" class="filled-in" />
+                <label for="Lightingzone">Lighting Zone</label>
+            </div>
+          </div>
+      </form>
+      <div class="row">
+        <div id="errortext" class="col s12 card-panel red lighten-2" hidden>
+        <p></p>
         </div>
       </div>
       <div class="row">
@@ -71,9 +93,39 @@
                     $("#errortext > p").text("No results");
                 } else {
                     $("#resultstable").show();
+                    //var querystring = "SELECT+%3Fx+WHERE+%7B%0A++++%3Fx+rdf%3Atype%2Frdfs%3AsubClassOf*+"+element+"+.";
+                    var selectvars = "?x"
+                    var whereparams = "";
+                    if ($("#uuid").prop("checked")) {
+                        whereparams += "?x bf:uuid ?uuid .\n"
+                        selectvars += " ?uuid"
+                    }
+                    if ($("#uri").prop("checked")) {
+                        whereparams += "?x bf:uri ?uri .\n"
+                        selectvars += " ?uri"
+                    }
+                    if ($("#room").prop("checked")) {
+                        whereparams += "?x bf:isLocatedIn ?room . \n?room rdf:type brick:Room .\n"
+                        selectvars += " ?room"
+                        console.log("room");
+                    }
+                    if ($("#HVACzone").prop("checked")) {
+                        whereparams += "?x bf:isLocatedIn/bf:isPartOf ?hvaczone .\n ?hvaczone rdf:type brick:HVAC_Zone .\n"
+                        selectvars += " ?hvaczone"
+                    }
+                    if ($("#Lightingzone").prop("checked")) {
+                        whereparams += "?x bf:isLocatedIn/bf:isPartOf ?lightingzone .\n ?lightingzone rdf:type brick:lighting_Zone .\n"
+                        selectvars += " ?lightingzone"
+                    }
+
+
                     data.forEach(function(element) {
+                        var querystring = "SELECT " + selectvars + " WHERE { \n" + whereparams;
+                        querystring += "?x rdf:type/rdfs:subClassOf* "+element+" .\n";
+                        querystring += "};";
                         html += "<tr><td>"
-                        html += "<a href='/query?query=SELECT+%3Fx+WHERE+%7B%0A++++%3Fx+rdf%3Atype%2Frdfs%3AsubClassOf*+"+element+"+.%0A%7D%3B'>"+element+"</a>";
+                        html += "<a href='/query?query="+encodeURIComponent(querystring)+"'>" + element + "</a>";
+                        //html += "<a href='/query?query=SELECT+%3Fx+WHERE+%7B%0A++++%3Fx+rdf%3Atype%2Frdfs%3AsubClassOf*+"+element+"+.%0A%7D%3B'>"+element+"</a>";
                         html += "</td></tr>"
                     });
                     html += "</tbody>";
@@ -100,8 +152,13 @@
           );
 
           // handle querying
-          $("#searchtext").on("input", function(event) {
-            var querytext = $(this).val();
+          //$("#searchtext").on("input", function(event) {
+          //  var querytext = $(this).val();
+          //  submit_query({'Query':querytext, 'Number': 500});
+          //  event.preventDefault();
+          //});
+          $("form :input").change(function() {
+            var querytext = $("#searchtext").val();
             submit_query({'Query':querytext, 'Number': 500});
             event.preventDefault();
           });
