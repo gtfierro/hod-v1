@@ -1,9 +1,9 @@
 package db
 
 import (
-	"fmt"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/gtfierro/hod/config"
 	turtle "github.com/gtfierro/hod/goraptor"
@@ -134,13 +134,17 @@ func TestDBQuery(t *testing.T) {
 			},
 		},
 	} {
-		fmt.Println(test.query)
+		time.Sleep(100 * time.Millisecond)
 		q, e := query.Parse(strings.NewReader(test.query))
 		if e != nil {
 			t.Error(test.query, e)
 			continue
 		}
-		result := db.RunQuery(q)
+		result, err := db.RunQuery(q)
+		if err != nil {
+			t.Error(err)
+			return
+		}
 		if !compareResultMapList(test.results, result.Rows) {
 			t.Errorf("Results for %s had\n %+v\nexpected\n %+v", test.query, result.Rows, test.results)
 			return
@@ -230,13 +234,17 @@ func TestDBQueryBerkeley(t *testing.T) {
 			485,
 		},
 	} {
-		fmt.Println(test.query)
+		time.Sleep(100 * time.Millisecond)
 		q, e := query.Parse(strings.NewReader(test.query))
 		if e != nil {
 			t.Error(test.query, e)
 			continue
 		}
-		result := db.RunQuery(q)
+		result, err := db.RunQuery(q)
+		if err != nil {
+			t.Error(err)
+			return
+		}
 		if result.Count != test.resultCount {
 			t.Errorf("Results for %s had %d expected %d", test.query, result.Count, test.resultCount)
 			return

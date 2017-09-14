@@ -129,7 +129,11 @@ func (ctx *queryContext) filterIfDefined(varname string, values *pointerTree) *p
 }
 
 func (ctx *queryContext) define(varname string, values *pointerTree) {
-	ctx.candidates[varname] = values
+	if oldvalues, found := ctx.candidates[varname]; found {
+		ctx.candidates[varname] = intersectPointerTrees(oldvalues, values)
+	} else {
+		ctx.candidates[varname] = values
+	}
 
 	if !ctx._traverseOrder.has(varname) {
 		ctx._traverseOrder.pushBack(varname)

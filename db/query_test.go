@@ -41,8 +41,8 @@ func BenchmarkExpandTuples(b *testing.B) {
 			q.Where.Filters[idx] = db.expandFilter(filter)
 		}
 		dg := db.sortQueryTerms(q)
-		qp := db.formQueryPlan(dg, q)
-		ctx := db.executeQueryPlan(qp)
+		qp, _ := db.formQueryPlan(dg, q)
+		ctx, _ := db.executeQueryPlan(qp)
 		b.ResetTimer()
 		b.Run(bm.name, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
