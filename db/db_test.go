@@ -33,7 +33,7 @@ func TestDBQuery(t *testing.T) {
 		},
 		{
 			"SELECT ?x WHERE { bldg:room_1 rdf:type ?x . };",
-			[]ResultMap{{"?x": turtle.ParseURI("http://buildsys.org/ontologies/Brick#Room")}},
+			[]ResultMap{{"?x": turtle.ParseURI("https://brickschema.org/schema/1.0.1/Brick#Room")}},
 		},
 		{
 			"SELECT ?x WHERE { bldg:room_1 ?x brick:Room . };",
@@ -46,26 +46,26 @@ func TestDBQuery(t *testing.T) {
 		{
 			"SELECT ?x ?y WHERE { bldg:room_1 ?x ?y . };",
 			[]ResultMap{
-				{"?x": turtle.ParseURI("http://buildsys.org/ontologies/BrickFrame#isPartOf"), "?y": turtle.ParseURI("http://buildsys.org/ontologies/building_example#floor_1")},
-				{"?x": turtle.ParseURI("http://buildsys.org/ontologies/BrickFrame#isPartOf"), "?y": turtle.ParseURI("http://buildsys.org/ontologies/building_example#hvaczone_1")},
-				{"?x": turtle.ParseURI("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"), "?y": turtle.ParseURI("http://buildsys.org/ontologies/Brick#Room")},
+				{"?x": turtle.ParseURI("https://brickschema.org/schema/1.0.1/BrickFrame#isPartOf"), "?y": turtle.ParseURI("http://buildsys.org/ontologies/building_example#floor_1")},
+				{"?x": turtle.ParseURI("https://brickschema.org/schema/1.0.1/BrickFrame#isPartOf"), "?y": turtle.ParseURI("http://buildsys.org/ontologies/building_example#hvaczone_1")},
+				{"?x": turtle.ParseURI("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"), "?y": turtle.ParseURI("https://brickschema.org/schema/1.0.1/Brick#Room")},
 				{"?x": turtle.ParseURI("http://www.w3.org/2000/01/rdf-schema#label"), "?y": turtle.URI{Value: "Room 1"}},
 			},
 		},
 		{
 			"SELECT ?x ?y WHERE { ?r rdf:type brick:Room . ?r ?x ?y . };",
 			[]ResultMap{
-				{"?x": turtle.ParseURI("http://buildsys.org/ontologies/BrickFrame#isPartOf"), "?y": turtle.ParseURI("http://buildsys.org/ontologies/building_example#floor_1")},
-				{"?x": turtle.ParseURI("http://buildsys.org/ontologies/BrickFrame#isPartOf"), "?y": turtle.ParseURI("http://buildsys.org/ontologies/building_example#hvaczone_1")},
-				{"?x": turtle.ParseURI("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"), "?y": turtle.ParseURI("http://buildsys.org/ontologies/Brick#Room")},
+				{"?x": turtle.ParseURI("https://brickschema.org/schema/1.0.1/BrickFrame#isPartOf"), "?y": turtle.ParseURI("http://buildsys.org/ontologies/building_example#floor_1")},
+				{"?x": turtle.ParseURI("https://brickschema.org/schema/1.0.1/BrickFrame#isPartOf"), "?y": turtle.ParseURI("http://buildsys.org/ontologies/building_example#hvaczone_1")},
+				{"?x": turtle.ParseURI("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"), "?y": turtle.ParseURI("https://brickschema.org/schema/1.0.1/Brick#Room")},
 				{"?x": turtle.ParseURI("http://www.w3.org/2000/01/rdf-schema#label"), "?y": turtle.URI{Value: "Room 1"}},
 			},
 		},
 		{
 			"SELECT ?x ?y WHERE { ?r rdf:type brick:Room . ?x ?y ?r . };",
 			[]ResultMap{
-				{"?y": turtle.ParseURI("http://buildsys.org/ontologies/BrickFrame#hasPart"), "?x": turtle.ParseURI("http://buildsys.org/ontologies/building_example#floor_1")},
-				{"?y": turtle.ParseURI("http://buildsys.org/ontologies/BrickFrame#hasPart"), "?x": turtle.ParseURI("http://buildsys.org/ontologies/building_example#hvaczone_1")},
+				{"?y": turtle.ParseURI("https://brickschema.org/schema/1.0.1/BrickFrame#hasPart"), "?x": turtle.ParseURI("http://buildsys.org/ontologies/building_example#floor_1")},
+				{"?y": turtle.ParseURI("https://brickschema.org/schema/1.0.1/BrickFrame#hasPart"), "?x": turtle.ParseURI("http://buildsys.org/ontologies/building_example#hvaczone_1")},
 			},
 		},
 		//		{
@@ -76,7 +76,7 @@ func TestDBQuery(t *testing.T) {
 		//			},
 		//		},
 		{
-			"SELECT ?x WHERE { ?x rdf:type <http://buildsys.org/ontologies/Brick#Room> . };",
+			"SELECT ?x WHERE { ?x rdf:type <https://brickschema.org/schema/1.0.1/Brick#Room> . };",
 			[]ResultMap{{"?x": turtle.ParseURI("http://buildsys.org/ontologies/building_example#room_1")}},
 		},
 		{
@@ -126,11 +126,15 @@ func TestDBQuery(t *testing.T) {
 		{
 			"SELECT ?s ?p WHERE { ?s ?p brick:Zone_Temperature_Sensor . ?s rdfs:subClassOf brick:Zone_Temperature_Sensor . };",
 			[]ResultMap{
-				{"?s": turtle.ParseURI("http://buildsys.org/ontologies/Brick#Average_Zone_Temperature_Sensor"), "?p": turtle.ParseURI("http://www.w3.org/2000/01/rdf-schema#subClassOf")},
-				{"?s": turtle.ParseURI("http://buildsys.org/ontologies/Brick#Coldest_Zone_Temperature_Sensor"), "?p": turtle.ParseURI("http://www.w3.org/2000/01/rdf-schema#subClassOf")},
-				{"?s": turtle.ParseURI("http://buildsys.org/ontologies/Brick#Highest_Zone_Temperature_Sensor"), "?p": turtle.ParseURI("http://www.w3.org/2000/01/rdf-schema#subClassOf")},
-				{"?s": turtle.ParseURI("http://buildsys.org/ontologies/Brick#Lowest_Zone_Temperature_Sensor"), "?p": turtle.ParseURI("http://www.w3.org/2000/01/rdf-schema#subClassOf")},
-				{"?s": turtle.ParseURI("http://buildsys.org/ontologies/Brick#Warmest_Zone_Temperature_Sensor"), "?p": turtle.ParseURI("http://www.w3.org/2000/01/rdf-schema#subClassOf")},
+				{"?s": turtle.ParseURI("https://brickschema.org/schema/1.0.1/Brick#Average_Zone_Temperature_Sensor"), "?p": turtle.ParseURI("http://www.w3.org/2000/01/rdf-schema#subClassOf")},
+				{"?s": turtle.ParseURI("https://brickschema.org/schema/1.0.1/Brick#Coldest_Zone_Temperature_Sensor"), "?p": turtle.ParseURI("http://www.w3.org/2000/01/rdf-schema#subClassOf")},
+				{"?s": turtle.ParseURI("https://brickschema.org/schema/1.0.1/Brick#Highest_Zone_Temperature_Sensor"), "?p": turtle.ParseURI("http://www.w3.org/2000/01/rdf-schema#subClassOf")},
+				{"?s": turtle.ParseURI("https://brickschema.org/schema/1.0.1/Brick#Lowest_Zone_Temperature_Sensor"), "?p": turtle.ParseURI("http://www.w3.org/2000/01/rdf-schema#subClassOf")},
+				{"?s": turtle.ParseURI("https://brickschema.org/schema/1.0.1/Brick#Warmest_Zone_Temperature_Sensor"), "?p": turtle.ParseURI("http://www.w3.org/2000/01/rdf-schema#subClassOf")},
+				{"?s": turtle.ParseURI("https://brickschema.org/schema/1.0.1/Brick#VAV_Zone_Temperature_Sensor"), "?p": turtle.ParseURI("http://www.w3.org/2000/01/rdf-schema#subClassOf")},
+				{"?s": turtle.ParseURI("https://brickschema.org/schema/1.0.1/Brick#AHU_Zone_Temperature_Sensor"), "?p": turtle.ParseURI("http://www.w3.org/2000/01/rdf-schema#subClassOf")},
+				{"?s": turtle.ParseURI("https://brickschema.org/schema/1.0.1/Brick#FCU_Zone_Temperature_Sensor"), "?p": turtle.ParseURI("http://www.w3.org/2000/01/rdf-schema#subClassOf")},
+				{"?s": turtle.ParseURI("https://brickschema.org/schema/1.0.1/Brick#Zone_Air_Temperature_Sensor"), "?p": turtle.ParseURI("http://www.w3.org/2000/01/rdf-schema#subClassOf")},
 			},
 		},
 	} {
@@ -232,6 +236,14 @@ func TestDBQueryBerkeley(t *testing.T) {
 		{
 			"COUNT ?vav ?x ?y WHERE { ?vav rdf:type brick:VAV . ?vav bf:hasPoint ?x . ?vav bf:isFedBy ?y . };",
 			485,
+		},
+		{
+			"COUNT ?ahu WHERE { ?ahu rdf:type brick:AHU . ?ahu bf:feeds soda_hall:vav_C711 . };",
+			1,
+		},
+		{
+			"COUNT ?ahu WHERE { ?ahu bf:feeds soda_hall:vav_C711 . ?ahu rdf:type brick:AHU . };",
+			1,
 		},
 	} {
 		time.Sleep(100 * time.Millisecond)
