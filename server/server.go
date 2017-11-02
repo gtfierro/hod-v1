@@ -58,6 +58,7 @@ func StartHodServer(db *hod.DB, cfg *config.Config) {
 	r.GET("/help", server.serveHelp)
 	r.GET("/plan", server.servePlanner)
 	r.GET("/explore", server.serveExplorer)
+	r.GET("/explore2", server.serveExplorer2)
 	r.GET("/search", server.serveSearch)
 	server.router = r
 
@@ -195,6 +196,11 @@ func (srv *hodServer) serveExplorer(rw http.ResponseWriter, req *http.Request, p
 	log.Infof("Serve explorer from %s", req.RemoteAddr)
 	defer req.Body.Close()
 	http.ServeFile(rw, req, srv.staticpath+"/explore.html")
+}
+func (srv *hodServer) serveExplorer2(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
+	log.Infof("Serve explorer from %s", req.RemoteAddr)
+	defer req.Body.Close()
+	http.ServeFile(rw, req, srv.staticpath+"/explore2.html")
 }
 
 func (srv *hodServer) serveSearch(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
