@@ -486,20 +486,20 @@ func (db *DB) LoadDataset(dataset turtle.DataSet) error {
 	)
 	b := db.textidx.NewBatch()
 	for _, triple := range dataset.Triples {
-		// add triples to text index
-		if triple.Predicate.String() != "http://www.w3.org/2004/02/skos/core#definition" && triple.Predicate.String() != "http://www.w3.org/2000/01/rdf-schema#label" {
+		// add classes to the text idx
+		if triple.Predicate.String() == "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" && triple.Object.String() == "http://www.w3.org/2002/07/owl#Class" {
 			sub := strings.Replace(triple.Subject.String(), "_", " ", -1)
 			if err := b.Index(triple.Subject.String(), sub); err != nil && len(triple.Subject.String()) > 0 {
 				return errors.Wrapf(err, "Could not add subject %s to text index (%s)", triple.Subject, triple)
 			}
-			pred := strings.Replace(triple.Predicate.String(), "_", " ", -1)
-			if err := b.Index(triple.Predicate.String(), pred); err != nil && len(triple.Predicate.String()) > 0 {
-				return errors.Wrapf(err, "Could not add predicate %s to text index (%s)", triple.Predicate, triple)
-			}
-			obj := strings.Replace(triple.Object.String(), "_", " ", -1)
-			if err := b.Index(triple.Object.String(), obj); err != nil && len(triple.Object.String()) > 0 {
-				return errors.Wrapf(err, "Could not add object %s to text index (%s)", triple.Object, triple)
-			}
+			//			pred := strings.Replace(triple.Predicate.String(), "_", " ", -1)
+			//			if err := b.Index(triple.Predicate.String(), pred); err != nil && len(triple.Predicate.String()) > 0 {
+			//				return errors.Wrapf(err, "Could not add predicate %s to text index (%s)", triple.Predicate, triple)
+			//			}
+			//			obj := strings.Replace(triple.Object.String(), "_", " ", -1)
+			//			if err := b.Index(triple.Object.String(), obj); err != nil && len(triple.Object.String()) > 0 {
+			//				return errors.Wrapf(err, "Could not add object %s to text index (%s)", triple.Object, triple)
+			//			}
 		}
 
 		if err := db.insertEntityTx(triple.Subject, subjectHash, enttx, pktx); err != nil {
