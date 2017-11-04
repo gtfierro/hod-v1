@@ -102,22 +102,24 @@
         });
 
         var render_node = function(node) {
-            var nodeQuery = "SELECT ?pred ?obj WHERE { <" + node + "> ?pred ?obj . };";
+            var nodeQuery = "SELECT ?pred ?obj ?class WHERE {?obj rdf:type ?class . <" + node + "> ?pred ?obj . };";
             var html = "<div class='row'><div class='col s12 m12'><div class='card darken-1'>";
             $.post("/api/query", nodeQuery, function(data) {
                 html += "<div class='card-content'><span class='card-title'>" + node + "</span>";
-                html += "<table><thead><tr><th>Attribute</th><th>Value</th></thead><tbody>";
+                html += "<table><thead><tr><th>Attribute</th><th>Value</th><th>Class</th></thead><tbody>";
                 var instances = "";
                 data.Rows.forEach(function(row) {
                     console.log(row);
                     var pred = row['?pred'].Value;
                     var full_object = row['?obj'].Namespace + '#' + row['?obj'].Value;
                     var object = row['?obj'].Value;
+                    var klass = row['?class'].Value;
                     html += "<tr><td><b>"+pred+"</b></td>";
                     if (pred == "type" && object == "Class") {
                         instances = "/explore2?class="+encodeURIComponent("brick:"+node);
                     }
                     html += "<td><a href='/explore2?node=" + encodeURIComponent(full_object)+"'>" + object + "</a></td>";
+                    html += "<td><a href='/explore2?class="+ encodeURIComponent("brick:"+klass) + "'>" + klass + "</a></td>";
                     html += "</tr>";
 
                     //    html += "<td><a href='/explore2?class=" + encodeURIComponent("brick:"+object) + "'>" + object + "</a></td>";
