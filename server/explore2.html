@@ -105,32 +105,142 @@
             var nodeQuery = "SELECT ?pred ?obj ?class WHERE {?obj rdf:type ?class . <" + node + "> ?pred ?obj . };";
             var html = "<div class='row'><div class='col s12 m12'><div class='card darken-1'>";
             $.post("/api/query", nodeQuery, function(data) {
+                console.log(data);
                 html += "<div class='card-content'><span class='card-title'>" + node + "</span>";
-                html += "<table><thead><tr><th>Attribute</th><th>Value</th><th>Class</th></thead><tbody>";
-                var instances = "";
+                /*
+                 * TODO: We need to have the "summarize" in here because its possible to have an instance with a LOT of out-edges (e.g. an AHU connected to all of its VAVs).
+                 * Here, loop through all of the rows and group objects by predicate. Then we can render a sliding window that implements the "..." David was talking about.
+                 * Will need some materializecss magic here
+                 */
+                var groupedEdges = {};
                 data.Rows.forEach(function(row) {
-                    console.log(row);
+                    var pred = row['?pred'].Value;
+                    if (groupedEdges[pred] == null) {
+                        groupedEdges[pred] = [];
+                    }
+                    groupedEdges[pred].push(row);
+                });
+                var compound = [];
+                var simple = [];
+                for (var pred in groupedEdges) {
+                    if (groupedEdges[pred].length > 3) {
+                        compound.push(pred);
+                    } else {
+                        simple.push(pred);
+                    }
+                }
+
+                html += "<ul class='collection collapsible' data-collapsible='accordion'>";
+                simple.forEach(function(pred) {
+                    var row = groupedEdges[pred][0];
                     var pred = row['?pred'].Value;
                     var full_object = row['?obj'].Namespace + '#' + row['?obj'].Value;
                     var object = row['?obj'].Value;
                     var klass = row['?class'].Value;
-                    html += "<tr><td><b>"+pred+"</b></td>";
-                    if (pred == "type" && object == "Class") {
-                        instances = "/explore2?class="+encodeURIComponent("brick:"+node);
-                    }
-                    html += "<td><a href='/explore2?node=" + encodeURIComponent(full_object)+"'>" + object + "</a></td>";
-                    html += "<td><a href='/explore2?class="+ encodeURIComponent("brick:"+klass) + "'>" + klass + "</a></td>";
-                    html += "</tr>";
-
-                    //    html += "<td><a href='/explore2?class=" + encodeURIComponent("brick:"+object) + "'>" + object + "</a></td>";
+                    html += "<li class='collection-item'>";
+                    html += "<div class='row'>";
+                        html += "<div class='col s4'><b>" + pred + "</b></div>";
+                        html += "<div class='col s4'>";
+                            if (klass == "Class") {
+                                html += "<a href='/explore2?class=" + encodeURIComponent("brick:"+object)+"'>" + object + "</a>";
+                            } else {
+                                html += "<a href='/explore2?node=" + encodeURIComponent(full_object)+"'>" + object + "</a>";
+                            }
+                        html += "</div>";
+                        html += "<div class='col s4'>";
+                            html += "<a href='/explore2?class="+ encodeURIComponent("brick:"+klass) + "'>" + klass + "</a>";
+                        html += "</div>";
+                    html += "</div>";
+                    html += "</li>";
                 });
-                html += "</tbody></table>";
-                if (instances != "") {
-                    //html += "<a class='waves-effect waves-light btn' href='"instances+"'>View instances of this class</a>";
-                    html += '<a class="waves-effect waves-light btn" href="'+instances+'">Instances of this class</a>';
-                }
+
+                compound.forEach(function(pred) {
+                    html += "<li>";
+                        html += "<div class='collapsible-header'><b>"+pred+"</b> (click to expand) </div>";
+                        html += "<div class='collapsible-body'>";
+                        html += "<ul class='collection'>";
+                        groupedEdges[pred].forEach(function(row) {
+                            var pred = row['?pred'].Value;
+                            var full_object = row['?obj'].Namespace + '#' + row['?obj'].Value;
+                            var object = row['?obj'].Value;
+                            var klass = row['?class'].Value;
+                            html += "<li class='collection-item grey lighten-4'>";
+                            html += "<div class='row'>";
+                                html += "<div class='col s4'><b>" + pred + "</b></div>";
+                                html += "<div class='col s4'>";
+                                    html += "<a href='/explore2?node=" + encodeURIComponent(full_object)+"'>" + object + "</a>";
+                                html += "</div>";
+                                html += "<div class='col s4'>";
+                                    html += "<a href='/explore2?class="+ encodeURIComponent("brick:"+klass) + "'>" + klass + "</a>";
+                                html += "</div>";
+                            html += "</div>";
+                            html += "</li>";
+                        });
+                        html += "</ul>";
+                        html += "</div>";
+                    html += "</li>";
+                });
+
+                //for (var pred in groupedEdges) {
+                //    var collapse = false;
+                //    html += "<li>";
+                //    if (groupedEdges[pred].length > 3) {
+                //        collapse = true;
+                //        html += "<div class='collapsible-header'><b>"+pred+"</b></div>";
+                //        html += "<div class='collapsible-body'>";
+                //        html += "<ul class='collection'>";
+                //    }
+                //    groupedEdges[pred].forEach(function(row) {
+                //        var pred = row['?pred'].Value;
+                //        var full_object = row['?obj'].Namespace + '#' + row['?obj'].Value;
+                //        var object = row['?obj'].Value;
+                //        var klass = row['?class'].Value;
+                //        html += "<li class='collection-item'>";
+                //        html += "<div class='row'>";
+                //            html += "<div class='col s4'><b>" + pred + "</b></div>";
+                //            html += "<div class='col s4'>";
+                //                html += "<a href='/explore2?node=" + encodeURIComponent(full_object)+"'>" + object + "</a>";
+                //            html += "</div>";
+                //            html += "<div class='col s4'>";
+                //                html += "<a href='/explore2?class="+ encodeURIComponent("brick:"+klass) + "'>" + klass + "</a>";
+                //            html += "</div>";
+                //        html += "</div>";
+                //        html += "</li>";
+                //    });
+                //    if (collapse) html += "</ul></div>";
+                //    html += "</li>";
+                //}
+                html += "</ul>";
+
+
+
+                //html += "<table><thead><tr><th>Attribute</th><th>Value</th><th>Class</th></thead><tbody>";
+                //var instances = "";
+                //data.Rows.forEach(function(row) {
+                //    console.log(row);
+                //    var pred = row['?pred'].Value;
+                //    var full_object = row['?obj'].Namespace + '#' + row['?obj'].Value;
+                //    var object = row['?obj'].Value;
+                //    var klass = row['?class'].Value;
+                //    html += "<tr><td><b>"+pred+"</b></td>";
+                //    if (pred == "type" && object == "Class") {
+                //        instances = "/explore2?class="+encodeURIComponent("brick:"+node);
+                //    }
+                //    html += "<td><a href='/explore2?node=" + encodeURIComponent(full_object)+"'>" + object + "</a></td>";
+                //    html += "<td><a href='/explore2?class="+ encodeURIComponent("brick:"+klass) + "'>" + klass + "</a></td>";
+                //    html += "</tr>";
+
+                //});
+                //html += "</tbody></table>";
+                //if (instances != "") {
+                //    html += '<a class="waves-effect waves-light btn" href="'+instances+'">Instances of this class</a>';
+                //}
                 html += "</div></div></div></div>";
                 $("#noderender").html(html);
+                $('.collapsible').collapsible({
+                    accordian: true,
+                    onOpen: function(e) { console.log("open", e); },
+                });
                 
                 console.log(data);
             });
