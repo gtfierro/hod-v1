@@ -9,3 +9,6 @@ _hoddb
 
 # Lets Encrypt certs
 certs
+
+# BW2 logs
+.bw2bind.log
