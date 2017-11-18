@@ -16,12 +16,12 @@ var EMPTYROW = [32]byte{}
 
 var ROWPOOL = sync.Pool{
 	New: func() interface{} {
-		return Row{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+		return &Row{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 	},
 }
 
-func NewRow() Row {
-	return ROWPOOL.Get().(Row)
+func NewRow() *Row {
+	return ROWPOOL.Get().(*Row)
 }
 
 func (row *Row) release() {
@@ -29,8 +29,8 @@ func (row *Row) release() {
 	ROWPOOL.Put(row)
 }
 
-func (row Row) copy() Row {
-	gr := ROWPOOL.Get().(Row)
+func (row *Row) copy() *Row {
+	gr := ROWPOOL.Get().(*Row)
 	copy(gr[:], row[:])
 	return gr
 }
@@ -45,7 +45,7 @@ func (row Row) valueAt(pos int) Key {
 	return k
 }
 
-func (row Row) swap(pos1, pos2 int) Row {
+func (row *Row) swap(pos1, pos2 int) *Row {
 	if pos1 == pos2 {
 		return row
 	}
@@ -55,10 +55,10 @@ func (row Row) swap(pos1, pos2 int) Row {
 	return newRow
 }
 
-func (row Row) Less(_than btree.Item, ctx interface{}) bool {
+func (row *Row) Less(_than btree.Item, ctx interface{}) bool {
 
-	than := _than.(Row)
-	return bytes.Compare(row[:], than[:]) <= 0
+	than := _than.(*Row)
+	return bytes.Compare(row[:], than[:]) < 0
 }
 
 // now to fix the join structures!
@@ -71,7 +71,7 @@ type Joiner struct {
 }
 
 func main() {
-	var rows = []Row{
+	var rows = []*Row{
 		{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 		{1, 1, 1, 1, 0, 0, 0, 0, 4, 4, 4, 4, 0, 0, 0, 0, 4, 4, 4, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 		{1, 1, 1, 1, 2, 2, 2, 2, 4, 4, 4, 4, 0, 0, 0, 0, 4, 4, 4, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
@@ -86,17 +86,33 @@ func main() {
 	}
 
 	fmt.Println("Test iter")
-	rowtree.iterRowsWithValue(0, Key{2, 2, 2, 2}, func(r Row) {
+	rowtree.iterRowsWithValue(0, Key{2, 2, 2, 2}, func(r *Row) {
 		fmt.Printf("  %+v\n", r)
 	})
 	fmt.Println("--")
-	rowtree.iterRowsWithValue(3, Key{6, 6, 6, 6}, func(r Row) {
+	rowtree.iterRowsWithValue(3, Key{6, 6, 6, 6}, func(r *Row) {
 		fmt.Printf("  %+v\n", r)
 	})
 
 	fmt.Println("Test Remove")
 	rowtree.deleteRowsWithValue(3, Key{6, 6, 6, 6})
-	rowtree.iterRowsWithValue(0, Key{2, 2, 2, 2}, func(r Row) {
+	rowtree.iterRowsWithValue(0, Key{2, 2, 2, 2}, func(r *Row) {
 		fmt.Printf("  %+v\n", r)
+	})
+
+	fmt.Println("Test Augment")
+	rowtree.augmentByValue(0, Key{0, 0, 0, 0}, 1, Key{1, 1, 1, 1})
+	rowtree.iterRowsWithValue(0, Key{0, 0, 0, 0}, func(r *Row) {
+		fmt.Printf("  %+v\n", r)
+	})
+
+	fmt.Println("Test Augment2")
+	rowtree.augmentByValues(1, Key{1, 1, 1, 1}, 6, []Key{{4, 5, 6, 7}, {1, 2, 3, 4}, {2, 4, 6, 8}})
+	rowtree.iterRowsWithValue(1, Key{1, 1, 1, 1}, func(r *Row) {
+		fmt.Printf("  %+v\n", r)
+	})
+	fmt.Println("all")
+	rowtree.iterAll(func(r *Row) {
+		fmt.Printf(" %+v\n", r)
 	})
 }
