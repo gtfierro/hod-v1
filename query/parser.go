@@ -9,8 +9,9 @@ import (
 )
 
 type Query struct {
-	Select SelectClause
-	Where  WhereClause
+	Select    SelectClause
+	Where     WhereClause
+	Variables []string
 }
 
 // generate a unique hash for this query.
@@ -279,6 +280,24 @@ func Parse(r io.Reader) (Query, error) {
 	}
 	if len(l.orclauses) > 0 {
 		q.Where.Ors = l.orclauses
+	}
+
+	vars := make(map[string]int)
+	for _, triple := range q.Where.Filters {
+		if triple.Subject.IsVariable() {
+			vars[triple.Subject.String()] = 1
+		}
+		if triple.Object.IsVariable() {
+			vars[triple.Object.String()] = 1
+		}
+		for _, path := range triple.Path {
+			if path.Predicate.IsVariable() {
+				vars[path.Predicate.String()] = 1
+			}
+		}
+	}
+	for vname := range vars {
+		q.Variables = append(q.Variables, vname)
 	}
 
 	return q, nil
