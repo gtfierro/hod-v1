@@ -11,7 +11,11 @@ type Key [4]byte
 
 func (k Key) Less(than btree.Item, ctx interface{}) bool {
 	t := than.(Key)
-	return binary.LittleEndian.Uint32(k[:]) < binary.LittleEndian.Uint32(t[:])
+	return k.LessThan(t)
+}
+
+func (k Key) LessThan(other Key) bool {
+	return binary.LittleEndian.Uint32(k[:]) < binary.LittleEndian.Uint32(other[:])
 }
 
 func (k *Key) FromSlice(src []byte) {

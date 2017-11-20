@@ -49,12 +49,15 @@ func (db *DB) getQueryResults(q query.Query) ([]*ResultRow, error) {
 	}
 
 	runStart := time.Now()
-	ctx, err := db.executeQueryPlan(qp)
+	ctx, ctx2, err := db.executeQueryPlan(qp)
 	if err != nil {
 		return nil, err
 	}
+	since := time.Since(runStart)
+	// ctx2 expand
+	ctx2.dumpRows()
 	if db.showQueryLatencies {
-		log.Infof("Ran query in %s", time.Since(runStart))
+		log.Infof("Ran query in %s", since)
 	}
 
 	runStart = time.Now()
@@ -63,23 +66,25 @@ func (db *DB) getQueryResults(q query.Query) ([]*ResultRow, error) {
 		log.Infof("Expanded tuples in %s", time.Since(runStart))
 		log.Infof("Has %d results", len(results))
 	}
+
 	return results, err
 }
 
-func (db *DB) executeQueryPlan(plan *queryPlan) (*queryContext, error) {
+func (db *DB) executeQueryPlan(plan *queryPlan) (*queryContext, *queryContext2, error) {
 	ctx := newQueryContext(plan, db)
+	ctx2 := newQueryContext2(plan, db)
 
 	for _, op := range ctx.operations {
 		now := time.Now()
-		err := op.run(ctx)
+		err := op.run(ctx, ctx2)
 		if db.showQueryPlanLatencies {
 			fmt.Println(op, time.Since(now))
 		}
 		if err != nil {
-			return ctx, err
+			return ctx, ctx2, err
 		}
 	}
-	return ctx, nil
+	return ctx, ctx2, nil
 }
 
 func (db *DB) sortQueryTerms(q query.Query) *dependencyGraph {
