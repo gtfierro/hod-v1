@@ -324,7 +324,6 @@ func (rso *resolveSubjectObjectFromPred) run(ctx *queryContext, ctx2 *queryConte
 	ctx2.addValuePairs(subjectVar, objectVar, subsobjs)
 	ctx2.markJoined(subjectVar)
 	ctx2.markJoined(objectVar)
-	log.Debug(rso.String(), len(subsobjs))
 	return nil
 }
 
@@ -350,9 +349,6 @@ func (op *resolveSubjectPredFromObject) GetTerm() *queryTerm {
 // by anything we've already resolved.
 // If we have *not* resolved the predicate, then this is easy: just graph traverse from the object
 func (op *resolveSubjectPredFromObject) run(ctx *queryContext, ctx2 *queryContext2) error {
-	//	var (
-	//		tree *pointerTree
-	//	)
 	subjectVar := op.term.Subject.String()
 	predicateVar := op.term.Path[0].Predicate.String()
 
@@ -364,7 +360,6 @@ func (op *resolveSubjectPredFromObject) run(ctx *queryContext, ctx2 *queryContex
 		return nil
 	}
 
-	//candidateSubjects := newPointerTree(BTREE_DEGREE)
 	// get all predicates from it
 	predicates := &keyTree{ctx.db.getPredicatesFromObject(object)}
 
@@ -391,30 +386,7 @@ func (op *resolveSubjectPredFromObject) run(ctx *queryContext, ctx2 *queryContex
 		})
 	})
 
-	// TODO: these need to join onto existing values
 	ctx2.joinValuePairs(subjectVar, predicateVar, sub_pred_pairs)
-
-	// for each subject reachable from each predicate, add the predicate as aa
-	// dependent of the subject
-	//predmax := predicates.Max()
-	//iterpred := func(predicate *Entity) bool {
-	//	path := []query.PathPattern{{Predicate: ctx.db.MustGetURI(predicate.PK), Pattern: query.PATTERN_SINGLE}}
-	//	subjects := hashTreeToPointerTree(ctx.db, ctx.db.getSubjectFromPredObject(object.PK, path))
-	//	max := subjects.Max()
-	//	iter := func(ent *Entity) bool {
-	//		tree = ctx.getLinkedValues(predicateVar, ent)
-	//		tree.Add(predicate)
-	//		candidateSubjects.Add(ent) // subject
-	//		ctx.addReachable(ent, subjectVar, tree, predicateVar)
-	//		return ent != max
-	//	}
-	//	subjects.Iter(iter)
-	//	return predicate != predmax
-	//}
-	//predicates.Iter(iterpred)
-
-	//// need to merge w/ the subjects we've already gotten
-	//ctx.addOrFilterVariable(subjectVar, candidateSubjects)
 
 	return nil
 }
@@ -436,9 +408,6 @@ func (op *resolvePredObjectFromSubject) GetTerm() *queryTerm {
 }
 
 func (op *resolvePredObjectFromSubject) run(ctx *queryContext, ctx2 *queryContext2) error {
-	var (
-		tree *pointerTree
-	)
 	objectVar := op.term.Object.String()
 	predicateVar := op.term.Path[0].Predicate.String()
 
@@ -449,28 +418,34 @@ func (op *resolvePredObjectFromSubject) run(ctx *queryContext, ctx2 *queryContex
 	} else if err == leveldb.ErrNotFound {
 		return nil
 	}
-	candidateObjects := newPointerTree(BTREE_DEGREE)
-	// get all predicates from it
-	predicates := hashTreeToPointerTree(ctx.db, ctx.db.getPredicatesFromSubject(subject))
-	predmax := predicates.Max()
-	iterpred := func(predicate *Entity) bool {
-		path := []query.PathPattern{{Predicate: ctx.db.MustGetURI(predicate.PK), Pattern: query.PATTERN_SINGLE}}
-		objects := hashTreeToPointerTree(ctx.db, ctx.db.getObjectFromSubjectPred(subject.PK, path))
-		max := objects.Max()
-		iter := func(ent *Entity) bool {
-			tree = ctx.getLinkedValues(predicateVar, ent)
-			tree.Add(predicate)
-			candidateObjects.Add(ent) // object
-			ctx.addReachable(ent, objectVar, tree, predicateVar)
-			return ent != max
-		}
-		objects.Iter(iter)
-		return predicate != predmax
-	}
-	predicates.Iter(iterpred)
 
-	// need to merge w/ the objects we've already gotten
-	ctx.addOrFilterVariable(objectVar, candidateObjects)
+	// get all predicates from it
+	predicates := &keyTree{ctx.db.getPredicatesFromSubject(subject)}
+
+	// TODO: augment the rows with this object with all [pred, subject] pairs, provided
+	// that they
+	var pred_obj_pairs [][]Key
+	predicates.Iter(func(predicate Key) {
+		if !ctx2.validValue(predicateVar, predicate) {
+			return
+		}
+		path := []query.PathPattern{{Predicate: ctx.db.MustGetURI(predicate), Pattern: query.PATTERN_SINGLE}}
+		objects := ctx.db.getObjectFromSubjectPred(subject.PK, path)
+
+		max := objects.Max()
+		// TODO: this can be a key tree?
+		objects.Ascend(func(_object btree.Item) bool {
+			object := _object.(Key)
+			if !ctx2.validValue(objectVar, object) {
+				return object != max
+			}
+			pred_obj_pairs = append(pred_obj_pairs, []Key{predicate, object})
+
+			return object != max
+		})
+	})
+
+	ctx2.joinValuePairs(predicateVar, objectVar, pred_obj_pairs)
 
 	return nil
 }
