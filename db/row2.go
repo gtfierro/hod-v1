@@ -10,6 +10,7 @@ var emptyHashTree = newKeyTree(BTREE_DEGREE)
 type queryContext2 struct {
 	// maps variable name to a position in a row
 	variablePosition map[string]int
+	selectVars       []string
 
 	// variable definitions
 	definitions map[string]*keyTree
@@ -32,6 +33,7 @@ func newQueryContext2(plan *queryPlan, db *DB) *queryContext2 {
 	return &queryContext2{
 		variablePosition: variablePosition,
 		definitions:      definitions,
+		selectVars:       plan.selectVars,
 		rows:             NewRowTree(),
 		db:               db,
 	}
@@ -138,8 +140,8 @@ func (ctx *queryContext2) restrictToResolved(varname string, values *keyTree) {
 // want to be able to copy those rows and add new values to them (and remove the old rows)
 // want ot be able to remove rows that have a given value in a given position
 
-func (ctx *queryContext2) populateValues(sourceVarname string, sourceValue Key, targetVarname string, targetValues *keyTree) {
-	targetIdx := ctx.variablePosition[targetVarname]
+func (ctx *queryContext2) populateValues(sourceVarname string, sourceValue Key, targetVarname string, addValues *keyTree) {
+	addPos := ctx.variablePosition[targetVarname]
 	sourceIdx := ctx.variablePosition[sourceVarname]
 
 	if !ctx.hasJoined(sourceVarname) {
@@ -148,7 +150,25 @@ func (ctx *queryContext2) populateValues(sourceVarname string, sourceValue Key, 
 		ctx.rows.Add(row)
 	}
 
-	ctx.rows.augmentByValues(sourceIdx, sourceValue, targetIdx, targetValues)
+	var toAdd []*Row
+	var toRemove []*Row
+	ctx.rows.iterRowsWithValue(sourceIdx, sourceValue, func(r *Row) {
+		addValues.Iter(func(addValue Key) {
+			newRow := r.copy()
+			newRow.addValue(addPos, addValue)
+			ctx.addDefinition(targetVarname, addValue)
+			toAdd = append(toAdd, newRow)
+		})
+		toRemove = append(toRemove, r)
+	})
+
+	for _, row := range toRemove {
+		ctx.rows.tree.Delete(row)
+		row.release()
+	}
+	for _, row := range toAdd {
+		ctx.rows.Add(row)
+	}
 }
 
 func (ctx *queryContext2) joinValuePairs(targetVarname1, targetVarname2 string, targetValues [][]Key) {
@@ -201,6 +221,8 @@ func (ctx *queryContext2) addValuePairs(sourceVarname, targetVarname string, pai
 		log.Debug("adding", sourceVarname, ctx.db.MustGetURI(pair[0]), targetVarname, ctx.db.MustGetURI(pair[1]))
 		row.addValue(sourceIdx, pair[0])
 		row.addValue(targetIdx, pair[1])
+		ctx.addDefinition(sourceVarname, pair[0])
+		ctx.addDefinition(targetVarname, pair[1])
 		ctx.rows.Add(row)
 	}
 }
@@ -221,4 +243,15 @@ func (ctx *queryContext2) dumpRow(row *Row) {
 	}
 	s += "]"
 	fmt.Println(s)
+}
+
+func (ctx *queryContext2) getResults() (results []*ResultRow) {
+	ctx.rows.iterAll(func(row *Row) {
+		resultrow := getResultRow(len(ctx.selectVars))
+		for idx, varname := range ctx.selectVars {
+			resultrow.row[idx] = ctx.db.MustGetURI(row.valueAt(ctx.variablePosition[varname]))
+		}
+		results = append(results, resultrow)
+	})
+	return
 }

@@ -49,19 +49,19 @@ func (db *DB) getQueryResults(q query.Query) ([]*ResultRow, error) {
 	}
 
 	runStart := time.Now()
-	ctx, ctx2, err := db.executeQueryPlan(qp)
+	_, ctx2, err := db.executeQueryPlan(qp)
 	if err != nil {
 		return nil, err
 	}
 	since := time.Since(runStart)
 	// ctx2 expand
-	ctx2.dumpRows()
+	//ctx2.dumpRows()
 	if db.showQueryLatencies {
 		log.Infof("Ran query in %s", since)
 	}
 
 	runStart = time.Now()
-	results := ctx.expandTuples()
+	results := ctx2.getResults()
 	if db.showQueryLatencies {
 		log.Infof("Expanded tuples in %s", time.Since(runStart))
 		log.Infof("Has %d results", len(results))
