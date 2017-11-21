@@ -54,6 +54,13 @@ func (ctx *queryContext2) hasJoined(varname string) bool {
 	return false
 }
 
+func (ctx *queryContext2) validValue(varname string, value Key) bool {
+	if tree, found := ctx.definitions[varname]; found {
+		return tree.Has(value)
+	}
+	return true
+}
+
 func (ctx *queryContext2) markJoined(varname string) {
 	for _, vname := range ctx.joined {
 		if vname == varname {
@@ -144,16 +151,74 @@ func (ctx *queryContext2) populateValues(sourceVarname string, sourceValue Key, 
 	ctx.rows.augmentByValues(sourceIdx, sourceValue, targetIdx, targetValues)
 }
 
+func (ctx *queryContext2) joinValuePairs(targetVarname1, targetVarname2 string, targetValues [][]Key) {
+	targetIdx1 := ctx.variablePosition[targetVarname1]
+	targetIdx2 := ctx.variablePosition[targetVarname2]
+
+	var joinKeyPos int
+	var otherKeyPos int
+	var joinPairIdx int
+	var otherPairIdx int
+	if ctx.hasJoined(targetVarname1) {
+		joinKeyPos = targetIdx1
+		otherKeyPos = targetIdx2
+		joinPairIdx = 0
+		otherPairIdx = 1
+	} else if ctx.hasJoined(targetVarname2) {
+		joinKeyPos = targetIdx2
+		otherKeyPos = targetIdx1
+		joinPairIdx = 1
+		otherPairIdx = 0
+	} else {
+		ctx.addValuePairs(targetVarname1, targetVarname2, targetValues)
+		return
+	}
+
+	var toAdd []*Row
+	var toRemove []*Row
+	for _, pair := range targetValues {
+		ctx.rows.iterRowsWithValue(joinKeyPos, pair[joinPairIdx], func(r *Row) {
+			newRow := r.copy()
+			newRow.addValue(otherKeyPos, pair[otherPairIdx])
+			toAdd = append(toAdd, newRow)
+			toRemove = append(toRemove, r)
+		})
+	}
+	for _, row := range toRemove {
+		ctx.rows.tree.Delete(row)
+		row.release()
+	}
+	for _, row := range toAdd {
+		ctx.rows.Add(row)
+	}
+}
+
+func (ctx *queryContext2) addValuePairs(sourceVarname, targetVarname string, pairs [][]Key) {
+	targetIdx := ctx.variablePosition[targetVarname]
+	sourceIdx := ctx.variablePosition[sourceVarname]
+	for _, pair := range pairs {
+		row := NewRow()
+		log.Debug("adding", sourceVarname, ctx.db.MustGetURI(pair[0]), targetVarname, ctx.db.MustGetURI(pair[1]))
+		row.addValue(sourceIdx, pair[0])
+		row.addValue(targetIdx, pair[1])
+		ctx.rows.Add(row)
+	}
+}
+
 func (ctx *queryContext2) dumpRows() {
 	ctx.rows.iterAll(func(row *Row) {
-		s := "["
-		for varName, pos := range ctx.variablePosition {
-			val := row.valueAt(pos)
-			if val != emptyKey {
-				s += varName + "=" + ctx.db.MustGetURI(val).String() + ", "
-			}
-		}
-		s += "]"
-		fmt.Println(s)
+		ctx.dumpRow(row)
 	})
+}
+
+func (ctx *queryContext2) dumpRow(row *Row) {
+	s := "["
+	for varName, pos := range ctx.variablePosition {
+		val := row.valueAt(pos)
+		if val != emptyKey {
+			s += varName + "=" + ctx.db.MustGetURI(val).String() + ", "
+		}
+	}
+	s += "]"
+	fmt.Println(s)
 }

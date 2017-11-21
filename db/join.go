@@ -235,6 +235,27 @@ func (tree *RowTree) augmentByValues(pos int, value Key, addPos int, addValues *
 	}
 }
 
+func (tree *RowTree) augmentByValuePairs(pos int, value Key, addPos1, addPos2 int, addValues [][]Key) {
+	var toAdd []*Row
+	var toRemove []*Row
+	tree.iterRowsWithValue(pos, value, func(r *Row) {
+		for _, pair := range addValues {
+			newRow := r.copy()
+			newRow.addValue(addPos1, pair[0])
+			newRow.addValue(addPos2, pair[1])
+			toAdd = append(toAdd, newRow)
+		}
+		toRemove = append(toRemove, r)
+	})
+
+	for _, row := range toRemove {
+		tree.tree.Delete(row)
+		row.release()
+	}
+	for _, row := range toAdd {
+		tree.Add(row)
+	}
+}
 func (tree *RowTree) iterAll(f func(row *Row)) {
 	max := tree.tree.Max()
 	tree.tree.Ascend(func(_row btree.Item) bool {

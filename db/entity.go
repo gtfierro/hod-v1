@@ -3,6 +3,7 @@ package db
 
 import (
 	"encoding/binary"
+	"fmt"
 
 	"github.com/mitghi/btree"
 )

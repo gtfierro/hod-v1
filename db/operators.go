@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/gtfierro/hod/query"
+	"github.com/mitghi/btree"
 	"github.com/pkg/errors"
 	"github.com/syndtr/goleveldb/leveldb"
 )
@@ -180,19 +181,15 @@ func (rso *restrictSubjectObjectByPredicate) run(ctx *queryContext, ctx2 *queryC
 			ctx2.restrictToResolved(subjectVar, reachableSubjects)
 			ctx2.populateValues(objectVar, object, subjectVar, reachableSubjects)
 		})
-	} else if ctx2.cardinalityUnique(subjectVar) < ctx2.cardinalityUnique(objectVar) {
-		// neither is joined
-
 		// TODO: use cardinality of rows, not of unique values
 		// we start with whichever has fewer values (subject or object). For each of them, we search
 		// the graph for reachable endpoints (object or subject) on the provided path (rso.term.Path)
+		// neither is joined
+	} else if ctx2.cardinalityUnique(subjectVar) < ctx2.cardinalityUnique(objectVar) {
 		subjects := ctx2.getValuesForVariable(subjectVar)
 		subjects.Iter(func(subject Key) {
 			reachableObjects := &keyTree{ctx2.db.getObjectFromSubjectPred(subject, rso.term.Path)}
-			// we restrict the values in reachableObjects to those that we already have inside 'objectVar'
 			ctx2.restrictToResolved(objectVar, reachableObjects)
-			// for rows where 'subjectVar' is 'subject', we add the values from 'reachableObjects'
-			// in the position for 'objectVar'
 			ctx2.populateValues(subjectVar, subject, objectVar, reachableObjects)
 		})
 	} else {
@@ -241,6 +238,8 @@ func (rsv *resolveSubjectFromVarObject) run(ctx *queryContext, ctx2 *queryContex
 		ctx2.restrictToResolved(subjectVar, reachableSubjects)
 		ctx2.populateValues(objectVar, object, subjectVar, reachableSubjects)
 	})
+	ctx2.markJoined(objectVar)
+	ctx2.markJoined(subjectVar)
 
 	return nil
 }
@@ -272,6 +271,8 @@ func (rov *resolveObjectFromVarSubject) run(ctx *queryContext, ctx2 *queryContex
 		ctx2.restrictToResolved(objectVar, reachableObjects)
 		ctx2.populateValues(subjectVar, subject, objectVar, reachableObjects)
 	})
+	ctx2.markJoined(objectVar)
+	ctx2.markJoined(subjectVar)
 
 	return nil
 }
@@ -317,16 +318,13 @@ func (op *resolveSubjectObjectFromPred) GetTerm() *queryTerm {
 // TODO: rewrite
 func (rso *resolveSubjectObjectFromPred) run(ctx *queryContext, ctx2 *queryContext2) error {
 	subsobjs := ctx.db.getSubjectObjectFromPred(rso.term.Path)
-	//subjectVar := rso.term.Subject.String()
-	//objectVar := rso.term.Object.String()
+	subjectVar := rso.term.Subject.String()
+	objectVar := rso.term.Object.String()
 
-	for _, sopair := range subsobjs {
-
-		_ = sopair
-		//ctx2.addReachableSingle(sopair[0], subjectVar, sopair[1], objectVar)
-
-	}
-	log.Debug(rso.String())
+	ctx2.addValuePairs(subjectVar, objectVar, subsobjs)
+	ctx2.markJoined(subjectVar)
+	ctx2.markJoined(objectVar)
+	log.Debug(rso.String(), len(subsobjs))
 	return nil
 }
 
@@ -352,9 +350,9 @@ func (op *resolveSubjectPredFromObject) GetTerm() *queryTerm {
 // by anything we've already resolved.
 // If we have *not* resolved the predicate, then this is easy: just graph traverse from the object
 func (op *resolveSubjectPredFromObject) run(ctx *queryContext, ctx2 *queryContext2) error {
-	var (
-		tree *pointerTree
-	)
+	//	var (
+	//		tree *pointerTree
+	//	)
 	subjectVar := op.term.Subject.String()
 	predicateVar := op.term.Path[0].Predicate.String()
 
@@ -365,30 +363,58 @@ func (op *resolveSubjectPredFromObject) run(ctx *queryContext, ctx2 *queryContex
 	} else if err == leveldb.ErrNotFound {
 		return nil
 	}
-	candidateSubjects := newPointerTree(BTREE_DEGREE)
+
+	//candidateSubjects := newPointerTree(BTREE_DEGREE)
 	// get all predicates from it
-	predicates := hashTreeToPointerTree(ctx.db, ctx.db.getPredicatesFromObject(object))
+	predicates := &keyTree{ctx.db.getPredicatesFromObject(object)}
+
+	// TODO: augment the rows with this object with all [pred, subject] pairs, provided
+	// that they
+	var sub_pred_pairs [][]Key
+	predicates.Iter(func(predicate Key) {
+		if !ctx2.validValue(predicateVar, predicate) {
+			return
+		}
+		path := []query.PathPattern{{Predicate: ctx.db.MustGetURI(predicate), Pattern: query.PATTERN_SINGLE}}
+		subjects := ctx.db.getSubjectFromPredObject(object.PK, path)
+
+		max := subjects.Max()
+		// TODO: this can be a key tree?
+		subjects.Ascend(func(_subject btree.Item) bool {
+			subject := _subject.(Key)
+			if !ctx2.validValue(subjectVar, subject) {
+				return subject != max
+			}
+			sub_pred_pairs = append(sub_pred_pairs, []Key{subject, predicate})
+
+			return subject != max
+		})
+	})
+
+	// TODO: these need to join onto existing values
+	ctx2.joinValuePairs(subjectVar, predicateVar, sub_pred_pairs)
+
 	// for each subject reachable from each predicate, add the predicate as aa
 	// dependent of the subject
-	predmax := predicates.Max()
-	iterpred := func(predicate *Entity) bool {
-		path := []query.PathPattern{{Predicate: ctx.db.MustGetURI(predicate.PK), Pattern: query.PATTERN_SINGLE}}
-		subjects := hashTreeToPointerTree(ctx.db, ctx.db.getSubjectFromPredObject(object.PK, path))
-		max := subjects.Max()
-		iter := func(ent *Entity) bool {
-			tree = ctx.getLinkedValues(predicateVar, ent)
-			tree.Add(predicate)
-			candidateSubjects.Add(ent) // subject
-			ctx.addReachable(ent, subjectVar, tree, predicateVar)
-			return ent != max
-		}
-		subjects.Iter(iter)
-		return predicate != predmax
-	}
-	predicates.Iter(iterpred)
+	//predmax := predicates.Max()
+	//iterpred := func(predicate *Entity) bool {
+	//	path := []query.PathPattern{{Predicate: ctx.db.MustGetURI(predicate.PK), Pattern: query.PATTERN_SINGLE}}
+	//	subjects := hashTreeToPointerTree(ctx.db, ctx.db.getSubjectFromPredObject(object.PK, path))
+	//	max := subjects.Max()
+	//	iter := func(ent *Entity) bool {
+	//		tree = ctx.getLinkedValues(predicateVar, ent)
+	//		tree.Add(predicate)
+	//		candidateSubjects.Add(ent) // subject
+	//		ctx.addReachable(ent, subjectVar, tree, predicateVar)
+	//		return ent != max
+	//	}
+	//	subjects.Iter(iter)
+	//	return predicate != predmax
+	//}
+	//predicates.Iter(iterpred)
 
-	// need to merge w/ the subjects we've already gotten
-	ctx.addOrFilterVariable(subjectVar, candidateSubjects)
+	//// need to merge w/ the subjects we've already gotten
+	//ctx.addOrFilterVariable(subjectVar, candidateSubjects)
 
 	return nil
 }
