@@ -119,7 +119,11 @@ func (ctx *queryContext2) restrictToResolved(varname string, values *keyTree) {
 	}
 	// remove bad values
 	cursor := values.Cursor()
-	item := cursor.Seek(values.Min()).(Key)
+	_item := cursor.Seek(values.Min())
+	if _item == nil {
+		return
+	}
+	item := _item.(Key)
 	for {
 		_next := cursor.Next()
 		if _next == nil {
@@ -246,6 +250,11 @@ func (ctx *queryContext2) dumpRow(row *Row) {
 }
 
 func (ctx *queryContext2) getResults() (results []*ResultRow) {
+
+	//ctx.definitions[varname].Iter(func(key Key) {
+	//	ctx.addRowWithValue(varname, key)
+	//})
+
 	ctx.rows.iterAll(func(row *Row) {
 		resultrow := getResultRow(len(ctx.selectVars))
 		for idx, varname := range ctx.selectVars {

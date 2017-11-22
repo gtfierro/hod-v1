@@ -41,7 +41,10 @@ func TestDBQuery(t *testing.T) {
 		},
 		{
 			"SELECT ?x ?y WHERE { ?x bf:feeds ?y . };",
-			[]ResultMap{{"?x": turtle.ParseURI("http://buildsys.org/ontologies/building_example#hvaczone_1"), "?y": turtle.ParseURI("http://buildsys.org/ontologies/building_example#vav_1")}},
+			[]ResultMap{
+				{"?x": turtle.ParseURI("http://buildsys.org/ontologies/building_example#vav_1"), "?y": turtle.ParseURI("http://buildsys.org/ontologies/building_example#hvaczone_1")},
+				{"?x": turtle.ParseURI("http://buildsys.org/ontologies/building_example#ahu_1"), "?y": turtle.ParseURI("http://buildsys.org/ontologies/building_example#vav_1")},
+			},
 		},
 		{
 			"SELECT ?x ?y WHERE { bldg:room_1 ?x ?y . };",

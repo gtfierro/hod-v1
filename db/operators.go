@@ -482,6 +482,21 @@ func (op *resolveVarTripleFromSubject) run(ctx *queryContext, ctx2 *queryContext
 		candidatePredicates            = newPointerTree(BTREE_DEGREE)
 	)
 
+	//tree, found := ctx2.definitions[subjectVar]
+	//if !found {
+	//	return errors.New("no var defined")
+	//}
+	//tree.Iter(func(subjectKey Key) {
+	//	subject := ctx.db.MustGetEntityFromHash(subjectKey)
+	//    // TODO: add predKey, objectKey to list of pairs, then join that
+	//    // onto the subject var
+	//	for edge, objectList := range subject.OutEdges {
+	//		predKey.FromSlice([]byte(edge))
+	//		for _, objectKey := range objectList {
+	//		}
+	//	}
+	//})
+
 	maxSub := subjects.Max()
 	var predKey Key
 	subjectIter := func(subject *Entity) bool {

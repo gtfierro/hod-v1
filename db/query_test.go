@@ -42,7 +42,7 @@ func BenchmarkExpandTuples(b *testing.B) {
 		}
 		dg := db.sortQueryTerms(q)
 		qp, _ := db.formQueryPlan(dg, q)
-		ctx, _ := db.executeQueryPlan(qp)
+		ctx, _, _ := db.executeQueryPlan(qp)
 		b.ResetTimer()
 		b.Run(bm.name, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
