@@ -340,6 +340,7 @@ func (db *DB) insertEntityTx(entity turtle.URI, hashdest []byte, enttx, pktx *le
 func (db *DB) loadPredicateEntity(predicate turtle.URI, _predicateHash, _subjectHash, _objectHash []byte, predtx *leveldb.Transaction) error {
 	var (
 		pred          *PredicateEntity
+		rpred         *PredicateEntity
 		found         bool
 		predicateHash Key
 		subjectHash   Key
@@ -358,12 +359,12 @@ func (db *DB) loadPredicateEntity(predicate turtle.URI, _predicateHash, _subject
 	db.predIndex[predicate] = pred
 
 	if reverse, found := db.relationships[predicate]; found {
-		if pred, found = db.predIndex[reverse]; !found {
-			pred = NewPredicateEntity()
-			pred.PK = predicateHash
+		if rpred, found = db.predIndex[reverse]; !found {
+			rpred = NewPredicateEntity()
+			rpred.PK = predicateHash
 		}
-		pred.AddSubjectObject(objectHash, subjectHash)
-		db.predIndex[predicate] = pred
+		rpred.AddSubjectObject(objectHash, subjectHash)
+		db.predIndex[reverse] = rpred
 	}
 
 	return nil

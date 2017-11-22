@@ -98,16 +98,16 @@ func NewPredicateEntity() *PredicateEntity {
 
 func (e *PredicateEntity) AddSubjectObject(subject, object Key) {
 	// if we have the subject
-	if ms, found := e.Subjects[string(subject[:])]; found {
+	if _, found := e.Subjects[string(subject[:])]; found {
 		// find the map of related objects
-		ms[string(object[:])] = 0
+		e.Subjects[string(subject[:])][string(object[:])] = 0
 	} else {
 		e.Subjects[string(subject[:])] = map[string]uint32{string(object[:]): 0}
 	}
 
-	if ms, found := e.Objects[string(object[:])]; found {
+	if _, found := e.Objects[string(object[:])]; found {
 		// find the map of related objects
-		ms[string(subject[:])] = 0
+		e.Objects[string(object[:])][string(subject[:])] = 0
 	} else {
 		e.Objects[string(object[:])] = map[string]uint32{string(subject[:]): 0}
 	}
