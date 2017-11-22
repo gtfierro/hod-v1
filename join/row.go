@@ -115,4 +115,23 @@ func main() {
 	rowtree.iterAll(func(r *Row) {
 		fmt.Printf(" %+v\n", r)
 	})
+
+	fmt.Println("try joins")
+	rowtree2 := NewRowTree()
+	r1 := NewRow()
+	r1.addValue(0, Key{1, 2, 3, 4})
+	rowtree2.Add(r1)
+	rowtree2.iterAll(func(r *Row) {
+		fmt.Printf(" %+v\n", r)
+	})
+	rowtree2.augmentByValue(0, Key{1, 2, 3, 4}, 2, Key{5, 6, 7, 8})
+	fmt.Println("after augment")
+	rowtree2.iterAll(func(r *Row) {
+		fmt.Printf(" %+v\n", r)
+	})
+	rowtree2.augmentByValues(0, Key{1, 2, 3, 4}, 3, []Key{{4, 4, 4, 4}, {5, 5, 5, 5}})
+	fmt.Println("after augment 2")
+	rowtree2.iterAll(func(r *Row) {
+		fmt.Printf(" %+v\n", r)
+	})
 }

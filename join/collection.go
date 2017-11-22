@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/mitghi/btree"
 )
 
@@ -80,8 +79,6 @@ func (tree *RowTree) augmentByValue(pos int, value Key, addPos int, addValue Key
 func (tree *RowTree) augmentByValues(pos int, value Key, addPos int, addValues []Key) {
 	var toAdd []*Row
 	var toRemove []*Row
-	v := addValues[2]
-	fmt.Println(v)
 	tree.augmentByValue(pos, value, addPos, Key{2, 2, 2, 2})
 	tree.iterRowsWithValue(pos, value, func(r *Row) {
 		for _, addValue := range addValues {
