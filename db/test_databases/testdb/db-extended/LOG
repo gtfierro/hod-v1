@@ -1,14 +1,28 @@
-=============== May 19, 2017 (PDT) ===============
-17:57:17.243867 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
-17:57:17.243980 db@open opening
-17:57:17.244413 version@stat F·[] S·0B[] Sc·[]
-17:57:17.246334 db@janitor F·2 G·0
-17:57:17.246361 db@open done T·2.375228ms
-17:57:18.580401 transaction@flush created L0@2 N·6 S·288B "I\xe1\xbe^,v5":"a\xeb\x98\xd6,v3"
-17:57:18.580426 version@stat F·[1] S·288B[288B] Sc·[0.25]
-17:57:18.585938 transaction@flush created L0@3 N·6 S·279B "\x99\x9c\x95U,v11":"\xf2,\xbc\xdf,v9"
-17:57:18.585964 version@stat F·[2] S·567B[567B] Sc·[0.50]
-17:57:18.597921 transaction@flush created L0@4 N·4 S·307B "I\xe1\xbe^,v15":"\x99\x9c\x95U,v14"
-17:57:18.597957 version@stat F·[3] S·874B[874B] Sc·[0.75]
-17:57:18.609934 db@close closing
-17:57:18.609956 db@close done T·21.266µs
+=============== Nov 22, 2017 (PST) ===============
+11:41:08.840651 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+11:41:08.851953 db@open opening
+11:41:08.852612 version@stat F·[] S·0B[] Sc·[]
+11:41:08.858462 db@janitor F·2 G·0
+11:41:08.858479 db@open done T·6.511668ms
+11:41:10.648971 transaction@flush created L0@2 N·6 S·280B "\x99\x9c\x95U,v6":"\xf2,\xbc\xdf,v1"
+11:41:10.649004 version@stat F·[1] S·280B[280B] Sc·[0.25]
+11:41:10.659032 transaction@flush created L0@3 N·9 S·325B "I\xe1\xbe^,v15":"a\xeb\x98\xd6,v7"
+11:41:10.659059 version@stat F·[2] S·605B[605B] Sc·[0.50]
+11:41:10.662977 transaction@flush created L0@4 N·9 S·377B "I\xe1\xbe^,v24":"\x99\x9c\x95U,v18"
+11:41:10.663001 version@stat F·[3] S·982B[982B] Sc·[0.75]
+11:41:10.666534 transaction@flush created L0@5 N·8 S·400B "I\xe1\xbe^,v30":"\x99\x9c\x95U,v26"
+11:41:10.666553 version@stat F·[4] S·1KiB[1KiB] Sc·[1.00]
+11:41:10.668251 table@compaction L0·4 -> L1·0 S·1KiB Q·32
+11:41:10.672488 table@build created L1@6 N·6 S·416B "I\xe1\xbe^,v30":"\xf2,\xbc\xdf,v5"
+11:41:10.672503 transaction@flush created L0@7 N·6 S·344B "I\xe1\xbe^,v37":"a\xeb\x98\xd6,v35"
+11:41:10.672541 version@stat F·[0 1] S·416B[0B 416B] Sc·[0.00 0.00]
+11:41:10.678395 table@compaction committed F-3 S-966B Ke·0 D·26 T·10.106003ms
+11:41:10.678457 table@remove removed @5
+11:41:10.678488 table@remove removed @4
+11:41:10.678511 table@remove removed @3
+11:41:10.678532 table@remove removed @2
+11:41:10.678560 version@stat F·[1 1] S·760B[344B 416B] Sc·[0.25 0.00]
+11:41:10.696187 transaction@flush created L0@8 N·4 S·310B "\x99\x9c\x95U,v41":"\xf2,\xbc\xdf,v40"
+11:41:10.696218 version@stat F·[2 1] S·1KiB[654B 416B] Sc·[0.50 0.00]
+11:41:10.707048 db@close closing
+11:41:10.707079 db@close done T·20.321µs
