@@ -17,6 +17,8 @@ type queryContext2 struct {
 
 	rows *RowTree
 
+	rel *Relation
+
 	// names of joined variables
 	joined []string
 
@@ -35,6 +37,7 @@ func newQueryContext2(plan *queryPlan, db *DB) *queryContext2 {
 		definitions:      definitions,
 		selectVars:       plan.selectVars,
 		rows:             NewRowTree(),
+		rel:              NewRelation(plan.query.Variables),
 		db:               db,
 	}
 }
@@ -88,14 +91,15 @@ func (ctx *queryContext2) getValuesForVariable(varname string) *keyTree {
 }
 
 func (ctx *queryContext2) defineVariable(varname string, values *keyTree, intersect bool) {
+
 	tree := ctx.definitions[varname]
 	// TODO: intersect? merge?
 	if tree == nil || tree.Len() == 0 {
 		ctx.definitions[varname] = values
 		//// for each value, we create the set of rows
-		//values.Iter(func(key Key) {
-		//	ctx.addRowWithValue(varname, key)
-		//})
+		values.Iter(func(key Key) {
+			ctx.addRowWithValue(varname, key)
+		})
 	}
 }
 
@@ -222,7 +226,7 @@ func (ctx *queryContext2) addValuePairs(sourceVarname, targetVarname string, pai
 	sourceIdx := ctx.variablePosition[sourceVarname]
 	for _, pair := range pairs {
 		row := NewRow()
-		log.Debug("adding", sourceVarname, ctx.db.MustGetURI(pair[0]), targetVarname, ctx.db.MustGetURI(pair[1]))
+		//log.Debug("adding", sourceVarname, ctx.db.MustGetURI(pair[0]), targetVarname, ctx.db.MustGetURI(pair[1]))
 		row.addValue(sourceIdx, pair[0])
 		row.addValue(targetIdx, pair[1])
 		ctx.addDefinition(sourceVarname, pair[0])
@@ -254,8 +258,9 @@ func (ctx *queryContext2) getResults() (results []*ResultRow) {
 	//ctx.definitions[varname].Iter(func(key Key) {
 	//	ctx.addRowWithValue(varname, key)
 	//})
+	//	ctx.rel.dumpRows(ctx.db)
 
-	ctx.rows.iterAll(func(row *Row) {
+	ctx.rel.rows.iterAll(func(row *Row) {
 		resultrow := getResultRow(len(ctx.selectVars))
 		for idx, varname := range ctx.selectVars {
 			resultrow.row[idx] = ctx.db.MustGetURI(row.valueAt(ctx.variablePosition[varname]))
