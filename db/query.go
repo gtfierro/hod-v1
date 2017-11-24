@@ -77,7 +77,7 @@ func (db *DB) executeQueryPlan(plan *queryPlan) (*queryContext, *queryContext2, 
 	for _, op := range ctx.operations {
 		now := time.Now()
 		err := op.run(ctx, ctx2)
-		if db.showQueryPlanLatencies {
+		if db.showOperationLatencies {
 			fmt.Println(op, time.Since(now))
 		}
 		if err != nil {

@@ -118,7 +118,6 @@ func (ctx *queryContext2) addDefinition(varname string, value Key) {
 func (ctx *queryContext2) restrictToResolved(varname string, values *keyTree) {
 	tree, found := ctx.definitions[varname]
 	if !found {
-		//ctx.definitions[varname] = values
 		return // do not change the tree
 	}
 	// remove bad values
@@ -129,14 +128,14 @@ func (ctx *queryContext2) restrictToResolved(varname string, values *keyTree) {
 	}
 	item := _item.(Key)
 	for {
+		if !tree.Has(item) {
+			values.Delete(item)
+		}
 		_next := cursor.Next()
 		if _next == nil {
 			break
 		}
 		next := _next.(Key)
-		if !tree.Has(item) {
-			values.Delete(item)
-		}
 		item = next
 		cursor.Seek(item)
 	}
@@ -263,6 +262,10 @@ func (ctx *queryContext2) getResults() (results []*ResultRow) {
 	ctx.rel.rows.iterAll(func(row *Row) {
 		resultrow := getResultRow(len(ctx.selectVars))
 		for idx, varname := range ctx.selectVars {
+			val := row.valueAt(ctx.variablePosition[varname])
+			if val == emptyKey {
+				return
+			}
 			resultrow.row[idx] = ctx.db.MustGetURI(row.valueAt(ctx.variablePosition[varname]))
 		}
 		results = append(results, resultrow)

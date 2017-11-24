@@ -186,8 +186,8 @@ func (rso *restrictSubjectObjectByPredicate) run(ctx *queryContext, ctx2 *queryC
 			reachableObjects.Iter(func(objectKey Key) {
 				relation_contents = append(relation_contents, []Key{subject, objectKey})
 			})
-
 		})
+		rsop_relation.add2Values(subjectVar, objectVar, relation_contents)
 	} else if ctx2.hasJoined(objectVar) {
 		objects := ctx2.getValuesForVariable(objectVar)
 
@@ -201,6 +201,7 @@ func (rso *restrictSubjectObjectByPredicate) run(ctx *queryContext, ctx2 *queryC
 				relation_contents = append(relation_contents, []Key{object, subjectKey})
 			})
 		})
+		rsop_relation.add2Values(objectVar, subjectVar, relation_contents)
 		// TODO: use cardinality of rows, not of unique values
 		// we start with whichever has fewer values (subject or object). For each of them, we search
 		// the graph for reachable endpoints (object or subject) on the provided path (rso.term.Path)
@@ -218,6 +219,7 @@ func (rso *restrictSubjectObjectByPredicate) run(ctx *queryContext, ctx2 *queryC
 				relation_contents = append(relation_contents, []Key{subject, objectKey})
 			})
 		})
+		rsop_relation.add2Values(subjectVar, objectVar, relation_contents)
 	} else {
 		objects := ctx2.getValuesForVariable(objectVar)
 
@@ -231,9 +233,12 @@ func (rso *restrictSubjectObjectByPredicate) run(ctx *queryContext, ctx2 *queryC
 				relation_contents = append(relation_contents, []Key{object, subjectKey})
 			})
 		})
+		rsop_relation.add2Values(objectVar, subjectVar, relation_contents)
 	}
 
 	ctx2.rel.join(rsop_relation, rsop_relation.keys, ctx2)
+	ctx2.markJoined(subjectVar)
+	ctx2.markJoined(objectVar)
 
 	return nil
 }
@@ -278,6 +283,8 @@ func (rsv *resolveSubjectFromVarObject) run(ctx *queryContext, ctx2 *queryContex
 
 	rsop_relation.add2Values(rsop_relation.keys[0], rsop_relation.keys[1], relation_contents)
 	ctx2.rel.join(rsop_relation, rsop_relation.keys, ctx2)
+	ctx2.markJoined(subjectVar)
+	ctx2.markJoined(objectVar)
 
 	return nil
 }
@@ -318,6 +325,8 @@ func (rov *resolveObjectFromVarSubject) run(ctx *queryContext, ctx2 *queryContex
 
 	rsop_relation.add2Values(rsop_relation.keys[0], rsop_relation.keys[1], relation_contents)
 	ctx2.rel.join(rsop_relation, rsop_relation.keys, ctx2)
+	ctx2.markJoined(subjectVar)
+	ctx2.markJoined(objectVar)
 
 	return nil
 }
@@ -367,6 +376,8 @@ func (rso *resolveSubjectObjectFromPred) run(ctx *queryContext, ctx2 *queryConte
 	objectVar := rso.term.Object.String()
 
 	ctx2.rel.add2Values(subjectVar, objectVar, subsobjs)
+	ctx2.markJoined(subjectVar)
+	ctx2.markJoined(objectVar)
 
 	return nil
 }
@@ -539,6 +550,7 @@ func (op *resolveVarTripleFromSubject) run(ctx *queryContext, ctx2 *queryContext
 
 	rsop_relation.add3Values(subjectVar, predicateVar, objectVar, relation_contents)
 	ctx2.rel.join(rsop_relation, []string{subjectVar}, ctx2)
+	ctx2.markJoined(subjectVar)
 	return nil
 }
 
@@ -583,6 +595,7 @@ func (op *resolveVarTripleFromObject) run(ctx *queryContext, ctx2 *queryContext2
 
 	rsop_relation.add3Values(objectVar, predicateVar, subjectVar, relation_contents)
 	ctx2.rel.join(rsop_relation, []string{objectVar}, ctx2)
+	ctx2.markJoined(objectVar)
 	return nil
 }
 
@@ -630,8 +643,10 @@ func (op *resolveVarTripleFromPredicate) run(ctx *queryContext, ctx2 *queryConte
 		}
 	})
 
+	ctx2.markJoined(predicateVar)
 	rsop_relation.add3Values(predicateVar, subjectVar, objectVar, relation_contents)
 	ctx2.rel.join(rsop_relation, []string{predicateVar}, ctx2)
+	ctx2.markJoined(predicateVar)
 	return nil
 
 }
