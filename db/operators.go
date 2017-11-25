@@ -45,12 +45,23 @@ func (rs *resolveSubject) run(ctx *queryContext, ctx2 *queryContext2) error {
 	}
 	subjectVar := rs.term.Subject.String()
 	// get all subjects reachable from the given object along the path
-	subjects := ctx.db.getSubjectFromPredObject(object.PK, rs.term.Path)
+	_subjects := ctx.db.getSubjectFromPredObject(object.PK, rs.term.Path)
+	subjects := &keyTree{_subjects}
+
+	// TODO: if there are values already defined, then we need to join!
 
 	// new stuff
-	ctx2.defineVariable(subjectVar, &keyTree{subjects}, true)
+	if !ctx2.defined(subjectVar) {
+		ctx2.defineVariable(subjectVar, subjects, true)
+		ctx2.rel.add1Value(subjectVar, subjects)
+	} else {
+		ctx2.unionDefinitions(subjectVar, subjects)
 
-	ctx2.rel.add1Value(subjectVar, &keyTree{subjects})
+		newrel := NewRelation([]string{subjectVar})
+		newrel.add1Value(subjectVar, subjects)
+
+		ctx2.rel.join(newrel, []string{subjectVar}, ctx2)
+	}
 
 	return nil
 }
@@ -83,12 +94,20 @@ func (ro *resolveObject) run(ctx *queryContext, ctx2 *queryContext2) error {
 	}
 	objectVar := ro.term.Object.String()
 	// get all objects reachable from the given subject along the path
-	objects := ctx.db.getObjectFromSubjectPred(subject.PK, ro.term.Path)
+	_objects := ctx.db.getObjectFromSubjectPred(subject.PK, ro.term.Path)
+	objects := &keyTree{_objects}
 
-	// new stuff
-	ctx2.defineVariable(objectVar, &keyTree{objects}, true)
+	if !ctx2.defined(objectVar) {
+		ctx2.defineVariable(objectVar, objects, true)
+		ctx2.rel.add1Value(objectVar, objects)
+	} else {
+		ctx2.unionDefinitions(objectVar, objects)
 
-	ctx2.rel.add1Value(objectVar, &keyTree{objects})
+		newrel := NewRelation([]string{objectVar})
+		newrel.add1Value(objectVar, objects)
+
+		ctx2.rel.join(newrel, []string{objectVar}, ctx2)
+	}
 
 	return nil
 }
@@ -130,12 +149,21 @@ func (op *resolvePredicate) run(ctx *queryContext, ctx2 *queryContext2) error {
 	predicateVar := op.term.Path[0].Predicate.String()
 	// get all preds w/ the given end object, starting from the given subject
 
-	predicates := ctx.db.getPredicateFromSubjectObject(subject, object)
+	_predicates := ctx.db.getPredicateFromSubjectObject(subject, object)
+	predicates := &keyTree{_predicates}
 
 	// new stuff
-	ctx2.defineVariable(predicateVar, &keyTree{predicates}, true)
+	if !ctx2.defined(predicateVar) {
+		ctx2.defineVariable(predicateVar, predicates, true)
+		ctx2.rel.add1Value(predicateVar, predicates)
+	} else {
+		ctx2.unionDefinitions(predicateVar, predicates)
 
-	ctx2.rel.add1Value(predicateVar, &keyTree{predicates})
+		newrel := NewRelation([]string{predicateVar})
+		newrel.add1Value(predicateVar, predicates)
+
+		ctx2.rel.join(newrel, []string{predicateVar}, ctx2)
+	}
 
 	return nil
 }

@@ -92,6 +92,16 @@ func (ctx *queryContext2) defineVariable(varname string, values *keyTree, inters
 	}
 }
 
+func (ctx *queryContext2) defined(varname string) bool {
+	_, found := ctx.definitions[varname]
+	return found
+}
+
+func (ctx *queryContext2) unionDefinitions(varname string, values *keyTree) {
+	ctx.restrictToResolved(varname, values)
+	ctx.definitions[varname] = values
+}
+
 func (ctx *queryContext2) addDefinition(varname string, value Key) {
 	tree := ctx.definitions[varname]
 	if tree == nil || tree.Len() == 0 {
