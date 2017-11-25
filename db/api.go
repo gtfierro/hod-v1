@@ -70,19 +70,20 @@ func (db *DB) RunQuery(q query.Query) (QueryResult, error) {
 			tmpQuery.Where.Filters = make([]query.Filter, len(oldFilters)+len(orTerm))
 			copy(tmpQuery.Where.Filters, oldFilters)
 			copy(tmpQuery.Where.Filters[len(oldFilters):], orTerm)
-			go func(q query.Query) {
-				results, err := db.getQueryResults(q)
-				rowLock.Lock()
-				if err != nil {
-					queryErr = err
-				} else {
-					for _, row := range results {
-						unionedRows.ReplaceOrInsert(row)
-					}
+
+			//	go func(q query.Query) {
+			results, err := db.getQueryResults(tmpQuery)
+			rowLock.Lock()
+			if err != nil {
+				queryErr = err
+			} else {
+				for _, row := range results {
+					unionedRows.ReplaceOrInsert(row)
 				}
-				rowLock.Unlock()
-				wg.Done()
-			}(tmpQuery)
+			}
+			rowLock.Unlock()
+			wg.Done()
+			//}(tmpQuery)
 		}
 		wg.Wait()
 		if queryErr != nil {
