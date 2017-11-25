@@ -238,7 +238,7 @@ func TestDBQueryBerkeley(t *testing.T) {
 		},
 		{
 			"COUNT ?vav ?x ?y WHERE { ?vav rdf:type brick:VAV . ?vav bf:hasPoint ?x . ?vav bf:isFedBy ?y . };",
-			485,
+			823,
 		},
 		{
 			"COUNT ?ahu WHERE { ?ahu rdf:type brick:AHU . ?ahu bf:feeds soda_hall:vav_C711 . };",
