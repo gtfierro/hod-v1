@@ -57,6 +57,7 @@ func (q Query) Copy() Query {
 		Where: WhereClause{
 			Filters: make([]Filter, len(q.Where.Filters)),
 		},
+		Variables: q.Variables,
 	}
 	for i, v := range q.Where.Filters {
 		newq.Where.Filters[i] = v.Copy()
@@ -296,6 +297,7 @@ func Parse(r io.Reader) (Query, error) {
 			}
 		}
 	}
+
 	for vname := range vars {
 		q.Variables = append(q.Variables, vname)
 	}
