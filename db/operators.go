@@ -11,7 +11,7 @@ import (
 )
 
 type operation interface {
-	run(ctx *queryContext, ctx2 *queryContext2) error
+	run(ctx *queryContext) error
 	String() string
 	SortKey() string
 	GetTerm() *queryTerm
@@ -35,7 +35,7 @@ func (rs *resolveSubject) GetTerm() *queryTerm {
 	return rs.term
 }
 
-func (rs *resolveSubject) run(ctx *queryContext, ctx2 *queryContext2) error {
+func (rs *resolveSubject) run(ctx *queryContext) error {
 	// fetch the object from the graph
 	object, err := ctx.db.GetEntity(rs.term.Object)
 	if err != nil && err != leveldb.ErrNotFound {
@@ -51,16 +51,16 @@ func (rs *resolveSubject) run(ctx *queryContext, ctx2 *queryContext2) error {
 	// TODO: if there are values already defined, then we need to join!
 
 	// new stuff
-	if !ctx2.defined(subjectVar) {
-		ctx2.defineVariable(subjectVar, subjects, true)
-		ctx2.rel.add1Value(subjectVar, subjects)
+	if !ctx.defined(subjectVar) {
+		ctx.defineVariable(subjectVar, subjects, true)
+		ctx.rel.add1Value(subjectVar, subjects)
 	} else {
-		ctx2.unionDefinitions(subjectVar, subjects)
+		ctx.unionDefinitions(subjectVar, subjects)
 
 		newrel := NewRelation([]string{subjectVar})
 		newrel.add1Value(subjectVar, subjects)
 
-		ctx2.rel.join(newrel, []string{subjectVar}, ctx2)
+		ctx.rel.join(newrel, []string{subjectVar}, ctx)
 	}
 
 	return nil
@@ -84,7 +84,7 @@ func (ro *resolveObject) GetTerm() *queryTerm {
 	return ro.term
 }
 
-func (ro *resolveObject) run(ctx *queryContext, ctx2 *queryContext2) error {
+func (ro *resolveObject) run(ctx *queryContext) error {
 	// fetch the subject from the graph
 	subject, err := ctx.db.GetEntity(ro.term.Subject)
 	if err != nil && err != leveldb.ErrNotFound {
@@ -97,16 +97,16 @@ func (ro *resolveObject) run(ctx *queryContext, ctx2 *queryContext2) error {
 	_objects := ctx.db.getObjectFromSubjectPred(subject.PK, ro.term.Path)
 	objects := &keyTree{_objects}
 
-	if !ctx2.defined(objectVar) {
-		ctx2.defineVariable(objectVar, objects, true)
-		ctx2.rel.add1Value(objectVar, objects)
+	if !ctx.defined(objectVar) {
+		ctx.defineVariable(objectVar, objects, true)
+		ctx.rel.add1Value(objectVar, objects)
 	} else {
-		ctx2.unionDefinitions(objectVar, objects)
+		ctx.unionDefinitions(objectVar, objects)
 
 		newrel := NewRelation([]string{objectVar})
 		newrel.add1Value(objectVar, objects)
 
-		ctx2.rel.join(newrel, []string{objectVar}, ctx2)
+		ctx.rel.join(newrel, []string{objectVar}, ctx)
 	}
 
 	return nil
@@ -130,7 +130,7 @@ func (op *resolvePredicate) GetTerm() *queryTerm {
 	return op.term
 }
 
-func (op *resolvePredicate) run(ctx *queryContext, ctx2 *queryContext2) error {
+func (op *resolvePredicate) run(ctx *queryContext) error {
 	// fetch the subject from the graph
 	subject, err := ctx.db.GetEntity(op.term.Subject)
 	if err != nil && err != leveldb.ErrNotFound {
@@ -153,16 +153,16 @@ func (op *resolvePredicate) run(ctx *queryContext, ctx2 *queryContext2) error {
 	predicates := &keyTree{_predicates}
 
 	// new stuff
-	if !ctx2.defined(predicateVar) {
-		ctx2.defineVariable(predicateVar, predicates, true)
-		ctx2.rel.add1Value(predicateVar, predicates)
+	if !ctx.defined(predicateVar) {
+		ctx.defineVariable(predicateVar, predicates, true)
+		ctx.rel.add1Value(predicateVar, predicates)
 	} else {
-		ctx2.unionDefinitions(predicateVar, predicates)
+		ctx.unionDefinitions(predicateVar, predicates)
 
 		newrel := NewRelation([]string{predicateVar})
 		newrel.add1Value(predicateVar, predicates)
 
-		ctx2.rel.join(newrel, []string{predicateVar}, ctx2)
+		ctx.rel.join(newrel, []string{predicateVar}, ctx)
 	}
 
 	return nil
@@ -187,7 +187,7 @@ func (rso *restrictSubjectObjectByPredicate) GetTerm() *queryTerm {
 	return rso.term
 }
 
-func (rso *restrictSubjectObjectByPredicate) run(ctx *queryContext, ctx2 *queryContext2) error {
+func (rso *restrictSubjectObjectByPredicate) run(ctx *queryContext) error {
 	var (
 		subjectVar = rso.term.Subject.String()
 		objectVar  = rso.term.Object.String()
@@ -201,72 +201,84 @@ func (rso *restrictSubjectObjectByPredicate) run(ctx *queryContext, ctx2 *queryC
 	var relation_contents [][]Key
 
 	// test joined
-	if ctx2.hasJoined(subjectVar) {
-		subjects := ctx2.getValuesForVariable(subjectVar)
+	if ctx.hasJoined(subjectVar) {
+		//log.Debug("subj", subjectVar)
+		subjects := ctx.getValuesForVariable(subjectVar)
 
 		rsop_relation = NewRelation([]string{subjectVar, objectVar})
 
 		subjects.Iter(func(subject Key) {
-			reachableObjects := &keyTree{ctx2.db.getObjectFromSubjectPred(subject, rso.term.Path)}
+			reachableObjects := &keyTree{ctx.db.getObjectFromSubjectPred(subject, rso.term.Path)}
 			// we restrict the values in reachableObjects to those that we already have inside 'objectVar'
-			ctx2.restrictToResolved(objectVar, reachableObjects)
+			ctx.restrictToResolved(objectVar, reachableObjects)
 
 			reachableObjects.Iter(func(objectKey Key) {
 				relation_contents = append(relation_contents, []Key{subject, objectKey})
 			})
 		})
 		rsop_relation.add2Values(subjectVar, objectVar, relation_contents)
-	} else if ctx2.hasJoined(objectVar) {
-		objects := ctx2.getValuesForVariable(objectVar)
+		//ctx.rel.join(rsop_relation, []string{subjectVar}, ctx)
+	} else if ctx.hasJoined(objectVar) {
+		//log.Debug("obj", objectVar)
+		objects := ctx.getValuesForVariable(objectVar)
 
 		rsop_relation = NewRelation([]string{objectVar, subjectVar})
 
 		objects.Iter(func(object Key) {
-			reachableSubjects := &keyTree{ctx2.db.getSubjectFromPredObject(object, rso.term.Path)}
-			ctx2.restrictToResolved(subjectVar, reachableSubjects)
+			reachableSubjects := &keyTree{ctx.db.getSubjectFromPredObject(object, rso.term.Path)}
+			ctx.restrictToResolved(subjectVar, reachableSubjects)
 
 			reachableSubjects.Iter(func(subjectKey Key) {
+				//log.Debug("reachable subject1", subjectVar, ctx.db.MustGetURI(subjectKey))
 				relation_contents = append(relation_contents, []Key{object, subjectKey})
 			})
 		})
 		rsop_relation.add2Values(objectVar, subjectVar, relation_contents)
+		//ctx.rel.join(rsop_relation, []string{objectVar}, ctx)
 		// TODO: use cardinality of rows, not of unique values
 		// we start with whichever has fewer values (subject or object). For each of them, we search
 		// the graph for reachable endpoints (object or subject) on the provided path (rso.term.Path)
 		// neither is joined
-	} else if ctx2.cardinalityUnique(subjectVar) < ctx2.cardinalityUnique(objectVar) {
-		subjects := ctx2.getValuesForVariable(subjectVar)
+	} else if ctx.cardinalityUnique(subjectVar) < ctx.cardinalityUnique(objectVar) {
+		subjects := ctx.getValuesForVariable(subjectVar)
 
 		rsop_relation = NewRelation([]string{subjectVar, objectVar})
 
 		subjects.Iter(func(subject Key) {
-			reachableObjects := &keyTree{ctx2.db.getObjectFromSubjectPred(subject, rso.term.Path)}
-			ctx2.restrictToResolved(objectVar, reachableObjects)
+			reachableObjects := &keyTree{ctx.db.getObjectFromSubjectPred(subject, rso.term.Path)}
+			ctx.restrictToResolved(objectVar, reachableObjects)
 
 			reachableObjects.Iter(func(objectKey Key) {
 				relation_contents = append(relation_contents, []Key{subject, objectKey})
 			})
 		})
 		rsop_relation.add2Values(subjectVar, objectVar, relation_contents)
+		//ctx.rel.join(rsop_relation, []string{subjectVar}, ctx)
 	} else {
-		objects := ctx2.getValuesForVariable(objectVar)
+		objects := ctx.getValuesForVariable(objectVar)
 
 		rsop_relation = NewRelation([]string{objectVar, subjectVar})
 
 		objects.Iter(func(object Key) {
-			reachableSubjects := &keyTree{ctx2.db.getSubjectFromPredObject(object, rso.term.Path)}
-			ctx2.restrictToResolved(subjectVar, reachableSubjects)
+			reachableSubjects := &keyTree{ctx.db.getSubjectFromPredObject(object, rso.term.Path)}
+			ctx.restrictToResolved(subjectVar, reachableSubjects)
+			//reachableSubjects.Iter(func(e Key) {
+			//	log.Debug("reachable subject", ctx.db.MustGetURI(e))
+			//})
 
 			reachableSubjects.Iter(func(subjectKey Key) {
 				relation_contents = append(relation_contents, []Key{object, subjectKey})
 			})
 		})
 		rsop_relation.add2Values(objectVar, subjectVar, relation_contents)
+		//	ctx.rel.join(rsop_relation, []string{objectVar}, ctx)
 	}
 
-	ctx2.rel.join(rsop_relation, rsop_relation.keys, ctx2)
-	ctx2.markJoined(subjectVar)
-	ctx2.markJoined(objectVar)
+	//log.Debug("rsop_relation.keys", rsop_relation.keys)
+	//rsop_relation.dumpRows(ctx.db)
+	ctx.rel.join(rsop_relation, rsop_relation.keys, ctx)
+	ctx.markJoined(subjectVar)
+	ctx.markJoined(objectVar)
 
 	return nil
 }
@@ -290,7 +302,7 @@ func (rsv *resolveSubjectFromVarObject) GetTerm() *queryTerm {
 }
 
 // Use this when we have subject and object variables, but only object has been filled in
-func (rsv *resolveSubjectFromVarObject) run(ctx *queryContext, ctx2 *queryContext2) error {
+func (rsv *resolveSubjectFromVarObject) run(ctx *queryContext) error {
 	var (
 		objectVar  = rsv.term.Object.String()
 		subjectVar = rsv.term.Subject.String()
@@ -299,20 +311,24 @@ func (rsv *resolveSubjectFromVarObject) run(ctx *queryContext, ctx2 *queryContex
 	var rsop_relation = NewRelation([]string{objectVar, subjectVar})
 	var relation_contents [][]Key
 
-	objects := ctx2.getValuesForVariable(objectVar)
+	newSubjects := newKeyTree(BTREE_DEGREE)
+
+	objects := ctx.getValuesForVariable(objectVar)
 	objects.Iter(func(object Key) {
 		reachableSubjects := &keyTree{ctx.db.getSubjectFromPredObject(object, rsv.term.Path)}
-		ctx2.restrictToResolved(subjectVar, reachableSubjects)
+		ctx.restrictToResolved(subjectVar, reachableSubjects)
 
 		reachableSubjects.Iter(func(subjectKey Key) {
+			newSubjects.Add(subjectKey)
 			relation_contents = append(relation_contents, []Key{object, subjectKey})
 		})
 	})
 
 	rsop_relation.add2Values(rsop_relation.keys[0], rsop_relation.keys[1], relation_contents)
-	ctx2.rel.join(rsop_relation, rsop_relation.keys, ctx2)
-	ctx2.markJoined(subjectVar)
-	ctx2.markJoined(objectVar)
+	ctx.rel.join(rsop_relation, rsop_relation.keys, ctx)
+	ctx.markJoined(subjectVar)
+	ctx.markJoined(objectVar)
+	ctx.unionDefinitions(subjectVar, newSubjects)
 
 	return nil
 }
@@ -333,7 +349,7 @@ func (rov *resolveObjectFromVarSubject) GetTerm() *queryTerm {
 	return rov.term
 }
 
-func (rov *resolveObjectFromVarSubject) run(ctx *queryContext, ctx2 *queryContext2) error {
+func (rov *resolveObjectFromVarSubject) run(ctx *queryContext) error {
 	var (
 		objectVar  = rov.term.Object.String()
 		subjectVar = rov.term.Subject.String()
@@ -342,19 +358,21 @@ func (rov *resolveObjectFromVarSubject) run(ctx *queryContext, ctx2 *queryContex
 	var rsop_relation = NewRelation([]string{subjectVar, objectVar})
 	var relation_contents [][]Key
 
-	subjects := ctx2.getValuesForVariable(subjectVar)
+	subjects := ctx.getValuesForVariable(subjectVar)
+	log.Info("values for", subjectVar, subjects.Len())
 	subjects.Iter(func(subject Key) {
 		reachableObjects := &keyTree{ctx.db.getObjectFromSubjectPred(subject, rov.term.Path)}
-		ctx2.restrictToResolved(objectVar, reachableObjects)
+		ctx.restrictToResolved(objectVar, reachableObjects)
 		reachableObjects.Iter(func(objectKey Key) {
 			relation_contents = append(relation_contents, []Key{subject, objectKey})
 		})
 	})
 
-	rsop_relation.add2Values(rsop_relation.keys[0], rsop_relation.keys[1], relation_contents)
-	ctx2.rel.join(rsop_relation, rsop_relation.keys, ctx2)
-	ctx2.markJoined(subjectVar)
-	ctx2.markJoined(objectVar)
+	rsop_relation.add2Values(subjectVar, objectVar, relation_contents)
+	log.Debug(subjectVar, objectVar, len(relation_contents))
+	ctx.rel.join(rsop_relation, rsop_relation.keys, ctx)
+	ctx.markJoined(subjectVar)
+	ctx.markJoined(objectVar)
 
 	return nil
 }
@@ -377,7 +395,7 @@ func (op *resolveObjectFromVarSubjectPred) GetTerm() *queryTerm {
 
 // TODO: implement resolveObjectFromVarSubjectPred
 // ?s ?p o
-func (rov *resolveObjectFromVarSubjectPred) run(ctx *queryContext, ctx2 *queryContext2) error {
+func (rov *resolveObjectFromVarSubjectPred) run(ctx *queryContext) error {
 	return nil
 }
 
@@ -398,14 +416,14 @@ func (op *resolveSubjectObjectFromPred) GetTerm() *queryTerm {
 }
 
 // TODO: rewrite
-func (rso *resolveSubjectObjectFromPred) run(ctx *queryContext, ctx2 *queryContext2) error {
+func (rso *resolveSubjectObjectFromPred) run(ctx *queryContext) error {
 	subsobjs := ctx.db.getSubjectObjectFromPred(rso.term.Path)
 	subjectVar := rso.term.Subject.String()
 	objectVar := rso.term.Object.String()
 
-	ctx2.rel.add2Values(subjectVar, objectVar, subsobjs)
-	ctx2.markJoined(subjectVar)
-	ctx2.markJoined(objectVar)
+	ctx.rel.add2Values(subjectVar, objectVar, subsobjs)
+	ctx.markJoined(subjectVar)
+	ctx.markJoined(objectVar)
 
 	return nil
 }
@@ -431,7 +449,7 @@ func (op *resolveSubjectPredFromObject) GetTerm() *queryTerm {
 // the known object and then pull the associated subjects. We then filter those subjects
 // by anything we've already resolved.
 // If we have *not* resolved the predicate, then this is easy: just graph traverse from the object
-func (op *resolveSubjectPredFromObject) run(ctx *queryContext, ctx2 *queryContext2) error {
+func (op *resolveSubjectPredFromObject) run(ctx *queryContext) error {
 	subjectVar := op.term.Subject.String()
 	predicateVar := op.term.Path[0].Predicate.String()
 
@@ -450,7 +468,7 @@ func (op *resolveSubjectPredFromObject) run(ctx *queryContext, ctx2 *queryContex
 	// that they
 	var sub_pred_pairs [][]Key
 	predicates.Iter(func(predicate Key) {
-		if !ctx2.validValue(predicateVar, predicate) {
+		if !ctx.validValue(predicateVar, predicate) {
 			return
 		}
 		path := []query.PathPattern{{Predicate: ctx.db.MustGetURI(predicate), Pattern: query.PATTERN_SINGLE}}
@@ -460,7 +478,7 @@ func (op *resolveSubjectPredFromObject) run(ctx *queryContext, ctx2 *queryContex
 		// TODO: this can be a key tree?
 		subjects.Ascend(func(_subject btree.Item) bool {
 			subject := _subject.(Key)
-			if !ctx2.validValue(subjectVar, subject) {
+			if !ctx.validValue(subjectVar, subject) {
 				return subject != max
 			}
 			sub_pred_pairs = append(sub_pred_pairs, []Key{subject, predicate})
@@ -469,7 +487,7 @@ func (op *resolveSubjectPredFromObject) run(ctx *queryContext, ctx2 *queryContex
 		})
 	})
 
-	ctx2.rel.add2Values(subjectVar, predicateVar, sub_pred_pairs)
+	ctx.rel.add2Values(subjectVar, predicateVar, sub_pred_pairs)
 
 	return nil
 }
@@ -490,7 +508,7 @@ func (op *resolvePredObjectFromSubject) GetTerm() *queryTerm {
 	return op.term
 }
 
-func (op *resolvePredObjectFromSubject) run(ctx *queryContext, ctx2 *queryContext2) error {
+func (op *resolvePredObjectFromSubject) run(ctx *queryContext) error {
 	objectVar := op.term.Object.String()
 	predicateVar := op.term.Path[0].Predicate.String()
 
@@ -509,7 +527,7 @@ func (op *resolvePredObjectFromSubject) run(ctx *queryContext, ctx2 *queryContex
 	// that they
 	var pred_obj_pairs [][]Key
 	predicates.Iter(func(predicate Key) {
-		if !ctx2.validValue(predicateVar, predicate) {
+		if !ctx.validValue(predicateVar, predicate) {
 			return
 		}
 		path := []query.PathPattern{{Predicate: ctx.db.MustGetURI(predicate), Pattern: query.PATTERN_SINGLE}}
@@ -519,7 +537,7 @@ func (op *resolvePredObjectFromSubject) run(ctx *queryContext, ctx2 *queryContex
 		// TODO: this can be a key tree?
 		objects.Ascend(func(_object btree.Item) bool {
 			object := _object.(Key)
-			if !ctx2.validValue(objectVar, object) {
+			if !ctx.validValue(objectVar, object) {
 				return object != max
 			}
 			pred_obj_pairs = append(pred_obj_pairs, []Key{predicate, object})
@@ -528,7 +546,7 @@ func (op *resolvePredObjectFromSubject) run(ctx *queryContext, ctx2 *queryContex
 		})
 	})
 
-	ctx2.rel.add2Values(predicateVar, objectVar, pred_obj_pairs)
+	ctx.rel.add2Values(predicateVar, objectVar, pred_obj_pairs)
 
 	return nil
 }
@@ -552,7 +570,7 @@ func (op *resolveVarTripleFromSubject) GetTerm() *queryTerm {
 }
 
 // ?s ?p ?o; start from s
-func (op *resolveVarTripleFromSubject) run(ctx *queryContext, ctx2 *queryContext2) error {
+func (op *resolveVarTripleFromSubject) run(ctx *queryContext) error {
 	// for all subjects, find all predicates and objects. Note: these predicates
 	// and objects may be partially evaluated already
 	var (
@@ -564,10 +582,10 @@ func (op *resolveVarTripleFromSubject) run(ctx *queryContext, ctx2 *queryContext
 	var rsop_relation = NewRelation([]string{subjectVar, predicateVar, objectVar})
 	var relation_contents [][]Key
 
-	subjects := ctx2.definitions[subjectVar]
+	subjects := ctx.definitions[subjectVar]
 	subjects.Iter(func(subjectKey Key) {
 		var predKey Key
-		subject := ctx2.db.MustGetEntityFromHash(subjectKey)
+		subject := ctx.db.MustGetEntityFromHash(subjectKey)
 		for edge, objectList := range subject.OutEdges {
 			predKey.FromSlice([]byte(edge))
 			for _, objectKey := range objectList {
@@ -577,8 +595,8 @@ func (op *resolveVarTripleFromSubject) run(ctx *queryContext, ctx2 *queryContext
 	})
 
 	rsop_relation.add3Values(subjectVar, predicateVar, objectVar, relation_contents)
-	ctx2.rel.join(rsop_relation, []string{subjectVar}, ctx2)
-	ctx2.markJoined(subjectVar)
+	ctx.rel.join(rsop_relation, []string{subjectVar}, ctx)
+	ctx.markJoined(subjectVar)
 	return nil
 }
 
@@ -599,7 +617,7 @@ func (op *resolveVarTripleFromObject) GetTerm() *queryTerm {
 }
 
 // ?s ?p ?o; start from o
-func (op *resolveVarTripleFromObject) run(ctx *queryContext, ctx2 *queryContext2) error {
+func (op *resolveVarTripleFromObject) run(ctx *queryContext) error {
 	var (
 		subjectVar   = op.term.Subject.String()
 		objectVar    = op.term.Object.String()
@@ -609,10 +627,10 @@ func (op *resolveVarTripleFromObject) run(ctx *queryContext, ctx2 *queryContext2
 	var rsop_relation = NewRelation([]string{objectVar, predicateVar, subjectVar})
 	var relation_contents [][]Key
 
-	objects := ctx2.definitions[objectVar]
+	objects := ctx.definitions[objectVar]
 	objects.Iter(func(objectKey Key) {
 		var predKey Key
-		object := ctx2.db.MustGetEntityFromHash(objectKey)
+		object := ctx.db.MustGetEntityFromHash(objectKey)
 		for edge, subjectList := range object.InEdges {
 			predKey.FromSlice([]byte(edge))
 			for _, subjectKey := range subjectList {
@@ -622,8 +640,8 @@ func (op *resolveVarTripleFromObject) run(ctx *queryContext, ctx2 *queryContext2
 	})
 
 	rsop_relation.add3Values(objectVar, predicateVar, subjectVar, relation_contents)
-	ctx2.rel.join(rsop_relation, []string{objectVar}, ctx2)
-	ctx2.markJoined(objectVar)
+	ctx.rel.join(rsop_relation, []string{objectVar}, ctx)
+	ctx.markJoined(objectVar)
 	return nil
 }
 
@@ -644,7 +662,7 @@ func (op *resolveVarTripleFromPredicate) GetTerm() *queryTerm {
 }
 
 // ?s ?p ?o; start from p
-func (op *resolveVarTripleFromPredicate) run(ctx *queryContext, ctx2 *queryContext2) error {
+func (op *resolveVarTripleFromPredicate) run(ctx *queryContext) error {
 	var (
 		subjectVar   = op.term.Subject.String()
 		objectVar    = op.term.Object.String()
@@ -654,7 +672,7 @@ func (op *resolveVarTripleFromPredicate) run(ctx *queryContext, ctx2 *queryConte
 	var rsop_relation = NewRelation([]string{predicateVar, subjectVar, objectVar})
 	var relation_contents [][]Key
 
-	predicates := ctx2.definitions[predicateVar]
+	predicates := ctx.definitions[predicateVar]
 	predicates.Iter(func(predicateKey Key) {
 		var subjectKey Key
 		// TODO: use?
@@ -671,10 +689,10 @@ func (op *resolveVarTripleFromPredicate) run(ctx *queryContext, ctx2 *queryConte
 		}
 	})
 
-	ctx2.markJoined(predicateVar)
+	ctx.markJoined(predicateVar)
 	rsop_relation.add3Values(predicateVar, subjectVar, objectVar, relation_contents)
-	ctx2.rel.join(rsop_relation, []string{predicateVar}, ctx2)
-	ctx2.markJoined(predicateVar)
+	ctx.rel.join(rsop_relation, []string{predicateVar}, ctx)
+	ctx.markJoined(predicateVar)
 	return nil
 
 }
@@ -696,6 +714,6 @@ func (op *resolveVarTripleAll) GetTerm() *queryTerm {
 }
 
 // ?s ?p ?o; start from s
-func (op *resolveVarTripleAll) run(ctx *queryContext, ctx2 *queryContext2) error {
+func (op *resolveVarTripleAll) run(ctx *queryContext) error {
 	return nil
 }

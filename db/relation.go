@@ -85,7 +85,7 @@ func (rel *Relation) add3Values(key1, key2, key3 string, values [][]Key) {
 }
 
 // this is a left inner join onto 'rel' on the keys in 'on'
-func (rel *Relation) join(other *Relation, on []string, ctx *queryContext2) {
+func (rel *Relation) join(other *Relation, on []string, ctx *queryContext) {
 
 	// get the variable positions for the join variables for
 	// each of the relations (these may be different)
@@ -118,7 +118,6 @@ func (rel *Relation) join(other *Relation, on []string, ctx *queryContext2) {
 			// into a *copy* of relRow
 			newRow := relRow.copy()
 			for otherVarname, otherIdx := range other.vars {
-				//log.Debug("adding", otherVarname, otherIdx, "found?", rel.vars[otherVarname])
 				//if relIdx, found := rel.vars[otherVarname]; !found {
 				//	// if we have var in the existing row, then don't need to
 				//log.Debug("add value at", relIdx, otherIdx)

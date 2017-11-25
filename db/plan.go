@@ -7,6 +7,11 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	RESOLVED   = "RESOLVED"
+	UNRESOLVED = ""
+)
+
 // need operator types that go into the query plan
 // Types:
 //  SELECT: given a 2/3 triple, it resolves the 3rd item
@@ -137,4 +142,49 @@ func (db *DB) formQueryPlan(dg *dependencyGraph, q query.Query) (*queryPlan, err
 	// sort operations
 	// sort.Sort(qp)
 	return qp, nil
+}
+
+// contains all useful state information for executing a query
+type queryPlan struct {
+	operations []operation
+	selectVars []string
+	dg         *dependencyGraph
+	query      query.Query
+	vars       map[string]string
+}
+
+func newQueryPlan(dg *dependencyGraph, q query.Query) *queryPlan {
+	plan := &queryPlan{
+		selectVars: dg.selectVars,
+		dg:         dg,
+		query:      q,
+		vars:       make(map[string]string),
+	}
+	return plan
+}
+
+func (qp *queryPlan) dumpVarchain() {
+	for k, v := range qp.vars {
+		fmt.Println(k, "=>", v)
+	}
+}
+
+func (plan *queryPlan) hasVar(variable string) bool {
+	return plan.vars[variable] != UNRESOLVED
+}
+
+func (plan *queryPlan) varIsChild(variable string) bool {
+	return plan.hasVar(variable) && plan.vars[variable] != RESOLVED
+}
+
+func (plan *queryPlan) varIsTop(variable string) bool {
+	return plan.hasVar(variable) && plan.vars[variable] == RESOLVED
+}
+
+func (plan *queryPlan) addTopLevel(variable string) {
+	plan.vars[variable] = RESOLVED
+}
+
+func (plan *queryPlan) addLink(parent, child string) {
+	plan.vars[child] = parent
 }
