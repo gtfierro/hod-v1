@@ -1,20 +1,20 @@
-=============== Nov 22, 2017 (PST) ===============
-11:41:08.819826 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
-11:41:08.824153 db@open opening
-11:41:08.825005 version@stat F·[] S·0B[] Sc·[]
-11:41:08.826732 db@janitor F·2 G·0
-11:41:08.826754 db@open done T·2.581986ms
-11:41:09.227804 transaction@flush created L0@2 N·90 S·2KiB ",v2":"htt..Tag,v22"
-11:41:09.227853 version@stat F·[1] S·2KiB[2KiB] Sc·[0.25]
-11:41:10.112060 transaction@flush created L0@3 N·4080 S·91KiB "AHU..nt\",v97":"htt..and,v1293"
-11:41:10.112102 version@stat F·[2] S·94KiB[94KiB] Sc·[0.50]
-11:41:10.129423 table@compaction L0·2 -> L1·0 S·94KiB Q·4170
-11:41:10.140145 table@build created L1@4 N·4170 S·93KiB ",v2":"htt..Tag,v22"
-11:41:10.140213 version@stat F·[0 1] S·93KiB[0B 93KiB] Sc·[0.00 0.00]
-11:41:10.151774 table@compaction committed F-1 S-256B Ke·0 D·0 T·22.312981ms
-11:41:10.151863 table@remove removed @3
-11:41:10.152037 table@remove removed @2
-11:41:10.607090 transaction@flush created L0@5 N·7 S·363B "Room 1,v4174":"htt..p_1,v4177"
-11:41:10.607122 version@stat F·[1 1] S·94KiB[363B 93KiB] Sc·[0.25 0.00]
-11:41:10.706846 db@close closing
-11:41:10.706947 db@close done T·100.253µs
+=============== Nov 24, 2017 (PST) ===============
+22:18:29.684606 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+22:18:29.688516 db@open opening
+22:18:29.689098 version@stat F·[] S·0B[] Sc·[]
+22:18:29.690849 db@janitor F·2 G·0
+22:18:29.690867 db@open done T·2.341714ms
+22:18:30.065755 transaction@flush created L0@2 N·90 S·2KiB ",v2":"htt..Tag,v22"
+22:18:30.065784 version@stat F·[1] S·2KiB[2KiB] Sc·[0.25]
+22:18:30.930742 transaction@flush created L0@3 N·4080 S·91KiB "AHU..nt\",v97":"htt..and,v1293"
+22:18:30.930795 version@stat F·[2] S·94KiB[94KiB] Sc·[0.50]
+22:18:30.948893 table@compaction L0·2 -> L1·0 S·94KiB Q·4170
+22:18:30.959581 table@build created L1@4 N·4170 S·93KiB ",v2":"htt..Tag,v22"
+22:18:30.959633 version@stat F·[0 1] S·93KiB[0B 93KiB] Sc·[0.00 0.00]
+22:18:30.965283 table@compaction committed F-1 S-256B Ke·0 D·0 T·16.357585ms
+22:18:30.965486 table@remove removed @3
+22:18:30.965524 table@remove removed @2
+22:18:31.405078 transaction@flush created L0@5 N·7 S·363B "Room 1,v4174":"htt..p_1,v4177"
+22:18:31.405118 version@stat F·[1 1] S·94KiB[363B 93KiB] Sc·[0.25 0.00]
+22:18:31.499968 db@close closing
+22:18:31.500036 db@close done T·66.912µs
