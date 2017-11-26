@@ -4,13 +4,17 @@ import (
 	"github.com/mitghi/btree"
 )
 
+const BTREE_DEGREE = 4
+
+var fl = btree.NewFreeList(262144)
+
 type keyTree struct {
 	tree *btree.BTree
 }
 
-func newKeyTree(size int) *keyTree {
+func newKeyTree() *keyTree {
 	return &keyTree{
-		tree: btree.NewWithFreeList(size, fl, struct{}{}),
+		tree: btree.NewWithFreeList(BTREE_DEGREE, fl, struct{}{}),
 	}
 }
 

@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/gtfierro/hod/query"
-	"github.com/mitghi/btree"
 	"github.com/pkg/errors"
 	"github.com/syndtr/goleveldb/leveldb"
 )
@@ -45,8 +44,7 @@ func (rs *resolveSubject) run(ctx *queryContext) error {
 	}
 	subjectVar := rs.term.Subject.String()
 	// get all subjects reachable from the given object along the path
-	_subjects := ctx.db.getSubjectFromPredObject(object.PK, rs.term.Path)
-	subjects := &keyTree{_subjects}
+	subjects := ctx.db.getSubjectFromPredObject(object.PK, rs.term.Path)
 
 	// TODO: if there are values already defined, then we need to join!
 
@@ -94,8 +92,7 @@ func (ro *resolveObject) run(ctx *queryContext) error {
 	}
 	objectVar := ro.term.Object.String()
 	// get all objects reachable from the given subject along the path
-	_objects := ctx.db.getObjectFromSubjectPred(subject.PK, ro.term.Path)
-	objects := &keyTree{_objects}
+	objects := ctx.db.getObjectFromSubjectPred(subject.PK, ro.term.Path)
 
 	if !ctx.defined(objectVar) {
 		ctx.defineVariable(objectVar, objects, true)
@@ -149,8 +146,7 @@ func (op *resolvePredicate) run(ctx *queryContext) error {
 	predicateVar := op.term.Path[0].Predicate.String()
 	// get all preds w/ the given end object, starting from the given subject
 
-	_predicates := ctx.db.getPredicateFromSubjectObject(subject, object)
-	predicates := &keyTree{_predicates}
+	predicates := ctx.db.getPredicateFromSubjectObject(subject, object)
 
 	// new stuff
 	if !ctx.defined(predicateVar) {
@@ -208,7 +204,7 @@ func (rso *restrictSubjectObjectByPredicate) run(ctx *queryContext) error {
 		rsop_relation = NewRelation([]string{subjectVar, objectVar})
 
 		subjects.Iter(func(subject Key) {
-			reachableObjects := &keyTree{ctx.db.getObjectFromSubjectPred(subject, rso.term.Path)}
+			reachableObjects := ctx.db.getObjectFromSubjectPred(subject, rso.term.Path)
 			// we restrict the values in reachableObjects to those that we already have inside 'objectVar'
 			ctx.restrictToResolved(objectVar, reachableObjects)
 
@@ -225,7 +221,7 @@ func (rso *restrictSubjectObjectByPredicate) run(ctx *queryContext) error {
 		rsop_relation = NewRelation([]string{objectVar, subjectVar})
 
 		objects.Iter(func(object Key) {
-			reachableSubjects := &keyTree{ctx.db.getSubjectFromPredObject(object, rso.term.Path)}
+			reachableSubjects := ctx.db.getSubjectFromPredObject(object, rso.term.Path)
 			ctx.restrictToResolved(subjectVar, reachableSubjects)
 
 			reachableSubjects.Iter(func(subjectKey Key) {
@@ -245,7 +241,7 @@ func (rso *restrictSubjectObjectByPredicate) run(ctx *queryContext) error {
 		rsop_relation = NewRelation([]string{subjectVar, objectVar})
 
 		subjects.Iter(func(subject Key) {
-			reachableObjects := &keyTree{ctx.db.getObjectFromSubjectPred(subject, rso.term.Path)}
+			reachableObjects := ctx.db.getObjectFromSubjectPred(subject, rso.term.Path)
 			ctx.restrictToResolved(objectVar, reachableObjects)
 
 			reachableObjects.Iter(func(objectKey Key) {
@@ -260,7 +256,7 @@ func (rso *restrictSubjectObjectByPredicate) run(ctx *queryContext) error {
 		rsop_relation = NewRelation([]string{objectVar, subjectVar})
 
 		objects.Iter(func(object Key) {
-			reachableSubjects := &keyTree{ctx.db.getSubjectFromPredObject(object, rso.term.Path)}
+			reachableSubjects := ctx.db.getSubjectFromPredObject(object, rso.term.Path)
 			ctx.restrictToResolved(subjectVar, reachableSubjects)
 			//reachableSubjects.Iter(func(e Key) {
 			//	log.Debug("reachable subject", ctx.db.MustGetURI(e))
@@ -311,11 +307,11 @@ func (rsv *resolveSubjectFromVarObject) run(ctx *queryContext) error {
 	var rsop_relation = NewRelation([]string{objectVar, subjectVar})
 	var relation_contents [][]Key
 
-	newSubjects := newKeyTree(BTREE_DEGREE)
+	newSubjects := newKeyTree()
 
 	objects := ctx.getValuesForVariable(objectVar)
 	objects.Iter(func(object Key) {
-		reachableSubjects := &keyTree{ctx.db.getSubjectFromPredObject(object, rsv.term.Path)}
+		reachableSubjects := ctx.db.getSubjectFromPredObject(object, rsv.term.Path)
 		ctx.restrictToResolved(subjectVar, reachableSubjects)
 
 		reachableSubjects.Iter(func(subjectKey Key) {
@@ -361,7 +357,7 @@ func (rov *resolveObjectFromVarSubject) run(ctx *queryContext) error {
 	subjects := ctx.getValuesForVariable(subjectVar)
 	log.Info("values for", subjectVar, subjects.Len())
 	subjects.Iter(func(subject Key) {
-		reachableObjects := &keyTree{ctx.db.getObjectFromSubjectPred(subject, rov.term.Path)}
+		reachableObjects := ctx.db.getObjectFromSubjectPred(subject, rov.term.Path)
 		ctx.restrictToResolved(objectVar, reachableObjects)
 		reachableObjects.Iter(func(objectKey Key) {
 			relation_contents = append(relation_contents, []Key{subject, objectKey})
@@ -462,7 +458,7 @@ func (op *resolveSubjectPredFromObject) run(ctx *queryContext) error {
 	}
 
 	// get all predicates from it
-	predicates := &keyTree{ctx.db.getPredicatesFromObject(object)}
+	predicates := ctx.db.getPredicatesFromObject(object)
 
 	// TODO: augment the rows with this object with all [pred, subject] pairs, provided
 	// that they
@@ -474,16 +470,13 @@ func (op *resolveSubjectPredFromObject) run(ctx *queryContext) error {
 		path := []query.PathPattern{{Predicate: ctx.db.MustGetURI(predicate), Pattern: query.PATTERN_SINGLE}}
 		subjects := ctx.db.getSubjectFromPredObject(object.PK, path)
 
-		max := subjects.Max()
 		// TODO: this can be a key tree?
-		subjects.Ascend(func(_subject btree.Item) bool {
-			subject := _subject.(Key)
+		subjects.Iter(func(subject Key) {
 			if !ctx.validValue(subjectVar, subject) {
-				return subject != max
+				return
 			}
 			sub_pred_pairs = append(sub_pred_pairs, []Key{subject, predicate})
 
-			return subject != max
 		})
 	})
 
@@ -521,7 +514,7 @@ func (op *resolvePredObjectFromSubject) run(ctx *queryContext) error {
 	}
 
 	// get all predicates from it
-	predicates := &keyTree{ctx.db.getPredicatesFromSubject(subject)}
+	predicates := ctx.db.getPredicatesFromSubject(subject)
 
 	// TODO: augment the rows with this object with all [pred, subject] pairs, provided
 	// that they
@@ -533,16 +526,11 @@ func (op *resolvePredObjectFromSubject) run(ctx *queryContext) error {
 		path := []query.PathPattern{{Predicate: ctx.db.MustGetURI(predicate), Pattern: query.PATTERN_SINGLE}}
 		objects := ctx.db.getObjectFromSubjectPred(subject.PK, path)
 
-		max := objects.Max()
-		// TODO: this can be a key tree?
-		objects.Ascend(func(_object btree.Item) bool {
-			object := _object.(Key)
+		objects.Iter(func(object Key) {
 			if !ctx.validValue(objectVar, object) {
-				return object != max
+				return
 			}
 			pred_obj_pairs = append(pred_obj_pairs, []Key{predicate, object})
-
-			return object != max
 		})
 	})
 

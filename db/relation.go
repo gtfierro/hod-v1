@@ -3,6 +3,7 @@ package db
 import (
 	"bytes"
 	"fmt"
+	//	"github.com/zhangxinngang/murmur"
 )
 
 type Relation struct {
@@ -105,25 +106,18 @@ func (rel *Relation) join(other *Relation, on []string, ctx *queryContext) {
 			for joinIdx := range on {
 				if !matches {
 					merged = false
-					//log.Debug("skipping row")
 					return // skip this row
 				}
 				leftVal := relRow.valueAt(relJoinKeyPos[joinIdx])
 				rightVal := otherRow.valueAt(otherJoinKeyPos[joinIdx])
 				matches = matches && bytes.Compare(leftVal[:], rightVal[:]) == 0
 			}
-			//log.Debug("matches!")
 
 			// here, we know the two rows match. Merge in the otherRow values
 			// into a *copy* of relRow
 			newRow := relRow.copy()
 			for otherVarname, otherIdx := range other.vars {
-				//if relIdx, found := rel.vars[otherVarname]; !found {
-				//	// if we have var in the existing row, then don't need to
-				//log.Debug("add value at", relIdx, otherIdx)
 				newRow.addValue(rel.vars[otherVarname], otherRow.valueAt(otherIdx))
-				//}
-
 			}
 			toAdd = append(toAdd, newRow)
 
@@ -141,6 +135,7 @@ func (rel *Relation) join(other *Relation, on []string, ctx *queryContext) {
 	for _, row := range toAdd {
 		rel.rows.Add(row)
 	}
+	other.rows.releaseAll()
 }
 
 func (rel *Relation) dumpRow(db *DB, row *Row) {

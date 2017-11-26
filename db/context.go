@@ -5,7 +5,7 @@ import (
 )
 
 var trees = newBtreePool(BTREE_DEGREE)
-var emptyHashTree = newKeyTree(BTREE_DEGREE)
+var emptyHashTree = newKeyTree()
 
 type queryContext struct {
 	// maps variable name to a position in a row
@@ -106,7 +106,7 @@ func (ctx *queryContext) unionDefinitions(varname string, values *keyTree) {
 func (ctx *queryContext) addDefinition(varname string, value Key) {
 	tree := ctx.definitions[varname]
 	if tree == nil || tree.Len() == 0 {
-		ctx.definitions[varname] = newKeyTree(BTREE_DEGREE)
+		ctx.definitions[varname] = newKeyTree()
 		ctx.definitions[varname].Add(value)
 	} else {
 		tree.Add(value)
@@ -163,6 +163,7 @@ func (ctx *queryContext) getResults() (results []*ResultRow) {
 			resultrow.row[idx] = ctx.db.MustGetURI(row.valueAt(ctx.variablePosition[varname]))
 		}
 		results = append(results, resultrow)
+		row.release()
 	})
 	return
 }

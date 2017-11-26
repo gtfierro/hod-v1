@@ -5,7 +5,6 @@ import (
 
 	turtle "github.com/gtfierro/hod/goraptor"
 	"github.com/gtfierro/hod/query"
-	"github.com/mitghi/btree"
 	"github.com/pkg/errors"
 	"github.com/syndtr/goleveldb/leveldb"
 )
@@ -196,7 +195,7 @@ func (db *DB) buildGraph(dataset turtle.DataSet) error {
 
 func (db *DB) populateIndex(predicateURI turtle.URI, predicate *PredicateEntity, extendtx *leveldb.Transaction) error {
 	forwardPath := query.PathPattern{Pattern: query.PATTERN_ONE_PLUS}
-	results := btree.New(BTREE_DEGREE, "")
+	results := newKeyTree()
 	if _, found := db.transitiveEdges[predicateURI]; !found {
 		return nil
 	}
@@ -231,8 +230,7 @@ func (db *DB) populateIndex(predicateURI turtle.URI, predicate *PredicateEntity,
 		db.followPathFromSubject(subject, results, stack, forwardPath)
 		//log.Debug(db.MustGetURI(subjectHash).Value, predicate.Value, results.Len())
 		for results.Len() > 0 {
-			i := results.DeleteMax()
-			subjectIndex.AddOutPlusEdge(extendedPred, i.(Key))
+			subjectIndex.AddOutPlusEdge(extendedPred, results.DeleteMax())
 		}
 		bytes, err := subjectIndex.MarshalMsg(nil)
 		if err != nil {
@@ -271,8 +269,7 @@ func (db *DB) populateIndex(predicateURI turtle.URI, predicate *PredicateEntity,
 		db.followPathFromObject(object, results, stack, forwardPath)
 		//log.Debug(db.MustGetURI(objectHash).Value, predicate.Value, results.Len())
 		for results.Len() > 0 {
-			i := results.DeleteMax()
-			objectIndex.AddInPlusEdge(extendedPred, i.(Key))
+			objectIndex.AddInPlusEdge(extendedPred, results.DeleteMax())
 		}
 		bytes, err := objectIndex.MarshalMsg(nil)
 		if err != nil {
@@ -315,8 +312,7 @@ func (db *DB) populateIndex(predicateURI turtle.URI, predicate *PredicateEntity,
 			db.followPathFromSubject(subject, results, stack, forwardPath)
 			//log.Debug(db.MustGetURI(subjectHash).Value, predicate.Value, results.Len())
 			for results.Len() > 0 {
-				i := results.DeleteMax()
-				subjectIndex.AddInPlusEdge(extendedPred, i.(Key))
+				subjectIndex.AddInPlusEdge(extendedPred, results.DeleteMax())
 			}
 			bytes, err := subjectIndex.MarshalMsg(nil)
 			if err != nil {
@@ -355,8 +351,7 @@ func (db *DB) populateIndex(predicateURI turtle.URI, predicate *PredicateEntity,
 			db.followPathFromObject(object, results, stack, forwardPath)
 			//log.Debug(db.MustGetURI(objectHash).Value, predicate.Value, results.Len())
 			for results.Len() > 0 {
-				i := results.DeleteMax()
-				objectIndex.AddOutPlusEdge(extendedPred, i.(Key))
+				objectIndex.AddOutPlusEdge(extendedPred, results.DeleteMax())
 			}
 			bytes, err := objectIndex.MarshalMsg(nil)
 			if err != nil {
