@@ -403,7 +403,17 @@ func (rso *resolveSubjectObjectFromPred) run(ctx *queryContext) error {
 	subjectVar := rso.term.Subject.String()
 	objectVar := rso.term.Object.String()
 
-	ctx.rel.add2Values(subjectVar, objectVar, subsobjs)
+	if ctx.defined(subjectVar) {
+		rsop_relation := NewRelation([]string{subjectVar, objectVar})
+		rsop_relation.add2Values(subjectVar, objectVar, subsobjs)
+		ctx.rel.join(rsop_relation, []string{subjectVar}, ctx)
+	} else if ctx.defined(objectVar) {
+		rsop_relation := NewRelation([]string{subjectVar, objectVar})
+		rsop_relation.add2Values(subjectVar, objectVar, subsobjs)
+		ctx.rel.join(rsop_relation, []string{objectVar}, ctx)
+	} else {
+		ctx.rel.add2Values(subjectVar, objectVar, subsobjs)
+	}
 	ctx.markJoined(subjectVar)
 	ctx.markJoined(objectVar)
 
@@ -474,6 +484,8 @@ func (op *resolveSubjectPredFromObject) run(ctx *queryContext) error {
 	} else {
 		ctx.rel.add2Values(subjectVar, predicateVar, sub_pred_pairs)
 	}
+	ctx.defineVariable(predicateVar, newKeyTree())
+	ctx.defineVariable(subjectVar, newKeyTree())
 
 	return nil
 }
@@ -526,6 +538,8 @@ func (op *resolvePredObjectFromSubject) run(ctx *queryContext) error {
 	})
 
 	ctx.rel.add2Values(predicateVar, objectVar, pred_obj_pairs)
+	ctx.defineVariable(predicateVar, newKeyTree())
+	ctx.defineVariable(objectVar, newKeyTree())
 
 	return nil
 }
