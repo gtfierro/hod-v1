@@ -151,17 +151,22 @@ func (ctx *queryContext) dumpRow(row *Row) {
 
 func (ctx *queryContext) getResults() (results []*ResultRow) {
 
+	results = make([]*ResultRow, len(ctx.rel.rows))
+	idx := 0
+rowIter:
 	for _, row := range ctx.rel.rows {
 		resultrow := getResultRow(len(ctx.selectVars))
 		for idx, varname := range ctx.selectVars {
 			val := row.valueAt(ctx.variablePosition[varname])
 			if val == emptyKey {
-				return
+				continue rowIter
 			}
 			resultrow.row[idx] = ctx.db.MustGetURI(row.valueAt(ctx.variablePosition[varname]))
 		}
-		results = append(results, resultrow)
+		results[idx] = resultrow
+		idx++
 		row.release()
 	}
+	results = results[:idx]
 	return
 }

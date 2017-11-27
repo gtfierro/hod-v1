@@ -1,10 +1,7 @@
 package db
 
 import (
-	"bytes"
 	"sync"
-
-	"github.com/mitghi/btree"
 )
 
 type Row [32]byte
@@ -40,20 +37,4 @@ func (row Row) valueAt(pos int) Key {
 	var k Key
 	copy(k[:], row[pos*4:pos*4+4])
 	return k
-}
-
-func (row *Row) swap(pos1, pos2 int) *Row {
-	if pos1 == pos2 {
-		return row
-	}
-	newRow := row.copy()
-	copy(newRow[pos1*4:], row[pos2*4:pos2*4+4])
-	copy(newRow[pos2*4:], row[pos1*4:pos1*4+4])
-	return newRow
-}
-
-func (row *Row) Less(_than btree.Item, ctx interface{}) bool {
-
-	than := _than.(*Row)
-	return bytes.Compare(row[:], than[:]) < 0
 }

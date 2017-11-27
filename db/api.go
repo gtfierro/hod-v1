@@ -119,6 +119,7 @@ func (db *DB) RunQuery(q query.Query) (QueryResult, error) {
 				m[vname.Var.String()] = row.row[idx]
 			}
 			result.Rows = append(result.Rows, m)
+			finishResultRow(row)
 			i = unionedRows.DeleteMax()
 		}
 		result.Count = len(result.Rows)
