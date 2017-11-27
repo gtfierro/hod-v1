@@ -134,9 +134,9 @@ func (ctx *queryContext) restrictToResolved(varname string, values *keyTree) {
 }
 
 func (ctx *queryContext) dumpRows() {
-	ctx.rel.rows.iterAll(func(row *Row) {
+	for _, row := range ctx.rel.rows {
 		ctx.dumpRow(row)
-	})
+	}
 }
 
 func (ctx *queryContext) dumpRow(row *Row) {
@@ -153,7 +153,7 @@ func (ctx *queryContext) dumpRow(row *Row) {
 
 func (ctx *queryContext) getResults() (results []*ResultRow) {
 
-	ctx.rel.rows.iterAll(func(row *Row) {
+	for _, row := range ctx.rel.rows {
 		resultrow := getResultRow(len(ctx.selectVars))
 		for idx, varname := range ctx.selectVars {
 			val := row.valueAt(ctx.variablePosition[varname])
@@ -164,6 +164,6 @@ func (ctx *queryContext) getResults() (results []*ResultRow) {
 		}
 		results = append(results, resultrow)
 		row.release()
-	})
+	}
 	return
 }

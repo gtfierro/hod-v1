@@ -195,10 +195,12 @@ func (rso *restrictSubjectObjectByPredicate) run(ctx *queryContext) error {
 
 	var rsop_relation *Relation
 	var relation_contents [][]Key
+	var joinOn []string
 
 	// test joined
 	if ctx.hasJoined(subjectVar) {
 		//log.Debug("subj", subjectVar)
+		joinOn = []string{subjectVar}
 		subjects := ctx.getValuesForVariable(subjectVar)
 
 		rsop_relation = NewRelation([]string{subjectVar, objectVar})
@@ -214,8 +216,10 @@ func (rso *restrictSubjectObjectByPredicate) run(ctx *queryContext) error {
 		})
 		rsop_relation.add2Values(subjectVar, objectVar, relation_contents)
 		//ctx.rel.join(rsop_relation, []string{subjectVar}, ctx)
+
 	} else if ctx.hasJoined(objectVar) {
 		//log.Debug("obj", objectVar)
+		joinOn = []string{objectVar}
 		objects := ctx.getValuesForVariable(objectVar)
 
 		rsop_relation = NewRelation([]string{objectVar, subjectVar})
@@ -236,6 +240,7 @@ func (rso *restrictSubjectObjectByPredicate) run(ctx *queryContext) error {
 		// the graph for reachable endpoints (object or subject) on the provided path (rso.term.Path)
 		// neither is joined
 	} else if ctx.cardinalityUnique(subjectVar) < ctx.cardinalityUnique(objectVar) {
+		joinOn = []string{subjectVar}
 		subjects := ctx.getValuesForVariable(subjectVar)
 
 		rsop_relation = NewRelation([]string{subjectVar, objectVar})
@@ -249,8 +254,8 @@ func (rso *restrictSubjectObjectByPredicate) run(ctx *queryContext) error {
 			})
 		})
 		rsop_relation.add2Values(subjectVar, objectVar, relation_contents)
-		//ctx.rel.join(rsop_relation, []string{subjectVar}, ctx)
 	} else {
+		joinOn = []string{objectVar}
 		objects := ctx.getValuesForVariable(objectVar)
 
 		rsop_relation = NewRelation([]string{objectVar, subjectVar})
@@ -267,12 +272,12 @@ func (rso *restrictSubjectObjectByPredicate) run(ctx *queryContext) error {
 			})
 		})
 		rsop_relation.add2Values(objectVar, subjectVar, relation_contents)
-		//	ctx.rel.join(rsop_relation, []string{objectVar}, ctx)
 	}
 
 	//log.Debug("rsop_relation.keys", rsop_relation.keys)
-	//rsop_relation.dumpRows(ctx.db)
-	ctx.rel.join(rsop_relation, rsop_relation.keys, ctx)
+	//rsop_relation.dumpRows(ctx)
+	//log.Debug("joining on", joinOn)
+	ctx.rel.join(rsop_relation, joinOn, ctx)
 	ctx.markJoined(subjectVar)
 	ctx.markJoined(objectVar)
 
@@ -321,7 +326,7 @@ func (rsv *resolveSubjectFromVarObject) run(ctx *queryContext) error {
 	})
 
 	rsop_relation.add2Values(rsop_relation.keys[0], rsop_relation.keys[1], relation_contents)
-	ctx.rel.join(rsop_relation, rsop_relation.keys, ctx)
+	ctx.rel.join(rsop_relation, rsop_relation.keys[:1], ctx)
 	ctx.markJoined(subjectVar)
 	ctx.markJoined(objectVar)
 	ctx.unionDefinitions(subjectVar, newSubjects)
@@ -355,7 +360,7 @@ func (rov *resolveObjectFromVarSubject) run(ctx *queryContext) error {
 	var relation_contents [][]Key
 
 	subjects := ctx.getValuesForVariable(subjectVar)
-	log.Info("values for", subjectVar, subjects.Len())
+	//log.Info("values for", subjectVar, subjects.Len())
 	subjects.Iter(func(subject Key) {
 		reachableObjects := ctx.db.getObjectFromSubjectPred(subject, rov.term.Path)
 		ctx.restrictToResolved(objectVar, reachableObjects)
@@ -365,8 +370,8 @@ func (rov *resolveObjectFromVarSubject) run(ctx *queryContext) error {
 	})
 
 	rsop_relation.add2Values(subjectVar, objectVar, relation_contents)
-	log.Debug(subjectVar, objectVar, len(relation_contents))
-	ctx.rel.join(rsop_relation, rsop_relation.keys, ctx)
+	//log.Debug(subjectVar, objectVar, len(relation_contents))
+	ctx.rel.join(rsop_relation, rsop_relation.keys[:1], ctx)
 	ctx.markJoined(subjectVar)
 	ctx.markJoined(objectVar)
 
@@ -480,7 +485,17 @@ func (op *resolveSubjectPredFromObject) run(ctx *queryContext) error {
 		})
 	})
 
-	ctx.rel.add2Values(subjectVar, predicateVar, sub_pred_pairs)
+	if ctx.defined(subjectVar) {
+		rsop_relation := NewRelation([]string{subjectVar, predicateVar})
+		rsop_relation.add2Values(subjectVar, predicateVar, sub_pred_pairs)
+		ctx.rel.join(rsop_relation, []string{subjectVar}, ctx)
+	} else if ctx.defined(predicateVar) {
+		rsop_relation := NewRelation([]string{subjectVar, predicateVar})
+		rsop_relation.add2Values(subjectVar, predicateVar, sub_pred_pairs)
+		ctx.rel.join(rsop_relation, []string{predicateVar}, ctx)
+	} else {
+		ctx.rel.add2Values(subjectVar, predicateVar, sub_pred_pairs)
+	}
 
 	return nil
 }

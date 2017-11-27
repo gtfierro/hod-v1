@@ -1,13 +1,15 @@
 package db
 
 import (
-	"bytes"
 	"fmt"
-	//	"github.com/zhangxinngang/murmur"
+	"github.com/RoaringBitmap/roaring"
 )
 
 type Relation struct {
-	rows *RowTree
+	rows []*Row
+
+	multiindex map[string]map[Key]*roaring.Bitmap
+
 	// map variable name to position in row
 	vars map[string]int
 	keys []string
@@ -15,12 +17,13 @@ type Relation struct {
 
 func NewRelation(vars []string) *Relation {
 	rel := &Relation{
-		keys: vars,
-		vars: make(map[string]int),
-		rows: NewRowTree(),
+		keys:       vars,
+		vars:       make(map[string]int),
+		multiindex: make(map[string]map[Key]*roaring.Bitmap),
 	}
 	for idx, varname := range vars {
 		rel.vars[varname] = idx
+		rel.multiindex[varname] = make(map[Key]*roaring.Bitmap)
 	}
 	return rel
 }
@@ -28,66 +31,115 @@ func NewRelation(vars []string) *Relation {
 func (rel *Relation) add1Value(key1 string, values *keyTree) {
 	key1pos, found := rel.vars[key1]
 	if !found {
-		key1pos = len(rel.vars) + 1
-		rel.vars[key1] = key1pos
+		panic("no keypos!")
 	}
 
+	// For each value (for this variable), we want to check
+	// if the bitmap is non-zero. If it is, then this value already
+	// exists inside the relation. Otherwise, we can add it ourselves
 	values.Iter(func(value Key) {
+		bitmap := rel.multiindex[key1][value]
+
+		// if this is non-nil, then the value exists already
+		if bitmap != nil {
+			return
+		}
+
 		row := NewRow()
 		row.addValue(key1pos, value)
-		rel.rows.Add(row)
+		rel.rows = append(rel.rows, row)
+		// add the row to the multiindex
+		rel.multiindex[key1][value] = roaring.New()
+		rel.multiindex[key1][value].AddInt(len(rel.rows) - 1)
 	})
 }
 
 func (rel *Relation) add2Values(key1, key2 string, values [][]Key) {
 	key1pos, found := rel.vars[key1]
 	if !found {
-		key1pos = len(rel.vars) + 1
-		rel.vars[key1] = key1pos
+		panic("no keypos!")
 	}
 	key2pos, found := rel.vars[key2]
 	if !found {
-		key2pos = len(rel.vars) + 1
-		rel.vars[key2] = key2pos
+		panic("no keypos!")
 	}
 
 	for _, valuepair := range values {
+		bitmap1 := rel.multiindex[key1][valuepair[0]]
+		bitmap2 := rel.multiindex[key2][valuepair[1]]
+
+		// if the bitmaps are all non-nil, and the intersection is non-nil, then the value pair exists already
+		if bitmap1 != nil && bitmap2 != nil && !roaring.FastAnd(bitmap1, bitmap2).IsEmpty() {
+			continue
+		}
+
 		row := NewRow()
 		row.addValue(key1pos, valuepair[0])
 		row.addValue(key2pos, valuepair[1])
-		rel.rows.Add(row)
+		rel.rows = append(rel.rows, row)
+
+		if bitmap1 == nil {
+			rel.multiindex[key1][valuepair[0]] = roaring.New()
+		}
+		if bitmap2 == nil {
+			rel.multiindex[key2][valuepair[1]] = roaring.New()
+		}
+
+		// add the row to the multiindex
+		rel.multiindex[key1][valuepair[0]].AddInt(len(rel.rows) - 1)
+		rel.multiindex[key2][valuepair[1]].AddInt(len(rel.rows) - 1)
 	}
 }
 
 func (rel *Relation) add3Values(key1, key2, key3 string, values [][]Key) {
 	key1pos, found := rel.vars[key1]
 	if !found {
-		key1pos = len(rel.vars) + 1
-		rel.vars[key1] = key1pos
+		panic("no keypos!")
 	}
 	key2pos, found := rel.vars[key2]
 	if !found {
-		key2pos = len(rel.vars) + 1
-		rel.vars[key2] = key2pos
+		panic("no keypos!")
 	}
 	key3pos, found := rel.vars[key3]
 	if !found {
-		key3pos = len(rel.vars) + 1
-		rel.vars[key3] = key3pos
+		panic("no keypos!")
 	}
 
-	for _, valuetriple := range values {
+	for _, valuepair := range values {
+		bitmap1 := rel.multiindex[key1][valuepair[0]]
+		bitmap2 := rel.multiindex[key2][valuepair[1]]
+		bitmap3 := rel.multiindex[key3][valuepair[2]]
+
+		// if the bitmaps are all non-nil, and the intersection is non-nil, then the value pair exists already
+		if bitmap1 != nil && bitmap2 != nil && bitmap3 != nil && !roaring.FastAnd(bitmap1, bitmap2, bitmap3).IsEmpty() {
+			continue
+		}
+
 		row := NewRow()
-		row.addValue(key1pos, valuetriple[0])
-		row.addValue(key2pos, valuetriple[1])
-		row.addValue(key3pos, valuetriple[2])
-		rel.rows.Add(row)
+		row.addValue(key1pos, valuepair[0])
+		row.addValue(key2pos, valuepair[1])
+		row.addValue(key3pos, valuepair[2])
+		rel.rows = append(rel.rows, row)
+
+		if bitmap1 == nil {
+			rel.multiindex[key1][valuepair[0]] = roaring.New()
+		}
+		if bitmap2 == nil {
+			rel.multiindex[key2][valuepair[1]] = roaring.New()
+		}
+		if bitmap3 == nil {
+			rel.multiindex[key3][valuepair[2]] = roaring.New()
+		}
+
+		// add the row to the multiindex
+		rel.multiindex[key1][valuepair[0]].AddInt(len(rel.rows) - 1)
+		rel.multiindex[key2][valuepair[1]].AddInt(len(rel.rows) - 1)
+		rel.multiindex[key3][valuepair[2]].AddInt(len(rel.rows) - 1)
 	}
+
 }
 
-// this is a left inner join onto 'rel' on the keys in 'on'
 func (rel *Relation) join(other *Relation, on []string, ctx *queryContext) {
-
 	// get the variable positions for the join variables for
 	// each of the relations (these may be different)
 	var relJoinKeyPos []int
@@ -97,61 +149,56 @@ func (rel *Relation) join(other *Relation, on []string, ctx *queryContext) {
 		otherJoinKeyPos = append(otherJoinKeyPos, other.vars[varname])
 	}
 
-	var toAdd []*Row
-	var toRemove []*Row
-	rel.rows.iterAll(func(relRow *Row) {
-		merged := true
-		other.rows.iterAll(func(otherRow *Row) {
-			matches := true
-			for joinIdx := range on {
-				if !matches {
-					merged = false
-					return // skip this row
-				}
-				leftVal := relRow.valueAt(relJoinKeyPos[joinIdx])
-				rightVal := otherRow.valueAt(otherJoinKeyPos[joinIdx])
-				matches = matches && bytes.Compare(leftVal[:], rightVal[:]) == 0
+	var joinedRows []*Row
+innerRows:
+	for _, innerRow := range rel.rows {
+		// find all the rows in [other] that share the values
+		var otherBitmaps []*roaring.Bitmap
+		for _, joinVarName := range on {
+			myVarPos := rel.vars[joinVarName]
+			innerRowValue := innerRow.valueAt(myVarPos)
+			if otherBitmap := other.multiindex[joinVarName][innerRowValue]; otherBitmap != nil {
+				otherBitmaps = append(otherBitmaps, otherBitmap)
+			} else {
+				innerRow.release()
+				continue innerRows // skip this row
 			}
-
-			// here, we know the two rows match. Merge in the otherRow values
-			// into a *copy* of relRow
-			newRow := relRow.copy()
-			for otherVarname, otherIdx := range other.vars {
-				newRow.addValue(rel.vars[otherVarname], otherRow.valueAt(otherIdx))
-			}
-			toAdd = append(toAdd, newRow)
-
-		})
-		// mark relRow for deletion if we had merged it above
-		if merged {
-			toRemove = append(toRemove, relRow)
 		}
-	})
+		otherRowsBitmap := roaring.FastAnd(otherBitmaps...)
+		if otherRowsBitmap.IsEmpty() {
+			innerRow.release()
+			continue innerRows // skip this row because there are no values to join
+			//TODO: delete innerRow?
+		}
+		iter := otherRowsBitmap.Iterator()
+		for iter.HasNext() {
+			row := other.rows[iter.Next()]
+			newRow := innerRow.copy()
+			for otherVarname, otherIdx := range other.vars {
+				newRow.addValue(rel.vars[otherVarname], row.valueAt(otherIdx))
+			}
 
-	for _, row := range toRemove {
-		rel.rows.tree.Delete(row)
-		row.release()
+			joinedRows = append(joinedRows, newRow)
+		}
+		innerRow.release() // now done with this row
 	}
-	for _, row := range toAdd {
-		rel.rows.Add(row)
-	}
-	other.rows.releaseAll()
+	rel.rows = joinedRows
 }
 
-func (rel *Relation) dumpRow(db *DB, row *Row) {
+func (rel *Relation) dumpRows(ctx *queryContext) {
+	for _, row := range rel.rows {
+		rel.dumpRow(row, ctx)
+	}
+}
+
+func (rel *Relation) dumpRow(row *Row, ctx *queryContext) {
 	s := "["
 	for varName, pos := range rel.vars {
 		val := row.valueAt(pos)
 		if val != emptyKey {
-			s += varName + "=" + db.MustGetURI(val).String() + ", "
+			s += varName + "=" + ctx.db.MustGetURI(val).String() + ", "
 		}
 	}
 	s += "]"
 	fmt.Println(s)
-}
-
-func (rel *Relation) dumpRows(db *DB) {
-	rel.rows.iterAll(func(r *Row) {
-		rel.dumpRow(db, r)
-	})
 }
