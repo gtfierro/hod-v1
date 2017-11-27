@@ -36,7 +36,7 @@ func (rs *resolveSubject) GetTerm() *queryTerm {
 
 func (rs *resolveSubject) run(ctx *queryContext) error {
 	// fetch the object from the graph
-	object, err := ctx.db.GetEntity(rs.term.Object)
+	object, err := ctx.db.GetHash(rs.term.Object)
 	if err != nil && err != leveldb.ErrNotFound {
 		return errors.Wrap(err, fmt.Sprintf("%+v", rs.term))
 	} else if err == leveldb.ErrNotFound {
@@ -44,15 +44,14 @@ func (rs *resolveSubject) run(ctx *queryContext) error {
 	}
 	subjectVar := rs.term.Subject.String()
 	// get all subjects reachable from the given object along the path
-	subjects := ctx.db.getSubjectFromPredObject(object.PK, rs.term.Path)
+	subjects := ctx.db.getSubjectFromPredObject(object, rs.term.Path)
 
-	// TODO: if there are values already defined, then we need to join!
-
-	// new stuff
 	if !ctx.defined(subjectVar) {
-		ctx.defineVariable(subjectVar, subjects, true)
+		// if not defined, then we put this into the relation
+		ctx.defineVariable(subjectVar, subjects)
 		ctx.rel.add1Value(subjectVar, subjects)
 	} else {
+		// if it *is* already defined, then we intersect the values by joining
 		ctx.unionDefinitions(subjectVar, subjects)
 
 		newrel := NewRelation([]string{subjectVar})
@@ -84,18 +83,17 @@ func (ro *resolveObject) GetTerm() *queryTerm {
 
 func (ro *resolveObject) run(ctx *queryContext) error {
 	// fetch the subject from the graph
-	subject, err := ctx.db.GetEntity(ro.term.Subject)
+	subject, err := ctx.db.GetHash(ro.term.Subject)
 	if err != nil && err != leveldb.ErrNotFound {
 		return errors.Wrap(err, fmt.Sprintf("%+v", ro.term))
 	} else if err == leveldb.ErrNotFound {
 		return nil
 	}
 	objectVar := ro.term.Object.String()
-	// get all objects reachable from the given subject along the path
-	objects := ctx.db.getObjectFromSubjectPred(subject.PK, ro.term.Path)
+	objects := ctx.db.getObjectFromSubjectPred(subject, ro.term.Path)
 
 	if !ctx.defined(objectVar) {
-		ctx.defineVariable(objectVar, objects, true)
+		ctx.defineVariable(objectVar, objects)
 		ctx.rel.add1Value(objectVar, objects)
 	} else {
 		ctx.unionDefinitions(objectVar, objects)
@@ -150,7 +148,7 @@ func (op *resolvePredicate) run(ctx *queryContext) error {
 
 	// new stuff
 	if !ctx.defined(predicateVar) {
-		ctx.defineVariable(predicateVar, predicates, true)
+		ctx.defineVariable(predicateVar, predicates)
 		ctx.rel.add1Value(predicateVar, predicates)
 	} else {
 		ctx.unionDefinitions(predicateVar, predicates)
@@ -189,7 +187,6 @@ func (rso *restrictSubjectObjectByPredicate) run(ctx *queryContext) error {
 		objectVar  = rso.term.Object.String()
 	)
 
-	// new stuff
 	// this operator takes existing values for subjects and objects and finds the pairs of them that
 	// are connected by the path defined by rso.term.Path.
 
@@ -197,9 +194,9 @@ func (rso *restrictSubjectObjectByPredicate) run(ctx *queryContext) error {
 	var relation_contents [][]Key
 	var joinOn []string
 
-	// test joined
+	// use whichever variable has already been joined on, which means
+	// that there are values in the relation that we can join with
 	if ctx.hasJoined(subjectVar) {
-		//log.Debug("subj", subjectVar)
 		joinOn = []string{subjectVar}
 		subjects := ctx.getValuesForVariable(subjectVar)
 
@@ -209,16 +206,13 @@ func (rso *restrictSubjectObjectByPredicate) run(ctx *queryContext) error {
 			reachableObjects := ctx.db.getObjectFromSubjectPred(subject, rso.term.Path)
 			// we restrict the values in reachableObjects to those that we already have inside 'objectVar'
 			ctx.restrictToResolved(objectVar, reachableObjects)
-
 			reachableObjects.Iter(func(objectKey Key) {
 				relation_contents = append(relation_contents, []Key{subject, objectKey})
 			})
 		})
 		rsop_relation.add2Values(subjectVar, objectVar, relation_contents)
-		//ctx.rel.join(rsop_relation, []string{subjectVar}, ctx)
 
 	} else if ctx.hasJoined(objectVar) {
-		//log.Debug("obj", objectVar)
 		joinOn = []string{objectVar}
 		objects := ctx.getValuesForVariable(objectVar)
 
@@ -229,17 +223,14 @@ func (rso *restrictSubjectObjectByPredicate) run(ctx *queryContext) error {
 			ctx.restrictToResolved(subjectVar, reachableSubjects)
 
 			reachableSubjects.Iter(func(subjectKey Key) {
-				//log.Debug("reachable subject1", subjectVar, ctx.db.MustGetURI(subjectKey))
 				relation_contents = append(relation_contents, []Key{object, subjectKey})
 			})
 		})
 		rsop_relation.add2Values(objectVar, subjectVar, relation_contents)
-		//ctx.rel.join(rsop_relation, []string{objectVar}, ctx)
-		// TODO: use cardinality of rows, not of unique values
+	} else if ctx.cardinalityUnique(subjectVar) < ctx.cardinalityUnique(objectVar) {
 		// we start with whichever has fewer values (subject or object). For each of them, we search
 		// the graph for reachable endpoints (object or subject) on the provided path (rso.term.Path)
 		// neither is joined
-	} else if ctx.cardinalityUnique(subjectVar) < ctx.cardinalityUnique(objectVar) {
 		joinOn = []string{subjectVar}
 		subjects := ctx.getValuesForVariable(subjectVar)
 
@@ -263,9 +254,6 @@ func (rso *restrictSubjectObjectByPredicate) run(ctx *queryContext) error {
 		objects.Iter(func(object Key) {
 			reachableSubjects := ctx.db.getSubjectFromPredObject(object, rso.term.Path)
 			ctx.restrictToResolved(subjectVar, reachableSubjects)
-			//reachableSubjects.Iter(func(e Key) {
-			//	log.Debug("reachable subject", ctx.db.MustGetURI(e))
-			//})
 
 			reachableSubjects.Iter(func(subjectKey Key) {
 				relation_contents = append(relation_contents, []Key{object, subjectKey})
@@ -274,9 +262,6 @@ func (rso *restrictSubjectObjectByPredicate) run(ctx *queryContext) error {
 		rsop_relation.add2Values(objectVar, subjectVar, relation_contents)
 	}
 
-	//log.Debug("rsop_relation.keys", rsop_relation.keys)
-	//rsop_relation.dumpRows(ctx)
-	//log.Debug("joining on", joinOn)
 	ctx.rel.join(rsop_relation, joinOn, ctx)
 	ctx.markJoined(subjectVar)
 	ctx.markJoined(objectVar)
@@ -360,7 +345,6 @@ func (rov *resolveObjectFromVarSubject) run(ctx *queryContext) error {
 	var relation_contents [][]Key
 
 	subjects := ctx.getValuesForVariable(subjectVar)
-	//log.Info("values for", subjectVar, subjects.Len())
 	subjects.Iter(func(subject Key) {
 		reachableObjects := ctx.db.getObjectFromSubjectPred(subject, rov.term.Path)
 		ctx.restrictToResolved(objectVar, reachableObjects)
@@ -370,7 +354,6 @@ func (rov *resolveObjectFromVarSubject) run(ctx *queryContext) error {
 	})
 
 	rsop_relation.add2Values(subjectVar, objectVar, relation_contents)
-	//log.Debug(subjectVar, objectVar, len(relation_contents))
 	ctx.rel.join(rsop_relation, rsop_relation.keys[:1], ctx)
 	ctx.markJoined(subjectVar)
 	ctx.markJoined(objectVar)
@@ -394,7 +377,6 @@ func (op *resolveObjectFromVarSubjectPred) GetTerm() *queryTerm {
 	return op.term
 }
 
-// TODO: implement resolveObjectFromVarSubjectPred
 // ?s ?p o
 func (rov *resolveObjectFromVarSubjectPred) run(ctx *queryContext) error {
 	return nil
@@ -416,7 +398,6 @@ func (op *resolveSubjectObjectFromPred) GetTerm() *queryTerm {
 	return op.term
 }
 
-// TODO: rewrite
 func (rso *resolveSubjectObjectFromPred) run(ctx *queryContext) error {
 	subsobjs := ctx.db.getSubjectObjectFromPred(rso.term.Path)
 	subjectVar := rso.term.Subject.String()
@@ -465,8 +446,6 @@ func (op *resolveSubjectPredFromObject) run(ctx *queryContext) error {
 	// get all predicates from it
 	predicates := ctx.db.getPredicatesFromObject(object)
 
-	// TODO: augment the rows with this object with all [pred, subject] pairs, provided
-	// that they
 	var sub_pred_pairs [][]Key
 	predicates.Iter(func(predicate Key) {
 		if !ctx.validValue(predicateVar, predicate) {
@@ -475,7 +454,6 @@ func (op *resolveSubjectPredFromObject) run(ctx *queryContext) error {
 		path := []query.PathPattern{{Predicate: ctx.db.MustGetURI(predicate), Pattern: query.PATTERN_SINGLE}}
 		subjects := ctx.db.getSubjectFromPredObject(object.PK, path)
 
-		// TODO: this can be a key tree?
 		subjects.Iter(func(subject Key) {
 			if !ctx.validValue(subjectVar, subject) {
 				return
@@ -531,8 +509,6 @@ func (op *resolvePredObjectFromSubject) run(ctx *queryContext) error {
 	// get all predicates from it
 	predicates := ctx.db.getPredicatesFromSubject(subject)
 
-	// TODO: augment the rows with this object with all [pred, subject] pairs, provided
-	// that they
 	var pred_obj_pairs [][]Key
 	predicates.Iter(func(predicate Key) {
 		if !ctx.validValue(predicateVar, predicate) {

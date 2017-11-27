@@ -493,14 +493,6 @@ func (db *DB) LoadDataset(dataset turtle.DataSet) error {
 			if err := b.Index(triple.Subject.String(), sub); err != nil && len(triple.Subject.String()) > 0 {
 				return errors.Wrapf(err, "Could not add subject %s to text index (%s)", triple.Subject, triple)
 			}
-			//			pred := strings.Replace(triple.Predicate.String(), "_", " ", -1)
-			//			if err := b.Index(triple.Predicate.String(), pred); err != nil && len(triple.Predicate.String()) > 0 {
-			//				return errors.Wrapf(err, "Could not add predicate %s to text index (%s)", triple.Predicate, triple)
-			//			}
-			//			obj := strings.Replace(triple.Object.String(), "_", " ", -1)
-			//			if err := b.Index(triple.Object.String(), obj); err != nil && len(triple.Object.String()) > 0 {
-			//				return errors.Wrapf(err, "Could not add object %s to text index (%s)", triple.Object, triple)
-			//			}
 		}
 
 		if err := db.insertEntityTx(triple.Subject, subjectHash, enttx, pktx); err != nil {

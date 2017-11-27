@@ -84,10 +84,8 @@ func (ctx *queryContext) getValuesForVariable(varname string) *keyTree {
 	return emptyHashTree
 }
 
-func (ctx *queryContext) defineVariable(varname string, values *keyTree, intersect bool) {
-
+func (ctx *queryContext) defineVariable(varname string, values *keyTree) {
 	tree := ctx.definitions[varname]
-	// TODO: intersect? merge?
 	if tree == nil || tree.Len() == 0 {
 		ctx.definitions[varname] = values
 	}
