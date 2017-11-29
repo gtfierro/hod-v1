@@ -310,8 +310,8 @@ func (rsv *resolveSubjectFromVarObject) run(ctx *queryContext) error {
 		})
 	})
 
-	rsop_relation.add2Values(rsop_relation.keys[0], rsop_relation.keys[1], relation_contents)
-	ctx.rel.join(rsop_relation, rsop_relation.keys[:1], ctx)
+	rsop_relation.add2Values(objectVar, subjectVar, relation_contents)
+	ctx.rel.join(rsop_relation, rsop_relation.keys[:1], ctx) // join on objectVar
 	ctx.markJoined(subjectVar)
 	ctx.markJoined(objectVar)
 	ctx.unionDefinitions(subjectVar, newSubjects)
@@ -344,19 +344,24 @@ func (rov *resolveObjectFromVarSubject) run(ctx *queryContext) error {
 	var rsop_relation = NewRelation([]string{subjectVar, objectVar})
 	var relation_contents [][]Key
 
+	newObjects := newKeyTree()
+
 	subjects := ctx.getValuesForVariable(subjectVar)
 	subjects.Iter(func(subject Key) {
 		reachableObjects := ctx.db.getObjectFromSubjectPred(subject, rov.term.Path)
 		ctx.restrictToResolved(objectVar, reachableObjects)
+
 		reachableObjects.Iter(func(objectKey Key) {
+			newObjects.Add(objectKey)
 			relation_contents = append(relation_contents, []Key{subject, objectKey})
 		})
 	})
 
 	rsop_relation.add2Values(subjectVar, objectVar, relation_contents)
-	ctx.rel.join(rsop_relation, rsop_relation.keys[:1], ctx)
+	ctx.rel.join(rsop_relation, rsop_relation.keys[:1], ctx) // join on subjectVar
 	ctx.markJoined(subjectVar)
 	ctx.markJoined(objectVar)
+	ctx.unionDefinitions(objectVar, newObjects)
 
 	return nil
 }
