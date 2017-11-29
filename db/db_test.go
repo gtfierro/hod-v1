@@ -248,6 +248,10 @@ func TestDBQueryBerkeley(t *testing.T) {
 			"COUNT ?ahu WHERE { ?ahu bf:feeds soda_hall:vav_C711 . ?ahu rdf:type brick:AHU . };",
 			1,
 		},
+		{
+			"COUNT ?vav ?x ?y ?z WHERE { ?vav rdf:type brick:VAV . ?vav bf:feeds+ ?x . ?vav bf:isFedBy+ ?y . ?vav bf:hasPoint+ ?z . };",
+			823,
+		},
 	} {
 		time.Sleep(100 * time.Millisecond)
 		q, e := query.Parse(strings.NewReader(test.query))
