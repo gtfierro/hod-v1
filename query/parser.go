@@ -138,11 +138,11 @@ func (f Filter) NumVars() int {
 }
 
 func (f Filter) String() string {
-	s := f.Subject.String()
+	s := "<" + f.Subject.String() + "|"
 	for _, pp := range f.Path {
-		s += pp.String()
+		s += " " + pp.String()
 	}
-	return s + f.Object.String()
+	return s + " | " + f.Object.String() + ">"
 }
 
 type OrClause struct {
