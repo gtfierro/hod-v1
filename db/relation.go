@@ -31,7 +31,9 @@ func NewRelation(vars []string) *Relation {
 func (rel *Relation) add1Value(key1 string, values *keyTree) {
 	key1pos, found := rel.vars[key1]
 	if !found {
-		panic("no keypos!")
+		rel.vars[key1] = len(rel.vars) + 1
+		key1pos = rel.vars[key1]
+		rel.multiindex[key1] = make(map[Key]*roaring.Bitmap)
 	}
 
 	// For each value (for this variable), we want to check
@@ -57,11 +59,15 @@ func (rel *Relation) add1Value(key1 string, values *keyTree) {
 func (rel *Relation) add2Values(key1, key2 string, values [][]Key) {
 	key1pos, found := rel.vars[key1]
 	if !found {
-		panic("no keypos!")
+		rel.vars[key1] = len(rel.vars) + 1
+		key1pos = rel.vars[key1]
+		rel.multiindex[key1] = make(map[Key]*roaring.Bitmap)
 	}
 	key2pos, found := rel.vars[key2]
 	if !found {
-		panic("no keypos!")
+		rel.vars[key2] = len(rel.vars) + 1
+		key2pos = rel.vars[key2]
+		rel.multiindex[key2] = make(map[Key]*roaring.Bitmap)
 	}
 
 	for _, valuepair := range values {
@@ -94,15 +100,21 @@ func (rel *Relation) add2Values(key1, key2 string, values [][]Key) {
 func (rel *Relation) add3Values(key1, key2, key3 string, values [][]Key) {
 	key1pos, found := rel.vars[key1]
 	if !found {
-		panic("no keypos!")
+		rel.vars[key1] = len(rel.vars) + 1
+		key1pos = rel.vars[key1]
+		rel.multiindex[key1] = make(map[Key]*roaring.Bitmap)
 	}
 	key2pos, found := rel.vars[key2]
 	if !found {
-		panic("no keypos!")
+		rel.vars[key2] = len(rel.vars) + 1
+		key2pos = rel.vars[key2]
+		rel.multiindex[key2] = make(map[Key]*roaring.Bitmap)
 	}
 	key3pos, found := rel.vars[key3]
 	if !found {
-		panic("no keypos!")
+		rel.vars[key3] = len(rel.vars) + 1
+		key3pos = rel.vars[key3]
+		rel.multiindex[key3] = make(map[Key]*roaring.Bitmap)
 	}
 
 	for _, valuepair := range values {
