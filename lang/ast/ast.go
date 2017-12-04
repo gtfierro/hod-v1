@@ -44,11 +44,22 @@ func NewQuery(selectclause, countclause, whereclause interface{}) (Query, error)
 			AddIfVar(path.Predicate, vars)
 		}
 	}
-	VarsFromGroup(q.Where.GraphGroup, vars)
+	if q.Where.GraphGroup != nil {
+		VarsFromGroup(*q.Where.GraphGroup, vars)
+	}
 	for varname := range vars {
 		q.Variables = append(q.Variables, varname)
 	}
 	return q, nil
+}
+
+func (q Query) IterTriples(f func(t Triple) Triple) {
+	for idx, triple := range q.Where.Terms {
+		q.Where.Terms[idx] = f(triple)
+	}
+	if q.Where.GraphGroup != nil {
+		q.Where.GraphGroup.IterTriples(f)
+	}
 }
 
 func AddIfVar(uri turtle.URI, m map[string]int) {
@@ -67,6 +78,28 @@ func VarsFromGroup(group GraphGroup, m map[string]int) {
 	}
 	for _, union := range group.Unions {
 		VarsFromGroup(union, m)
+	}
+}
+
+func (grp GraphGroup) Iter(f func(t turtle.URI)) {
+	for _, triple := range grp.Terms {
+		f(triple.Subject)
+		f(triple.Object)
+		for _, path := range triple.Predicates {
+			f(path.Predicate)
+		}
+	}
+	for _, union := range grp.Unions {
+		union.Iter(f)
+	}
+}
+
+func (grp *GraphGroup) IterTriples(f func(t Triple) Triple) {
+	for idx, triple := range grp.Terms {
+		grp.Terms[idx] = f(triple)
+	}
+	for _, union := range grp.Unions {
+		union.IterTriples(f)
 	}
 }
 
@@ -98,7 +131,7 @@ func NewCountClause(varlist interface{}) (CountClause, error) {
 
 type WhereClause struct {
 	Terms      []Triple
-	GraphGroup GraphGroup
+	GraphGroup *GraphGroup
 }
 
 func NewWhereClause(triples interface{}) (WhereClause, error) {
@@ -108,15 +141,17 @@ func NewWhereClause(triples interface{}) (WhereClause, error) {
 }
 
 func NewWhereClauseWithGraphGroup(triples, group interface{}) (WhereClause, error) {
+	g := group.(GraphGroup)
 	return WhereClause{
 		Terms:      triples.([]Triple),
-		GraphGroup: group.(GraphGroup),
+		GraphGroup: &g,
 	}, nil
 }
 
 func NewWhereClauseGraphGroup(group interface{}) (WhereClause, error) {
+	g := group.(GraphGroup)
 	return WhereClause{
-		GraphGroup: group.(GraphGroup),
+		GraphGroup: &g,
 	}, nil
 }
 
@@ -155,6 +190,14 @@ type Triple struct {
 	Subject    turtle.URI
 	Predicates []PathPattern
 	Object     turtle.URI
+}
+
+func (t Triple) String() string {
+	s := "<" + t.Subject.String() + "|"
+	for _, pp := range t.Predicates {
+		s += " " + pp.String()
+	}
+	return s + " | " + t.Object.String() + ">"
 }
 
 func NewTriple(subject, predicates, object interface{}) (Triple, error) {

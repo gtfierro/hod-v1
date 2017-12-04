@@ -31,21 +31,21 @@ var productionsTable = ProdTab{
 		},
 	},
 	ProdTabEntry{
-		String: `QueryUnit : SelectQuery	<< X[0], nil >>`,
+		String: `QueryUnit : SelectQuery ";"	<< X[0], nil >>`,
 		Id:         "QueryUnit",
 		NTType:     1,
 		Index:      1,
-		NumSymbols: 1,
+		NumSymbols: 2,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return X[0], nil
 		},
 	},
 	ProdTabEntry{
-		String: `QueryUnit : CountQuery	<< X[0], nil >>`,
+		String: `QueryUnit : CountQuery ";"	<< X[0], nil >>`,
 		Id:         "QueryUnit",
 		NTType:     1,
 		Index:      2,
-		NumSymbols: 1,
+		NumSymbols: 2,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return X[0], nil
 		},

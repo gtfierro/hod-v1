@@ -5,7 +5,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/gtfierro/hod/query"
+	sparql "github.com/gtfierro/hod/lang/ast"
 )
 
 // make a set of structs that capture what these queries want to do
@@ -18,7 +18,7 @@ import (
 // First we "clean" these by making sure that they have their full
 // namespaces rather than the prefix
 
-func (db *DB) getQueryResults(q query.Query) ([]*ResultRow, error) {
+func (db *DB) getQueryResults(q *sparql.Query) ([]*ResultRow, error) {
 	if db.showQueryPlan {
 		fmt.Println("-------------- start query plan -------------")
 	}
@@ -85,10 +85,10 @@ func (db *DB) executeQueryPlan(plan *queryPlan) (*queryContext, error) {
 	return ctx, nil
 }
 
-func (db *DB) sortQueryTerms(q query.Query) *dependencyGraph {
+func (db *DB) sortQueryTerms(q *sparql.Query) *dependencyGraph {
 	dg := makeDependencyGraph(q)
-	terms := make([]*queryTerm, len(q.Where.Filters))
-	for i, f := range q.Where.Filters {
+	terms := make([]*queryTerm, len(q.Where.Terms))
+	for i, f := range q.Where.Terms {
 		terms[i] = dg.makeQueryTerm(f)
 	}
 

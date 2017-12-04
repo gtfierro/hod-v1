@@ -10,7 +10,7 @@ import (
 
 	"github.com/gtfierro/hod/config"
 	turtle "github.com/gtfierro/hod/goraptor"
-	"github.com/gtfierro/hod/query"
+	//"github.com/gtfierro/hod/query"
 
 	"github.com/blevesearch/bleve"
 	"github.com/coocood/freecache"
@@ -744,45 +744,4 @@ func (db *DB) GetEntityIndexFromHash(hash Key) (*EntityExtendedIndex, error) {
 	_, err = ent.UnmarshalMsg(bytes)
 	db.entityIndexCache[hash] = ent
 	return ent, err
-}
-
-func (db *DB) expandFilter(filter query.Filter) query.Filter {
-	if !strings.HasPrefix(filter.Subject.Value, "?") {
-		if full, found := db.namespaces[filter.Subject.Namespace]; found {
-			filter.Subject.Namespace = full
-		}
-	}
-	if !strings.HasPrefix(filter.Object.Value, "?") {
-		if full, found := db.namespaces[filter.Object.Namespace]; found {
-			filter.Object.Namespace = full
-		}
-	}
-	for idx2, pred := range filter.Path {
-		if !strings.HasPrefix(pred.Predicate.Value, "?") {
-			if full, found := db.namespaces[pred.Predicate.Namespace]; found {
-				pred.Predicate.Namespace = full
-			}
-			filter.Path[idx2] = pred
-		}
-	}
-	return filter
-}
-
-func (db *DB) expandOrClauseFilters(orc query.OrClause) query.OrClause {
-	for fidx, filter := range orc.Terms {
-		orc.Terms[fidx] = db.expandFilter(filter)
-	}
-	for fidx, filter := range orc.LeftTerms {
-		orc.LeftTerms[fidx] = db.expandFilter(filter)
-	}
-	for fidx, filter := range orc.RightTerms {
-		orc.RightTerms[fidx] = db.expandFilter(filter)
-	}
-	for oidx, oc := range orc.LeftOr {
-		orc.LeftOr[oidx] = db.expandOrClauseFilters(oc)
-	}
-	for oidx, oc := range orc.RightOr {
-		orc.RightOr[oidx] = db.expandOrClauseFilters(oc)
-	}
-	return orc
 }

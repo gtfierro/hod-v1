@@ -2,7 +2,7 @@ package db
 
 import (
 	"fmt"
-	"github.com/gtfierro/hod/query"
+	sparql "github.com/gtfierro/hod/lang/ast"
 	"reflect"
 	"strings"
 )
@@ -17,14 +17,14 @@ type dependencyGraph struct {
 }
 
 // initializes the query plan struct
-func makeDependencyGraph(q query.Query) *dependencyGraph {
+func makeDependencyGraph(q *sparql.Query) *dependencyGraph {
 	dg := &dependencyGraph{
 		selectVars: []string{},
 		roots:      []*queryTerm{},
 		variables:  make(map[string]bool),
 	}
-	for _, v := range q.Select.Variables {
-		dg.selectVars = append(dg.selectVars, v.Var.String())
+	for _, v := range q.Select.Vars {
+		dg.selectVars = append(dg.selectVars, v)
 	}
 	return dg
 }
@@ -38,15 +38,15 @@ func (dg *dependencyGraph) dump() {
 // stores the state/variables for a particular triple
 // from a SPARQL query
 type queryTerm struct {
-	query.Filter
+	sparql.Triple
 	children  []*queryTerm
 	variables []string
 }
 
 // initializes a queryTerm from a given Filter
-func (dg *dependencyGraph) makeQueryTerm(f query.Filter) *queryTerm {
+func (dg *dependencyGraph) makeQueryTerm(t sparql.Triple) *queryTerm {
 	qt := &queryTerm{
-		f,
+		t,
 		[]*queryTerm{},
 		[]string{},
 	}
@@ -54,9 +54,9 @@ func (dg *dependencyGraph) makeQueryTerm(f query.Filter) *queryTerm {
 		dg.variables[qt.Subject.String()] = false
 		qt.variables = append(qt.variables, qt.Subject.String())
 	}
-	if qt.Path[0].Predicate.IsVariable() {
-		dg.variables[qt.Path[0].Predicate.String()] = false
-		qt.variables = append(qt.variables, qt.Path[0].Predicate.String())
+	if qt.Predicates[0].Predicate.IsVariable() {
+		dg.variables[qt.Predicates[0].Predicate.String()] = false
+		qt.variables = append(qt.variables, qt.Predicates[0].Predicate.String())
 	}
 	if qt.Object.IsVariable() {
 		dg.variables[qt.Object.String()] = false
@@ -69,11 +69,11 @@ func (dg *dependencyGraph) makeQueryTerm(f query.Filter) *queryTerm {
 func (qt *queryTerm) equals(qt2 *queryTerm) bool {
 	return qt.Subject == qt2.Subject &&
 		qt.Object == qt2.Object &&
-		reflect.DeepEqual(qt.Path, qt2.Path)
+		reflect.DeepEqual(qt.Predicates, qt2.Predicates)
 }
 
 func (qt *queryTerm) String() string {
-	return fmt.Sprintf("<%s %s %s>", qt.Subject, qt.Path, qt.Object)
+	return fmt.Sprintf("<%s %s %s>", qt.Subject, qt.Predicates, qt.Object)
 }
 
 func (qt *queryTerm) dump(indent int) {

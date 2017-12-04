@@ -9,7 +9,7 @@ import (
 
 	"github.com/gtfierro/hod/config"
 	hod "github.com/gtfierro/hod/db"
-	"github.com/gtfierro/hod/query"
+	query "github.com/gtfierro/hod/lang"
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/op/go-logging"
@@ -117,7 +117,15 @@ func (srv *hodServer) handleQuery(rw http.ResponseWriter, req *http.Request, ps 
 	defer req.Body.Close()
 
 	log.Infof("Query from %s", req.RemoteAddr)
-	parsed, err := query.Parse(req.Body)
+	var querybytes = make([]byte, 2048)
+	nbytes, err := req.Body.Read(querybytes)
+	if err != nil {
+		log.Error(err)
+		rw.WriteHeader(400)
+		rw.Write([]byte(err.Error()))
+		return
+	}
+	parsed, err := query.Parse(string(querybytes[:nbytes]))
 	if err != nil {
 		log.Error(err)
 		rw.WriteHeader(400)
@@ -213,7 +221,15 @@ func (srv *hodServer) handleQueryDot(rw http.ResponseWriter, req *http.Request, 
 	defer req.Body.Close()
 	log.Infof("QueryDot from %s", req.RemoteAddr)
 
-	dot, err := srv.db.QueryToDOT(req.Body)
+	var querybytes = make([]byte, 2048)
+	nbytes, err := req.Body.Read(querybytes)
+	if err != nil {
+		log.Error(err)
+		rw.WriteHeader(400)
+		rw.Write([]byte(err.Error()))
+		return
+	}
+	dot, err := srv.db.QueryToDOT(string(querybytes[:nbytes]))
 	if err != nil {
 		log.Error(err)
 		rw.WriteHeader(400)
@@ -229,7 +245,15 @@ func (srv *hodServer) handleQueryClassDot(rw http.ResponseWriter, req *http.Requ
 	defer req.Body.Close()
 	log.Infof("QueryDot from %s", req.RemoteAddr)
 
-	dot, err := srv.db.QueryToClassDOT(req.Body)
+	var querybytes = make([]byte, 2048)
+	nbytes, err := req.Body.Read(querybytes)
+	if err != nil {
+		log.Error(err)
+		rw.WriteHeader(400)
+		rw.Write([]byte(err.Error()))
+		return
+	}
+	dot, err := srv.db.QueryToClassDOT(string(querybytes[:nbytes]))
 	if err != nil {
 		log.Error(err)
 		rw.WriteHeader(400)

@@ -4,7 +4,7 @@ package db
 import (
 	"fmt"
 
-	"github.com/gtfierro/hod/query"
+	sparql "github.com/gtfierro/hod/lang/ast"
 	"github.com/pkg/errors"
 	"github.com/syndtr/goleveldb/leveldb"
 )
@@ -44,7 +44,7 @@ func (rs *resolveSubject) run(ctx *queryContext) error {
 	}
 	subjectVar := rs.term.Subject.String()
 	// get all subjects reachable from the given object along the path
-	subjects := ctx.db.getSubjectFromPredObject(object, rs.term.Path)
+	subjects := ctx.db.getSubjectFromPredObject(object, rs.term.Predicates)
 
 	if !ctx.defined(subjectVar) {
 		// if not defined, then we put this into the relation
@@ -90,7 +90,7 @@ func (ro *resolveObject) run(ctx *queryContext) error {
 		return nil
 	}
 	objectVar := ro.term.Object.String()
-	objects := ctx.db.getObjectFromSubjectPred(subject, ro.term.Path)
+	objects := ctx.db.getObjectFromSubjectPred(subject, ro.term.Predicates)
 
 	if !ctx.defined(objectVar) {
 		ctx.defineVariable(objectVar, objects)
@@ -118,7 +118,7 @@ func (op *resolvePredicate) String() string {
 }
 
 func (op *resolvePredicate) SortKey() string {
-	return op.term.Path[0].Predicate.String()
+	return op.term.Predicates[0].Predicate.String()
 }
 
 func (op *resolvePredicate) GetTerm() *queryTerm {
@@ -141,7 +141,7 @@ func (op *resolvePredicate) run(ctx *queryContext) error {
 		return nil
 	}
 
-	predicateVar := op.term.Path[0].Predicate.String()
+	predicateVar := op.term.Predicates[0].Predicate.String()
 	// get all preds w/ the given end object, starting from the given subject
 
 	predicates := ctx.db.getPredicateFromSubjectObject(subject, object)
@@ -188,7 +188,7 @@ func (rso *restrictSubjectObjectByPredicate) run(ctx *queryContext) error {
 	)
 
 	// this operator takes existing values for subjects and objects and finds the pairs of them that
-	// are connected by the path defined by rso.term.Path.
+	// are connected by the path defined by rso.term.Predicates.
 
 	var rsop_relation *Relation
 	var relation_contents [][]Key
@@ -203,7 +203,7 @@ func (rso *restrictSubjectObjectByPredicate) run(ctx *queryContext) error {
 		rsop_relation = NewRelation([]string{subjectVar, objectVar})
 
 		subjects.Iter(func(subject Key) {
-			reachableObjects := ctx.db.getObjectFromSubjectPred(subject, rso.term.Path)
+			reachableObjects := ctx.db.getObjectFromSubjectPred(subject, rso.term.Predicates)
 			// we restrict the values in reachableObjects to those that we already have inside 'objectVar'
 			ctx.restrictToResolved(objectVar, reachableObjects)
 			reachableObjects.Iter(func(objectKey Key) {
@@ -219,7 +219,7 @@ func (rso *restrictSubjectObjectByPredicate) run(ctx *queryContext) error {
 		rsop_relation = NewRelation([]string{objectVar, subjectVar})
 
 		objects.Iter(func(object Key) {
-			reachableSubjects := ctx.db.getSubjectFromPredObject(object, rso.term.Path)
+			reachableSubjects := ctx.db.getSubjectFromPredObject(object, rso.term.Predicates)
 			ctx.restrictToResolved(subjectVar, reachableSubjects)
 
 			reachableSubjects.Iter(func(subjectKey Key) {
@@ -229,7 +229,7 @@ func (rso *restrictSubjectObjectByPredicate) run(ctx *queryContext) error {
 		rsop_relation.add2Values(objectVar, subjectVar, relation_contents)
 	} else if ctx.cardinalityUnique(subjectVar) < ctx.cardinalityUnique(objectVar) {
 		// we start with whichever has fewer values (subject or object). For each of them, we search
-		// the graph for reachable endpoints (object or subject) on the provided path (rso.term.Path)
+		// the graph for reachable endpoints (object or subject) on the provided path (rso.term.Predicates)
 		// neither is joined
 		joinOn = []string{subjectVar}
 		subjects := ctx.getValuesForVariable(subjectVar)
@@ -237,7 +237,7 @@ func (rso *restrictSubjectObjectByPredicate) run(ctx *queryContext) error {
 		rsop_relation = NewRelation([]string{subjectVar, objectVar})
 
 		subjects.Iter(func(subject Key) {
-			reachableObjects := ctx.db.getObjectFromSubjectPred(subject, rso.term.Path)
+			reachableObjects := ctx.db.getObjectFromSubjectPred(subject, rso.term.Predicates)
 			ctx.restrictToResolved(objectVar, reachableObjects)
 
 			reachableObjects.Iter(func(objectKey Key) {
@@ -252,7 +252,7 @@ func (rso *restrictSubjectObjectByPredicate) run(ctx *queryContext) error {
 		rsop_relation = NewRelation([]string{objectVar, subjectVar})
 
 		objects.Iter(func(object Key) {
-			reachableSubjects := ctx.db.getSubjectFromPredObject(object, rso.term.Path)
+			reachableSubjects := ctx.db.getSubjectFromPredObject(object, rso.term.Predicates)
 			ctx.restrictToResolved(subjectVar, reachableSubjects)
 
 			reachableSubjects.Iter(func(subjectKey Key) {
@@ -301,7 +301,7 @@ func (rsv *resolveSubjectFromVarObject) run(ctx *queryContext) error {
 
 	objects := ctx.getValuesForVariable(objectVar)
 	objects.Iter(func(object Key) {
-		reachableSubjects := ctx.db.getSubjectFromPredObject(object, rsv.term.Path)
+		reachableSubjects := ctx.db.getSubjectFromPredObject(object, rsv.term.Predicates)
 		ctx.restrictToResolved(subjectVar, reachableSubjects)
 
 		reachableSubjects.Iter(func(subjectKey Key) {
@@ -348,7 +348,7 @@ func (rov *resolveObjectFromVarSubject) run(ctx *queryContext) error {
 
 	subjects := ctx.getValuesForVariable(subjectVar)
 	subjects.Iter(func(subject Key) {
-		reachableObjects := ctx.db.getObjectFromSubjectPred(subject, rov.term.Path)
+		reachableObjects := ctx.db.getObjectFromSubjectPred(subject, rov.term.Predicates)
 		ctx.restrictToResolved(objectVar, reachableObjects)
 
 		reachableObjects.Iter(func(objectKey Key) {
@@ -404,7 +404,7 @@ func (op *resolveSubjectObjectFromPred) GetTerm() *queryTerm {
 }
 
 func (rso *resolveSubjectObjectFromPred) run(ctx *queryContext) error {
-	subsobjs := ctx.db.getSubjectObjectFromPred(rso.term.Path)
+	subsobjs := ctx.db.getSubjectObjectFromPred(rso.term.Predicates)
 	subjectVar := rso.term.Subject.String()
 	objectVar := rso.term.Object.String()
 
@@ -434,7 +434,7 @@ func (op *resolveSubjectPredFromObject) String() string {
 }
 
 func (op *resolveSubjectPredFromObject) SortKey() string {
-	return op.term.Path[0].Predicate.String()
+	return op.term.Predicates[0].Predicate.String()
 }
 
 func (op *resolveSubjectPredFromObject) GetTerm() *queryTerm {
@@ -448,7 +448,7 @@ func (op *resolveSubjectPredFromObject) GetTerm() *queryTerm {
 // If we have *not* resolved the predicate, then this is easy: just graph traverse from the object
 func (op *resolveSubjectPredFromObject) run(ctx *queryContext) error {
 	subjectVar := op.term.Subject.String()
-	predicateVar := op.term.Path[0].Predicate.String()
+	predicateVar := op.term.Predicates[0].Predicate.String()
 
 	// fetch the object from the graph
 	object, err := ctx.db.GetEntity(op.term.Object)
@@ -466,7 +466,7 @@ func (op *resolveSubjectPredFromObject) run(ctx *queryContext) error {
 		if !ctx.validValue(predicateVar, predicate) {
 			return
 		}
-		path := []query.PathPattern{{Predicate: ctx.db.MustGetURI(predicate), Pattern: query.PATTERN_SINGLE}}
+		path := []sparql.PathPattern{{Predicate: ctx.db.MustGetURI(predicate), Pattern: sparql.PATTERN_SINGLE}}
 		subjects := ctx.db.getSubjectFromPredObject(object.PK, path)
 
 		subjects.Iter(func(subject Key) {
@@ -504,7 +504,7 @@ func (op *resolvePredObjectFromSubject) String() string {
 }
 
 func (op *resolvePredObjectFromSubject) SortKey() string {
-	return op.term.Path[0].Predicate.String()
+	return op.term.Predicates[0].Predicate.String()
 }
 
 func (op *resolvePredObjectFromSubject) GetTerm() *queryTerm {
@@ -513,7 +513,7 @@ func (op *resolvePredObjectFromSubject) GetTerm() *queryTerm {
 
 func (op *resolvePredObjectFromSubject) run(ctx *queryContext) error {
 	objectVar := op.term.Object.String()
-	predicateVar := op.term.Path[0].Predicate.String()
+	predicateVar := op.term.Predicates[0].Predicate.String()
 
 	// fetch the subject from the graph
 	subject, err := ctx.db.GetEntity(op.term.Subject)
@@ -531,7 +531,7 @@ func (op *resolvePredObjectFromSubject) run(ctx *queryContext) error {
 		if !ctx.validValue(predicateVar, predicate) {
 			return
 		}
-		path := []query.PathPattern{{Predicate: ctx.db.MustGetURI(predicate), Pattern: query.PATTERN_SINGLE}}
+		path := []sparql.PathPattern{{Predicate: ctx.db.MustGetURI(predicate), Pattern: sparql.PATTERN_SINGLE}}
 		objects := ctx.db.getObjectFromSubjectPred(subject.PK, path)
 
 		objects.Iter(func(object Key) {
@@ -574,7 +574,7 @@ func (op *resolveVarTripleFromSubject) run(ctx *queryContext) error {
 	var (
 		subjectVar   = op.term.Subject.String()
 		objectVar    = op.term.Object.String()
-		predicateVar = op.term.Path[0].Predicate.String()
+		predicateVar = op.term.Predicates[0].Predicate.String()
 	)
 
 	var rsop_relation = NewRelation([]string{subjectVar, predicateVar, objectVar})
@@ -619,7 +619,7 @@ func (op *resolveVarTripleFromObject) run(ctx *queryContext) error {
 	var (
 		subjectVar   = op.term.Subject.String()
 		objectVar    = op.term.Object.String()
-		predicateVar = op.term.Path[0].Predicate.String()
+		predicateVar = op.term.Predicates[0].Predicate.String()
 	)
 
 	var rsop_relation = NewRelation([]string{objectVar, predicateVar, subjectVar})
@@ -652,7 +652,7 @@ func (op *resolveVarTripleFromPredicate) String() string {
 }
 
 func (op *resolveVarTripleFromPredicate) SortKey() string {
-	return op.term.Path[0].Predicate.String()
+	return op.term.Predicates[0].Predicate.String()
 }
 
 func (op *resolveVarTripleFromPredicate) GetTerm() *queryTerm {
@@ -664,7 +664,7 @@ func (op *resolveVarTripleFromPredicate) run(ctx *queryContext) error {
 	var (
 		subjectVar   = op.term.Subject.String()
 		objectVar    = op.term.Object.String()
-		predicateVar = op.term.Path[0].Predicate.String()
+		predicateVar = op.term.Predicates[0].Predicate.String()
 	)
 
 	var rsop_relation = NewRelation([]string{predicateVar, subjectVar, objectVar})
@@ -674,7 +674,7 @@ func (op *resolveVarTripleFromPredicate) run(ctx *queryContext) error {
 	predicates.Iter(func(predicateKey Key) {
 		var subjectKey Key
 		// TODO: use?
-		// subsobjs := ctx.db.getSubjectObjectFromPred(rso.term.Path)
+		// subsobjs := ctx.db.getSubjectObjectFromPred(rso.term.Predicates)
 		uri := ctx.db.MustGetURI(predicateKey)
 		predicate := ctx.db.predIndex[uri]
 		for subStrHash, subjectMap := range predicate.Subjects {

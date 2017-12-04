@@ -4,15 +4,15 @@ import (
 	"container/list"
 	"fmt"
 
-	"github.com/gtfierro/hod/query"
+	sparql "github.com/gtfierro/hod/lang/ast"
 
 	"github.com/pkg/errors"
 	"github.com/syndtr/goleveldb/leveldb"
 )
 
 // takes the inverse of every relationship. If no inverse exists, returns nil
-func (db *DB) reversePathPattern(path []query.PathPattern) []query.PathPattern {
-	var reverse = make([]query.PathPattern, len(path))
+func (db *DB) reversePathPattern(path []sparql.PathPattern) []sparql.PathPattern {
+	var reverse = make([]sparql.PathPattern, len(path))
 	for idx, pred := range path {
 		if inverse, found := db.relationships[pred.Predicate]; found {
 			pred.Predicate = inverse
@@ -26,7 +26,7 @@ func (db *DB) reversePathPattern(path []query.PathPattern) []query.PathPattern {
 }
 
 // follow the pattern from the given object's InEdges, placing the results in the btree
-func (db *DB) followPathFromObject(object *Entity, results *keyTree, searchstack *list.List, pattern query.PathPattern) {
+func (db *DB) followPathFromObject(object *Entity, results *keyTree, searchstack *list.List, pattern sparql.PathPattern) {
 	stack := list.New()
 	stack.PushFront(object)
 
@@ -52,7 +52,7 @@ func (db *DB) followPathFromObject(object *Entity, results *keyTree, searchstack
 		}
 		traversed.ReplaceOrInsert(entity.PK)
 		switch pattern.Pattern {
-		case query.PATTERN_SINGLE:
+		case sparql.PATTERN_SINGLE:
 			// [found] indicates whether or not we have any edges with the given pattern
 			edges, found := entity.InEdges[string(predHash[:])]
 			// this requires the pattern to exist, so we skip if we have no edges of that name
@@ -64,7 +64,7 @@ func (db *DB) followPathFromObject(object *Entity, results *keyTree, searchstack
 				results.Add(entityHash)
 			}
 			// because this is one hop, we don't add any new entities to the stack
-		case query.PATTERN_ZERO_ONE:
+		case sparql.PATTERN_ZERO_ONE:
 			results.Add(entity.PK)
 			endpoints, found := entity.InEdges[string(predHash[:])]
 			// this requires the pattern to exist, so we skip if we have no edges of that name
@@ -76,7 +76,7 @@ func (db *DB) followPathFromObject(object *Entity, results *keyTree, searchstack
 				results.Add(entityHash)
 			}
 			// because this is one hop, we don't add any new entities to the stack
-		case query.PATTERN_ZERO_PLUS:
+		case sparql.PATTERN_ZERO_PLUS:
 			results.Add(entity.PK)
 			// faster index
 			if !db.loading {
@@ -103,7 +103,7 @@ func (db *DB) followPathFromObject(object *Entity, results *keyTree, searchstack
 				results.Add(entityHash)
 				stack.PushBack(nextEntity)
 			}
-		case query.PATTERN_ONE_PLUS:
+		case sparql.PATTERN_ONE_PLUS:
 			// faster index
 			if !db.loading {
 				index := db.MustGetEntityIndexFromHash(entity.PK)
@@ -134,7 +134,7 @@ func (db *DB) followPathFromObject(object *Entity, results *keyTree, searchstack
 }
 
 // follow the pattern from the given subject's OutEdges, placing the results in the btree
-func (db *DB) followPathFromSubject(subject *Entity, results *keyTree, searchstack *list.List, pattern query.PathPattern) {
+func (db *DB) followPathFromSubject(subject *Entity, results *keyTree, searchstack *list.List, pattern sparql.PathPattern) {
 	stack := list.New()
 	stack.PushFront(subject)
 
@@ -154,7 +154,7 @@ func (db *DB) followPathFromSubject(subject *Entity, results *keyTree, searchsta
 		}
 		traversed.ReplaceOrInsert(entity.PK)
 		switch pattern.Pattern {
-		case query.PATTERN_SINGLE:
+		case sparql.PATTERN_SINGLE:
 			// [found] indicates whether or not we have any edges with the given pattern
 			endpoints, found := entity.OutEdges[string(predHash[:])]
 			// this requires the pattern to exist, so we skip if we have no edges of that name
@@ -166,7 +166,7 @@ func (db *DB) followPathFromSubject(subject *Entity, results *keyTree, searchsta
 				results.Add(entityHash)
 			}
 			// because this is one hop, we don't add any new entities to the stack
-		case query.PATTERN_ZERO_ONE:
+		case sparql.PATTERN_ZERO_ONE:
 			// this does not require the pattern to exist, so we add the current entity plus any
 			// connected by the appropriate edge
 			results.Add(entity.PK)
@@ -180,7 +180,7 @@ func (db *DB) followPathFromSubject(subject *Entity, results *keyTree, searchsta
 				results.Add(entityHash)
 			}
 			// because this is one hop, we don't add any new entities to the stack
-		case query.PATTERN_ZERO_PLUS:
+		case sparql.PATTERN_ZERO_PLUS:
 			results.Add(entity.PK)
 			// faster index
 			if !db.loading {
@@ -209,7 +209,7 @@ func (db *DB) followPathFromSubject(subject *Entity, results *keyTree, searchsta
 				results.Add(entityHash)
 				stack.PushBack(nextEntity)
 			}
-		case query.PATTERN_ONE_PLUS:
+		case sparql.PATTERN_ONE_PLUS:
 			// faster index
 			if !db.loading {
 				index := db.MustGetEntityIndexFromHash(entity.PK)
@@ -239,7 +239,7 @@ func (db *DB) followPathFromSubject(subject *Entity, results *keyTree, searchsta
 	}
 }
 
-func (db *DB) getSubjectFromPredObject(objectHash Key, path []query.PathPattern) *keyTree {
+func (db *DB) getSubjectFromPredObject(objectHash Key, path []sparql.PathPattern) *keyTree {
 	// first get the initial object entity from the db
 	// then we're going to conduct a BFS search starting from this entity looking for all entities
 	// that have the required path sequence. We place the results in a BTree to maintain uniqueness
@@ -297,7 +297,7 @@ func (db *DB) getSubjectFromPredObject(objectHash Key, path []query.PathPattern)
 }
 
 // Given object and predicate, get all subjects
-func (db *DB) getObjectFromSubjectPred(subjectHash Key, path []query.PathPattern) *keyTree {
+func (db *DB) getObjectFromSubjectPred(subjectHash Key, path []sparql.PathPattern) *keyTree {
 	subEntity, err := db.GetEntityFromHash(subjectHash)
 	if err != nil {
 		log.Error(errors.Wrapf(err, "Not found: %v", subjectHash))
@@ -347,7 +347,7 @@ func (db *DB) getObjectFromSubjectPred(subjectHash Key, path []query.PathPattern
 }
 
 // Given a predicate, it returns pairs of (subject, object) that are connected by that relationship
-func (db *DB) getSubjectObjectFromPred(path []query.PathPattern) (soPair [][]Key) {
+func (db *DB) getSubjectObjectFromPred(path []sparql.PathPattern) (soPair [][]Key) {
 	pe, found := db.predIndex[path[0].Predicate]
 	if !found {
 		log.Errorf("Can't find predicate: %v", path[0].Predicate)

@@ -15,8 +15,8 @@ string : _varstring ;
 
 /* syntax */
 QueryUnit
-    : SelectQuery << $0, nil >>
-    | CountQuery  << $0, nil >>
+    : SelectQuery ";" << $0, nil >>
+    | CountQuery  ";" << $0, nil >>
     ;
 
 SelectQuery

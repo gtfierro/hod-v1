@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"encoding/csv"
 	"fmt"
+	"io/ioutil"
 	"math/big"
 	"os"
 	"os/exec"
@@ -15,7 +16,8 @@ import (
 	"github.com/gtfierro/hod/config"
 	hod "github.com/gtfierro/hod/db"
 	"github.com/gtfierro/hod/goraptor"
-	"github.com/gtfierro/hod/query"
+	query "github.com/gtfierro/hod/lang"
+	sparql "github.com/gtfierro/hod/lang/ast"
 	"github.com/gtfierro/hod/server"
 
 	"github.com/chzyer/readline"
@@ -154,7 +156,7 @@ func startServer(c *cli.Context) error {
 			log.Info("Serving query", inq.Query)
 
 			var response hodResponse
-			if q, err := query.Parse(strings.NewReader(inq.Query)); err != nil {
+			if q, err := query.Parse(inq.Query); err != nil {
 				log.Error(errors.Wrap(err, "Could not parse hod query"))
 				response = hodResponse{
 					Nonce: inq.Nonce,
@@ -211,20 +213,20 @@ func doQuery(c *cli.Context) error {
 	}
 	defer db.Close()
 	var (
-		q   query.Query
+		q   *sparql.Query
 		res hod.QueryResult
 	)
 	if c.String("query") != "" {
-		q, err = query.Parse(strings.NewReader(c.String("query")))
+		q, err = query.Parse(c.String("query"))
 		if err != nil {
 			log.Fatal(err)
 		}
 	} else if c.String("file") != "" {
-		file, err := os.Open(c.String("file"))
+		filebytes, err := ioutil.ReadFile(c.String("file"))
 		if err != nil {
 			log.Fatal(err)
 		}
-		q, err = query.Parse(file)
+		q, err = query.Parse(string(filebytes))
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -457,7 +459,7 @@ func runInteractiveQuery(db *hod.DB) error {
 		}
 		rl.SetPrompt(cyan("(hod)> "))
 		rl.SaveHistory(bufQuery)
-		q, err := query.Parse(strings.NewReader(bufQuery))
+		q, err := query.Parse(bufQuery)
 		if err != nil {
 			log.Error(err)
 		} else if res, err := db.RunQuery(q); err != nil {

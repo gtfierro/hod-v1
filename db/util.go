@@ -2,8 +2,10 @@ package db
 
 import (
 	"fmt"
-	"github.com/gtfierro/hod/query"
+	sparql "github.com/gtfierro/hod/lang/ast"
 	"github.com/mitghi/btree"
+	"hash/fnv"
+	"sort"
 )
 
 func dumpHashTree(tree *btree.BTree, db *DB, limit int) {
@@ -82,8 +84,33 @@ func rowIsFull(row []Key) bool {
 	return true
 }
 
-func reversePath(path []query.PathPattern) {
+func reversePath(path []sparql.PathPattern) {
 	for i, j := 0, len(path)-1; i < j; i, j = i+1, j-1 {
 		path[i], path[j] = path[j], path[i]
 	}
+}
+
+func hashQuery(q *sparql.Query) []byte {
+	h := fnv.New64a()
+	var selectVars = make(sort.StringSlice, len(q.Select.Vars))
+	for idx, varname := range q.Select.Vars {
+		selectVars[idx] = varname
+	}
+	for _, hv := range selectVars {
+		h.Write([]byte(hv))
+	}
+
+	var triples []string
+	q.IterTriples(func(triple sparql.Triple) sparql.Triple {
+		triples = append(triples, triple.String())
+		return triple
+	})
+
+	x := sort.StringSlice(triples)
+	x.Sort()
+	for _, hv := range x {
+		h.Write([]byte(hv))
+	}
+
+	return h.Sum(nil)
 }

@@ -11,7 +11,6 @@ import (
 	"time"
 
 	turtle "github.com/gtfierro/hod/goraptor"
-	"github.com/gtfierro/hod/query"
 
 	"github.com/mitghi/btree"
 )
@@ -20,7 +19,7 @@ var emptyResultMapList = []ResultMap{}
 var emptyLinkResultmapList = []LinkResultMap{}
 
 type QueryResult struct {
-	selectVars []query.SelectVar
+	selectVars []string
 	Rows       []ResultMap
 	Count      int
 	Elapsed    time.Duration `msg:"-"`
@@ -49,9 +48,9 @@ func (qr QueryResult) DumpToCSV(usePrefixes bool, db *DB, w io.Writer) error {
 			var line = make([]string, len(qr.selectVars))
 			for idx, varname := range qr.selectVars {
 				if usePrefixes {
-					line[idx] = db.Abbreviate(row[varname.Var.Value])
+					line[idx] = db.Abbreviate(row[varname])
 				} else {
-					line[idx] = row[varname.Var.Value].String()
+					line[idx] = row[varname].String()
 				}
 			}
 			if err := csvwriter.Write(line); err != nil {

@@ -2,13 +2,13 @@ package db
 
 import (
 	"fmt"
-	"io"
 	"strings"
-	"sync"
+	//"sync"
 	"time"
 
 	turtle "github.com/gtfierro/hod/goraptor"
-	"github.com/gtfierro/hod/query"
+	query "github.com/gtfierro/hod/lang"
+	sparql "github.com/gtfierro/hod/lang/ast"
 
 	"github.com/blevesearch/bleve"
 	"github.com/coocood/freecache"
@@ -16,27 +16,46 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (db *DB) RunQuery(q query.Query) (QueryResult, error) {
+func (db *DB) RunQuery(q *sparql.Query) (QueryResult, error) {
 	fullQueryStart := time.Now()
 
 	// "clean" the query by expanding out the prefixes
 	// make sure to first do the Filters, then the Or clauses
-	for idx, filter := range q.Where.Filters {
-		q.Where.Filters[idx] = db.expandFilter(filter)
-	}
-	for idx, orclause := range q.Where.Ors {
-		q.Where.Ors[idx] = db.expandOrClauseFilters(orclause)
-	}
+	q.IterTriples(func(triple sparql.Triple) sparql.Triple {
+		if !strings.HasPrefix(triple.Subject.Value, "?") {
+			if full, found := db.namespaces[triple.Subject.Namespace]; found {
+				triple.Subject.Namespace = full
+			}
+		}
+		if !strings.HasPrefix(triple.Object.Value, "?") {
+			if full, found := db.namespaces[triple.Object.Namespace]; found {
+				triple.Object.Namespace = full
+			}
+		}
+		for idx2, pred := range triple.Predicates {
+			if !strings.HasPrefix(pred.Predicate.Value, "?") {
+				if full, found := db.namespaces[pred.Predicate.Namespace]; found {
+					pred.Predicate.Namespace = full
+				}
+				triple.Predicates[idx2] = pred
+			}
+		}
+		return triple
+	})
 
 	// we flatten the OR clauses to get the array of queries we are going
 	// to run and then merge
-	orTerms := query.FlattenOrClauseList(q.Where.Ors)
-	oldFilters := q.Where.Filters
+	//	orTerms := query.FlattenOrClauseList(q.Where.Ors)
+	//for _, t := range orTerms {
+	//	fmt.Println(t)
+	//	fmt.Println()
+	//}
+	//	oldFilters := q.Where.Filters
 
 	// check query hash
 	var queryhash []byte
 	if db.queryCacheEnabled {
-		queryhash = q.Hash(orTerms)
+		queryhash = hashQuery(q)
 		if ans, err := db.queryCache.Get(queryhash); err == nil {
 			var res QueryResult
 			if _, err := res.UnmarshalMsg(ans); err != nil {
@@ -59,71 +78,67 @@ func (db *DB) RunQuery(q query.Query) (QueryResult, error) {
 	// if we have terms that are part of a set of OR statements, then we run
 	// parallel queries for each fully-elaborated "branch" or the OR statement,
 	// and then merge the results together at the end
-	if len(orTerms) > 0 {
-		var rowLock sync.Mutex
-		var wg sync.WaitGroup
-		var queryErr error
-		wg.Add(len(orTerms))
-		for _, orTerm := range orTerms {
-			tmpQuery := q.Copy()
-			// augment with the filters
-			tmpQuery.Where.Filters = make([]query.Filter, len(oldFilters)+len(orTerm))
-			copy(tmpQuery.Where.Filters, oldFilters)
-			copy(tmpQuery.Where.Filters[len(oldFilters):], orTerm)
+	//if len(orTerms) > 0 {
+	//	var rowLock sync.Mutex
+	//	var wg sync.WaitGroup
+	//	var queryErr error
+	//	wg.Add(len(orTerms))
+	//	for _, orTerm := range orTerms {
+	//		tmpQuery := q.Copy()
+	//		// augment with the filters
+	//		tmpQuery.Where.Filters = make([]query.Filter, len(oldFilters)+len(orTerm))
+	//		copy(tmpQuery.Where.Filters, oldFilters)
+	//		copy(tmpQuery.Where.Filters[len(oldFilters):], orTerm)
 
-			//	go func(q query.Query) {
-			results, err := db.getQueryResults(tmpQuery)
-			rowLock.Lock()
-			if err != nil {
-				queryErr = err
-			} else {
-				for _, row := range results {
-					unionedRows.ReplaceOrInsert(row)
-				}
-			}
-			rowLock.Unlock()
-			wg.Done()
-			//}(tmpQuery)
-		}
-		wg.Wait()
-		if queryErr != nil {
-			return QueryResult{}, queryErr
-		}
-	} else {
-		results, err := db.getQueryResults(q)
-		if err != nil {
-			return QueryResult{}, err
-		}
-		for _, row := range results {
-			unionedRows.ReplaceOrInsert(row)
-		}
+	//		//	go func(q query.Query) {
+	//		results, err := db.getQueryResults(tmpQuery)
+	//		rowLock.Lock()
+	//		if err != nil {
+	//			queryErr = err
+	//		} else {
+	//			for _, row := range results {
+	//				unionedRows.ReplaceOrInsert(row)
+	//			}
+	//		}
+	//		rowLock.Unlock()
+	//		wg.Done()
+	//		//}(tmpQuery)
+	//	}
+	//	wg.Wait()
+	//	if queryErr != nil {
+	//		return QueryResult{}, queryErr
+	//	}
+	//} else {
+	results, err := db.getQueryResults(q)
+	if err != nil {
+		return QueryResult{}, err
 	}
+	for _, row := range results {
+		unionedRows.ReplaceOrInsert(row)
+	}
+	//}
 	if db.showQueryLatencies {
 		log.Noticef("Full Query took %s", time.Since(fullQueryStart))
 	}
 
 	var result = newQueryResult()
-	result.selectVars = q.Select.Variables
+	result.selectVars = q.Select.Vars
 	result.Elapsed = time.Since(fullQueryStart)
 
-	if q.Select.Count {
-		// return the count of results
-		result.Count = unionedRows.Len()
-	} else {
-		// return the rows
-		i := unionedRows.DeleteMax()
-		for i != nil {
-			row := i.(*ResultRow)
-			m := make(ResultMap)
-			for idx, vname := range q.Select.Variables {
-				m[vname.Var.String()] = row.row[idx]
-			}
-			result.Rows = append(result.Rows, m)
-			finishResultRow(row)
-			i = unionedRows.DeleteMax()
+	// TODO: count!
+	// return the rows
+	i := unionedRows.DeleteMax()
+	for i != nil {
+		row := i.(*ResultRow)
+		m := make(ResultMap)
+		for idx, vname := range q.Select.Vars {
+			m[vname] = row.row[idx]
 		}
-		result.Count = len(result.Rows)
+		result.Rows = append(result.Rows, m)
+		finishResultRow(row)
+		i = unionedRows.DeleteMax()
 	}
+	result.Count = len(result.Rows)
 
 	if db.queryCacheEnabled {
 		// set this in the cache
@@ -141,7 +156,7 @@ func (db *DB) RunQuery(q query.Query) (QueryResult, error) {
 
 // takes a query and returns a DOT representation to visualize
 // the construction of the query
-func (db *DB) QueryToDOT(querystring io.Reader) (string, error) {
+func (db *DB) QueryToDOT(querystring string) (string, error) {
 	q, err := query.Parse(querystring)
 	if err != nil {
 		return "", err
@@ -153,44 +168,44 @@ func (db *DB) QueryToDOT(querystring io.Reader) (string, error) {
 	dot += "rankdir=\"LR\"\n"
 	dot += "size=\"7.5,10\"\n"
 
-	if len(q.Where.Ors) > 0 {
-		orTerms := query.FlattenOrClauseList(q.Where.Ors)
-		oldFilters := q.Where.Filters
-		for _, orTerm := range orTerms {
-			filters := append(oldFilters, orTerm...)
-			for _, filter := range filters {
-				var parts []string
-				for _, p := range filter.Path {
-					parts = append(parts, fmt.Sprintf("%s%s", p.Predicate, p.Pattern))
-				}
-				line := fmt.Sprintf("\"%s\" -> \"%s\" [label=\"%s\"];\n", filter.Subject, filter.Object, strings.Join(parts, "/"))
-				if !strings.Contains(dot, line) {
-					dot += line
-				}
+	//if len(q.Where.Ors) > 0 {
+	//	orTerms := query.FlattenOrClauseList(q.Where.Ors)
+	//	oldFilters := q.Where.Filters
+	//	for _, orTerm := range orTerms {
+	//		filters := append(oldFilters, orTerm...)
+	//		for _, filter := range filters {
+	//			var parts []string
+	//			for _, p := range filter.Path {
+	//				parts = append(parts, fmt.Sprintf("%s%s", p.Predicate, p.Pattern))
+	//			}
+	//			line := fmt.Sprintf("\"%s\" -> \"%s\" [label=\"%s\"];\n", filter.Subject, filter.Object, strings.Join(parts, "/"))
+	//			if !strings.Contains(dot, line) {
+	//				dot += line
+	//			}
 
-			}
+	//		}
+	//	}
+	//} else {
+	for _, filter := range q.Where.Terms {
+		var parts []string
+		for _, p := range filter.Predicates {
+			parts = append(parts, fmt.Sprintf("%s%s", p.Predicate, p.Pattern))
 		}
-	} else {
-		for _, filter := range q.Where.Filters {
-			var parts []string
-			for _, p := range filter.Path {
-				parts = append(parts, fmt.Sprintf("%s%s", p.Predicate, p.Pattern))
-			}
-			line := fmt.Sprintf("\"%s\" -> \"%s\" [label=\"%s\"];\n", filter.Subject, filter.Object, strings.Join(parts, "/"))
-			if !strings.Contains(dot, line) {
-				dot += line
-			}
+		line := fmt.Sprintf("\"%s\" -> \"%s\" [label=\"%s\"];\n", filter.Subject, filter.Object, strings.Join(parts, "/"))
+		if !strings.Contains(dot, line) {
+			dot += line
 		}
 	}
-	for _, sv := range q.Select.Variables {
-		dot += fmt.Sprintf("\"%s\" [fillcolor=#e57373]\n", sv.Var)
+	//}
+	for _, sv := range q.Select.Vars {
+		dot += fmt.Sprintf("\"%s\" [fillcolor=#e57373]\n", sv)
 	}
 	dot += "}"
 	return dot, nil
 }
 
 // executes a query and returns a DOT string of the classes involved
-func (db *DB) QueryToClassDOT(querystring io.Reader) (string, error) {
+func (db *DB) QueryToClassDOT(querystring string) (string, error) {
 	q, err := query.Parse(querystring)
 	if err != nil {
 		return "", err

@@ -4,7 +4,7 @@ import (
 	"container/list"
 
 	turtle "github.com/gtfierro/hod/goraptor"
-	"github.com/gtfierro/hod/query"
+	sparql "github.com/gtfierro/hod/lang/ast"
 	"github.com/pkg/errors"
 	"github.com/syndtr/goleveldb/leveldb"
 )
@@ -194,7 +194,7 @@ func (db *DB) buildGraph(dataset turtle.DataSet) error {
 }
 
 func (db *DB) populateIndex(predicateURI turtle.URI, predicate *PredicateEntity, extendtx *leveldb.Transaction) error {
-	forwardPath := query.PathPattern{Pattern: query.PATTERN_ONE_PLUS}
+	forwardPath := sparql.PathPattern{Pattern: sparql.PATTERN_ONE_PLUS}
 	results := newKeyTree()
 	if _, found := db.transitiveEdges[predicateURI]; !found {
 		return nil
