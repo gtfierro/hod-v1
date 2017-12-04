@@ -181,39 +181,39 @@ func TestDBQueryBerkeley(t *testing.T) {
 		},
 		{
 			"COUNT ?x WHERE { ?ahu rdf:type brick:AHU . ?ahu bf:feeds ?x };",
-			240,
+			241,
 		},
 		{
 			"COUNT ?x WHERE { ?ahu rdf:type brick:AHU . ?ahu bf:feeds+ ?x };",
-			480,
+			482,
 		},
 		{
 			"COUNT ?x WHERE { ?ahu rdf:type brick:AHU . ?x bf:isFedBy+ ?ahu };",
-			480,
+			482,
 		},
 		{
 			"COUNT ?x WHERE { ?ahu rdf:type brick:AHU . ?ahu bf:feeds/bf:feeds ?x };",
-			240,
+			241,
 		},
 		{
 			"COUNT ?x WHERE { ?ahu rdf:type brick:AHU . ?ahu bf:feeds/bf:feeds+ ?x };",
-			240,
+			241,
 		},
 		{
 			"COUNT ?x WHERE { ?ahu rdf:type brick:AHU . ?ahu bf:feeds/bf:feeds? ?x };",
-			480,
+			482,
 		},
 		{
 			"COUNT ?x WHERE { ?ahu rdf:type brick:AHU . ?x bf:isFedBy/bf:isFedBy? ?ahu };",
-			480,
+			482,
 		},
 		{
 			"COUNT ?x WHERE { ?ahu rdf:type brick:AHU . ?ahu bf:feeds* ?x };",
-			485,
+			487,
 		},
 		{
 			"COUNT ?x WHERE { ?ahu rdf:type brick:AHU . ?x bf:isFedBy* ?ahu };",
-			485,
+			487,
 		},
 		{
 			"COUNT ?vav ?room WHERE { ?vav rdf:type brick:VAV . ?room rdf:type brick:Room . ?zone rdf:type brick:HVAC_Zone . ?vav bf:feeds+ ?zone . ?room bf:isPartOf ?zone }; ",
@@ -224,15 +224,15 @@ func TestDBQueryBerkeley(t *testing.T) {
 			232,
 		},
 		{
-			"COUNT ?sensor ?room WHERE { ?sensor rdf:type/rdfs:subClassOf* brick:Zone_Temperature_Sensor . ?room rdf:type brick:Room . ?vav rdf:type brick:VAV . ?zone rdf:type brick:HVAC_Zone . ?vav bf:feeds+ ?zone . ?zone bf:hasPart ?room . ?sensor bf:isPointOf ?vav .  };",
+			"COUNT ?sensor ?room WHERE { ?sensor rdf:type/rdfs:subClassOf* brick:Zone_Temperature_Sensor . ?room rdf:type brick:Room . ?vav rdf:type brick:VAV . ?zone rdf:type brick:HVAC_Zone . ?vav bf:feeds+ ?zone . ?zone bf:hasPart ?room . ?sensor bf:isPointOf ?vav };",
 			232,
 		},
 		{
-			"COUNT ?sensor ?room WHERE { ?sensor rdf:type/rdfs:subClassOf* brick:Zone_Temperature_Sensor . ?vav rdf:type brick:VAV . ?zone rdf:type brick:HVAC_Zone . ?room rdf:type brick:Room . ?vav bf:feeds+ ?zone . ?zone bf:hasPart ?room . { ?sensor bf:isPointOf ?vav . OR ?sensor bf:isPointOf ?room .} };",
+			"COUNT ?sensor ?room WHERE { ?sensor rdf:type/rdfs:subClassOf* brick:Zone_Temperature_Sensor . ?vav rdf:type brick:VAV . ?zone rdf:type brick:HVAC_Zone . ?room rdf:type brick:Room . ?vav bf:feeds+ ?zone . ?zone bf:hasPart ?room  { ?sensor bf:isPointOf ?vav } UNION { ?sensor bf:isPointOf ?room } };",
 			232,
 		},
 		{
-			"COUNT ?sensor ?room WHERE { ?sensor rdf:type/rdfs:subClassOf* brick:Zone_Temperature_Sensor . ?room rdf:type brick:Room . ?vav rdf:type brick:VAV . ?zone rdf:type brick:HVAC_Zone . ?vav bf:feeds+ ?zone . ?zone bf:hasPart ?room . ?sensor bf:isPointOf ?room .  };",
+			"COUNT ?sensor ?room WHERE { ?sensor rdf:type/rdfs:subClassOf* brick:Zone_Temperature_Sensor . ?room rdf:type brick:Room . ?vav rdf:type brick:VAV . ?zone rdf:type brick:HVAC_Zone . ?vav bf:feeds+ ?zone . ?zone bf:hasPart ?room . ?sensor bf:isPointOf ?room };",
 			0,
 		},
 		{

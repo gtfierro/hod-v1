@@ -127,6 +127,7 @@ func (db *DB) RunQuery(q *sparql.Query) (QueryResult, error) {
 
 	// TODO: count!
 	// return the rows
+	result.Count = len(results)
 	i := unionedRows.DeleteMax()
 	for i != nil {
 		row := i.(*ResultRow)
@@ -138,7 +139,7 @@ func (db *DB) RunQuery(q *sparql.Query) (QueryResult, error) {
 		finishResultRow(row)
 		i = unionedRows.DeleteMax()
 	}
-	result.Count = len(result.Rows)
+	//result.Count = len(result.Rows)
 
 	if db.queryCacheEnabled {
 		// set this in the cache
