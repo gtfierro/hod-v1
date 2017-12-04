@@ -1,6 +1,8 @@
 package sparql
 
 import (
+	"fmt"
+	"github.com/kr/pretty"
 	"testing"
 )
 
@@ -41,7 +43,14 @@ func TestQueryParse(t *testing.T) {
 		{
 			"SELECT ?x ?y ?z WHERE { { ?y bf:isFedBy ?x . ?y bf:hasPoint ?z } UNION { ?y bf:feeds ?x } }",
 		},
+		{
+			"SELECT ?x ?y ?z WHERE { ?y rdf:type VAV { ?y bf:isFedBy ?x . ?y bf:hasPoint ?z } UNION { ?y bf:feeds ?x } }",
+		},
 	} {
-		Parse(test.str)
+		q, err := Parse(test.str)
+		if err != nil {
+			t.Error(err)
+		}
+		fmt.Printf("%# v", pretty.Formatter(q))
 	}
 }

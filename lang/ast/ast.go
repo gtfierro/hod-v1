@@ -17,18 +17,57 @@ func ClearDebug() {
 }
 
 type Query struct {
-	Select SelectClause
-	Where  WhereClause
+	Select    SelectClause
+	Count     CountClause
+	Where     WhereClause
+	Variables []string
 }
 
-func NewQuery(selectclause, whereclause interface{}) (Query, error) {
+func NewQuery(selectclause, countclause, whereclause interface{}) (Query, error) {
 	if debug {
 		fmt.Printf("%# v", pretty.Formatter(whereclause.(WhereClause)))
 	}
-	return Query{
-		Select: selectclause.(SelectClause),
-		Where:  whereclause.(WhereClause),
-	}, nil
+	q := Query{
+		Where: whereclause.(WhereClause),
+	}
+	if selectclause != nil {
+		q.Select = selectclause.(SelectClause)
+	} else if countclause != nil {
+		q.Count = countclause.(CountClause)
+	}
+	vars := make(map[string]int)
+	// get all variables
+	for _, triple := range q.Where.Terms {
+		AddIfVar(triple.Subject, vars)
+		AddIfVar(triple.Object, vars)
+		for _, path := range triple.Predicates {
+			AddIfVar(path.Predicate, vars)
+		}
+	}
+	VarsFromGroup(q.Where.GraphGroup, vars)
+	for varname := range vars {
+		q.Variables = append(q.Variables, varname)
+	}
+	return q, nil
+}
+
+func AddIfVar(uri turtle.URI, m map[string]int) {
+	if uri.IsVariable() {
+		m[uri.String()] = 1
+	}
+}
+
+func VarsFromGroup(group GraphGroup, m map[string]int) {
+	for _, triple := range group.Terms {
+		AddIfVar(triple.Subject, m)
+		AddIfVar(triple.Object, m)
+		for _, path := range triple.Predicates {
+			AddIfVar(path.Predicate, m)
+		}
+	}
+	for _, union := range group.Unions {
+		VarsFromGroup(union, m)
+	}
 }
 
 type SelectClause struct {
@@ -44,20 +83,33 @@ func NewSelectClause(varlist interface{}) (SelectClause, error) {
 	return SelectClause{Vars: varlist.([]string)}, nil
 }
 
+type CountClause struct {
+	Vars    []string
+	AllVars bool
+}
+
+func NewAllCountClause() (CountClause, error) {
+	return CountClause{AllVars: true}, nil
+}
+
+func NewCountClause(varlist interface{}) (CountClause, error) {
+	return CountClause{Vars: varlist.([]string)}, nil
+}
+
 type WhereClause struct {
-	Terms      [][]Triple
+	Terms      []Triple
 	GraphGroup GraphGroup
 }
 
 func NewWhereClause(triples interface{}) (WhereClause, error) {
 	return WhereClause{
-		Terms: [][]Triple{triples.([]Triple)},
+		Terms: triples.([]Triple),
 	}, nil
 }
 
 func NewWhereClauseWithGraphGroup(triples, group interface{}) (WhereClause, error) {
 	return WhereClause{
-		Terms:      [][]Triple{triples.([]Triple)},
+		Terms:      triples.([]Triple),
 		GraphGroup: group.(GraphGroup),
 	}, nil
 }

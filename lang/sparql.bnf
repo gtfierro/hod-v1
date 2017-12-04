@@ -16,16 +16,27 @@ string : _varstring ;
 /* syntax */
 QueryUnit
     : SelectQuery << $0, nil >>
+    | CountQuery  << $0, nil >>
     ;
 
 SelectQuery
     : SelectClause DatasetClause WhereClause /* TODO */
-    | SelectClause WhereClause  << ast.NewQuery($0, $1) >>
+    | SelectClause WhereClause  << ast.NewQuery($0, nil, $1) >>
+    ;
+
+CountQuery
+    : CountClause DatasetClause WhereClause /* TODO */
+    | CountClause WhereClause  << ast.NewQuery(nil, $0, $1) >>
     ;
 
 SelectClause
     : "SELECT" "*"      << ast.NewAllSelectClause() >>
     | "SELECT" Varlist  << ast.NewSelectClause($1) >>
+    ;
+
+CountClause
+    : "COUNT" "*"      << ast.NewAllCountClause() >>
+    | "COUNT" Varlist  << ast.NewCountClause($1) >>
     ;
 
 Varlist

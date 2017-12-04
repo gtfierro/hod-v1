@@ -1,8 +1,7 @@
 package sparql
 
 import (
-	"log"
-
+	"github.com/gtfierro/hod/lang/ast"
 	"github.com/gtfierro/hod/lang/lexer"
 	"github.com/gtfierro/hod/lang/parser"
 )
@@ -13,12 +12,12 @@ func init() {
 	p = parser.NewParser()
 }
 
-func Parse(s string) {
+func Parse(s string) (*ast.Query, error) {
 	lexed := lexer.NewLexer([]byte(s))
-	x, err := p.Parse(lexed)
+	_q, err := p.Parse(lexed)
 	if err != nil {
-		log.Println(err)
-	} else {
-		log.Printf("%+v", x)
+		return nil, err
 	}
+	q := _q.(ast.Query)
+	return &q, nil
 }
