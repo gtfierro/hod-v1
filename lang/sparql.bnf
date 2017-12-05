@@ -21,12 +21,12 @@ QueryUnit
 
 SelectQuery
     : SelectClause DatasetClause WhereClause /* TODO */
-    | SelectClause WhereClause  << ast.NewQuery($0, nil, $1) >>
+    | SelectClause WhereClause  << ast.NewQuery($0, $1, false) >>
     ;
 
 CountQuery
     : CountClause DatasetClause WhereClause /* TODO */
-    | CountClause WhereClause  << ast.NewQuery(nil, $0, $1) >>
+    | CountClause WhereClause  << ast.NewQuery($0, $1, true) >>
     ;
 
 SelectClause
@@ -35,8 +35,8 @@ SelectClause
     ;
 
 CountClause
-    : "COUNT" "*"      << ast.NewAllCountClause() >>
-    | "COUNT" Varlist  << ast.NewCountClause($1) >>
+    : "COUNT" "*"      << ast.NewAllSelectClause() >>
+    | "COUNT" Varlist  << ast.NewSelectClause($1) >>
     ;
 
 Varlist

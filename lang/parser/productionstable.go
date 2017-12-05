@@ -61,13 +61,13 @@ var productionsTable = ProdTab{
 		},
 	},
 	ProdTabEntry{
-		String: `SelectQuery : SelectClause WhereClause	<< ast.NewQuery(X[0], nil, X[1]) >>`,
+		String: `SelectQuery : SelectClause WhereClause	<< ast.NewQuery(X[0], X[1], false) >>`,
 		Id:         "SelectQuery",
 		NTType:     2,
 		Index:      4,
 		NumSymbols: 2,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
-			return ast.NewQuery(X[0], nil, X[1])
+			return ast.NewQuery(X[0], X[1], false)
 		},
 	},
 	ProdTabEntry{
@@ -81,13 +81,13 @@ var productionsTable = ProdTab{
 		},
 	},
 	ProdTabEntry{
-		String: `CountQuery : CountClause WhereClause	<< ast.NewQuery(nil, X[0], X[1]) >>`,
+		String: `CountQuery : CountClause WhereClause	<< ast.NewQuery(X[0], X[1], true) >>`,
 		Id:         "CountQuery",
 		NTType:     3,
 		Index:      6,
 		NumSymbols: 2,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
-			return ast.NewQuery(nil, X[0], X[1])
+			return ast.NewQuery(X[0], X[1], true)
 		},
 	},
 	ProdTabEntry{
@@ -111,23 +111,23 @@ var productionsTable = ProdTab{
 		},
 	},
 	ProdTabEntry{
-		String: `CountClause : "COUNT" "*"	<< ast.NewAllCountClause() >>`,
+		String: `CountClause : "COUNT" "*"	<< ast.NewAllSelectClause() >>`,
 		Id:         "CountClause",
 		NTType:     5,
 		Index:      9,
 		NumSymbols: 2,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
-			return ast.NewAllCountClause()
+			return ast.NewAllSelectClause()
 		},
 	},
 	ProdTabEntry{
-		String: `CountClause : "COUNT" Varlist	<< ast.NewCountClause(X[1]) >>`,
+		String: `CountClause : "COUNT" Varlist	<< ast.NewSelectClause(X[1]) >>`,
 		Id:         "CountClause",
 		NTType:     5,
 		Index:      10,
 		NumSymbols: 2,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
-			return ast.NewCountClause(X[1])
+			return ast.NewSelectClause(X[1])
 		},
 	},
 	ProdTabEntry{

@@ -18,23 +18,34 @@ func ClearDebug() {
 
 type Query struct {
 	Select    SelectClause
-	Count     CountClause
+	Count     bool
 	Where     WhereClause
 	Variables []string
 }
 
-func NewQuery(selectclause, countclause, whereclause interface{}) (Query, error) {
+func (q Query) CopyWithNewTerms(terms []Triple) Query {
+	newq := Query{
+		Select:    q.Select,
+		Variables: q.Variables,
+	}
+	newq.Where.Terms = make([]Triple, len(terms))
+	copy(newq.Where.Terms, terms)
+	return newq
+}
+
+func NewQuery(selectclause, whereclause interface{}, count bool) (Query, error) {
 	if debug {
 		fmt.Printf("%# v", pretty.Formatter(whereclause.(WhereClause)))
 	}
 	q := Query{
 		Where: whereclause.(WhereClause),
 	}
-	if selectclause != nil {
-		q.Select = selectclause.(SelectClause)
-	} else if countclause != nil {
-		q.Count = countclause.(CountClause)
-	}
+	q.Select = selectclause.(SelectClause)
+	q.Count = count
+	return q, nil
+}
+
+func (q *Query) PopulateVars() {
 	vars := make(map[string]int)
 	// get all variables
 	for _, triple := range q.Where.Terms {
@@ -50,7 +61,6 @@ func NewQuery(selectclause, countclause, whereclause interface{}) (Query, error)
 	for varname := range vars {
 		q.Variables = append(q.Variables, varname)
 	}
-	return q, nil
 }
 
 func (q Query) IterTriples(f func(t Triple) Triple) {
@@ -79,6 +89,23 @@ func VarsFromGroup(group GraphGroup, m map[string]int) {
 	for _, union := range group.Unions {
 		VarsFromGroup(union, m)
 	}
+}
+
+func (grp GraphGroup) Expand() [][]Triple {
+	var terms = make([]Triple, len(grp.Terms))
+	copy(terms, grp.Terms)
+	var groups [][]Triple
+
+	if len(grp.Unions) > 0 {
+		for _, union := range grp.Unions {
+			for _, subgroup := range union.Expand() {
+				groups = append(groups, append(terms, subgroup...))
+			}
+		}
+	} else {
+		groups = append(groups, terms)
+	}
+	return groups
 }
 
 func (grp GraphGroup) Iter(f func(t turtle.URI)) {
@@ -114,19 +141,6 @@ func NewAllSelectClause() (SelectClause, error) {
 
 func NewSelectClause(varlist interface{}) (SelectClause, error) {
 	return SelectClause{Vars: varlist.([]string)}, nil
-}
-
-type CountClause struct {
-	Vars    []string
-	AllVars bool
-}
-
-func NewAllCountClause() (CountClause, error) {
-	return CountClause{AllVars: true}, nil
-}
-
-func NewCountClause(varlist interface{}) (CountClause, error) {
-	return CountClause{Vars: varlist.([]string)}, nil
 }
 
 type WhereClause struct {
