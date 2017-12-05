@@ -84,14 +84,12 @@ type ResultRow struct {
 
 func (rr ResultRow) Less(than btree.Item, ctx interface{}) bool {
 	row := than.(*ResultRow)
-	if rr.count < row.count {
-		return true
-	} else if row.count < rr.count {
-		return false
-	}
 	before := false
 	for idx, item := range rr.row[:rr.count] {
-		before = before || item.Value < row.row[idx].Value || item.Namespace < row.row[idx].Namespace
+		if before {
+			return before
+		}
+		before = item.Value < row.row[idx].Value || item.Namespace < row.row[idx].Namespace
 	}
 	return before
 }

@@ -3,7 +3,7 @@ package db
 import (
 	"fmt"
 	"strings"
-	//"sync"
+	"sync"
 	"time"
 
 	turtle "github.com/gtfierro/hod/goraptor"
@@ -12,9 +12,14 @@ import (
 
 	"github.com/blevesearch/bleve"
 	"github.com/coocood/freecache"
+	"github.com/kr/pretty"
 	"github.com/mitghi/btree"
 	"github.com/pkg/errors"
 )
+
+func prettyprint(v interface{}) {
+	fmt.Printf("%# v", pretty.Formatter(v))
+}
 
 func (db *DB) RunQuery(q *sparql.Query) (QueryResult, error) {
 	fullQueryStart := time.Now()
@@ -43,14 +48,15 @@ func (db *DB) RunQuery(q *sparql.Query) (QueryResult, error) {
 		return triple
 	})
 
-	// we flatten the OR clauses to get the array of queries we are going
-	// to run and then merge
-	//	orTerms := query.FlattenOrClauseList(q.Where.Ors)
-	//for _, t := range orTerms {
-	//	fmt.Println(t)
-	//	fmt.Println()
-	//}
-	//	oldFilters := q.Where.Filters
+	// expand the graphgroup unions
+	var ors [][]sparql.Triple
+	if q.Where.GraphGroup != nil {
+		for _, group := range q.Where.GraphGroup.Expand() {
+			newterms := make([]sparql.Triple, len(q.Where.Terms))
+			copy(newterms, q.Where.Terms)
+			ors = append(ors, append(newterms, group...))
+		}
+	}
 
 	// check query hash
 	var queryhash []byte
@@ -78,45 +84,43 @@ func (db *DB) RunQuery(q *sparql.Query) (QueryResult, error) {
 	// if we have terms that are part of a set of OR statements, then we run
 	// parallel queries for each fully-elaborated "branch" or the OR statement,
 	// and then merge the results together at the end
-	//if len(orTerms) > 0 {
-	//	var rowLock sync.Mutex
-	//	var wg sync.WaitGroup
-	//	var queryErr error
-	//	wg.Add(len(orTerms))
-	//	for _, orTerm := range orTerms {
-	//		tmpQuery := q.Copy()
-	//		// augment with the filters
-	//		tmpQuery.Where.Filters = make([]query.Filter, len(oldFilters)+len(orTerm))
-	//		copy(tmpQuery.Where.Filters, oldFilters)
-	//		copy(tmpQuery.Where.Filters[len(oldFilters):], orTerm)
-
-	//		//	go func(q query.Query) {
-	//		results, err := db.getQueryResults(tmpQuery)
-	//		rowLock.Lock()
-	//		if err != nil {
-	//			queryErr = err
-	//		} else {
-	//			for _, row := range results {
-	//				unionedRows.ReplaceOrInsert(row)
-	//			}
-	//		}
-	//		rowLock.Unlock()
-	//		wg.Done()
-	//		//}(tmpQuery)
-	//	}
-	//	wg.Wait()
-	//	if queryErr != nil {
-	//		return QueryResult{}, queryErr
-	//	}
-	//} else {
-	results, err := db.getQueryResults(q)
-	if err != nil {
-		return QueryResult{}, err
+	if len(ors) > 0 {
+		var rowLock sync.Mutex
+		var wg sync.WaitGroup
+		var queryErr error
+		wg.Add(len(ors))
+		for _, group := range ors {
+			tmpQuery := q.CopyWithNewTerms(group)
+			tmpQuery.PopulateVars()
+			go func(q *sparql.Query) {
+				results, err := db.getQueryResults(&tmpQuery)
+				rowLock.Lock()
+				if err != nil {
+					queryErr = err
+				} else {
+					log.Debug("got", len(results))
+					for _, row := range results {
+						unionedRows.ReplaceOrInsert(row)
+					}
+				}
+				rowLock.Unlock()
+				wg.Done()
+			}(&tmpQuery)
+		}
+		wg.Wait()
+		if queryErr != nil {
+			return QueryResult{}, queryErr
+		}
+	} else {
+		q.PopulateVars()
+		results, err := db.getQueryResults(q)
+		if err != nil {
+			return QueryResult{}, err
+		}
+		for _, row := range results {
+			unionedRows.ReplaceOrInsert(row)
+		}
 	}
-	for _, row := range results {
-		unionedRows.ReplaceOrInsert(row)
-	}
-	//}
 	if db.showQueryLatencies {
 		log.Noticef("Full Query took %s", time.Since(fullQueryStart))
 	}
@@ -127,19 +131,22 @@ func (db *DB) RunQuery(q *sparql.Query) (QueryResult, error) {
 
 	// TODO: count!
 	// return the rows
-	result.Count = len(results)
-	i := unionedRows.DeleteMax()
-	for i != nil {
-		row := i.(*ResultRow)
-		m := make(ResultMap)
-		for idx, vname := range q.Select.Vars {
-			m[vname] = row.row[idx]
+	log.Debug(unionedRows.Len())
+
+	result.Count = unionedRows.Len()
+	if !q.Count {
+		i := unionedRows.DeleteMax()
+		for i != nil {
+			row := i.(*ResultRow)
+			m := make(ResultMap)
+			for idx, vname := range q.Select.Vars {
+				m[vname] = row.row[idx]
+			}
+			result.Rows = append(result.Rows, m)
+			finishResultRow(row)
+			i = unionedRows.DeleteMax()
 		}
-		result.Rows = append(result.Rows, m)
-		finishResultRow(row)
-		i = unionedRows.DeleteMax()
 	}
-	//result.Count = len(result.Rows)
 
 	if db.queryCacheEnabled {
 		// set this in the cache

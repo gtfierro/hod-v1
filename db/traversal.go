@@ -21,8 +21,7 @@ func (db *DB) reversePathPattern(path []sparql.PathPattern) []sparql.PathPattern
 			return nil
 		}
 	}
-	reversePath(reverse)
-	return reverse
+	return reversePath(reverse)
 }
 
 // follow the pattern from the given object's InEdges, placing the results in the btree
@@ -260,7 +259,7 @@ func (db *DB) getSubjectFromPredObject(objectHash Key, path []sparql.PathPattern
 	var traversed = traversedBTreePool.Get()
 	defer traversedBTreePool.Put(traversed)
 	// reverse the path because we are getting from the object
-	reversePath(path)
+	path = reversePath(path)
 
 	for idx, segment := range path {
 		// clear out the tree

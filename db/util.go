@@ -84,10 +84,16 @@ func rowIsFull(row []Key) bool {
 	return true
 }
 
-func reversePath(path []sparql.PathPattern) {
-	for i, j := 0, len(path)-1; i < j; i, j = i+1, j-1 {
-		path[i], path[j] = path[j], path[i]
+func reversePath(path []sparql.PathPattern) []sparql.PathPattern {
+	newpath := make([]sparql.PathPattern, len(path))
+	// for in-place, replace newpath with path
+	if len(newpath) == 1 {
+		return path
 	}
+	for i, j := 0, len(path)-1; i < j; i, j = i+1, j-1 {
+		newpath[i], newpath[j] = path[j], path[i]
+	}
+	return newpath
 }
 
 func hashQuery(q *sparql.Query) []byte {

@@ -32,7 +32,6 @@ func newQueryContext(plan *queryPlan, db *DB) *queryContext {
 	for idx, variable := range plan.query.Variables {
 		variablePosition[variable] = idx
 	}
-	log.Debug("2>", variablePosition)
 	return &queryContext{
 		variablePosition: variablePosition,
 		definitions:      definitions,
