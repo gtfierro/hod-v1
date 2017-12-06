@@ -142,13 +142,13 @@
                         html += "<div class='col s4'><b>" + pred + "</b></div>";
                         html += "<div class='col s4'>";
                             if (klass == "Class") {
-                                html += "<a href='/explore2?class=" + encodeURIComponent("brick:"+object)+"'>" + object + "</a>";
+                                html += "<a href='/search?class=" + encodeURIComponent("brick:"+object)+"'>" + object + "</a>";
                             } else {
-                                html += "<a href='/explore2?node=" + encodeURIComponent(full_object)+"'>" + object + "</a>";
+                                html += "<a href='/search?node=" + encodeURIComponent(full_object)+"'>" + object + "</a>";
                             }
                         html += "</div>";
                         html += "<div class='col s4'>";
-                            html += "<a href='/explore2?class="+ encodeURIComponent("brick:"+klass) + "'>" + klass + "</a>";
+                            html += "<a href='/search?class="+ encodeURIComponent("brick:"+klass) + "'>" + klass + "</a>";
                         html += "</div>";
                     html += "</div>";
                     html += "</li>";
@@ -168,10 +168,10 @@
                             html += "<div class='row'>";
                                 html += "<div class='col s4'><b>" + pred + "</b></div>";
                                 html += "<div class='col s4'>";
-                                    html += "<a href='/explore2?node=" + encodeURIComponent(full_object)+"'>" + object + "</a>";
+                                    html += "<a href='/search?node=" + encodeURIComponent(full_object)+"'>" + object + "</a>";
                                 html += "</div>";
                                 html += "<div class='col s4'>";
-                                    html += "<a href='/explore2?class="+ encodeURIComponent("brick:"+klass) + "'>" + klass + "</a>";
+                                    html += "<a href='/search?class="+ encodeURIComponent("brick:"+klass) + "'>" + klass + "</a>";
                                 html += "</div>";
                             html += "</div>";
                             html += "</li>";
@@ -212,8 +212,8 @@
                         var inst = element["?inst"].Value;
                         var full_inst = element["?inst"].Namespace+'#'+element["?inst"].Value;
                         var klass = element["?class"].Value;
-                        html += "<tr><td><a href='/explore2?node=" + encodeURIComponent(full_inst) + "'>"+ inst + "</a></td>";
-                        html += "<td><a href='/explore2?class=" + encodeURIComponent("brick:"+klass) + "'>" + klass + "</a></td></tr>";
+                        html += "<tr><td><a href='/search?node=" + encodeURIComponent(full_inst) + "'>"+ inst + "</a></td>";
+                        html += "<td><a href='/search?class=" + encodeURIComponent("brick:"+klass) + "'>" + klass + "</a></td></tr>";
                     });
                 }
                 html += "</tbody>";
