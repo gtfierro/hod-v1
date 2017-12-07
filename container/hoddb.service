@@ -13,6 +13,5 @@ ExecStart=/usr/bin/docker run \
 
 ExecStop=/usr/bin/docker stop -t 5 %p ; /usr/bin/docker rm -f %p
 
-[X-Fleet]
-MachineMetadata=n=node0
-
+[Install]
+WantedBy=multi-user.target
