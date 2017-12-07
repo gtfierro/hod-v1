@@ -489,6 +489,7 @@ func (op *resolveSubjectPredFromObject) run(ctx *queryContext) error {
 	} else {
 		ctx.rel.add2Values(subjectVar, predicateVar, sub_pred_pairs)
 	}
+
 	ctx.defineVariable(predicateVar, newKeyTree())
 	ctx.defineVariable(subjectVar, newKeyTree())
 
@@ -523,9 +524,8 @@ func (op *resolvePredObjectFromSubject) run(ctx *queryContext) error {
 		return nil
 	}
 
-	// get all predicates from it
+	// We take each reachable predicate (from the subject) and enumerate it with each reachable object
 	predicates := ctx.db.getPredicatesFromSubject(subject)
-
 	var pred_obj_pairs [][]Key
 	predicates.Iter(func(predicate Key) {
 		if !ctx.validValue(predicateVar, predicate) {
@@ -542,9 +542,27 @@ func (op *resolvePredObjectFromSubject) run(ctx *queryContext) error {
 		})
 	})
 
-	ctx.rel.add2Values(predicateVar, objectVar, pred_obj_pairs)
-	ctx.defineVariable(predicateVar, newKeyTree())
-	ctx.defineVariable(objectVar, newKeyTree())
+	var rsop_relation *Relation
+	var joinOn []string
+	if ctx.hasJoined(predicateVar) {
+		joinOn = []string{predicateVar}
+		rsop_relation = NewRelation([]string{predicateVar, objectVar})
+		rsop_relation.add2Values(predicateVar, objectVar, pred_obj_pairs)
+		ctx.rel.join(rsop_relation, joinOn, ctx)
+	} else if ctx.hasJoined(objectVar) {
+		joinOn = []string{objectVar}
+		rsop_relation = NewRelation([]string{objectVar, predicateVar})
+		rsop_relation.add2Values(predicateVar, objectVar, pred_obj_pairs)
+		ctx.rel.join(rsop_relation, joinOn, ctx)
+	} else {
+		// if nothing has been joined yet, then we are populating this relation for the first time.
+		// from that predicate
+		ctx.rel.add2Values(predicateVar, objectVar, pred_obj_pairs)
+		ctx.defineVariable(predicateVar, newKeyTree())
+		ctx.defineVariable(objectVar, newKeyTree())
+	}
+	ctx.markJoined(predicateVar)
+	ctx.markJoined(objectVar)
 
 	return nil
 }
