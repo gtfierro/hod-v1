@@ -4,7 +4,7 @@ package db
 import (
 	"fmt"
 
-	"github.com/gtfierro/hod/query"
+	sparql "github.com/gtfierro/hod/lang/ast"
 	"github.com/pkg/errors"
 	"github.com/syndtr/goleveldb/leveldb"
 )
@@ -36,7 +36,7 @@ func (rs *resolveSubject) GetTerm() *queryTerm {
 
 func (rs *resolveSubject) run(ctx *queryContext) error {
 	// fetch the object from the graph
-	object, err := ctx.db.GetEntity(rs.term.Object)
+	object, err := ctx.db.GetHash(rs.term.Object)
 	if err != nil && err != leveldb.ErrNotFound {
 		return errors.Wrap(err, fmt.Sprintf("%+v", rs.term))
 	} else if err == leveldb.ErrNotFound {
@@ -44,9 +44,21 @@ func (rs *resolveSubject) run(ctx *queryContext) error {
 	}
 	subjectVar := rs.term.Subject.String()
 	// get all subjects reachable from the given object along the path
-	subjects := ctx.db.getSubjectFromPredObject(object.PK, rs.term.Path)
+	subjects := ctx.db.getSubjectFromPredObject(object, rs.term.Predicates)
 
-	ctx.define(subjectVar, hashTreeToPointerTree(ctx.db, subjects))
+	if !ctx.defined(subjectVar) {
+		// if not defined, then we put this into the relation
+		ctx.defineVariable(subjectVar, subjects)
+		ctx.rel.add1Value(subjectVar, subjects)
+	} else {
+		// if it *is* already defined, then we intersect the values by joining
+		ctx.unionDefinitions(subjectVar, subjects)
+
+		newrel := NewRelation([]string{subjectVar})
+		newrel.add1Value(subjectVar, subjects)
+
+		ctx.rel.join(newrel, []string{subjectVar}, ctx)
+	}
 
 	return nil
 }
@@ -71,17 +83,26 @@ func (ro *resolveObject) GetTerm() *queryTerm {
 
 func (ro *resolveObject) run(ctx *queryContext) error {
 	// fetch the subject from the graph
-	subject, err := ctx.db.GetEntity(ro.term.Subject)
+	subject, err := ctx.db.GetHash(ro.term.Subject)
 	if err != nil && err != leveldb.ErrNotFound {
 		return errors.Wrap(err, fmt.Sprintf("%+v", ro.term))
 	} else if err == leveldb.ErrNotFound {
 		return nil
 	}
 	objectVar := ro.term.Object.String()
-	// get all objects reachable from the given subject along the path
-	objects := ctx.db.getObjectFromSubjectPred(subject.PK, ro.term.Path)
+	objects := ctx.db.getObjectFromSubjectPred(subject, ro.term.Predicates)
 
-	ctx.define(objectVar, hashTreeToPointerTree(ctx.db, objects))
+	if !ctx.defined(objectVar) {
+		ctx.defineVariable(objectVar, objects)
+		ctx.rel.add1Value(objectVar, objects)
+	} else {
+		ctx.unionDefinitions(objectVar, objects)
+
+		newrel := NewRelation([]string{objectVar})
+		newrel.add1Value(objectVar, objects)
+
+		ctx.rel.join(newrel, []string{objectVar}, ctx)
+	}
 
 	return nil
 }
@@ -97,7 +118,7 @@ func (op *resolvePredicate) String() string {
 }
 
 func (op *resolvePredicate) SortKey() string {
-	return op.term.Path[0].Predicate.String()
+	return op.term.Predicates[0].Predicate.String()
 }
 
 func (op *resolvePredicate) GetTerm() *queryTerm {
@@ -120,12 +141,24 @@ func (op *resolvePredicate) run(ctx *queryContext) error {
 		return nil
 	}
 
-	predicateVar := op.term.Path[0].Predicate.String()
+	predicateVar := op.term.Predicates[0].Predicate.String()
 	// get all preds w/ the given end object, starting from the given subject
 
 	predicates := ctx.db.getPredicateFromSubjectObject(subject, object)
 
-	ctx.define(predicateVar, hashTreeToPointerTree(ctx.db, predicates))
+	// new stuff
+	if !ctx.defined(predicateVar) {
+		ctx.defineVariable(predicateVar, predicates)
+		ctx.rel.add1Value(predicateVar, predicates)
+	} else {
+		ctx.unionDefinitions(predicateVar, predicates)
+
+		newrel := NewRelation([]string{predicateVar})
+		newrel.add1Value(predicateVar, predicates)
+
+		ctx.rel.join(newrel, []string{predicateVar}, ctx)
+	}
+
 	return nil
 }
 
@@ -152,44 +185,86 @@ func (rso *restrictSubjectObjectByPredicate) run(ctx *queryContext) error {
 	var (
 		subjectVar = rso.term.Subject.String()
 		objectVar  = rso.term.Object.String()
-		subTree, _ = ctx.getValues(subjectVar)
-		objTree, _ = ctx.getValues(objectVar)
 	)
-	// we add the objects on to each subject
-	if rso.parentVar == subjectVar {
-		// iterate through current subjects
-		max := subTree.Max()
-		newObjects := newPointerTree(BTREE_DEGREE)
-		iter := func(subject *Entity) bool {
-			objects := hashTreeToPointerTree(ctx.db, ctx.db.getObjectFromSubjectPred(subject.PK, rso.term.Path))
-			objects = ctx.filterIfDefined(objectVar, objects)
-			newObjects.mergeFromTree(objects)
-			ctx.addReachable(subject, subjectVar, objects, objectVar)
-			return subject != max
-		}
-		subTree.Iter(iter)
-		ctx.define(objectVar, newObjects)
-	} else if rso.parentVar == objectVar {
-		// iterate through current objects
-		max := objTree.Max()
-		newSubjects := newPointerTree(BTREE_DEGREE)
-		iter := func(object *Entity) bool {
-			subjects := hashTreeToPointerTree(ctx.db, ctx.db.getSubjectFromPredObject(object.PK, rso.term.Path))
-			subjects = ctx.filterIfDefined(subjectVar, subjects)
-			newSubjects.mergeFromTree(subjects)
-			ctx.addReachable(object, objectVar, subjects, subjectVar)
-			return object != max
-		}
-		objTree.Iter(iter)
-		ctx.define(subjectVar, newSubjects)
+
+	// this operator takes existing values for subjects and objects and finds the pairs of them that
+	// are connected by the path defined by rso.term.Predicates.
+
+	var rsop_relation *Relation
+	var relation_contents [][]Key
+	var joinOn []string
+
+	// use whichever variable has already been joined on, which means
+	// that there are values in the relation that we can join with
+	if ctx.hasJoined(subjectVar) {
+		joinOn = []string{subjectVar}
+		subjects := ctx.getValuesForVariable(subjectVar)
+
+		rsop_relation = NewRelation([]string{subjectVar, objectVar})
+
+		subjects.Iter(func(subject Key) {
+			reachableObjects := ctx.db.getObjectFromSubjectPred(subject, rso.term.Predicates)
+			// we restrict the values in reachableObjects to those that we already have inside 'objectVar'
+			ctx.restrictToResolved(objectVar, reachableObjects)
+			reachableObjects.Iter(func(objectKey Key) {
+				relation_contents = append(relation_contents, []Key{subject, objectKey})
+			})
+		})
+		rsop_relation.add2Values(subjectVar, objectVar, relation_contents)
+
+	} else if ctx.hasJoined(objectVar) {
+		joinOn = []string{objectVar}
+		objects := ctx.getValuesForVariable(objectVar)
+
+		rsop_relation = NewRelation([]string{objectVar, subjectVar})
+
+		objects.Iter(func(object Key) {
+			reachableSubjects := ctx.db.getSubjectFromPredObject(object, rso.term.Predicates)
+			ctx.restrictToResolved(subjectVar, reachableSubjects)
+
+			reachableSubjects.Iter(func(subjectKey Key) {
+				relation_contents = append(relation_contents, []Key{object, subjectKey})
+			})
+		})
+		rsop_relation.add2Values(objectVar, subjectVar, relation_contents)
+	} else if ctx.cardinalityUnique(subjectVar) < ctx.cardinalityUnique(objectVar) {
+		// we start with whichever has fewer values (subject or object). For each of them, we search
+		// the graph for reachable endpoints (object or subject) on the provided path (rso.term.Predicates)
+		// neither is joined
+		joinOn = []string{subjectVar}
+		subjects := ctx.getValuesForVariable(subjectVar)
+
+		rsop_relation = NewRelation([]string{subjectVar, objectVar})
+
+		subjects.Iter(func(subject Key) {
+			reachableObjects := ctx.db.getObjectFromSubjectPred(subject, rso.term.Predicates)
+			ctx.restrictToResolved(objectVar, reachableObjects)
+
+			reachableObjects.Iter(func(objectKey Key) {
+				relation_contents = append(relation_contents, []Key{subject, objectKey})
+			})
+		})
+		rsop_relation.add2Values(subjectVar, objectVar, relation_contents)
 	} else {
-		log.Fatal("unfamiliar situation")
+		joinOn = []string{objectVar}
+		objects := ctx.getValuesForVariable(objectVar)
+
+		rsop_relation = NewRelation([]string{objectVar, subjectVar})
+
+		objects.Iter(func(object Key) {
+			reachableSubjects := ctx.db.getSubjectFromPredObject(object, rso.term.Predicates)
+			ctx.restrictToResolved(subjectVar, reachableSubjects)
+
+			reachableSubjects.Iter(func(subjectKey Key) {
+				relation_contents = append(relation_contents, []Key{object, subjectKey})
+			})
+		})
+		rsop_relation.add2Values(objectVar, subjectVar, relation_contents)
 	}
-	//log.Debug(rso)
-	//for varname, tree := range ctx.candidates {
-	//	log.Debug(varname, tree.Len())
-	//}
-	//	ctx.dumpChildren()
+
+	ctx.rel.join(rsop_relation, joinOn, ctx)
+	ctx.markJoined(subjectVar)
+	ctx.markJoined(objectVar)
 
 	return nil
 }
@@ -217,16 +292,30 @@ func (rsv *resolveSubjectFromVarObject) run(ctx *queryContext) error {
 	var (
 		objectVar  = rsv.term.Object.String()
 		subjectVar = rsv.term.Subject.String()
-		objTree, _ = ctx.getValues(objectVar)
 	)
-	max := objTree.Max()
-	iter := func(object *Entity) bool {
-		subjects := hashTreeToPointerTree(ctx.db, ctx.db.getSubjectFromPredObject(object.PK, rsv.term.Path))
-		ctx.addOrMergeVariable(subjectVar, subjects)
-		ctx.addReachable(object, objectVar, subjects, subjectVar)
-		return object != max
-	}
-	objTree.Iter(iter)
+
+	var rsop_relation = NewRelation([]string{objectVar, subjectVar})
+	var relation_contents [][]Key
+
+	newSubjects := newKeyTree()
+
+	objects := ctx.getValuesForVariable(objectVar)
+	objects.Iter(func(object Key) {
+		reachableSubjects := ctx.db.getSubjectFromPredObject(object, rsv.term.Predicates)
+		ctx.restrictToResolved(subjectVar, reachableSubjects)
+
+		reachableSubjects.Iter(func(subjectKey Key) {
+			newSubjects.Add(subjectKey)
+			relation_contents = append(relation_contents, []Key{object, subjectKey})
+		})
+	})
+
+	rsop_relation.add2Values(objectVar, subjectVar, relation_contents)
+	ctx.rel.join(rsop_relation, rsop_relation.keys[:1], ctx) // join on objectVar
+	ctx.markJoined(subjectVar)
+	ctx.markJoined(objectVar)
+	ctx.unionDefinitions(subjectVar, newSubjects)
+
 	return nil
 }
 
@@ -250,19 +339,30 @@ func (rov *resolveObjectFromVarSubject) run(ctx *queryContext) error {
 	var (
 		objectVar  = rov.term.Object.String()
 		subjectVar = rov.term.Subject.String()
-		subTree, _ = ctx.getValues(subjectVar)
 	)
-	max := subTree.Max()
-	newObjects := newPointerTree(BTREE_DEGREE)
-	iter := func(subject *Entity) bool {
-		objects := hashTreeToPointerTree(ctx.db, ctx.db.getObjectFromSubjectPred(subject.PK, rov.term.Path))
-		objects = ctx.filterIfDefined(objectVar, objects)
-		newObjects.mergeFromTree(objects)
-		ctx.addReachable(subject, subjectVar, objects, objectVar)
-		return subject != max
-	}
-	subTree.Iter(iter)
-	ctx.define(objectVar, newObjects)
+
+	var rsop_relation = NewRelation([]string{subjectVar, objectVar})
+	var relation_contents [][]Key
+
+	newObjects := newKeyTree()
+
+	subjects := ctx.getValuesForVariable(subjectVar)
+	subjects.Iter(func(subject Key) {
+		reachableObjects := ctx.db.getObjectFromSubjectPred(subject, rov.term.Predicates)
+		ctx.restrictToResolved(objectVar, reachableObjects)
+
+		reachableObjects.Iter(func(objectKey Key) {
+			newObjects.Add(objectKey)
+			relation_contents = append(relation_contents, []Key{subject, objectKey})
+		})
+	})
+
+	rsop_relation.add2Values(subjectVar, objectVar, relation_contents)
+	ctx.rel.join(rsop_relation, rsop_relation.keys[:1], ctx) // join on subjectVar
+	ctx.markJoined(subjectVar)
+	ctx.markJoined(objectVar)
+	ctx.unionDefinitions(objectVar, newObjects)
+
 	return nil
 }
 
@@ -282,7 +382,6 @@ func (op *resolveObjectFromVarSubjectPred) GetTerm() *queryTerm {
 	return op.term
 }
 
-// TODO: implement resolveObjectFromVarSubjectPred
 // ?s ?p o
 func (rov *resolveObjectFromVarSubjectPred) run(ctx *queryContext) error {
 	return nil
@@ -305,22 +404,24 @@ func (op *resolveSubjectObjectFromPred) GetTerm() *queryTerm {
 }
 
 func (rso *resolveSubjectObjectFromPred) run(ctx *queryContext) error {
-	subsobjs := ctx.db.getSubjectObjectFromPred(rso.term.Path)
+	subsobjs := ctx.db.getSubjectObjectFromPred(rso.term.Predicates)
 	subjectVar := rso.term.Subject.String()
 	objectVar := rso.term.Object.String()
-	subjects := newPointerTree(BTREE_DEGREE)
-	objects := newPointerTree(BTREE_DEGREE)
-	for _, sopair := range subsobjs {
-		subject := ctx.db.MustGetEntityFromHash(sopair[0])
-		object := ctx.db.MustGetEntityFromHash(sopair[1])
-		if ctx.candidateHasValue(subjectVar, subject) && ctx.candidateHasValue(objectVar, object) {
-			ctx.addReachableSingle(subject, subjectVar, object, objectVar)
-			subjects.Add(subject)
-			objects.Add(object)
-		}
+
+	if ctx.defined(subjectVar) {
+		rsop_relation := NewRelation([]string{subjectVar, objectVar})
+		rsop_relation.add2Values(subjectVar, objectVar, subsobjs)
+		ctx.rel.join(rsop_relation, []string{subjectVar}, ctx)
+	} else if ctx.defined(objectVar) {
+		rsop_relation := NewRelation([]string{subjectVar, objectVar})
+		rsop_relation.add2Values(subjectVar, objectVar, subsobjs)
+		ctx.rel.join(rsop_relation, []string{objectVar}, ctx)
+	} else {
+		ctx.rel.add2Values(subjectVar, objectVar, subsobjs)
 	}
-	ctx.define(subjectVar, subjects)
-	ctx.define(objectVar, objects)
+	ctx.markJoined(subjectVar)
+	ctx.markJoined(objectVar)
+
 	return nil
 }
 
@@ -333,7 +434,7 @@ func (op *resolveSubjectPredFromObject) String() string {
 }
 
 func (op *resolveSubjectPredFromObject) SortKey() string {
-	return op.term.Path[0].Predicate.String()
+	return op.term.Predicates[0].Predicate.String()
 }
 
 func (op *resolveSubjectPredFromObject) GetTerm() *queryTerm {
@@ -346,11 +447,8 @@ func (op *resolveSubjectPredFromObject) GetTerm() *queryTerm {
 // by anything we've already resolved.
 // If we have *not* resolved the predicate, then this is easy: just graph traverse from the object
 func (op *resolveSubjectPredFromObject) run(ctx *queryContext) error {
-	var (
-		tree *pointerTree
-	)
 	subjectVar := op.term.Subject.String()
-	predicateVar := op.term.Path[0].Predicate.String()
+	predicateVar := op.term.Predicates[0].Predicate.String()
 
 	// fetch the object from the graph
 	object, err := ctx.db.GetEntity(op.term.Object)
@@ -359,30 +457,41 @@ func (op *resolveSubjectPredFromObject) run(ctx *queryContext) error {
 	} else if err == leveldb.ErrNotFound {
 		return nil
 	}
-	candidateSubjects := newPointerTree(BTREE_DEGREE)
-	// get all predicates from it
-	predicates := hashTreeToPointerTree(ctx.db, ctx.db.getPredicatesFromObject(object))
-	// for each subject reachable from each predicate, add the predicate as aa
-	// dependent of the subject
-	predmax := predicates.Max()
-	iterpred := func(predicate *Entity) bool {
-		path := []query.PathPattern{{Predicate: ctx.db.MustGetURI(predicate.PK), Pattern: query.PATTERN_SINGLE}}
-		subjects := hashTreeToPointerTree(ctx.db, ctx.db.getSubjectFromPredObject(object.PK, path))
-		max := subjects.Max()
-		iter := func(ent *Entity) bool {
-			tree = ctx.getLinkedValues(predicateVar, ent)
-			tree.Add(predicate)
-			candidateSubjects.Add(ent) // subject
-			ctx.addReachable(ent, subjectVar, tree, predicateVar)
-			return ent != max
-		}
-		subjects.Iter(iter)
-		return predicate != predmax
-	}
-	predicates.Iter(iterpred)
 
-	// need to merge w/ the subjects we've already gotten
-	ctx.addOrFilterVariable(subjectVar, candidateSubjects)
+	// get all predicates from it
+	predicates := ctx.db.getPredicatesFromObject(object)
+
+	var sub_pred_pairs [][]Key
+	predicates.Iter(func(predicate Key) {
+		if !ctx.validValue(predicateVar, predicate) {
+			return
+		}
+		path := []sparql.PathPattern{{Predicate: ctx.db.MustGetURI(predicate), Pattern: sparql.PATTERN_SINGLE}}
+		subjects := ctx.db.getSubjectFromPredObject(object.PK, path)
+
+		subjects.Iter(func(subject Key) {
+			if !ctx.validValue(subjectVar, subject) {
+				return
+			}
+			sub_pred_pairs = append(sub_pred_pairs, []Key{subject, predicate})
+
+		})
+	})
+
+	if ctx.defined(subjectVar) {
+		rsop_relation := NewRelation([]string{subjectVar, predicateVar})
+		rsop_relation.add2Values(subjectVar, predicateVar, sub_pred_pairs)
+		ctx.rel.join(rsop_relation, []string{subjectVar}, ctx)
+	} else if ctx.defined(predicateVar) {
+		rsop_relation := NewRelation([]string{subjectVar, predicateVar})
+		rsop_relation.add2Values(subjectVar, predicateVar, sub_pred_pairs)
+		ctx.rel.join(rsop_relation, []string{predicateVar}, ctx)
+	} else {
+		ctx.rel.add2Values(subjectVar, predicateVar, sub_pred_pairs)
+	}
+
+	ctx.defineVariable(predicateVar, newKeyTree())
+	ctx.defineVariable(subjectVar, newKeyTree())
 
 	return nil
 }
@@ -396,7 +505,7 @@ func (op *resolvePredObjectFromSubject) String() string {
 }
 
 func (op *resolvePredObjectFromSubject) SortKey() string {
-	return op.term.Path[0].Predicate.String()
+	return op.term.Predicates[0].Predicate.String()
 }
 
 func (op *resolvePredObjectFromSubject) GetTerm() *queryTerm {
@@ -404,11 +513,8 @@ func (op *resolvePredObjectFromSubject) GetTerm() *queryTerm {
 }
 
 func (op *resolvePredObjectFromSubject) run(ctx *queryContext) error {
-	var (
-		tree *pointerTree
-	)
 	objectVar := op.term.Object.String()
-	predicateVar := op.term.Path[0].Predicate.String()
+	predicateVar := op.term.Predicates[0].Predicate.String()
 
 	// fetch the subject from the graph
 	subject, err := ctx.db.GetEntity(op.term.Subject)
@@ -417,28 +523,46 @@ func (op *resolvePredObjectFromSubject) run(ctx *queryContext) error {
 	} else if err == leveldb.ErrNotFound {
 		return nil
 	}
-	candidateObjects := newPointerTree(BTREE_DEGREE)
-	// get all predicates from it
-	predicates := hashTreeToPointerTree(ctx.db, ctx.db.getPredicatesFromSubject(subject))
-	predmax := predicates.Max()
-	iterpred := func(predicate *Entity) bool {
-		path := []query.PathPattern{{Predicate: ctx.db.MustGetURI(predicate.PK), Pattern: query.PATTERN_SINGLE}}
-		objects := hashTreeToPointerTree(ctx.db, ctx.db.getObjectFromSubjectPred(subject.PK, path))
-		max := objects.Max()
-		iter := func(ent *Entity) bool {
-			tree = ctx.getLinkedValues(predicateVar, ent)
-			tree.Add(predicate)
-			candidateObjects.Add(ent) // object
-			ctx.addReachable(ent, objectVar, tree, predicateVar)
-			return ent != max
-		}
-		objects.Iter(iter)
-		return predicate != predmax
-	}
-	predicates.Iter(iterpred)
 
-	// need to merge w/ the objects we've already gotten
-	ctx.addOrFilterVariable(objectVar, candidateObjects)
+	// We take each reachable predicate (from the subject) and enumerate it with each reachable object
+	predicates := ctx.db.getPredicatesFromSubject(subject)
+	var pred_obj_pairs [][]Key
+	predicates.Iter(func(predicate Key) {
+		if !ctx.validValue(predicateVar, predicate) {
+			return
+		}
+		path := []sparql.PathPattern{{Predicate: ctx.db.MustGetURI(predicate), Pattern: sparql.PATTERN_SINGLE}}
+		objects := ctx.db.getObjectFromSubjectPred(subject.PK, path)
+
+		objects.Iter(func(object Key) {
+			if !ctx.validValue(objectVar, object) {
+				return
+			}
+			pred_obj_pairs = append(pred_obj_pairs, []Key{predicate, object})
+		})
+	})
+
+	var rsop_relation *Relation
+	var joinOn []string
+	if ctx.hasJoined(predicateVar) {
+		joinOn = []string{predicateVar}
+		rsop_relation = NewRelation([]string{predicateVar, objectVar})
+		rsop_relation.add2Values(predicateVar, objectVar, pred_obj_pairs)
+		ctx.rel.join(rsop_relation, joinOn, ctx)
+	} else if ctx.hasJoined(objectVar) {
+		joinOn = []string{objectVar}
+		rsop_relation = NewRelation([]string{objectVar, predicateVar})
+		rsop_relation.add2Values(predicateVar, objectVar, pred_obj_pairs)
+		ctx.rel.join(rsop_relation, joinOn, ctx)
+	} else {
+		// if nothing has been joined yet, then we are populating this relation for the first time.
+		// from that predicate
+		ctx.rel.add2Values(predicateVar, objectVar, pred_obj_pairs)
+		ctx.defineVariable(predicateVar, newKeyTree())
+		ctx.defineVariable(objectVar, newKeyTree())
+	}
+	ctx.markJoined(predicateVar)
+	ctx.markJoined(objectVar)
 
 	return nil
 }
@@ -466,41 +590,29 @@ func (op *resolveVarTripleFromSubject) run(ctx *queryContext) error {
 	// for all subjects, find all predicates and objects. Note: these predicates
 	// and objects may be partially evaluated already
 	var (
-		subjectVar                     = op.term.Subject.String()
-		objectVar                      = op.term.Object.String()
-		predicateVar                   = op.term.Path[0].Predicate.String()
-		subjects, _                    = ctx.getValues(subjectVar)
-		knownPredicates, hadPredicates = ctx.getValues(predicateVar)
-		candidateObjects               = newPointerTree(BTREE_DEGREE)
-		candidatePredicates            = newPointerTree(BTREE_DEGREE)
+		subjectVar   = op.term.Subject.String()
+		objectVar    = op.term.Object.String()
+		predicateVar = op.term.Predicates[0].Predicate.String()
 	)
 
-	maxSub := subjects.Max()
-	var predKey Key
-	subjectIter := func(subject *Entity) bool {
-		linkedPredicates := newPointerTree(BTREE_DEGREE)
+	var rsop_relation = NewRelation([]string{subjectVar, predicateVar, objectVar})
+	var relation_contents [][]Key
+
+	subjects := ctx.definitions[subjectVar]
+	subjects.Iter(func(subjectKey Key) {
+		var predKey Key
+		subject := ctx.db.MustGetEntityFromHash(subjectKey)
 		for edge, objectList := range subject.OutEdges {
 			predKey.FromSlice([]byte(edge))
-			predicate := ctx.db.MustGetEntityFromHash(predKey)
-			if hadPredicates && !knownPredicates.Has(predicate) {
-				continue // skip
-			}
-			candidatePredicates.Add(predicate)
-			linkedPredicates.Add(predicate)
-			linkedObjects := newPointerTree(BTREE_DEGREE)
 			for _, objectKey := range objectList {
-				object := ctx.db.MustGetEntityFromHash(objectKey)
-				candidateObjects.Add(object)
-				linkedObjects.Add(object)
+				relation_contents = append(relation_contents, []Key{subject.PK, predKey, objectKey})
 			}
-			ctx.addReachable(predicate, predicateVar, linkedObjects, objectVar)
 		}
-		ctx.addReachable(subject, subjectVar, linkedPredicates, predicateVar)
-		return subject != maxSub
-	}
-	subjects.Iter(subjectIter)
-	ctx.addOrMergeVariable(objectVar, candidateObjects)
-	ctx.addOrMergeVariable(predicateVar, candidatePredicates)
+	})
+
+	rsop_relation.add3Values(subjectVar, predicateVar, objectVar, relation_contents)
+	ctx.rel.join(rsop_relation, []string{subjectVar}, ctx)
+	ctx.markJoined(subjectVar)
 	return nil
 }
 
@@ -523,41 +635,29 @@ func (op *resolveVarTripleFromObject) GetTerm() *queryTerm {
 // ?s ?p ?o; start from o
 func (op *resolveVarTripleFromObject) run(ctx *queryContext) error {
 	var (
-		subjectVar                     = op.term.Subject.String()
-		objectVar                      = op.term.Object.String()
-		predicateVar                   = op.term.Path[0].Predicate.String()
-		objects, _                     = ctx.getValues(objectVar)
-		knownPredicates, hadPredicates = ctx.getValues(predicateVar)
-		candidateSubjects              = newPointerTree(BTREE_DEGREE)
-		candidatePredicates            = newPointerTree(BTREE_DEGREE)
+		subjectVar   = op.term.Subject.String()
+		objectVar    = op.term.Object.String()
+		predicateVar = op.term.Predicates[0].Predicate.String()
 	)
 
-	maxObj := objects.Max()
-	var predKey Key
-	objectIter := func(object *Entity) bool {
-		linkedPredicates := newPointerTree(BTREE_DEGREE)
+	var rsop_relation = NewRelation([]string{objectVar, predicateVar, subjectVar})
+	var relation_contents [][]Key
+
+	objects := ctx.definitions[objectVar]
+	objects.Iter(func(objectKey Key) {
+		var predKey Key
+		object := ctx.db.MustGetEntityFromHash(objectKey)
 		for edge, subjectList := range object.InEdges {
 			predKey.FromSlice([]byte(edge))
-			predicate := ctx.db.MustGetEntityFromHash(predKey)
-			if hadPredicates && !knownPredicates.Has(predicate) {
-				continue // skip
-			}
-			candidatePredicates.Add(predicate)
-			linkedPredicates.Add(predicate)
-			linkedSubjects := newPointerTree(BTREE_DEGREE)
 			for _, subjectKey := range subjectList {
-				subject := ctx.db.MustGetEntityFromHash(subjectKey)
-				candidateSubjects.Add(subject)
-				linkedSubjects.Add(subject)
+				relation_contents = append(relation_contents, []Key{object.PK, predKey, subjectKey})
 			}
-			ctx.addReachable(predicate, predicateVar, linkedSubjects, subjectVar)
 		}
-		ctx.addReachable(object, objectVar, linkedPredicates, predicateVar)
-		return object != maxObj
-	}
-	objects.Iter(objectIter)
-	ctx.addOrMergeVariable(subjectVar, candidateSubjects)
-	ctx.addOrMergeVariable(predicateVar, candidatePredicates)
+	})
+
+	rsop_relation.add3Values(objectVar, predicateVar, subjectVar, relation_contents)
+	ctx.rel.join(rsop_relation, []string{objectVar}, ctx)
+	ctx.markJoined(objectVar)
 	return nil
 }
 
@@ -570,7 +670,7 @@ func (op *resolveVarTripleFromPredicate) String() string {
 }
 
 func (op *resolveVarTripleFromPredicate) SortKey() string {
-	return op.term.Path[0].Predicate.String()
+	return op.term.Predicates[0].Predicate.String()
 }
 
 func (op *resolveVarTripleFromPredicate) GetTerm() *queryTerm {
@@ -579,45 +679,38 @@ func (op *resolveVarTripleFromPredicate) GetTerm() *queryTerm {
 
 // ?s ?p ?o; start from p
 func (op *resolveVarTripleFromPredicate) run(ctx *queryContext) error {
-	// for all predicates, pull the entity from the predindex
 	var (
-		subjectVar        = op.term.Subject.String()
-		objectVar         = op.term.Object.String()
-		predicateVar      = op.term.Path[0].Predicate.String()
-		predicates, _     = ctx.getValues(predicateVar)
-		candidateObjects  = newPointerTree(BTREE_DEGREE)
-		candidateSubjects = newPointerTree(BTREE_DEGREE)
+		subjectVar   = op.term.Subject.String()
+		objectVar    = op.term.Object.String()
+		predicateVar = op.term.Predicates[0].Predicate.String()
 	)
-	predMax := predicates.Max()
-	predIter := func(ent *Entity) bool {
-		uri := ctx.db.MustGetURI(ent.PK)
+
+	var rsop_relation = NewRelation([]string{predicateVar, subjectVar, objectVar})
+	var relation_contents [][]Key
+
+	predicates := ctx.definitions[predicateVar]
+	predicates.Iter(func(predicateKey Key) {
+		var subjectKey Key
+		// TODO: use?
+		// subsobjs := ctx.db.getSubjectObjectFromPred(rso.term.Predicates)
+		uri := ctx.db.MustGetURI(predicateKey)
 		predicate := ctx.db.predIndex[uri]
-		// iter through subjects
-		linkedSubjects := newPointerTree(BTREE_DEGREE)
 		for subStrHash, subjectMap := range predicate.Subjects {
-			var subjectHash Key
-			copy(subjectHash[:], []byte(subStrHash))
-			subject := ctx.db.MustGetEntityFromHash(subjectHash)
-			candidateSubjects.Add(subject)
-			linkedSubjects.Add(subject)
-			linkedObjects := newPointerTree(BTREE_DEGREE)
-			// link objects to subject
+			copy(subjectKey[:], []byte(subStrHash))
 			for objStrHash := range subjectMap {
 				var objectHash Key
-				copy(objectHash[:], []byte(objStrHash))
-				object := ctx.db.MustGetEntityFromHash(objectHash)
-				candidateObjects.Add(object)
-				linkedObjects.Add(object)
+				objectHash.FromSlice([]byte(objStrHash))
+				relation_contents = append(relation_contents, []Key{predicateKey, subjectKey, objectHash})
 			}
-			ctx.addReachable(subject, subjectVar, linkedObjects, objectVar)
 		}
-		ctx.addReachable(ent, predicateVar, linkedSubjects, subjectVar)
-		return ent != predMax
-	}
-	predicates.Iter(predIter)
-	ctx.addOrMergeVariable(objectVar, candidateObjects)
-	ctx.addOrMergeVariable(subjectVar, candidateSubjects)
+	})
+
+	ctx.markJoined(predicateVar)
+	rsop_relation.add3Values(predicateVar, subjectVar, objectVar, relation_contents)
+	ctx.rel.join(rsop_relation, []string{predicateVar}, ctx)
+	ctx.markJoined(predicateVar)
 	return nil
+
 }
 
 type resolveVarTripleAll struct {

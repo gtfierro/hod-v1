@@ -10,7 +10,7 @@ import (
 
 	"github.com/gtfierro/hod/config"
 	turtle "github.com/gtfierro/hod/goraptor"
-	"github.com/gtfierro/hod/query"
+	//"github.com/gtfierro/hod/query"
 
 	"github.com/blevesearch/bleve"
 	"github.com/coocood/freecache"
@@ -493,14 +493,6 @@ func (db *DB) LoadDataset(dataset turtle.DataSet) error {
 			if err := b.Index(triple.Subject.String(), sub); err != nil && len(triple.Subject.String()) > 0 {
 				return errors.Wrapf(err, "Could not add subject %s to text index (%s)", triple.Subject, triple)
 			}
-			//			pred := strings.Replace(triple.Predicate.String(), "_", " ", -1)
-			//			if err := b.Index(triple.Predicate.String(), pred); err != nil && len(triple.Predicate.String()) > 0 {
-			//				return errors.Wrapf(err, "Could not add predicate %s to text index (%s)", triple.Predicate, triple)
-			//			}
-			//			obj := strings.Replace(triple.Object.String(), "_", " ", -1)
-			//			if err := b.Index(triple.Object.String(), obj); err != nil && len(triple.Object.String()) > 0 {
-			//				return errors.Wrapf(err, "Could not add object %s to text index (%s)", triple.Object, triple)
-			//			}
 		}
 
 		if err := db.insertEntityTx(triple.Subject, subjectHash, enttx, pktx); err != nil {
@@ -752,45 +744,4 @@ func (db *DB) GetEntityIndexFromHash(hash Key) (*EntityExtendedIndex, error) {
 	_, err = ent.UnmarshalMsg(bytes)
 	db.entityIndexCache[hash] = ent
 	return ent, err
-}
-
-func (db *DB) expandFilter(filter query.Filter) query.Filter {
-	if !strings.HasPrefix(filter.Subject.Value, "?") {
-		if full, found := db.namespaces[filter.Subject.Namespace]; found {
-			filter.Subject.Namespace = full
-		}
-	}
-	if !strings.HasPrefix(filter.Object.Value, "?") {
-		if full, found := db.namespaces[filter.Object.Namespace]; found {
-			filter.Object.Namespace = full
-		}
-	}
-	for idx2, pred := range filter.Path {
-		if !strings.HasPrefix(pred.Predicate.Value, "?") {
-			if full, found := db.namespaces[pred.Predicate.Namespace]; found {
-				pred.Predicate.Namespace = full
-			}
-			filter.Path[idx2] = pred
-		}
-	}
-	return filter
-}
-
-func (db *DB) expandOrClauseFilters(orc query.OrClause) query.OrClause {
-	for fidx, filter := range orc.Terms {
-		orc.Terms[fidx] = db.expandFilter(filter)
-	}
-	for fidx, filter := range orc.LeftTerms {
-		orc.LeftTerms[fidx] = db.expandFilter(filter)
-	}
-	for fidx, filter := range orc.RightTerms {
-		orc.RightTerms[fidx] = db.expandFilter(filter)
-	}
-	for oidx, oc := range orc.LeftOr {
-		orc.LeftOr[oidx] = db.expandOrClauseFilters(oc)
-	}
-	for oidx, oc := range orc.RightOr {
-		orc.RightOr[oidx] = db.expandOrClauseFilters(oc)
-	}
-	return orc
 }

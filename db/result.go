@@ -11,7 +11,6 @@ import (
 	"time"
 
 	turtle "github.com/gtfierro/hod/goraptor"
-	"github.com/gtfierro/hod/query"
 
 	"github.com/mitghi/btree"
 )
@@ -20,7 +19,7 @@ var emptyResultMapList = []ResultMap{}
 var emptyLinkResultmapList = []LinkResultMap{}
 
 type QueryResult struct {
-	selectVars []query.SelectVar
+	selectVars []string
 	Rows       []ResultMap
 	Count      int
 	Elapsed    time.Duration `msg:"-"`
@@ -49,9 +48,9 @@ func (qr QueryResult) DumpToCSV(usePrefixes bool, db *DB, w io.Writer) error {
 			var line = make([]string, len(qr.selectVars))
 			for idx, varname := range qr.selectVars {
 				if usePrefixes {
-					line[idx] = db.Abbreviate(row[varname.Var.Value])
+					line[idx] = db.Abbreviate(row[varname])
 				} else {
-					line[idx] = row[varname.Var.Value].String()
+					line[idx] = row[varname].String()
 				}
 			}
 			if err := csvwriter.Write(line); err != nil {
@@ -85,14 +84,12 @@ type ResultRow struct {
 
 func (rr ResultRow) Less(than btree.Item, ctx interface{}) bool {
 	row := than.(*ResultRow)
-	if rr.count < row.count {
-		return true
-	} else if row.count < rr.count {
-		return false
-	}
 	before := false
 	for idx, item := range rr.row[:rr.count] {
-		before = before || item.Value < row.row[idx].Value || item.Namespace < row.row[idx].Namespace
+		if before {
+			return before
+		}
+		before = item.Value < row.row[idx].Value || item.Namespace < row.row[idx].Namespace
 	}
 	return before
 }

@@ -3,8 +3,13 @@ package db
 import (
 	"fmt"
 
-	"github.com/gtfierro/hod/query"
+	sparql "github.com/gtfierro/hod/lang/ast"
 	"github.com/pkg/errors"
+)
+
+const (
+	RESOLVED   = "RESOLVED"
+	UNRESOLVED = ""
 )
 
 // need operator types that go into the query plan
@@ -16,7 +21,7 @@ import (
 // the queryplanner. What we should do now is take that dependency graph and turn
 // it into a query plan
 
-func (db *DB) formQueryPlan(dg *dependencyGraph, q query.Query) (*queryPlan, error) {
+func (db *DB) formQueryPlan(dg *dependencyGraph, q *sparql.Query) (*queryPlan, error) {
 	qp := newQueryPlan(dg, q)
 
 	for _, term := range dg.terms {
@@ -24,10 +29,10 @@ func (db *DB) formQueryPlan(dg *dependencyGraph, q query.Query) (*queryPlan, err
 			subjectIsVariable = term.Subject.IsVariable()
 			objectIsVariable  = term.Object.IsVariable()
 			// for now just look at first item in path
-			predicateIsVariable  = term.Path[0].Predicate.IsVariable()
+			predicateIsVariable  = term.Predicates[0].Predicate.IsVariable()
 			subjectVar           = term.Subject.String()
 			objectVar            = term.Object.String()
-			predicateVar         = term.Path[0].Predicate.String()
+			predicateVar         = term.Predicates[0].Predicate.String()
 			hasResolvedSubject   bool
 			hasResolvedObject    bool
 			hasResolvedPredicate bool
@@ -137,4 +142,49 @@ func (db *DB) formQueryPlan(dg *dependencyGraph, q query.Query) (*queryPlan, err
 	// sort operations
 	// sort.Sort(qp)
 	return qp, nil
+}
+
+// contains all useful state information for executing a query
+type queryPlan struct {
+	operations []operation
+	selectVars []string
+	dg         *dependencyGraph
+	query      *sparql.Query
+	vars       map[string]string
+}
+
+func newQueryPlan(dg *dependencyGraph, q *sparql.Query) *queryPlan {
+	plan := &queryPlan{
+		selectVars: dg.selectVars,
+		dg:         dg,
+		query:      q,
+		vars:       make(map[string]string),
+	}
+	return plan
+}
+
+func (qp *queryPlan) dumpVarchain() {
+	for k, v := range qp.vars {
+		fmt.Println(k, "=>", v)
+	}
+}
+
+func (plan *queryPlan) hasVar(variable string) bool {
+	return plan.vars[variable] != UNRESOLVED
+}
+
+func (plan *queryPlan) varIsChild(variable string) bool {
+	return plan.hasVar(variable) && plan.vars[variable] != RESOLVED
+}
+
+func (plan *queryPlan) varIsTop(variable string) bool {
+	return plan.hasVar(variable) && plan.vars[variable] == RESOLVED
+}
+
+func (plan *queryPlan) addTopLevel(variable string) {
+	plan.vars[variable] = RESOLVED
+}
+
+func (plan *queryPlan) addLink(parent, child string) {
+	plan.vars[child] = parent
 }

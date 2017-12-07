@@ -2,88 +2,11 @@ package db
 
 import (
 	"fmt"
-	"github.com/gtfierro/hod/query"
+	sparql "github.com/gtfierro/hod/lang/ast"
 	"github.com/mitghi/btree"
+	"hash/fnv"
+	"sort"
 )
-
-// merges all the keys from 'src' into 'dst'
-func mergeTrees(dest, src *btree.BTree) {
-	max := src.Max()
-	iter := func(i btree.Item) bool {
-		dest.ReplaceOrInsert(i)
-		return i != max
-	}
-	src.Ascend(iter)
-}
-
-// merges all the keys from 'src' into 'dst'
-func mergePointerTrees(dest, src *pointerTree) {
-	max := src.Max()
-	iter := func(e *Entity) bool {
-		dest.Add(e)
-		return e != max
-	}
-	src.Iter(iter)
-}
-
-// takes a btree of [4]byte hashes, and turns those into
-// a tree of Entity
-func hashTreeToPointerTree(db *DB, src *btree.BTree) *pointerTree {
-	newTree := newPointerTree(BTREE_DEGREE)
-	max := src.Max()
-	iter := func(i btree.Item) bool {
-		if i == nil {
-			return i != max
-		}
-		ve := db.MustGetEntityFromHash(i.(Key))
-		newTree.Add(ve)
-		return i != max
-	}
-	src.Ascend(iter)
-	return newTree
-}
-
-// takes the intersection of the two trees and returns it
-func intersectTrees(a, b *btree.BTree) *btree.BTree {
-	res := btree.New(BTREE_DEGREE, "")
-	// early skip
-	if a.Len() == 0 || b.Len() == 0 || a.Max().Less(b.Min(), "") || b.Max().Less(a.Min(), "") {
-		return res
-	}
-	if a.Len() < b.Len() {
-		a, b = b, a
-	}
-	max := a.Max()
-	iter := func(i btree.Item) bool {
-		if b.Has(i) {
-			res.ReplaceOrInsert(i)
-		}
-		return i != max
-	}
-	a.Ascend(iter)
-	return res
-}
-
-// takes the intersection of the two pointertrees and returns it
-func intersectPointerTrees(a, b *pointerTree) *pointerTree {
-	res := newPointerTree(BTREE_DEGREE)
-	// early skip
-	if a.Len() == 0 || b.Len() == 0 || a.Max().Less(b.Min(), "") || b.Max().Less(a.Min(), "") {
-		return res
-	}
-	if a.Len() < b.Len() {
-		a, b = b, a
-	}
-	max := a.Max()
-	iter := func(e *Entity) bool {
-		if b.Has(e) {
-			res.Add(e)
-		}
-		return e != max
-	}
-	a.Iter(iter)
-	return res
-}
 
 func dumpHashTree(tree *btree.BTree, db *DB, limit int) {
 	max := tree.Max()
@@ -97,20 +20,6 @@ func dumpHashTree(tree *btree.BTree, db *DB, limit int) {
 		return i != max
 	}
 	tree.Ascend(iter)
-}
-
-func dumpPointerTree(tree *pointerTree, db *DB, limit int) {
-	max := tree.Max()
-	iter := func(e *Entity) bool {
-		if limit == 0 {
-			return false // stop iteration
-		} else if limit > 0 {
-			limit -= 1 //
-		}
-		fmt.Println(db.MustGetURI(e.PK))
-		return e != max
-	}
-	tree.Iter(iter)
 }
 
 func dumpEntityTree(tree *btree.BTree, db *DB, limit int) {
@@ -175,8 +84,39 @@ func rowIsFull(row []Key) bool {
 	return true
 }
 
-func reversePath(path []query.PathPattern) {
-	for i, j := 0, len(path)-1; i < j; i, j = i+1, j-1 {
-		path[i], path[j] = path[j], path[i]
+func reversePath(path []sparql.PathPattern) []sparql.PathPattern {
+	newpath := make([]sparql.PathPattern, len(path))
+	// for in-place, replace newpath with path
+	if len(newpath) == 1 {
+		return path
 	}
+	for i, j := 0, len(path)-1; i < j; i, j = i+1, j-1 {
+		newpath[i], newpath[j] = path[j], path[i]
+	}
+	return newpath
+}
+
+func hashQuery(q *sparql.Query) []byte {
+	h := fnv.New64a()
+	var selectVars = make(sort.StringSlice, len(q.Select.Vars))
+	for idx, varname := range q.Select.Vars {
+		selectVars[idx] = varname
+	}
+	for _, hv := range selectVars {
+		h.Write([]byte(hv))
+	}
+
+	var triples []string
+	q.IterTriples(func(triple sparql.Triple) sparql.Triple {
+		triples = append(triples, triple.String())
+		return triple
+	})
+
+	x := sort.StringSlice(triples)
+	x.Sort()
+	for _, hv := range x {
+		h.Write([]byte(hv))
+	}
+
+	return h.Sum(nil)
 }

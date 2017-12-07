@@ -1,6 +1,7 @@
 package query
 
 import (
+	"fmt"
 	"io"
 	"sort"
 
@@ -9,8 +10,9 @@ import (
 )
 
 type Query struct {
-	Select SelectClause
-	Where  WhereClause
+	Select    SelectClause
+	Where     WhereClause
+	Variables []string
 }
 
 // generate a unique hash for this query.
@@ -56,6 +58,7 @@ func (q Query) Copy() Query {
 		Where: WhereClause{
 			Filters: make([]Filter, len(q.Where.Filters)),
 		},
+		Variables: q.Variables,
 	}
 	for i, v := range q.Where.Filters {
 		newq.Where.Filters[i] = v.Copy()
@@ -136,11 +139,11 @@ func (f Filter) NumVars() int {
 }
 
 func (f Filter) String() string {
-	s := f.Subject.String()
+	s := "<" + f.Subject.String() + "|"
 	for _, pp := range f.Path {
-		s += pp.String()
+		s += " " + pp.String()
 	}
-	return s + f.Object.String()
+	return s + " | " + f.Object.String() + ">"
 }
 
 type OrClause struct {
@@ -279,6 +282,25 @@ func Parse(r io.Reader) (Query, error) {
 	}
 	if len(l.orclauses) > 0 {
 		q.Where.Ors = l.orclauses
+	}
+
+	vars := make(map[string]int)
+	for _, triple := range q.Where.Filters {
+		if triple.Subject.IsVariable() {
+			vars[triple.Subject.String()] = 1
+		}
+		if triple.Object.IsVariable() {
+			vars[triple.Object.String()] = 1
+		}
+		for _, path := range triple.Path {
+			if path.Predicate.IsVariable() {
+				vars[path.Predicate.String()] = 1
+			}
+		}
+	}
+
+	for vname := range vars {
+		q.Variables = append(q.Variables, vname)
 	}
 
 	return q, nil

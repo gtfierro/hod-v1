@@ -1,20 +1,20 @@
-=============== May 19, 2017 (PDT) ===============
-17:57:18.763081 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
-17:57:18.763230 db@open opening
-17:57:18.763709 version@stat F·[] S·0B[] Sc·[]
-17:57:18.767698 db@janitor F·2 G·0
-17:57:18.767727 db@open done T·4.490442ms
-17:57:19.127005 transaction@flush created L0@2 N·88 S·2KiB ",v2":"htt..rom,v61"
-17:57:19.127042 version@stat F·[1] S·2KiB[2KiB] Sc·[0.25]
-17:57:19.509107 transaction@flush created L0@3 N·3090 S·66KiB "\"Av..@en,v2644":"vir..ls\",v2906"
-17:57:19.509151 version@stat F·[2] S·68KiB[68KiB] Sc·[0.50]
-17:57:19.533558 table@compaction L0·2 -> L1·0 S·68KiB Q·3178
-17:57:19.538988 table@build created L1@4 N·3178 S·68KiB ",v2":"vir..ls\",v2906"
-17:57:19.539022 version@stat F·[0 1] S·68KiB[0B 68KiB] Sc·[0.00 0.00]
-17:57:19.542270 table@compaction committed F-1 S-73B Ke·0 D·0 T·8.683446ms
-17:57:19.542341 table@remove removed @3
-17:57:19.542376 table@remove removed @2
-17:57:20.194052 transaction@flush created L0@5 N·1711 S·29KiB "Sod..all,v4889":"htt..Tag,v4886"
-17:57:20.194083 version@stat F·[1 1] S·97KiB[29KiB 68KiB] Sc·[0.25 0.00]
-17:57:20.479299 db@close closing
-17:57:20.479370 db@close done T·70.211µs
+=============== Nov 24, 2017 (PST) ===============
+22:18:31.642090 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+22:18:31.654405 db@open opening
+22:18:31.654722 version@stat F·[] S·0B[] Sc·[]
+22:18:31.658540 db@janitor F·2 G·0
+22:18:31.658567 db@open done T·4.143351ms
+22:18:32.019896 transaction@flush created L0@2 N·90 S·2KiB ",v2":"htt..Tag,v22"
+22:18:32.019936 version@stat F·[1] S·2KiB[2KiB] Sc·[0.25]
+22:18:32.879195 transaction@flush created L0@3 N·4080 S·91KiB "AHU..nt\",v97":"htt..and,v1293"
+22:18:32.879229 version@stat F·[2] S·94KiB[94KiB] Sc·[0.50]
+22:18:32.901168 table@compaction L0·2 -> L1·0 S·94KiB Q·4170
+22:18:32.907582 table@build created L1@4 N·4170 S·93KiB ",v2":"htt..Tag,v22"
+22:18:32.907636 version@stat F·[0 1] S·93KiB[0B 93KiB] Sc·[0.00 0.00]
+22:18:32.911258 table@compaction committed F-1 S-256B Ke·0 D·0 T·10.051885ms
+22:18:32.911406 table@remove removed @3
+22:18:32.911442 table@remove removed @2
+22:18:33.499207 transaction@flush created L0@5 N·1709 S·29KiB "Sod..all,v5879":"htt..eat,v5877"
+22:18:33.499239 version@stat F·[1 1] S·123KiB[29KiB 93KiB] Sc·[0.25 0.00]
+22:18:33.899207 db@close closing
+22:18:33.899268 db@close done T·60.067µs

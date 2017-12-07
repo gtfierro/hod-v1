@@ -1,14 +1,14 @@
-=============== May 19, 2017 (PDT) ===============
-17:57:17.241363 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
-17:57:17.241473 db@open opening
-17:57:17.241921 version@stat F·[] S·0B[] Sc·[]
-17:57:17.243718 db@janitor F·2 G·0
-17:57:17.243750 db@open done T·2.271208ms
-17:57:17.613448 transaction@flush created L0@2 N·88 S·2KiB "\x02\xcb*\xc1,v7":"\xfc\xb2\x0f\xc8,v18"
-17:57:17.613482 version@stat F·[1] S·2KiB[2KiB] Sc·[0.25]
-17:57:18.015957 transaction@flush created L0@3 N·3090 S·89KiB "\x00+\xd4Y,v2783":"\xff\xbd\xa8\xec,v465"
-17:57:18.015987 version@stat F·[2] S·91KiB[91KiB] Sc·[0.50]
-17:57:18.549335 transaction@flush created L0@4 N·7 S·364B ".!\xbc\xd6,v3182":"\xf2,\xbc\xdf,v3185"
-17:57:18.549368 version@stat F·[3] S·92KiB[92KiB] Sc·[0.75]
-17:57:18.609804 db@close closing
-17:57:18.609833 db@close done T·28.824µs
+=============== Nov 24, 2017 (PST) ===============
+22:18:29.690985 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+22:18:29.694343 db@open opening
+22:18:29.694682 version@stat F·[] S·0B[] Sc·[]
+22:18:29.696552 db@janitor F·2 G·0
+22:18:29.696571 db@open done T·2.214798ms
+22:18:30.075992 transaction@flush created L0@2 N·90 S·2KiB "\aJ\xb5%,v52":"\xfe\xc6\xe3\xfd,v37"
+22:18:30.076015 version@stat F·[1] S·2KiB[2KiB] Sc·[0.25]
+22:18:30.944209 transaction@flush created L0@3 N·4080 S·134KiB "\x00\x03 \xc1,v2638":"\xff\xf6\xfc\x1b,v1936"
+22:18:30.944234 version@stat F·[2] S·137KiB[137KiB] Sc·[0.50]
+22:18:31.423586 transaction@flush created L0@4 N·7 S·364B ".!\xbc\xd6,v4174":"\xf2,\xbc\xdf,v4177"
+22:18:31.423619 version@stat F·[3] S·137KiB[137KiB] Sc·[0.75]
+22:18:31.500046 db@close closing
+22:18:31.500070 db@close done T·23.666µs

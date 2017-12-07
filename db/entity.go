@@ -3,6 +3,7 @@ package db
 
 import (
 	"encoding/binary"
+	"fmt"
 
 	"github.com/mitghi/btree"
 )
@@ -110,6 +111,19 @@ func (e *PredicateEntity) AddSubjectObject(subject, object Key) {
 		e.Objects[string(object[:])][string(subject[:])] = 0
 	} else {
 		e.Objects[string(object[:])] = map[string]uint32{string(subject[:]): 0}
+	}
+}
+
+func (e *PredicateEntity) Dump(db *DB) {
+	fmt.Printf("dump predicate> %s %p\n", db.MustGetURI(e.PK), e)
+	for sub, objmap := range e.Subjects {
+		var s, o Key
+		s.FromSlice([]byte(sub))
+		fmt.Println("   subject>", db.MustGetURI(s))
+		for obj := range objmap {
+			o.FromSlice([]byte(obj))
+			fmt.Println("     object>", db.MustGetURI(o))
+		}
 	}
 }
 
