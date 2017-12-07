@@ -461,21 +461,21 @@ var productionsTable = ProdTab{
 		},
 	},
 	ProdTabEntry{
-		String: `RestOfWhere : GraphPatternNotTriples Joiner TriplesBlock	<< ast.AddTriplesToGraphGroup(X[0], X[2]) >>`,
+		String: `RestOfWhere : GraphPatternNotTriples Joiner TriplesBlock Joiner	<< ast.AddTriplesToGraphGroup(X[0], X[2]) >>`,
 		Id:         "RestOfWhere",
 		NTType:     20,
 		Index:      44,
-		NumSymbols: 3,
+		NumSymbols: 4,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return ast.AddTriplesToGraphGroup(X[0], X[2])
 		},
 	},
 	ProdTabEntry{
-		String: `RestOfWhere : GraphPatternNotTriples	<< X[0], nil >>`,
+		String: `RestOfWhere : GraphPatternNotTriples Joiner	<< X[0], nil >>`,
 		Id:         "RestOfWhere",
 		NTType:     20,
 		Index:      45,
-		NumSymbols: 1,
+		NumSymbols: 2,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return X[0], nil
 		},
@@ -521,11 +521,11 @@ var productionsTable = ProdTab{
 		},
 	},
 	ProdTabEntry{
-		String: `GroupGraphPattern : "{" GroupGraphPatternSub "}"	<< X[1], nil >>`,
+		String: `GroupGraphPattern : "{" GroupGraphPatternSub Joiner "}"	<< X[1], nil >>`,
 		Id:         "GroupGraphPattern",
 		NTType:     23,
 		Index:      50,
-		NumSymbols: 3,
+		NumSymbols: 4,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return X[1], nil
 		},

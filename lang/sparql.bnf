@@ -114,8 +114,8 @@ RestOfWhereList
     ;
 
 RestOfWhere
-    : GraphPatternNotTriples Joiner TriplesBlock << ast.AddTriplesToGraphGroup($0, $2) >>
-    | GraphPatternNotTriples    << $0, nil >>
+    : GraphPatternNotTriples Joiner TriplesBlock Joiner << ast.AddTriplesToGraphGroup($0, $2) >>
+    | GraphPatternNotTriples Joiner   << $0, nil >>
     ;
 
 Joiner
@@ -130,7 +130,7 @@ GraphPatternNotTriples
     ;
 
 GroupGraphPattern
-    : "{" GroupGraphPatternSub "}"      << $1, nil >>
+    : "{" GroupGraphPatternSub Joiner "}"      << $1, nil >>
     ;
 
 GroupGraphPatternSub
