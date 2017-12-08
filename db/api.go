@@ -107,6 +107,10 @@ func (db *DB) RunQuery(q *sparql.Query) (QueryResult, error) {
 		for _, group := range ors {
 			tmpQuery := q.CopyWithNewTerms(group)
 			tmpQuery.PopulateVars()
+			if tmpQuery.Select.AllVars {
+				tmpQuery.Select.Vars = tmpQuery.Variables
+			}
+
 			go func(q *sparql.Query) {
 				results, err := db.getQueryResults(&tmpQuery)
 				rowLock.Lock()
@@ -128,6 +132,9 @@ func (db *DB) RunQuery(q *sparql.Query) (QueryResult, error) {
 		}
 	} else {
 		q.PopulateVars()
+		if q.Select.AllVars {
+			q.Select.Vars = q.Variables
+		}
 		results, err := db.getQueryResults(q)
 		if err != nil {
 			return QueryResult{}, err
