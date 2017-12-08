@@ -21,6 +21,21 @@ func prettyprint(v interface{}) {
 	fmt.Printf("%# v", pretty.Formatter(v))
 }
 
+func (db *DB) RunQueryString(q string) (QueryResult, error) {
+	var emptyres QueryResult
+	if q, err := query.Parse(q); err != nil {
+		e := errors.Wrap(err, "Could not parse hod query")
+		log.Error(e)
+		return emptyres, e
+	} else if result, err := db.RunQuery(q); err != nil {
+		e := errors.Wrap(err, "Could not complete hod query")
+		log.Error(e)
+		return emptyres, e
+	} else {
+		return result, nil
+	}
+}
+
 func (db *DB) RunQuery(q *sparql.Query) (QueryResult, error) {
 	fullQueryStart := time.Now()
 
