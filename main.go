@@ -49,6 +49,17 @@ func main() {
 			},
 		},
 		{
+			Name:   "multi",
+			Usage:  "Start multidb (BETA)",
+			Action: startMultiDB,
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:  "config, c",
+					Usage: "Path to hoddb config file",
+				},
+			},
+		},
+		{
 			Name:   "server",
 			Usage:  "Start hoddb server from existing database. Default to HTTP server only, but can do both that and BOSSWAVE",
 			Action: startServer,

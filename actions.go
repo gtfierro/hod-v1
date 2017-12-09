@@ -18,6 +18,7 @@ import (
 	"github.com/gtfierro/hod/goraptor"
 	query "github.com/gtfierro/hod/lang"
 	sparql "github.com/gtfierro/hod/lang/ast"
+	"github.com/gtfierro/hod/multidb"
 	"github.com/gtfierro/hod/server"
 
 	"github.com/chzyer/readline"
@@ -88,6 +89,20 @@ func startCLI(c *cli.Context) error {
 	}
 	defer db.Close()
 	return runInteractiveQuery(db)
+}
+
+func startMultiDB(c *cli.Context) error {
+	cfg, err := config.ReadConfig(c.String("config"))
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+	mdb, err := multidb.NewMultiDB(cfg)
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+	return runInteractiveQueryMulti(mdb)
 }
 
 func startServer(c *cli.Context) error {
@@ -426,6 +441,53 @@ func gethash() string {
 }
 
 func runInteractiveQuery(db *hod.DB) error {
+	currentUser, err := user.Current()
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+	fmt.Println("Successfully loaded dataset!")
+	bufQuery := ""
+
+	//setup color for prompt
+	c := color.New(color.FgCyan)
+	c.Add(color.Bold)
+	cyan := c.SprintFunc()
+
+	rl, err := readline.NewEx(&readline.Config{
+		Prompt:                 cyan("(hod)> "),
+		HistoryFile:            currentUser.HomeDir + "/.hod-query-history",
+		DisableAutoSaveHistory: true,
+	})
+	for {
+		line, err := rl.Readline()
+		if err != nil {
+			break
+		}
+		if len(line) == 0 {
+			continue
+		}
+		bufQuery += line + " "
+		if !strings.HasSuffix(strings.TrimSpace(line), ";") {
+			rl.SetPrompt(">>> ...")
+			continue
+		}
+		rl.SetPrompt(cyan("(hod)> "))
+		rl.SaveHistory(bufQuery)
+		q, err := query.Parse(bufQuery)
+		if err != nil {
+			log.Error(err)
+		} else if res, err := db.RunQuery(q); err != nil {
+			log.Error(err)
+		} else {
+			res.Dump()
+		}
+		bufQuery = ""
+	}
+	return nil
+}
+
+func runInteractiveQueryMulti(db *multidb.MultiDB) error {
 	currentUser, err := user.Current()
 	if err != nil {
 		log.Error(err)

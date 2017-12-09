@@ -17,6 +17,9 @@ type Config struct {
 	ReloadBrick       bool
 	DisableQueryCache bool
 
+	// for multidb
+	Buildings map[string]string
+
 	EnableHTTP     bool
 	EnableBOSSWAVE bool
 
@@ -59,6 +62,7 @@ func init() {
 	viper.SetDefault("BrickClassTTL", prefix+"/src/github.com/gtfierro/hod/Brick.ttl")
 	viper.SetDefault("ReloadBrick", true)
 	viper.SetDefault("DisableQueryCache", false)
+	viper.SetDefault("Buildings", make(map[string]string))
 
 	viper.SetDefault("EnableHTTP", true)
 	viper.SetDefault("EnableBOSSWAVE", false)
@@ -112,6 +116,7 @@ func ReadConfig(file string) (*Config, error) {
 		EnableHTTP:             viper.GetBool("EnableHTTP"),
 		EnableBOSSWAVE:         viper.GetBool("EnableBOSSWAVE"),
 		DisableQueryCache:      viper.GetBool("DisableQueryCache"),
+		Buildings:              viper.GetStringMapString("Buildings"),
 		ShowNamespaces:         viper.GetBool("ShowNamespaces"),
 		ShowDependencyGraph:    viper.GetBool("ShowDependencyGraph"),
 		ShowQueryPlan:          viper.GetBool("ShowQueryPlan"),
