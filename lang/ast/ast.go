@@ -2,8 +2,8 @@ package ast
 
 import (
 	"fmt"
-	turtle "github.com/gtfierro/hod/goraptor"
 	"github.com/gtfierro/hod/lang/token"
+	"github.com/gtfierro/hod/turtle"
 	"github.com/kr/pretty"
 )
 

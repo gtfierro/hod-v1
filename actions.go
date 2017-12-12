@@ -15,11 +15,11 @@ import (
 
 	"github.com/gtfierro/hod/config"
 	hod "github.com/gtfierro/hod/db"
-	"github.com/gtfierro/hod/goraptor"
 	query "github.com/gtfierro/hod/lang"
 	sparql "github.com/gtfierro/hod/lang/ast"
 	"github.com/gtfierro/hod/multidb"
 	"github.com/gtfierro/hod/server"
+	"github.com/gtfierro/hod/turtle"
 
 	"github.com/chzyer/readline"
 	"github.com/fatih/color"

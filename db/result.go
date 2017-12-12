@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	turtle "github.com/gtfierro/hod/goraptor"
+	"github.com/gtfierro/hod/turtle"
 
 	"github.com/mitghi/btree"
 )

@@ -5,7 +5,7 @@ package db
 // DO NOT EDIT
 
 import (
-	turtle "github.com/gtfierro/hod/goraptor"
+	"github.com/gtfierro/hod/turtle"
 	"github.com/tinylib/msgp/msgp"
 )
 

@@ -8,9 +8,9 @@ import (
 
 	"github.com/gtfierro/hod/config"
 	hoddb "github.com/gtfierro/hod/db"
-	turtle "github.com/gtfierro/hod/goraptor"
 	query "github.com/gtfierro/hod/lang"
 	sparql "github.com/gtfierro/hod/lang/ast"
+	"github.com/gtfierro/hod/turtle"
 
 	"github.com/op/go-logging"
 	"github.com/pkg/errors"

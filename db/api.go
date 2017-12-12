@@ -6,9 +6,9 @@ import (
 	"sync"
 	"time"
 
-	turtle "github.com/gtfierro/hod/goraptor"
 	query "github.com/gtfierro/hod/lang"
 	sparql "github.com/gtfierro/hod/lang/ast"
+	"github.com/gtfierro/hod/turtle"
 
 	"github.com/blevesearch/bleve"
 	"github.com/coocood/freecache"

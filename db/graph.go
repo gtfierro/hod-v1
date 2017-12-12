@@ -3,8 +3,8 @@ package db
 import (
 	"container/list"
 
-	turtle "github.com/gtfierro/hod/goraptor"
 	sparql "github.com/gtfierro/hod/lang/ast"
+	"github.com/gtfierro/hod/turtle"
 	"github.com/pkg/errors"
 	"github.com/syndtr/goleveldb/leveldb"
 )

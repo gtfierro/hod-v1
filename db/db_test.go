@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/gtfierro/hod/config"
-	turtle "github.com/gtfierro/hod/goraptor"
 	query "github.com/gtfierro/hod/lang"
+	"github.com/gtfierro/hod/turtle"
 )
 
 func TestDBQuery(t *testing.T) {

@@ -9,8 +9,7 @@ import (
 	"time"
 
 	"github.com/gtfierro/hod/config"
-	turtle "github.com/gtfierro/hod/goraptor"
-	//"github.com/gtfierro/hod/query"
+	"github.com/gtfierro/hod/turtle"
 
 	"github.com/blevesearch/bleve"
 	"github.com/coocood/freecache"
