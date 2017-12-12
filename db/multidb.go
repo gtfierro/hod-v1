@@ -178,35 +178,38 @@ func (mdb *MultiDB) RunQuery(q *sparql.Query) (QueryResult, error) {
 
 	var wg sync.WaitGroup
 	wg.Add(len(databases))
+	//var rowlock sync.Mutex
 	unionedRows := btree.New(4, "")
 	var result QueryResult
 
 	for dbname, db := range databases {
+		//go func() {
 		singleresult, err := db.runQueryToSet(q)
 		if err != nil {
 			log.Error(errors.Wrapf(err, "Error running query on %s", dbname))
 		}
+		//rowlock.Lock()
 		for _, row := range singleresult {
 			unionedRows.ReplaceOrInsert(row)
 		}
-
-		result.Count = unionedRows.Len()
-		if !q.Count {
-			i := unionedRows.DeleteMax()
-			for i != nil {
-				row := i.(*ResultRow)
-				m := make(ResultMap)
-				for idx, vname := range q.Select.Vars {
-					m[vname] = row.row[idx]
-				}
-				result.Rows = append(result.Rows, m)
-				finishResultRow(row)
-				i = unionedRows.DeleteMax()
-			}
-		}
-
+		//rowlock.Unlock()
 		//TODO: merge these or decide how to grouop them
 		wg.Done()
+		//}()
+	}
+	result.Count = unionedRows.Len()
+	if !q.Count {
+		i := unionedRows.DeleteMax()
+		for i != nil {
+			row := i.(*ResultRow)
+			m := make(ResultMap)
+			for idx, vname := range q.Select.Vars {
+				m[vname] = row.row[idx]
+			}
+			result.Rows = append(result.Rows, m)
+			finishResultRow(row)
+			i = unionedRows.DeleteMax()
+		}
 	}
 
 	wg.Wait()
