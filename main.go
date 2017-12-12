@@ -27,31 +27,9 @@ func main() {
 
 	app.Commands = []cli.Command{
 		{
-			Name:   "load",
-			Usage:  "Load dataset into hoddb",
-			Action: load,
-			Flags: []cli.Flag{
-				cli.StringFlag{
-					Name:  "config, c",
-					Usage: "Path to hoddb config file",
-				},
-			},
-		},
-		{
 			Name:   "cli",
 			Usage:  "Start hoddb from existing database",
 			Action: startCLI,
-			Flags: []cli.Flag{
-				cli.StringFlag{
-					Name:  "config, c",
-					Usage: "Path to hoddb config file",
-				},
-			},
-		},
-		{
-			Name:   "multi",
-			Usage:  "Start multidb (BETA)",
-			Action: startMultiDB,
 			Flags: []cli.Flag{
 				cli.StringFlag{
 					Name:  "config, c",
@@ -90,26 +68,6 @@ func main() {
 				cli.BoolFlag{
 					Name:  "prefixes, p",
 					Usage: "If true, abbreviate all namespaces. Else, just print the full URI",
-				},
-			},
-		},
-		{
-			Name:   "search",
-			Usage:  "Query for triples using just text matching",
-			Action: doSearch,
-			Flags: []cli.Flag{
-				cli.StringFlag{
-					Name:  "config, c",
-					Usage: "Path to hoddb config file",
-				},
-				cli.StringFlag{
-					Name:  "query, q",
-					Usage: "Query string",
-				},
-				cli.IntFlag{
-					Name:  "number, n",
-					Usage: "Number of results to return",
-					Value: 20,
 				},
 			},
 		},

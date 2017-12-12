@@ -17,7 +17,6 @@ import (
 	hod "github.com/gtfierro/hod/db"
 	query "github.com/gtfierro/hod/lang"
 	sparql "github.com/gtfierro/hod/lang/ast"
-	"github.com/gtfierro/hod/multidb"
 	"github.com/gtfierro/hod/server"
 	"github.com/gtfierro/hod/turtle"
 
@@ -43,37 +42,21 @@ func benchLoad(c *cli.Context) error {
 	return nil
 }
 
-func load(c *cli.Context) error {
-	if c.NArg() == 0 {
-		log.Fatal("Need to specify a turtle file to load")
-	}
-	filename := c.Args().Get(0)
-	cfg, err := config.ReadConfig(c.String("config"))
-	if err != nil {
-		log.Error(err)
-		return err
-	}
-	p := turtle.GetParser()
-	ds, duration := p.Parse(filename)
-	rate := float64((float64(ds.NumTriples()) / float64(duration.Nanoseconds())) * 1e9)
-	log.Infof("Loaded %d triples, %d namespaces in %s (%.0f/sec)", ds.NumTriples(), ds.NumNamespaces(), duration, rate)
-
-	cfg.ReloadBrick = true
-
-	db, err := hod.NewDB(cfg)
-	if err != nil {
-		log.Error(err)
-		return err
-	}
-	defer db.Close()
-	err = db.LoadDataset(ds)
-	if err != nil {
-		log.Error(err)
-		return err
-	}
-
-	return nil
-}
+//func startCLI(c *cli.Context) error {
+//	cfg, err := config.ReadConfig(c.String("config"))
+//	if err != nil {
+//		log.Error(err)
+//		return err
+//	}
+//	cfg.ReloadBrick = false
+//	db, err := hod.NewDB(cfg)
+//	if err != nil {
+//		log.Error(err)
+//		return err
+//	}
+//	defer db.Close()
+//	return runInteractiveQuery(db)
+//}
 
 func startCLI(c *cli.Context) error {
 	cfg, err := config.ReadConfig(c.String("config"))
@@ -81,28 +64,12 @@ func startCLI(c *cli.Context) error {
 		log.Error(err)
 		return err
 	}
-	cfg.ReloadBrick = false
-	db, err := hod.NewDB(cfg)
+	mdb, err := hod.NewMultiDB(cfg)
 	if err != nil {
 		log.Error(err)
 		return err
 	}
-	defer db.Close()
-	return runInteractiveQuery(db)
-}
-
-func startMultiDB(c *cli.Context) error {
-	cfg, err := config.ReadConfig(c.String("config"))
-	if err != nil {
-		log.Error(err)
-		return err
-	}
-	mdb, err := multidb.NewMultiDB(cfg)
-	if err != nil {
-		log.Error(err)
-		return err
-	}
-	return runInteractiveQueryMulti(mdb)
+	return runInteractiveQuery(mdb)
 }
 
 func startServer(c *cli.Context) error {
@@ -112,7 +79,7 @@ func startServer(c *cli.Context) error {
 		return err
 	}
 	cfg.ReloadBrick = false
-	db, err := hod.NewDB(cfg)
+	db, err := hod.NewMultiDB(cfg)
 	if err != nil {
 		log.Error(err)
 		return err
@@ -221,7 +188,7 @@ func doQuery(c *cli.Context) error {
 		return err
 	}
 	cfg.ReloadBrick = false
-	db, err := hod.NewDB(cfg)
+	db, err := hod.NewMultiDB(cfg)
 	if err != nil {
 		log.Error(err)
 		return err
@@ -251,33 +218,6 @@ func doQuery(c *cli.Context) error {
 		log.Fatal(err)
 	}
 	return res.DumpToCSV(c.Bool("prefixes"), db, os.Stdout)
-}
-
-func doSearch(c *cli.Context) error {
-	cfg, err := config.ReadConfig(c.String("config"))
-	if err != nil {
-		log.Error(err)
-		return err
-	}
-	cfg.ReloadBrick = false
-	db, err := hod.NewDB(cfg)
-	if err != nil {
-		log.Error(err)
-		return err
-	}
-	defer db.Close()
-
-	query := c.String("query")
-	number := c.Int("number")
-	if query == "" {
-		query = strings.Join(c.Args(), " ")
-	}
-	res, err := db.Search(query, number)
-
-	for _, l := range res {
-		fmt.Println(">", l)
-	}
-	return err
 }
 
 func dump(c *cli.Context) error {
@@ -440,54 +380,54 @@ func gethash() string {
 	return fmt.Sprintf("%x", h.Sum(nil))
 }
 
-func runInteractiveQuery(db *hod.DB) error {
-	currentUser, err := user.Current()
-	if err != nil {
-		log.Error(err)
-		return err
-	}
-	fmt.Println("Successfully loaded dataset!")
-	bufQuery := ""
+//func runInteractiveQuery(db *hod.DB) error {
+//	currentUser, err := user.Current()
+//	if err != nil {
+//		log.Error(err)
+//		return err
+//	}
+//	fmt.Println("Successfully loaded dataset!")
+//	bufQuery := ""
+//
+//	//setup color for prompt
+//	c := color.New(color.FgCyan)
+//	c.Add(color.Bold)
+//	cyan := c.SprintFunc()
+//
+//	rl, err := readline.NewEx(&readline.Config{
+//		Prompt:                 cyan("(hod)> "),
+//		HistoryFile:            currentUser.HomeDir + "/.hod-query-history",
+//		DisableAutoSaveHistory: true,
+//	})
+//	for {
+//		line, err := rl.Readline()
+//		if err != nil {
+//			break
+//		}
+//		if len(line) == 0 {
+//			continue
+//		}
+//		bufQuery += line + " "
+//		if !strings.HasSuffix(strings.TrimSpace(line), ";") {
+//			rl.SetPrompt(">>> ...")
+//			continue
+//		}
+//		rl.SetPrompt(cyan("(hod)> "))
+//		rl.SaveHistory(bufQuery)
+//		q, err := query.Parse(bufQuery)
+//		if err != nil {
+//			log.Error(err)
+//		} else if res, err := db.RunQuery(q); err != nil {
+//			log.Error(err)
+//		} else {
+//			res.Dump()
+//		}
+//		bufQuery = ""
+//	}
+//	return nil
+//}
 
-	//setup color for prompt
-	c := color.New(color.FgCyan)
-	c.Add(color.Bold)
-	cyan := c.SprintFunc()
-
-	rl, err := readline.NewEx(&readline.Config{
-		Prompt:                 cyan("(hod)> "),
-		HistoryFile:            currentUser.HomeDir + "/.hod-query-history",
-		DisableAutoSaveHistory: true,
-	})
-	for {
-		line, err := rl.Readline()
-		if err != nil {
-			break
-		}
-		if len(line) == 0 {
-			continue
-		}
-		bufQuery += line + " "
-		if !strings.HasSuffix(strings.TrimSpace(line), ";") {
-			rl.SetPrompt(">>> ...")
-			continue
-		}
-		rl.SetPrompt(cyan("(hod)> "))
-		rl.SaveHistory(bufQuery)
-		q, err := query.Parse(bufQuery)
-		if err != nil {
-			log.Error(err)
-		} else if res, err := db.RunQuery(q); err != nil {
-			log.Error(err)
-		} else {
-			res.Dump()
-		}
-		bufQuery = ""
-	}
-	return nil
-}
-
-func runInteractiveQueryMulti(db *multidb.MultiDB) error {
+func runInteractiveQuery(db *hod.MultiDB) error {
 	currentUser, err := user.Current()
 	if err != nil {
 		log.Error(err)

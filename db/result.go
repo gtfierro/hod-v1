@@ -41,14 +41,14 @@ func (qr QueryResult) Dump() {
 	fmt.Println(qr.Count)
 }
 
-func (qr QueryResult) DumpToCSV(usePrefixes bool, db *DB, w io.Writer) error {
+func (qr QueryResult) DumpToCSV(usePrefixes bool, db *MultiDB, w io.Writer) error {
 	csvwriter := csv.NewWriter(w)
 	if len(qr.Rows) > 0 {
 		for _, row := range qr.Rows {
 			var line = make([]string, len(qr.selectVars))
 			for idx, varname := range qr.selectVars {
 				if usePrefixes {
-					line[idx] = db.Abbreviate(row[varname])
+					line[idx] = db.abbreviate(row[varname])
 				} else {
 					line[idx] = row[varname].String()
 				}

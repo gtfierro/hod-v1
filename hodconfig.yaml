@@ -4,6 +4,11 @@
 ####
 # Location and structure of database
 ####
+#
+
+Buildings:
+    sdh: sdh.ttl
+    soda: buildings/berkeley.ttl
 
 # the location of the database files
 #DBPath: _hoddb

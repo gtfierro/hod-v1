@@ -9,8 +9,8 @@ import (
 	"os"
 
 	"github.com/gtfierro/hod/config"
+	hod "github.com/gtfierro/hod/db"
 	query "github.com/gtfierro/hod/lang"
-	hod "github.com/gtfierro/hod/multidb"
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/op/go-logging"
