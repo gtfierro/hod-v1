@@ -31,20 +31,23 @@ func init() {
 type MultiDB struct {
 	// database name => *db.DB
 	dbs sync.Map
+	// store the config so we can make more databases
+	cfg   *config.Config
+	dbdir string
 }
 
 func NewMultiDB(cfg *config.Config) (*MultiDB, error) {
-	var mdb = new(MultiDB)
+	var mdb = &MultiDB{cfg: cfg}
 	// create path for dbs
-	path := strings.TrimSuffix(cfg.DBPath, "/")
-	if err := os.MkdirAll(path, os.ModeDir); err != nil {
-		return nil, errors.Wrapf(err, "Could not create db directory %s", path)
+	mdb.dbdir = strings.TrimSuffix(cfg.DBPath, "/")
+	if err := os.MkdirAll(mdb.dbdir, os.ModeDir); err != nil {
+		return nil, errors.Wrapf(err, "Could not create db directory %s", mdb.dbdir)
 	}
 
 	p := turtle.GetParser()
 
 	for buildingname, buildingttlfile := range cfg.Buildings {
-		cfg.DBPath = filepath.Join(path, buildingname)
+		cfg.DBPath = filepath.Join(mdb.dbdir, buildingname)
 		db, err := hoddb.NewDB(cfg)
 		if err != nil {
 			return nil, errors.Wrapf(err, "Could not create database at %s", cfg.DBPath)
@@ -62,13 +65,33 @@ func NewMultiDB(cfg *config.Config) (*MultiDB, error) {
 	return mdb, nil
 }
 
-func (db *MultiDB) RunQueryString(querystring string) (hoddb.QueryResult, error) {
+func (mdb *MultiDB) LoadMulti(dbs map[string]string) error {
+	p := turtle.GetParser()
+	for buildingname, buildingttlfile := range dbs {
+		mdb.cfg.DBPath = filepath.Join(mdb.dbdir, buildingname)
+		db, err := hoddb.NewDB(mdb.cfg)
+		if err != nil {
+			return errors.Wrapf(err, "Could not create database at %s", mdb.cfg.DBPath)
+		}
+		ds, duration := p.Parse(buildingttlfile)
+		rate := float64((float64(ds.NumTriples()) / float64(duration.Nanoseconds())) * 1e9)
+		log.Infof("Loaded %d triples, %d namespaces in %s (%.0f/sec)", ds.NumTriples(), ds.NumNamespaces(), duration, rate)
+		err = db.LoadDataset(ds)
+		if err != nil {
+			return errors.Wrapf(err, "Could not load dataset %s", buildingttlfile)
+		}
+		mdb.dbs.Store(buildingname, db)
+	}
+	return nil
+}
+
+func (mdb *MultiDB) RunQueryString(querystring string) (hoddb.QueryResult, error) {
 	var emptyres hoddb.QueryResult
 	if q, err := query.Parse(querystring); err != nil {
 		e := errors.Wrap(err, "Could not parse hod query")
 		log.Error(e)
 		return emptyres, e
-	} else if result, err := db.RunQuery(q); err != nil {
+	} else if result, err := mdb.RunQuery(q); err != nil {
 		e := errors.Wrap(err, "Could not complete hod query")
 		log.Error(e)
 		return emptyres, e
@@ -77,7 +100,7 @@ func (db *MultiDB) RunQueryString(querystring string) (hoddb.QueryResult, error)
 	}
 }
 
-func (db *MultiDB) RunQuery(q *sparql.Query) (hoddb.QueryResult, error) {
+func (mdb *MultiDB) RunQuery(q *sparql.Query) (hoddb.QueryResult, error) {
 	var databases = make(map[string]*hoddb.DB)
 
 	// if no FROM clause, then query all dbs!
@@ -86,7 +109,7 @@ func (db *MultiDB) RunQuery(q *sparql.Query) (hoddb.QueryResult, error) {
 	}
 
 	if q.From.AllDBs {
-		db.dbs.Range(func(_dbname, _db interface{}) bool {
+		mdb.dbs.Range(func(_dbname, _db interface{}) bool {
 			dbname := _dbname.(string)
 			db := _db.(*hoddb.DB)
 			databases[dbname] = db
@@ -94,7 +117,7 @@ func (db *MultiDB) RunQuery(q *sparql.Query) (hoddb.QueryResult, error) {
 		})
 	} else {
 		for _, dbname := range q.From.Databases {
-			db, ok := db.dbs.Load(dbname)
+			db, ok := mdb.dbs.Load(dbname)
 			if ok {
 				databases[dbname] = db.(*hoddb.DB)
 			}
@@ -110,21 +133,74 @@ func (db *MultiDB) RunQuery(q *sparql.Query) (hoddb.QueryResult, error) {
 			log.Error(errors.Wrapf(err, "Error running query on %s", dbname))
 		}
 		log.Info(dbname, result.Count)
+		//TODO: merge these or decide how to grouop them
 		wg.Done()
 	}
 
 	wg.Wait()
 
-	//else if result, err := db.RunQuery(q); err != nil {
-	//	e := errors.Wrap(err, "Could not complete hod query")
-	//	log.Error(e)
-	//	return emptyres, e
-	//} else {
-	//	return result, nil
-	//}
 	return hoddb.QueryResult{}, nil
 }
 
 func (db *MultiDB) LoadDataset(name, ttlfile string) error {
 	return nil
+}
+
+func (mdb *MultiDB) Close() {
+	mdb.dbs.Range(func(_dbname, _db interface{}) bool {
+		db := _db.(*hoddb.DB)
+		db.Close()
+		return true
+	})
+}
+
+func (mdb *MultiDB) Search(q string, n int) ([]string, error) {
+	// just pick first db for now
+	var (
+		res []string
+		err error
+	)
+	mdb.dbs.Range(func(_dbname, _db interface{}) bool {
+		db := _db.(*hoddb.DB)
+		res, err = db.Search(q, n)
+		if err != nil {
+			return true
+		}
+		return false
+	})
+	return res, err
+}
+
+func (mdb *MultiDB) QueryToClassDOT(q string) (string, error) {
+	// just pick first db for now
+	var (
+		res string
+		err error
+	)
+	mdb.dbs.Range(func(_dbname, _db interface{}) bool {
+		db := _db.(*hoddb.DB)
+		res, err = db.QueryToClassDOT(q)
+		if err != nil {
+			return true
+		}
+		return false
+	})
+	return res, err
+}
+
+func (mdb *MultiDB) QueryToDOT(q string) (string, error) {
+	// just pick first db for now
+	var (
+		res string
+		err error
+	)
+	mdb.dbs.Range(func(_dbname, _db interface{}) bool {
+		db := _db.(*hoddb.DB)
+		res, err = db.QueryToDOT(q)
+		if err != nil {
+			return true
+		}
+		return false
+	})
+	return res, err
 }
