@@ -408,11 +408,11 @@ func (rso *resolveSubjectObjectFromPred) run(ctx *queryContext) error {
 	subjectVar := rso.term.Subject.String()
 	objectVar := rso.term.Object.String()
 
-	if ctx.defined(subjectVar) {
+	if ctx.defined(subjectVar) || ctx.hasJoined(subjectVar) {
 		rsop_relation := NewRelation([]string{subjectVar, objectVar})
 		rsop_relation.add2Values(subjectVar, objectVar, subsobjs)
 		ctx.rel.join(rsop_relation, []string{subjectVar}, ctx)
-	} else if ctx.defined(objectVar) {
+	} else if ctx.defined(objectVar) || ctx.hasJoined(objectVar) {
 		rsop_relation := NewRelation([]string{subjectVar, objectVar})
 		rsop_relation.add2Values(subjectVar, objectVar, subsobjs)
 		ctx.rel.join(rsop_relation, []string{objectVar}, ctx)
