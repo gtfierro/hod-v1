@@ -53,8 +53,6 @@ func NewMultiDB(cfg *config.Config) (*MultiDB, error) {
 		}
 	}
 
-	p := turtle.GetParser()
-
 	// load files.
 	// For each file, we compute the sha256 hash. If we have already loaded the file and
 	// it hasn't changed, the hash should be in mdb.loadedfilehashes
@@ -85,19 +83,9 @@ func NewMultiDB(cfg *config.Config) (*MultiDB, error) {
 		mdb.loadedfilehashes[buildingttlfile] = filehash
 		f.Close()
 
-		cfg.DBPath = filepath.Join(mdb.dbdir, buildingname)
-		db, err := NewDB(cfg)
-		if err != nil {
-			return nil, errors.Wrapf(err, "Could not create database at %s", cfg.DBPath)
+		if err := mdb.loadDataset(buildingname, buildingttlfile); err != nil {
+			return nil, err
 		}
-		ds, duration := p.Parse(buildingttlfile)
-		rate := float64((float64(ds.NumTriples()) / float64(duration.Nanoseconds())) * 1e9)
-		log.Infof("Loaded %d triples, %d namespaces in %s (%.0f/sec)", ds.NumTriples(), ds.NumNamespaces(), duration, rate)
-		err = db.LoadDataset(ds)
-		if err != nil {
-			return nil, errors.Wrapf(err, "Could not load dataset %s", buildingttlfile)
-		}
-		mdb.dbs.Store(buildingname, db)
 	}
 
 	if err := mdb.saveIndexes(); err != nil {
@@ -115,26 +103,6 @@ func (mdb *MultiDB) saveIndexes() error {
 	defer f.Close()
 	enc := json.NewEncoder(f)
 	return enc.Encode(mdb.loadedfilehashes)
-}
-
-func (mdb *MultiDB) LoadMulti(dbs map[string]string) error {
-	p := turtle.GetParser()
-	for buildingname, buildingttlfile := range dbs {
-		mdb.cfg.DBPath = filepath.Join(mdb.dbdir, buildingname)
-		db, err := NewDB(mdb.cfg)
-		if err != nil {
-			return errors.Wrapf(err, "Could not create database at %s", mdb.cfg.DBPath)
-		}
-		ds, duration := p.Parse(buildingttlfile)
-		rate := float64((float64(ds.NumTriples()) / float64(duration.Nanoseconds())) * 1e9)
-		log.Infof("Loaded %d triples, %d namespaces in %s (%.0f/sec)", ds.NumTriples(), ds.NumNamespaces(), duration, rate)
-		err = db.LoadDataset(ds)
-		if err != nil {
-			return errors.Wrapf(err, "Could not load dataset %s", buildingttlfile)
-		}
-		mdb.dbs.Store(buildingname, db)
-	}
-	return nil
 }
 
 func (mdb *MultiDB) RunQueryString(querystring string) (QueryResult, error) {
@@ -217,7 +185,21 @@ func (mdb *MultiDB) RunQuery(q *sparql.Query) (QueryResult, error) {
 	return result, nil
 }
 
-func (db *MultiDB) LoadDataset(name, ttlfile string) error {
+func (mdb *MultiDB) loadDataset(name, ttlfile string) error {
+	mdb.cfg.DBPath = filepath.Join(mdb.dbdir, name)
+	db, err := NewDB(mdb.cfg)
+	if err != nil {
+		return errors.Wrapf(err, "Could not create database at %s", mdb.cfg.DBPath)
+	}
+	p := turtle.GetParser()
+	ds, duration := p.Parse(ttlfile)
+	rate := float64((float64(ds.NumTriples()) / float64(duration.Nanoseconds())) * 1e9)
+	log.Infof("Loaded %d triples, %d namespaces in %s (%.0f/sec)", ds.NumTriples(), ds.NumNamespaces(), duration, rate)
+	err = db.LoadDataset(ds)
+	if err != nil {
+		return errors.Wrapf(err, "Could not load dataset %s", ttlfile)
+	}
+	mdb.dbs.Store(name, db)
 	return nil
 }
 
