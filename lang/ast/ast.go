@@ -73,6 +73,7 @@ func (q *Query) PopulateVars() {
 	if q.Where.GraphGroup != nil {
 		VarsFromGroup(*q.Where.GraphGroup, vars)
 	}
+	q.Variables = []string{} // clear
 	for varname := range vars {
 		q.Variables = append(q.Variables, varname)
 	}
