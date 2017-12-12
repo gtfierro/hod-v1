@@ -9,8 +9,8 @@ import (
 	"os"
 
 	"github.com/gtfierro/hod/config"
-	hod "github.com/gtfierro/hod/db"
 	query "github.com/gtfierro/hod/lang"
+	hod "github.com/gtfierro/hod/multidb"
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/op/go-logging"
@@ -32,13 +32,13 @@ func init() {
 }
 
 type hodServer struct {
-	db         *hod.DB
+	db         *hod.MultiDB
 	port       string
 	staticpath string
 	router     *httprouter.Router
 }
 
-func StartHodServer(db *hod.DB, cfg *config.Config) {
+func StartHodServer(db *hod.MultiDB, cfg *config.Config) {
 	server := &hodServer{
 		db:         db,
 		port:       cfg.ServerPort,
