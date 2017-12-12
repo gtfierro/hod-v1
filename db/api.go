@@ -329,7 +329,6 @@ func (db *DB) queryToClassDOT(querystring string) (string, error) {
 	}
 	// create DOT template string
 	dot := ""
-	dot += "digraph G {\n"
 
 	// get rdf:type predicate hash as a string
 	typeURI := turtle.ParseURI("rdf:type")
@@ -414,8 +413,6 @@ func (db *DB) queryToClassDOT(querystring string) (string, error) {
 
 		}
 	}
-
-	dot += "}"
 
 	return dot, nil
 }

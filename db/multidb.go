@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/json"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -235,14 +236,25 @@ func (mdb *MultiDB) QueryToClassDOT(q string) (string, error) {
 		res string
 		err error
 	)
+
+	if err != nil {
+		return "", err
+	}
+	// create DOT template string
+	dot := ""
+	dot += "digraph G {\n"
+
 	mdb.dbs.Range(func(_dbname, _db interface{}) bool {
 		db := _db.(*DB)
 		res, err = db.queryToClassDOT(q)
+		dot += res
 		if err != nil {
 			return true
 		}
-		return false
+		return true
 	})
+	dot += "}"
+	fmt.Println(dot)
 	return res, err
 }
 
