@@ -1,6 +1,10 @@
 package db
 
 import (
+	"bytes"
+	"crypto/sha256"
+	"encoding/json"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -18,22 +22,69 @@ import (
 type MultiDB struct {
 	// database name => *db.DB
 	dbs sync.Map
+	// filename => sha256 hash
+	loadedfilehashes map[string][]byte
 	// store the config so we can make more databases
 	cfg   *config.Config
 	dbdir string
 }
 
 func NewMultiDB(cfg *config.Config) (*MultiDB, error) {
-	var mdb = &MultiDB{cfg: cfg}
+	var mdb = &MultiDB{
+		cfg:              cfg,
+		loadedfilehashes: make(map[string][]byte),
+	}
+
 	// create path for dbs
 	mdb.dbdir = strings.TrimSuffix(cfg.DBPath, "/")
 	if err := os.MkdirAll(mdb.dbdir, 0700); err != nil {
 		return nil, errors.Wrapf(err, "Could not create db directory %s", mdb.dbdir)
 	}
 
+	fileHashPath := filepath.Join(mdb.dbdir, "fileHashes")
+	if _, err := os.Stat(fileHashPath); !os.IsNotExist(err) {
+		f, err := os.Open(fileHashPath)
+		if err != nil {
+			return nil, errors.Wrapf(err, "Could not open fileHash %s", fileHashPath)
+		}
+		dec := json.NewDecoder(f)
+		if err := dec.Decode(&mdb.loadedfilehashes); err != nil {
+			return nil, errors.Wrapf(err, "Could not decode fileHash %s", fileHashPath)
+		}
+	}
+
 	p := turtle.GetParser()
 
+	// load files.
+	// For each file, we compute the sha256 hash. If we have already loaded the file and
+	// it hasn't changed, the hash should be in mdb.loadedfilehashes
+
 	for buildingname, buildingttlfile := range cfg.Buildings {
+		f, err := os.Open(buildingttlfile)
+		if err != nil {
+			return nil, errors.Wrapf(err, "Could not read input file %s", buildingttlfile)
+		}
+		filehasher := sha256.New()
+		if _, err := io.Copy(filehasher, f); err != nil {
+			return nil, errors.Wrapf(err, "Could not hash file %s", buildingttlfile)
+		}
+		filehash := filehasher.Sum(nil)
+		if existinghash, found := mdb.loadedfilehashes[buildingttlfile]; found && bytes.Equal(filehash, existinghash) {
+			log.Infof("TTL file %s has not changed since we last loaded it! Skipping...", buildingttlfile)
+			// TODO: get the database! load it from the file
+			cfg.ReloadBrick = false
+			cfg.DBPath = filepath.Join(mdb.dbdir, buildingname)
+			db, err := NewDB(cfg)
+			if err != nil {
+				return nil, errors.Wrap(err, "Could not load existing database")
+			}
+			mdb.dbs.Store(buildingname, db)
+			f.Close()
+			continue
+		}
+		mdb.loadedfilehashes[buildingttlfile] = filehash
+		f.Close()
+
 		cfg.DBPath = filepath.Join(mdb.dbdir, buildingname)
 		db, err := NewDB(cfg)
 		if err != nil {
@@ -49,7 +100,21 @@ func NewMultiDB(cfg *config.Config) (*MultiDB, error) {
 		mdb.dbs.Store(buildingname, db)
 	}
 
+	if err := mdb.saveIndexes(); err != nil {
+		return nil, errors.Wrap(err, "Could not save file indexes")
+	}
+
 	return mdb, nil
+}
+
+func (mdb *MultiDB) saveIndexes() error {
+	f, err := os.Create(filepath.Join(mdb.dbdir, "fileHashes"))
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	enc := json.NewEncoder(f)
+	return enc.Encode(mdb.loadedfilehashes)
 }
 
 func (mdb *MultiDB) LoadMulti(dbs map[string]string) error {
