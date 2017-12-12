@@ -27,7 +27,7 @@ func NewMultiDB(cfg *config.Config) (*MultiDB, error) {
 	var mdb = &MultiDB{cfg: cfg}
 	// create path for dbs
 	mdb.dbdir = strings.TrimSuffix(cfg.DBPath, "/")
-	if err := os.MkdirAll(mdb.dbdir, os.ModeDir); err != nil {
+	if err := os.MkdirAll(mdb.dbdir, 0700); err != nil {
 		return nil, errors.Wrapf(err, "Could not create db directory %s", mdb.dbdir)
 	}
 
