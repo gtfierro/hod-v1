@@ -187,6 +187,7 @@ func (mdb *MultiDB) RunQuery(q *sparql.Query) (QueryResult, error) {
 
 func (mdb *MultiDB) loadDataset(name, ttlfile string) error {
 	mdb.cfg.DBPath = filepath.Join(mdb.dbdir, name)
+	mdb.cfg.ReloadBrick = true
 	db, err := NewDB(mdb.cfg)
 	if err != nil {
 		return errors.Wrapf(err, "Could not create database at %s", mdb.cfg.DBPath)
