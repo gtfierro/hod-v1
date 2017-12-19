@@ -44,6 +44,7 @@ func StartHodServer(db *hod.MultiDB, cfg *config.Config) *http.Server {
 		port:       cfg.ServerPort,
 		staticpath: cfg.StaticPath,
 	}
+	log.Info("Static Path", cfg.StaticPath)
 	r := httprouter.New()
 
 	r.POST("/api/query", server.handleQuery)
