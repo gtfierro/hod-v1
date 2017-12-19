@@ -1,16 +1,20 @@
 package main
 
 import (
+	"context"
 	"crypto/md5"
 	"encoding/binary"
 	"encoding/csv"
 	"fmt"
 	"io/ioutil"
 	"math/big"
+	"net/http"
 	"os"
 	"os/exec"
+	"os/signal"
 	"os/user"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/gtfierro/hod/config"
@@ -90,8 +94,9 @@ func startServer(c *cli.Context) error {
 		return err
 	}
 	defer db.Close()
+	var srv *http.Server
 	if cfg.EnableHTTP {
-		go server.StartHodServer(db, cfg)
+		srv = server.StartHodServer(db, cfg)
 	}
 	if cfg.EnableBOSSWAVE {
 		client := bw2bind.ConnectOrExit(cfg.BW2_AGENT)
@@ -181,8 +186,18 @@ func startServer(c *cli.Context) error {
 			go handleBOSSWAVEQuery(msg)
 		}
 	}
-	x := make(chan bool)
-	<-x
+	interruptSignal := make(chan os.Signal, 1)
+	signal.Notify(interruptSignal, os.Interrupt, syscall.SIGTERM)
+	killSignal := <-interruptSignal
+	switch killSignal {
+	case os.Interrupt:
+		log.Warning("SIGINT")
+	case syscall.SIGTERM:
+		log.Warning("SIGTERM")
+	}
+	if srv != nil {
+		srv.Shutdown(context.Background())
+	}
 	return nil
 }
 

@@ -38,7 +38,7 @@ type hodServer struct {
 	router     *httprouter.Router
 }
 
-func StartHodServer(db *hod.MultiDB, cfg *config.Config) {
+func StartHodServer(db *hod.MultiDB, cfg *config.Config) *http.Server {
 	server := &hodServer{
 		db:         db,
 		port:       cfg.ServerPort,
@@ -91,23 +91,29 @@ func StartHodServer(db *hod.MultiDB, cfg *config.Config) {
 	http.Handle("/", server.router)
 	log.Notice("Starting HTTP Server on ", addrString)
 
+	var srv *http.Server
 	if cfg.TLSHost != "" {
 		m := autocert.Manager{
 			Prompt:     autocert.AcceptTOS,
 			HostPolicy: autocert.HostWhitelist(cfg.TLSHost),
 			Cache:      autocert.DirCache("certs"),
 		}
-		s := &http.Server{
+		srv = &http.Server{
 			Addr:      address.String(),
 			TLSConfig: &tls.Config{GetCertificate: m.GetCertificate},
 		}
-		log.Fatal(s.ListenAndServeTLS("", ""))
+		go func() {
+			log.Warning(srv.ListenAndServeTLS("", ""))
+		}()
 	} else {
-		srv := &http.Server{
+		srv = &http.Server{
 			Addr: address.String(),
 		}
-		log.Fatal(srv.ListenAndServe())
+		go func() {
+			log.Warning(srv.ListenAndServe())
+		}()
 	}
+	return srv
 }
 
 func (srv *hodServer) handleQuery(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
