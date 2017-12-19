@@ -19,6 +19,7 @@ import (
 	sparql "github.com/gtfierro/hod/lang/ast"
 	"github.com/gtfierro/hod/server"
 	"github.com/gtfierro/hod/turtle"
+	"github.com/gtfierro/hod/version"
 
 	"github.com/chzyer/readline"
 	"github.com/fatih/color"
@@ -27,6 +28,10 @@ import (
 	"github.com/urfave/cli"
 	"gopkg.in/immesys/bw2bind.v5"
 )
+
+func init() {
+	fmt.Println(version.LOGO)
+}
 
 type ResultMap hod.ResultMap
 

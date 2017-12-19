@@ -70,7 +70,6 @@ func NewMultiDB(cfg *config.Config) (*MultiDB, error) {
 		filehash := filehasher.Sum(nil)
 		if existinghash, found := mdb.loadedfilehashes[buildingttlfile]; found && bytes.Equal(filehash, existinghash) {
 			log.Infof("TTL file %s has not changed since we last loaded it! Skipping...", buildingttlfile)
-			// TODO: get the database! load it from the file
 			cfg.ReloadBrick = false
 			cfg.DBPath = filepath.Join(mdb.dbdir, buildingname)
 			db, err := NewDB(cfg)

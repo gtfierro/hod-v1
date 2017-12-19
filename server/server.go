@@ -46,9 +46,6 @@ func StartHodServer(db *hod.MultiDB, cfg *config.Config) {
 	}
 	r := httprouter.New()
 
-	// TODO: how do we handle loading in data? Need to have the multiple
-	// concurrent buildings issue fixed first, but for now it is sufficient
-	// to just have one server per building
 	r.POST("/api/query", server.handleQuery)
 	r.POST("/api/querydot", server.handleQueryDot)
 	r.POST("/api/queryclassdot", server.handleQueryClassDot)

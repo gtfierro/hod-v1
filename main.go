@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 
+	"github.com/gtfierro/hod/version"
 	"github.com/op/go-logging"
 	"github.com/urfave/cli"
 )
@@ -22,7 +23,7 @@ func init() {
 func main() {
 	app := cli.NewApp()
 	app.Name = "hod"
-	app.Version = "0.5.1"
+	app.Version = version.Release
 	app.Usage = "BRICK database and query engine"
 
 	app.Commands = []cli.Command{
