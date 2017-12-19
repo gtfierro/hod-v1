@@ -7,6 +7,7 @@ RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 ADD hod /bin/hod
 ADD hodconfig.yaml /etc/hod/
 ADD entrypoint.sh /bin/
+ADD server /server
 ADD Brick.ttl BrickFrame.ttl /
 
 ENTRYPOINT [ "/bin/entrypoint.sh" ]

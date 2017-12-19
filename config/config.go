@@ -90,7 +90,7 @@ func init() {
 	viper.SetConfigName("hodconfig")
 	// set search paths for config
 	viper.AddConfigPath(".")
-	viper.AddConfigPath("/etc/hoddb/")
+	viper.AddConfigPath("/etc/hod/")
 	viper.AddConfigPath(prefix + "/src/github.com/gtfierro/hod")
 }
 

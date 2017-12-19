@@ -1,65 +1,29 @@
 ### HodDB Configuration
 # commented out lines are default configuration options
-
-####
-# Location and structure of database
-####
-#
-
 Buildings:
-    ciee: buildings/ciee.ttl
-    sdh: buildings/sdh.ttl
-    soda: buildings/berkeley.ttl
-
-# the location of the database files
-#DBPath: _hoddb
+    ciee: /etc/hod/buildings/ciee.ttl
+    sdh: /etc/hod/buildings/sdh.ttl
+    soda: /etc/hod/buildings/berkeley.ttl
 
 # the path to the TTL file containing Brick relationships
-#BrickFrameTTL: "$GOPATH/src/github.com/gtfierro/hod/BrickFrame.ttl"
-
+BrickFrameTTL: "/BrickFrame.ttl"
 # the path to the TTL file containing Brick classes
-#BrickClassTTL: "$GOPATH/src/github.com/gtfierro/hod/Brick.ttl"
-
-# whether or not to reload the Brick database files
-#ReloadBrick: true
-
-# By default, each query w/n a generation is cached (up to 64 MB)
-# If DisableQueryCache is flipped to true, then this cache is disabled
-# and all queries run directly against the database
+BrickClassTTL: "/Brick.ttl"
 DisableQueryCache: true
 
 ####
 # Interface Enabling
 ####
-#
 # Enable HTTP server
-#EnableHTTP: true
-#
+EnableHTTP: true
 # Enable BOSSWAVE server
-#EnableBOSSWAVE: false
+EnableBOSSWAVE: true
 
 ####
 # configuration for verbosity during operation
 ####
-#
-# Show the namespace prefixes
-#ShowNamespaces: true
-
-# Show the built dependency graph of query terms
-#ShowDependencyGraph: false
-
-# Show the set of operations in the query plan
-ShowQueryPlan: true
-
-# Show the latencies of creating the query plan
-#ShowQueryPlanLatencies: false
-
-# Show the latencies of each operation in the query plan
-ShowOperationLatencies: true
-
 # Show the full latency of the query (and its larger components)
-#ShowQueryLatencies: true
-
+ShowQueryLatencies: true
 # Set log level. In order of increasing verbosity:
 # Debug, Info, Notice, Warning, Error, Critical
 LogLevel: Debug
@@ -68,18 +32,12 @@ LogLevel: Debug
 ####
 # HTTP Server Configuration
 ####
-
 # port to run the server on
-#ServerPort: 47808
-
-# Whether or not to serve on IPv6
-#UseIPv6: false
-
+ServerPort: 47808
 # Whether or not to serve on localhost. If false, serves on a public interface
-#ListenAddress: 0.0.0.0
-
+ListenAddress: 0.0.0.0
 # Path to the server directory of hod, which contains the necessary HTML files
-#StaticPath: $GOPATH/src/github.com/gtfierro/hod/server
+StaticPath: /server
 
 # If specified, serve the frontend over HTTPS using golang.org/x/crypto/acme/autocert
 # If left blank (default), just serve over HTTP
@@ -88,30 +46,5 @@ LogLevel: Debug
 ####
 # BOSSWAVE Server Configuration
 ####
-
-# BOSSWAVE agent
-#BW2_AGENT: $BW2_AGENT
-
-# BOSSWAVE entity
-#BW2_DEFAULT_ENTITY: $BW2_DEFAULT_ENTITY
-
 # Base URI
-#HodURI: scratch.ns/hod
-
-####
-# Profiling Information for HTTP Server
-####
-# Note that best practices dictate that these be done in a mutually exclusive
-# manner, e.g. do not enable CPU and MEM profiling at the same time because
-# they will end up measuring the effect of measuring
-# Also note that if you are trying to use the net/http/profile trick for generating
-# torch graphs, you will need to keep these both at false
-
-# Enable CPU profile
-#EnableCPUProfile: false
-
-# Enable MEM profile
-#EnableMEMProfile: false
-
-# Enable Block profile
-#EnableBlockProfile: false
+HodURI: scratch.ns/hod
