@@ -22,9 +22,11 @@ container: build
 	cp BrickFrame.ttl container/.
 	cp -r server container/.
 	docker build -t gtfierro/$(APP):$(RELEASE) container
+	docker build -t gtfierro/$(APP):latest container
 
-push: build
+push: container
 	docker push gtfierro/$(APP):$(RELEASE)
+	docker push gtfierro/$(APP):latest
 
 containerRun: container
 	docker stop $(APP):$(RELEASE) || true && docker rm $(APP):$(RELEASE) || true
