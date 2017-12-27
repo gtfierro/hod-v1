@@ -13,6 +13,11 @@ build: clean
 		-ldflags "-s -w -X ${PROJECT}/version.Release=${RELEASE} \
 						-X ${PROJECT}/version.Commit=${COMMIT}" \
 						-o ${APP}
+install:
+	go install \
+		-ldflags "-s -w -X ${PROJECT}/version.Release=${RELEASE} \
+						-X ${PROJECT}/version.Commit=${COMMIT}"
+
 run: build
 		${APP}
 
