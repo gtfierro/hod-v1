@@ -35,6 +35,16 @@ func (q Query) CopyWithNewTerms(terms []Triple) Query {
 	return newq
 }
 
+func (q Query) Copy() *Query {
+	return &Query{
+		Select:    q.Select,
+		From:      q.From,
+		Variables: q.Variables,
+		Where:     q.Where,
+		Count:     q.Count,
+	}
+}
+
 func NewQuery(selectclause, whereclause interface{}, count bool) (Query, error) {
 	if debug {
 		fmt.Printf("%# v", pretty.Formatter(whereclause.(WhereClause)))

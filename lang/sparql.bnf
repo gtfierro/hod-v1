@@ -2,7 +2,7 @@
 _uppercase : 'A'-'Z' ;
 _lowercase : 'a'-'z' ;
 _digit : '0'-'9' ;
-_varchar : (_uppercase | _lowercase | _digit | '_' ) ;
+_varchar : (_uppercase | _lowercase | _digit | '_' | '-' ) ;
 _varstring : _varchar {_varchar} ;
 _urichar : ( _uppercase | _lowercase | _digit | '_' | '\\' | '-' | '#' | '%' | '$' | '@' ) ;
 _uristring : _uristring {_uristring} ;
