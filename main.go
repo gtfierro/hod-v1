@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 
+	"github.com/gtfierro/hod/version"
 	"github.com/op/go-logging"
 	"github.com/urfave/cli"
 )
@@ -22,21 +23,10 @@ func init() {
 func main() {
 	app := cli.NewApp()
 	app.Name = "hod"
-	app.Version = "0.5.0"
+	app.Version = version.Release
 	app.Usage = "BRICK database and query engine"
 
 	app.Commands = []cli.Command{
-		{
-			Name:   "load",
-			Usage:  "Load dataset into hoddb",
-			Action: load,
-			Flags: []cli.Flag{
-				cli.StringFlag{
-					Name:  "config, c",
-					Usage: "Path to hoddb config file",
-				},
-			},
-		},
 		{
 			Name:   "cli",
 			Usage:  "Start hoddb from existing database",
@@ -79,26 +69,6 @@ func main() {
 				cli.BoolFlag{
 					Name:  "prefixes, p",
 					Usage: "If true, abbreviate all namespaces. Else, just print the full URI",
-				},
-			},
-		},
-		{
-			Name:   "search",
-			Usage:  "Query for triples using just text matching",
-			Action: doSearch,
-			Flags: []cli.Flag{
-				cli.StringFlag{
-					Name:  "config, c",
-					Usage: "Path to hoddb config file",
-				},
-				cli.StringFlag{
-					Name:  "query, q",
-					Usage: "Query string",
-				},
-				cli.IntFlag{
-					Name:  "number, n",
-					Usage: "Number of results to return",
-					Value: 20,
 				},
 			},
 		},

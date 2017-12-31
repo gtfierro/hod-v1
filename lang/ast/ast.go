@@ -2,8 +2,8 @@ package ast
 
 import (
 	"fmt"
-	turtle "github.com/gtfierro/hod/goraptor"
 	"github.com/gtfierro/hod/lang/token"
+	"github.com/gtfierro/hod/turtle"
 	"github.com/kr/pretty"
 )
 
@@ -18,6 +18,7 @@ func ClearDebug() {
 
 type Query struct {
 	Select    SelectClause
+	From      FromClause
 	Count     bool
 	Where     WhereClause
 	Variables []string
@@ -26,6 +27,7 @@ type Query struct {
 func (q Query) CopyWithNewTerms(terms []Triple) Query {
 	newq := Query{
 		Select:    q.Select,
+		From:      q.From,
 		Variables: q.Variables,
 	}
 	newq.Where.Terms = make([]Triple, len(terms))
@@ -33,15 +35,44 @@ func (q Query) CopyWithNewTerms(terms []Triple) Query {
 	return newq
 }
 
+func (q Query) Copy() *Query {
+	return &Query{
+		Select:    q.Select,
+		From:      q.From,
+		Variables: q.Variables,
+		Where:     q.Where,
+		Count:     q.Count,
+	}
+}
+
 func NewQuery(selectclause, whereclause interface{}, count bool) (Query, error) {
 	if debug {
 		fmt.Printf("%# v", pretty.Formatter(whereclause.(WhereClause)))
 	}
 	q := Query{
-		Where: whereclause.(WhereClause),
+		Where:  whereclause.(WhereClause),
+		Select: selectclause.(SelectClause),
+		Count:  count,
 	}
-	q.Select = selectclause.(SelectClause)
-	q.Count = count
+	if q.From.Empty() {
+		q.From.AllDBs = true
+	}
+	return q, nil
+}
+
+func NewQueryMulti(selectclause, fromclause, whereclause interface{}, count bool) (Query, error) {
+	if debug {
+		fmt.Printf("%# v", pretty.Formatter(whereclause.(WhereClause)))
+	}
+	q := Query{
+		Where:  whereclause.(WhereClause),
+		From:   fromclause.(FromClause),
+		Select: selectclause.(SelectClause),
+		Count:  count,
+	}
+	if q.From.Empty() {
+		q.From.AllDBs = true
+	}
 	return q, nil
 }
 
@@ -58,6 +89,7 @@ func (q *Query) PopulateVars() {
 	if q.Where.GraphGroup != nil {
 		VarsFromGroup(*q.Where.GraphGroup, vars)
 	}
+	q.Variables = []string{} // clear
 	for varname := range vars {
 		q.Variables = append(q.Variables, varname)
 	}
@@ -141,6 +173,23 @@ func NewAllSelectClause() (SelectClause, error) {
 
 func NewSelectClause(varlist interface{}) (SelectClause, error) {
 	return SelectClause{Vars: varlist.([]string)}, nil
+}
+
+type FromClause struct {
+	Databases []string
+	AllDBs    bool
+}
+
+func NewAllFromClause() (FromClause, error) {
+	return FromClause{AllDBs: true}, nil
+}
+
+func NewFromClause(dblist interface{}) (FromClause, error) {
+	return FromClause{Databases: dblist.([]string)}, nil
+}
+
+func (from FromClause) Empty() bool {
+	return len(from.Databases) == 0 && !from.AllDBs
 }
 
 type WhereClause struct {
@@ -240,6 +289,14 @@ func NewVarList(_var interface{}) ([]string, error) {
 
 func AppendVar(varlist, _var interface{}) ([]string, error) {
 	return append(varlist.([]string), _var.(string)), nil
+}
+
+func NewStringList(_str interface{}) ([]string, error) {
+	return []string{_str.(string)}, nil
+}
+
+func AppendString(strlist, _str interface{}) ([]string, error) {
+	return append(strlist.([]string), _str.(string)), nil
 }
 
 func ParseString(_var interface{}) (string, error) {

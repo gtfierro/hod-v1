@@ -2,7 +2,7 @@
 _uppercase : 'A'-'Z' ;
 _lowercase : 'a'-'z' ;
 _digit : '0'-'9' ;
-_varchar : (_uppercase | _lowercase | _digit | '_' ) ;
+_varchar : (_uppercase | _lowercase | _digit | '_' | '-' ) ;
 _varstring : _varchar {_varchar} ;
 _urichar : ( _uppercase | _lowercase | _digit | '_' | '\\' | '-' | '#' | '%' | '$' | '@' ) ;
 _uristring : _uristring {_uristring} ;
@@ -20,12 +20,12 @@ QueryUnit
     ;
 
 SelectQuery
-    : SelectClause DatasetClause WhereClause /* TODO */
+    : SelectClause DatasetClause WhereClause << ast.NewQueryMulti($0, $1, $2, false) >>
     | SelectClause WhereClause  << ast.NewQuery($0, $1, false) >>
     ;
 
 CountQuery
-    : CountClause DatasetClause WhereClause /* TODO */
+    : CountClause DatasetClause WhereClause << ast.NewQueryMulti($0, $1, $2, true) >>
     | CountClause WhereClause  << ast.NewQuery($0, $1, true) >>
     ;
 
@@ -44,10 +44,17 @@ Varlist
     | Varlist Var       << ast.AppendVar($0, $1) >>
     ;
 
+DBlist
+    : String            << ast.NewStringList($0) >>
+    | DBlist String     << ast.AppendString($0, $1) >>
+    ;
+
+String : string << ast.ParseString($0) >> ;
 Var : var << ast.ParseString($0) >> ;
 
 DatasetClause
-    : "FROM" string
+    : "FROM" DBlist << ast.NewFromClause($1) >>
+    | "FROM" "*" << ast.NewAllFromClause() >>
     ;
 
 WhereClause

@@ -32,23 +32,21 @@ func init() {
 }
 
 type hodServer struct {
-	db         *hod.DB
+	db         *hod.MultiDB
 	port       string
 	staticpath string
 	router     *httprouter.Router
 }
 
-func StartHodServer(db *hod.DB, cfg *config.Config) {
+func StartHodServer(db *hod.MultiDB, cfg *config.Config) *http.Server {
 	server := &hodServer{
 		db:         db,
 		port:       cfg.ServerPort,
 		staticpath: cfg.StaticPath,
 	}
+	log.Info("Static Path", cfg.StaticPath)
 	r := httprouter.New()
 
-	// TODO: how do we handle loading in data? Need to have the multiple
-	// concurrent buildings issue fixed first, but for now it is sufficient
-	// to just have one server per building
 	r.POST("/api/query", server.handleQuery)
 	r.POST("/api/querydot", server.handleQueryDot)
 	r.POST("/api/queryclassdot", server.handleQueryClassDot)
@@ -58,8 +56,7 @@ func StartHodServer(db *hod.DB, cfg *config.Config) {
 	r.GET("/query", server.serveQuery)
 	r.GET("/help", server.serveHelp)
 	r.GET("/plan", server.servePlanner)
-	r.GET("/explore", server.serveExplorer)
-	r.GET("/explore2", server.serveExplorer2)
+	//r.GET("/explore", server.serveExplorer)
 	r.GET("/search", server.serveSearch)
 	server.router = r
 
@@ -95,23 +92,29 @@ func StartHodServer(db *hod.DB, cfg *config.Config) {
 	http.Handle("/", server.router)
 	log.Notice("Starting HTTP Server on ", addrString)
 
+	var srv *http.Server
 	if cfg.TLSHost != "" {
 		m := autocert.Manager{
 			Prompt:     autocert.AcceptTOS,
 			HostPolicy: autocert.HostWhitelist(cfg.TLSHost),
 			Cache:      autocert.DirCache("certs"),
 		}
-		s := &http.Server{
+		srv = &http.Server{
 			Addr:      address.String(),
 			TLSConfig: &tls.Config{GetCertificate: m.GetCertificate},
 		}
-		log.Fatal(s.ListenAndServeTLS("", ""))
+		go func() {
+			log.Warning(srv.ListenAndServeTLS("", ""))
+		}()
 	} else {
-		srv := &http.Server{
+		srv = &http.Server{
 			Addr: address.String(),
 		}
-		log.Fatal(srv.ListenAndServe())
+		go func() {
+			log.Warning(srv.ListenAndServe())
+		}()
 	}
+	return srv
 }
 
 func (srv *hodServer) handleQuery(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
@@ -207,11 +210,6 @@ func (srv *hodServer) serveExplorer(rw http.ResponseWriter, req *http.Request, p
 	log.Infof("Serve explorer from %s", req.RemoteAddr)
 	defer req.Body.Close()
 	http.ServeFile(rw, req, srv.staticpath+"/explore.html")
-}
-func (srv *hodServer) serveExplorer2(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
-	log.Infof("Serve explorer from %s", req.RemoteAddr)
-	defer req.Body.Close()
-	http.ServeFile(rw, req, srv.staticpath+"/explore2.html")
 }
 
 func (srv *hodServer) serveSearch(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {

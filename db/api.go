@@ -6,9 +6,9 @@ import (
 	"sync"
 	"time"
 
-	turtle "github.com/gtfierro/hod/goraptor"
 	query "github.com/gtfierro/hod/lang"
 	sparql "github.com/gtfierro/hod/lang/ast"
+	"github.com/gtfierro/hod/turtle"
 
 	"github.com/blevesearch/bleve"
 	"github.com/coocood/freecache"
@@ -21,13 +21,13 @@ func prettyprint(v interface{}) {
 	fmt.Printf("%# v", pretty.Formatter(v))
 }
 
-func (db *DB) RunQueryString(q string) (QueryResult, error) {
+func (db *DB) runQueryString(q string) (QueryResult, error) {
 	var emptyres QueryResult
 	if q, err := query.Parse(q); err != nil {
 		e := errors.Wrap(err, "Could not parse hod query")
 		log.Error(e)
 		return emptyres, e
-	} else if result, err := db.RunQuery(q); err != nil {
+	} else if result, err := db.runQuery(q); err != nil {
 		e := errors.Wrap(err, "Could not complete hod query")
 		log.Error(e)
 		return emptyres, e
@@ -36,7 +36,7 @@ func (db *DB) RunQueryString(q string) (QueryResult, error) {
 	}
 }
 
-func (db *DB) RunQuery(q *sparql.Query) (QueryResult, error) {
+func (db *DB) runQuery(q *sparql.Query) (QueryResult, error) {
 	fullQueryStart := time.Now()
 
 	// "clean" the query by expanding out the prefixes
@@ -184,9 +184,96 @@ func (db *DB) RunQuery(q *sparql.Query) (QueryResult, error) {
 	return result, nil
 }
 
+func (db *DB) runQueryToSet(q *sparql.Query) ([]*ResultRow, error) {
+	var result []*ResultRow
+
+	fullQueryStart := time.Now()
+
+	// "clean" the query by expanding out the prefixes
+	// make sure to first do the Filters, then the Or clauses
+	q.IterTriples(func(triple sparql.Triple) sparql.Triple {
+		if !strings.HasPrefix(triple.Subject.Value, "?") {
+			if full, found := db.namespaces[triple.Subject.Namespace]; found {
+				triple.Subject.Namespace = full
+			}
+		}
+		if !strings.HasPrefix(triple.Object.Value, "?") {
+			if full, found := db.namespaces[triple.Object.Namespace]; found {
+				triple.Object.Namespace = full
+			}
+		}
+		for idx2, pred := range triple.Predicates {
+			if !strings.HasPrefix(pred.Predicate.Value, "?") {
+				if full, found := db.namespaces[pred.Predicate.Namespace]; found {
+					pred.Predicate.Namespace = full
+				}
+				triple.Predicates[idx2] = pred
+			}
+		}
+		return triple
+	})
+
+	// expand the graphgroup unions
+	var ors [][]sparql.Triple
+	if q.Where.GraphGroup != nil {
+		for _, group := range q.Where.GraphGroup.Expand() {
+			newterms := make([]sparql.Triple, len(q.Where.Terms))
+			copy(newterms, q.Where.Terms)
+			ors = append(ors, append(newterms, group...))
+		}
+	}
+
+	// if we have terms that are part of a set of OR statements, then we run
+	// parallel queries for each fully-elaborated "branch" or the OR statement,
+	// and then merge the results together at the end
+	if len(ors) > 0 {
+		var rowLock sync.Mutex
+		var wg sync.WaitGroup
+		var queryErr error
+		wg.Add(len(ors))
+		for _, group := range ors {
+			tmpQuery := q.CopyWithNewTerms(group)
+			tmpQuery.PopulateVars()
+			if tmpQuery.Select.AllVars {
+				tmpQuery.Select.Vars = tmpQuery.Variables
+			}
+
+			go func(q *sparql.Query) {
+				results, err := db.getQueryResults(&tmpQuery)
+				rowLock.Lock()
+				if err != nil {
+					queryErr = err
+				} else {
+					result = append(result, results...)
+				}
+				rowLock.Unlock()
+				wg.Done()
+			}(&tmpQuery)
+		}
+		wg.Wait()
+		if queryErr != nil {
+			return result, queryErr
+		}
+	} else {
+		q.PopulateVars()
+		if q.Select.AllVars {
+			q.Select.Vars = q.Variables
+		}
+		results, err := db.getQueryResults(q)
+		if err != nil {
+			return result, err
+		}
+		result = append(result, results...)
+	}
+	if db.showQueryLatencies {
+		log.Noticef("Full Query took %s", time.Since(fullQueryStart))
+	}
+	return result, nil
+}
+
 // takes a query and returns a DOT representation to visualize
 // the construction of the query
-func (db *DB) QueryToDOT(querystring string) (string, error) {
+func (db *DB) queryToDOT(querystring string) (string, error) {
 	q, err := query.Parse(querystring)
 	if err != nil {
 		return "", err
@@ -235,14 +322,13 @@ func (db *DB) QueryToDOT(querystring string) (string, error) {
 }
 
 // executes a query and returns a DOT string of the classes involved
-func (db *DB) QueryToClassDOT(querystring string) (string, error) {
+func (db *DB) queryToClassDOT(querystring string) (string, error) {
 	q, err := query.Parse(querystring)
 	if err != nil {
 		return "", err
 	}
 	// create DOT template string
 	dot := ""
-	dot += "digraph G {\n"
 
 	// get rdf:type predicate hash as a string
 	typeURI := turtle.ParseURI("rdf:type")
@@ -293,7 +379,7 @@ func (db *DB) QueryToClassDOT(querystring string) (string, error) {
 		return
 	}
 
-	result, err := db.RunQuery(q)
+	result, err := db.runQuery(q)
 	if err != nil {
 		return "", err
 	}
@@ -313,12 +399,12 @@ func (db *DB) QueryToClassDOT(querystring string) (string, error) {
 			}
 			// add class as node to graph
 			for _, class := range classList {
-				line := fmt.Sprintf("\"%s\" [fillcolor=\"#4caf50\"];\n", db.Abbreviate(class))
+				line := fmt.Sprintf("\"%s\" [fillcolor=\"#4caf50\"];\n", db.abbreviate(class))
 				if !strings.Contains(dot, line) {
 					dot += line
 				}
 				for i := 0; i < len(preds); i++ {
-					line := fmt.Sprintf("\"%s\" -> \"%s\" [label=\"%s\"];\n", db.Abbreviate(class), db.Abbreviate(objs[i]), db.Abbreviate(preds[i]))
+					line := fmt.Sprintf("\"%s\" -> \"%s\" [label=\"%s\"];\n", db.abbreviate(class), db.abbreviate(objs[i]), db.abbreviate(preds[i]))
 					if !strings.Contains(dot, line) {
 						dot += line
 					}
@@ -328,12 +414,10 @@ func (db *DB) QueryToClassDOT(querystring string) (string, error) {
 		}
 	}
 
-	dot += "}"
-
 	return dot, nil
 }
 
-func (db *DB) Abbreviate(uri turtle.URI) string {
+func (db *DB) abbreviate(uri turtle.URI) string {
 	for abbv, ns := range db.namespaces {
 		if abbv != "" && ns == uri.Namespace {
 			return abbv + ":" + uri.Value
@@ -343,7 +427,7 @@ func (db *DB) Abbreviate(uri turtle.URI) string {
 }
 
 // Searches all of the values in the database; basic wildcard search
-func (db *DB) Search(q string, n int) ([]string, error) {
+func (db *DB) search(q string, n int) ([]string, error) {
 	var res []string
 
 	fmt.Println("Displaying", n, "results")
@@ -355,7 +439,7 @@ func (db *DB) Search(q string, n int) ([]string, error) {
 		return res, err
 	}
 	for _, doc := range searchResults.Hits {
-		res = append(res, db.Abbreviate(turtle.ParseURI(doc.ID)))
+		res = append(res, db.abbreviate(turtle.ParseURI(doc.ID)))
 	}
 	return res, nil
 }

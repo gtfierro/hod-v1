@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/gtfierro/hod/config"
-	turtle "github.com/gtfierro/hod/goraptor"
 	query "github.com/gtfierro/hod/lang"
+	"github.com/gtfierro/hod/turtle"
 )
 
 func TestDBQuery(t *testing.T) {
@@ -146,7 +146,7 @@ func TestDBQuery(t *testing.T) {
 			t.Error(test.query, e)
 			continue
 		}
-		result, err := db.RunQuery(q)
+		result, err := db.runQuery(q)
 		if err != nil {
 			t.Error(err)
 			return
@@ -258,7 +258,7 @@ func TestDBQueryBerkeley(t *testing.T) {
 			t.Error(test.query, e)
 			continue
 		}
-		result, err := db.RunQuery(q)
+		result, err := db.runQuery(q)
 		if err != nil {
 			t.Error(err)
 			return
@@ -309,7 +309,7 @@ func BenchmarkQueryPerformance1(b *testing.B) {
 					b.Error(e)
 					continue
 				}
-				db.RunQuery(q)
+				db.runQuery(q)
 			}
 		})
 	}

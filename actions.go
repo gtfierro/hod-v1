@@ -1,32 +1,42 @@
 package main
 
 import (
+	"context"
 	"crypto/md5"
 	"encoding/binary"
 	"encoding/csv"
 	"fmt"
 	"io/ioutil"
 	"math/big"
+	"net/http"
 	"os"
 	"os/exec"
+	"os/signal"
 	"os/user"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/gtfierro/hod/config"
 	hod "github.com/gtfierro/hod/db"
-	"github.com/gtfierro/hod/goraptor"
 	query "github.com/gtfierro/hod/lang"
 	sparql "github.com/gtfierro/hod/lang/ast"
 	"github.com/gtfierro/hod/server"
+	"github.com/gtfierro/hod/turtle"
+	"github.com/gtfierro/hod/version"
 
 	"github.com/chzyer/readline"
 	"github.com/fatih/color"
+	"github.com/immesys/bw2/crypto"
+	"github.com/immesys/bw2bind"
 	"github.com/montanaflynn/stats"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli"
-	"gopkg.in/immesys/bw2bind.v5"
 )
+
+func init() {
+	fmt.Println(version.LOGO)
+}
 
 type ResultMap hod.ResultMap
 
@@ -42,37 +52,21 @@ func benchLoad(c *cli.Context) error {
 	return nil
 }
 
-func load(c *cli.Context) error {
-	if c.NArg() == 0 {
-		log.Fatal("Need to specify a turtle file to load")
-	}
-	filename := c.Args().Get(0)
-	cfg, err := config.ReadConfig(c.String("config"))
-	if err != nil {
-		log.Error(err)
-		return err
-	}
-	p := turtle.GetParser()
-	ds, duration := p.Parse(filename)
-	rate := float64((float64(ds.NumTriples()) / float64(duration.Nanoseconds())) * 1e9)
-	log.Infof("Loaded %d triples, %d namespaces in %s (%.0f/sec)", ds.NumTriples(), ds.NumNamespaces(), duration, rate)
-
-	cfg.ReloadBrick = true
-
-	db, err := hod.NewDB(cfg)
-	if err != nil {
-		log.Error(err)
-		return err
-	}
-	defer db.Close()
-	err = db.LoadDataset(ds)
-	if err != nil {
-		log.Error(err)
-		return err
-	}
-
-	return nil
-}
+//func startCLI(c *cli.Context) error {
+//	cfg, err := config.ReadConfig(c.String("config"))
+//	if err != nil {
+//		log.Error(err)
+//		return err
+//	}
+//	cfg.ReloadBrick = false
+//	db, err := hod.NewDB(cfg)
+//	if err != nil {
+//		log.Error(err)
+//		return err
+//	}
+//	defer db.Close()
+//	return runInteractiveQuery(db)
+//}
 
 func startCLI(c *cli.Context) error {
 	cfg, err := config.ReadConfig(c.String("config"))
@@ -80,14 +74,12 @@ func startCLI(c *cli.Context) error {
 		log.Error(err)
 		return err
 	}
-	cfg.ReloadBrick = false
-	db, err := hod.NewDB(cfg)
+	mdb, err := hod.NewMultiDB(cfg)
 	if err != nil {
 		log.Error(err)
 		return err
 	}
-	defer db.Close()
-	return runInteractiveQuery(db)
+	return runInteractiveQuery(mdb)
 }
 
 func startServer(c *cli.Context) error {
@@ -97,14 +89,15 @@ func startServer(c *cli.Context) error {
 		return err
 	}
 	cfg.ReloadBrick = false
-	db, err := hod.NewDB(cfg)
+	db, err := hod.NewMultiDB(cfg)
 	if err != nil {
 		log.Error(err)
 		return err
 	}
 	defer db.Close()
+	var srv *http.Server
 	if cfg.EnableHTTP {
-		go server.StartHodServer(db, cfg)
+		srv = server.StartHodServer(db, cfg)
 	}
 	if cfg.EnableBOSSWAVE {
 		client := bw2bind.ConnectOrExit(cfg.BW2_AGENT)
@@ -156,27 +149,68 @@ func startServer(c *cli.Context) error {
 			log.Info("Serving query", inq.Query)
 
 			var response hodResponse
-			if q, err := query.Parse(inq.Query); err != nil {
+			returnErr := func(err error) {
 				log.Error(errors.Wrap(err, "Could not parse hod query"))
 				response = hodResponse{
 					Nonce: inq.Nonce,
 					Error: err.Error(),
 				}
-			} else if result, err := db.RunQuery(q); err != nil {
-				log.Error(errors.Wrap(err, "Could not run query"))
-				response = hodResponse{
-					Nonce: inq.Nonce,
-					Error: err.Error(),
+				responsePO, err := bw2bind.CreateMsgPackPayloadObject(ResponsePID, response)
+				if err != nil {
+					log.Error(errors.Wrap(err, "Could not serialize hod response"))
+					return
 				}
+				if err = iface.PublishSignal("result", responsePO); err != nil {
+					log.Error(errors.Wrap(err, "Could not send hod response"))
+					return
+				}
+			}
+
+			q, err := query.Parse(inq.Query)
+			if err != nil {
+				returnErr(err)
+				return
+			}
+
+			newq := q.Copy()
+			toKey, _ := crypto.UnFmtKey(msg.From)
+			var dbs []string
+			if newq.From.AllDBs || newq.From.Empty() {
+				dbs = db.Databases()
 			} else {
-				response = hodResponse{
-					Count:   result.Count,
-					Elapsed: result.Elapsed.Nanoseconds(),
-					Nonce:   inq.Nonce,
+				dbs = newq.From.Databases
+			}
+			newq.From.Databases = []string{}
+			newq.From.AllDBs = false
+			for _, dbname := range dbs {
+				key, zero, err := client.ResolveLongAlias(dbname)
+				if err != nil {
+					log.Error(errors.Wrap(err, "Could not resolve alias"))
+					continue
 				}
-				for _, row := range result.Rows {
-					response.Rows = append(response.Rows, ResultMap(row))
+				if zero {
+					log.Error(errors.New("No alias by that name"))
+					continue
 				}
+				if allowVK("06DZ14k6dhRognGUoSHofD8oS8CUaWwq4tH-FPW13UU=/hod", key, toKey, client) {
+					newq.From.Databases = append(newq.From.Databases, dbname)
+				}
+			}
+
+			result, err := db.RunQuery(newq)
+			if err != nil {
+				log.Error(errors.Wrap(err, "Could not run query"))
+				returnErr(err)
+				return
+			}
+
+			response = hodResponse{
+				Count:   result.Count,
+				Elapsed: result.Elapsed.Nanoseconds(),
+				Nonce:   inq.Nonce,
+			}
+			for _, row := range result.Rows {
+				response.Rows = append(response.Rows, ResultMap(row))
 			}
 
 			responsePO, err := bw2bind.CreateMsgPackPayloadObject(ResponsePID, response)
@@ -194,8 +228,18 @@ func startServer(c *cli.Context) error {
 			go handleBOSSWAVEQuery(msg)
 		}
 	}
-	x := make(chan bool)
-	<-x
+	interruptSignal := make(chan os.Signal, 1)
+	signal.Notify(interruptSignal, os.Interrupt, syscall.SIGTERM)
+	killSignal := <-interruptSignal
+	switch killSignal {
+	case os.Interrupt:
+		log.Warning("SIGINT")
+	case syscall.SIGTERM:
+		log.Warning("SIGTERM")
+	}
+	if srv != nil {
+		srv.Shutdown(context.Background())
+	}
 	return nil
 }
 
@@ -206,7 +250,7 @@ func doQuery(c *cli.Context) error {
 		return err
 	}
 	cfg.ReloadBrick = false
-	db, err := hod.NewDB(cfg)
+	db, err := hod.NewMultiDB(cfg)
 	if err != nil {
 		log.Error(err)
 		return err
@@ -236,33 +280,6 @@ func doQuery(c *cli.Context) error {
 		log.Fatal(err)
 	}
 	return res.DumpToCSV(c.Bool("prefixes"), db, os.Stdout)
-}
-
-func doSearch(c *cli.Context) error {
-	cfg, err := config.ReadConfig(c.String("config"))
-	if err != nil {
-		log.Error(err)
-		return err
-	}
-	cfg.ReloadBrick = false
-	db, err := hod.NewDB(cfg)
-	if err != nil {
-		log.Error(err)
-		return err
-	}
-	defer db.Close()
-
-	query := c.String("query")
-	number := c.Int("number")
-	if query == "" {
-		query = strings.Join(c.Args(), " ")
-	}
-	res, err := db.Search(query, number)
-
-	for _, l := range res {
-		fmt.Println(">", l)
-	}
-	return err
 }
 
 func dump(c *cli.Context) error {
@@ -425,7 +442,54 @@ func gethash() string {
 	return fmt.Sprintf("%x", h.Sum(nil))
 }
 
-func runInteractiveQuery(db *hod.DB) error {
+//func runInteractiveQuery(db *hod.DB) error {
+//	currentUser, err := user.Current()
+//	if err != nil {
+//		log.Error(err)
+//		return err
+//	}
+//	fmt.Println("Successfully loaded dataset!")
+//	bufQuery := ""
+//
+//	//setup color for prompt
+//	c := color.New(color.FgCyan)
+//	c.Add(color.Bold)
+//	cyan := c.SprintFunc()
+//
+//	rl, err := readline.NewEx(&readline.Config{
+//		Prompt:                 cyan("(hod)> "),
+//		HistoryFile:            currentUser.HomeDir + "/.hod-query-history",
+//		DisableAutoSaveHistory: true,
+//	})
+//	for {
+//		line, err := rl.Readline()
+//		if err != nil {
+//			break
+//		}
+//		if len(line) == 0 {
+//			continue
+//		}
+//		bufQuery += line + " "
+//		if !strings.HasSuffix(strings.TrimSpace(line), ";") {
+//			rl.SetPrompt(">>> ...")
+//			continue
+//		}
+//		rl.SetPrompt(cyan("(hod)> "))
+//		rl.SaveHistory(bufQuery)
+//		q, err := query.Parse(bufQuery)
+//		if err != nil {
+//			log.Error(err)
+//		} else if res, err := db.RunQuery(q); err != nil {
+//			log.Error(err)
+//		} else {
+//			res.Dump()
+//		}
+//		bufQuery = ""
+//	}
+//	return nil
+//}
+
+func runInteractiveQuery(db *hod.MultiDB) error {
 	currentUser, err := user.Current()
 	if err != nil {
 		log.Error(err)

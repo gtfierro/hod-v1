@@ -1,0 +1,47 @@
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+    name: hoddb
+    labels:
+        app: hoddb
+spec:
+    replicas: 1
+    selector:
+        matchLabels:
+            app: hoddb
+    template:
+        metadata:
+            labels:
+                app: hoddb
+        spec:
+            containers:
+                - name: hod
+                  image:  gtfierro/hod:0.5.2
+                  imagePullPolicy: Always
+                  ports:
+                    - containerPort: 47808
+                  volumeMounts:
+                    - name: hodconfig
+                      mountPath: /etc/hod
+            volumes:
+                - name: hodconfig
+                  hostPath:
+                    path: << config directory >>
+#                    type: Directory
+---
+kind: Service
+apiVersion: v1
+metadata:
+    name: hoddb-service
+spec:
+    type: ClusterIP
+    externalIPs:
+    - << ip address here >>
+    selector:
+        app: hoddb
+    ports:
+    - protocol: TCP
+      port: 47808
+      targetPort: 47808
+      name: http
+

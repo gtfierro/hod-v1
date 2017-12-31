@@ -1,0 +1,50 @@
+### HodDB Configuration
+# commented out lines are default configuration options
+Buildings:
+    ciee: /etc/hod/buildings/ciee.ttl
+    sdh: /etc/hod/buildings/sdh.ttl
+    soda: /etc/hod/buildings/berkeley.ttl
+
+# the path to the TTL file containing Brick relationships
+BrickFrameTTL: "/BrickFrame.ttl"
+# the path to the TTL file containing Brick classes
+BrickClassTTL: "/Brick.ttl"
+DisableQueryCache: true
+
+####
+# Interface Enabling
+####
+# Enable HTTP server
+EnableHTTP: true
+# Enable BOSSWAVE server
+EnableBOSSWAVE: false
+
+####
+# configuration for verbosity during operation
+####
+# Show the full latency of the query (and its larger components)
+ShowQueryLatencies: true
+# Set log level. In order of increasing verbosity:
+# Debug, Info, Notice, Warning, Error, Critical
+LogLevel: Debug
+
+
+####
+# HTTP Server Configuration
+####
+# port to run the server on
+ServerPort: 47808
+# Whether or not to serve on localhost. If false, serves on a public interface
+ListenAddress: 0.0.0.0
+# Path to the server directory of hod, which contains the necessary HTML files
+StaticPath: /server
+
+# If specified, serve the frontend over HTTPS using golang.org/x/crypto/acme/autocert
+# If left blank (default), just serve over HTTP
+#TLSHost: ""
+
+####
+# BOSSWAVE Server Configuration
+####
+# Base URI
+HodURI: scratch.ns/hod
