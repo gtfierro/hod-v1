@@ -54,6 +54,9 @@ func NewQuery(selectclause, whereclause interface{}, count bool) (Query, error) 
 		Select: selectclause.(SelectClause),
 		Count:  count,
 	}
+	if q.From.Empty() {
+		q.From.AllDBs = true
+	}
 	return q, nil
 }
 
@@ -66,6 +69,9 @@ func NewQueryMulti(selectclause, fromclause, whereclause interface{}, count bool
 		From:   fromclause.(FromClause),
 		Select: selectclause.(SelectClause),
 		Count:  count,
+	}
+	if q.From.Empty() {
+		q.From.AllDBs = true
 	}
 	return q, nil
 }

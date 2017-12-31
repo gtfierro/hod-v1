@@ -27,10 +27,11 @@ import (
 
 	"github.com/chzyer/readline"
 	"github.com/fatih/color"
+	"github.com/immesys/bw2/crypto"
+	"github.com/immesys/bw2bind"
 	"github.com/montanaflynn/stats"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli"
-	"gopkg.in/immesys/bw2bind.v5"
 )
 
 func init() {
@@ -148,27 +149,68 @@ func startServer(c *cli.Context) error {
 			log.Info("Serving query", inq.Query)
 
 			var response hodResponse
-			if q, err := query.Parse(inq.Query); err != nil {
+			returnErr := func(err error) {
 				log.Error(errors.Wrap(err, "Could not parse hod query"))
 				response = hodResponse{
 					Nonce: inq.Nonce,
 					Error: err.Error(),
 				}
-			} else if result, err := db.RunQuery(q); err != nil {
-				log.Error(errors.Wrap(err, "Could not run query"))
-				response = hodResponse{
-					Nonce: inq.Nonce,
-					Error: err.Error(),
+				responsePO, err := bw2bind.CreateMsgPackPayloadObject(ResponsePID, response)
+				if err != nil {
+					log.Error(errors.Wrap(err, "Could not serialize hod response"))
+					return
 				}
+				if err = iface.PublishSignal("result", responsePO); err != nil {
+					log.Error(errors.Wrap(err, "Could not send hod response"))
+					return
+				}
+			}
+
+			q, err := query.Parse(inq.Query)
+			if err != nil {
+				returnErr(err)
+				return
+			}
+
+			newq := q.Copy()
+			toKey, _ := crypto.UnFmtKey(msg.From)
+			var dbs []string
+			if newq.From.AllDBs || newq.From.Empty() {
+				dbs = db.Databases()
 			} else {
-				response = hodResponse{
-					Count:   result.Count,
-					Elapsed: result.Elapsed.Nanoseconds(),
-					Nonce:   inq.Nonce,
+				dbs = newq.From.Databases
+			}
+			newq.From.Databases = []string{}
+			newq.From.AllDBs = false
+			for _, dbname := range dbs {
+				key, zero, err := client.ResolveLongAlias(dbname)
+				if err != nil {
+					log.Error(errors.Wrap(err, "Could not resolve alias"))
+					continue
 				}
-				for _, row := range result.Rows {
-					response.Rows = append(response.Rows, ResultMap(row))
+				if zero {
+					log.Error(errors.New("No alias by that name"))
+					continue
 				}
+				if allowVK("06DZ14k6dhRognGUoSHofD8oS8CUaWwq4tH-FPW13UU=/hod", key, toKey, client) {
+					newq.From.Databases = append(newq.From.Databases, dbname)
+				}
+			}
+
+			result, err := db.RunQuery(newq)
+			if err != nil {
+				log.Error(errors.Wrap(err, "Could not run query"))
+				returnErr(err)
+				return
+			}
+
+			response = hodResponse{
+				Count:   result.Count,
+				Elapsed: result.Elapsed.Nanoseconds(),
+				Nonce:   inq.Nonce,
+			}
+			for _, row := range result.Rows {
+				response.Rows = append(response.Rows, ResultMap(row))
 			}
 
 			responsePO, err := bw2bind.CreateMsgPackPayloadObject(ResponsePID, response)

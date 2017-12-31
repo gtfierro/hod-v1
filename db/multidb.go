@@ -21,6 +21,7 @@ import (
 )
 
 type MultiDB struct {
+	buildings []string
 	// database name => *db.DB
 	dbs sync.Map
 	// filename => sha256 hash
@@ -78,6 +79,7 @@ func NewMultiDB(cfg *config.Config) (*MultiDB, error) {
 			}
 			mdb.dbs.Store(buildingname, db)
 			f.Close()
+			mdb.buildings = append(mdb.buildings, buildingname)
 			continue
 		}
 		mdb.loadedfilehashes[buildingttlfile] = filehash
@@ -120,13 +122,12 @@ func (mdb *MultiDB) RunQueryString(querystring string) (QueryResult, error) {
 	}
 }
 
+func (mdb *MultiDB) Databases() []string {
+	return mdb.buildings
+}
+
 func (mdb *MultiDB) RunQuery(q *sparql.Query) (QueryResult, error) {
 	var databases = make(map[string]*DB)
-
-	// if no FROM clause, then query all dbs!
-	if q.From.Empty() {
-		q.From.AllDBs = true
-	}
 
 	if q.From.AllDBs {
 		mdb.dbs.Range(func(_dbname, _db interface{}) bool {
