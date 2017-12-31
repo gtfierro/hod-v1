@@ -1,5 +1,5 @@
 APP?=hod
-RELEASE?=0.5.2
+RELEASE?=0.5.3
 COMMIT?=$(shell git rev-parse --short HEAD)
 PROJECT?=github.com/gtfierro/hod
 PERSISTDIR?=/etc/hod
