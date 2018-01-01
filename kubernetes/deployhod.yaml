@@ -1,10 +1,11 @@
 apiVersion: apps/v1beta1
-kind: Deployment
+kind: StatefulSet
 metadata:
     name: hoddb
     labels:
         app: hoddb
 spec:
+    serviceName: "hoddb"
     replicas: 1
     selector:
         matchLabels:
@@ -32,7 +33,7 @@ spec:
 kind: Service
 apiVersion: v1
 metadata:
-    name: hoddb-service
+    name: hoddb
 spec:
     type: ClusterIP
     externalIPs:
