@@ -66,7 +66,7 @@ import (
 	"sync"
 	"time"
 
-	turtle "github.com/gtfierro/hod/goraptor"
+	"github.com/gtfierro/hod/turtle"
 	"github.com/pkg/errors"
 	bw2 "gopkg.in/immesys/bw2bind.v5"
 )
