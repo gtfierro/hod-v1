@@ -97,6 +97,70 @@ func main() {
 			Usage:  "Outputs statistics on the provided TTL file. Loads all file provided as arguments",
 			Action: ttlStat,
 		},
+		{
+			Name:   "check",
+			Usage:  "Check access to MDAL on behalf of some key",
+			Action: doCheck,
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:   "agent,a",
+					Value:  "127.0.0.1:28589",
+					Usage:  "Local BOSSWAVE Agent",
+					EnvVar: "BW2_AGENT",
+				},
+				cli.StringFlag{
+					Name:   "entity,e",
+					Value:  "",
+					Usage:  "The entity to use",
+					EnvVar: "BW2_DEFAULT_ENTITY",
+				},
+				cli.StringFlag{
+					Name:  "key, k",
+					Usage: "The key or alias to check",
+				},
+				cli.StringFlag{
+					Name:  "uri, u",
+					Usage: "The base URI of MDAL",
+				},
+			},
+		},
+		{
+			Name:   "grant",
+			Usage:  "Grant access to MDAL to some key",
+			Action: doGrant,
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:   "agent,a",
+					Value:  "127.0.0.1:28589",
+					Usage:  "Local BOSSWAVE Agent",
+					EnvVar: "BW2_AGENT",
+				},
+				cli.StringFlag{
+					Name:   "entity,e",
+					Value:  "",
+					Usage:  "The entity to use",
+					EnvVar: "BW2_DEFAULT_ENTITY",
+				},
+				cli.StringFlag{
+					Name:   "bankroll, b",
+					Value:  "",
+					Usage:  "The entity to use for bankrolling",
+					EnvVar: "BW2_DEFAULT_BANKROLL",
+				},
+				cli.StringFlag{
+					Name:  "expiry",
+					Usage: "Set the expiry on access to MDAL measured from now e.g. 3d7h20m",
+				},
+				cli.StringFlag{
+					Name:  "key, k",
+					Usage: "The key or alias to check",
+				},
+				cli.StringFlag{
+					Name:  "uri, u",
+					Usage: "The base URI of MDAL",
+				},
+			},
+		},
 	}
 	app.Run(os.Args)
 }
