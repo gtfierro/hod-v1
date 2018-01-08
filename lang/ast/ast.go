@@ -5,6 +5,7 @@ import (
 	"github.com/gtfierro/hod/lang/token"
 	"github.com/gtfierro/hod/turtle"
 	"github.com/kr/pretty"
+	"strings"
 )
 
 var debug = false
@@ -178,6 +179,13 @@ func NewSelectClause(varlist interface{}) (SelectClause, error) {
 type FromClause struct {
 	Databases []string
 	AllDBs    bool
+}
+
+func (f FromClause) String() string {
+	if f.AllDBs {
+		return "*"
+	}
+	return strings.Join(f.Databases, " ")
 }
 
 func NewAllFromClause() (FromClause, error) {

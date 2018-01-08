@@ -150,6 +150,7 @@ func (db *DB) runQuery(q *sparql.Query) (QueryResult, error) {
 	}
 	if stats != nil {
 		logrus.WithFields(logrus.Fields{
+			"Where":   q.Select.Vars,
 			"Execute": stats.ExecutionTime,
 			"Expand":  stats.ExpandTime,
 			"Results": stats.NumResults,
@@ -161,10 +162,7 @@ func (db *DB) runQuery(q *sparql.Query) (QueryResult, error) {
 	result.selectVars = q.Select.Vars
 	result.Elapsed = time.Since(fullQueryStart)
 
-	// TODO: count!
 	// return the rows
-	log.Debug(unionedRows.Len())
-
 	result.Count = unionedRows.Len()
 	if !q.Count {
 		i := unionedRows.DeleteMax()
