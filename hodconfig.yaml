@@ -7,8 +7,8 @@
 #
 
 Buildings:
-    sdh: sdh.ttl
     soda: buildings/berkeley.ttl
+    ciee: buildings/ciee.ttl
 
 # the location of the database files
 #DBPath: _hoddb
@@ -35,7 +35,7 @@ Buildings:
 #EnableHTTP: true
 #
 # Enable BOSSWAVE server
-#EnableBOSSWAVE: false
+EnableBOSSWAVE: true
 
 ####
 # configuration for verbosity during operation

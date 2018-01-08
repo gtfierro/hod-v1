@@ -148,12 +148,14 @@ func (db *DB) runQuery(q *sparql.Query) (QueryResult, error) {
 			unionedRows.ReplaceOrInsert(row)
 		}
 	}
-	logrus.WithFields(logrus.Fields{
-		"Execute": stats.ExecutionTime,
-		"Expand":  stats.ExpandTime,
-		"Results": stats.NumResults,
-		"Total":   time.Since(fullQueryStart),
-	}).Fatal("Query")
+	if stats != nil {
+		logrus.WithFields(logrus.Fields{
+			"Execute": stats.ExecutionTime,
+			"Expand":  stats.ExpandTime,
+			"Results": stats.NumResults,
+			"Total":   time.Since(fullQueryStart),
+		}).Info("Query")
+	}
 
 	var result = newQueryResult()
 	result.selectVars = q.Select.Vars
