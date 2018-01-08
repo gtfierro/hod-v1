@@ -224,9 +224,11 @@ func startServer(c *cli.Context) error {
 			}
 		}
 
-		for msg := range queryChan {
-			go handleBOSSWAVEQuery(msg)
-		}
+		go func() {
+			for msg := range queryChan {
+				go handleBOSSWAVEQuery(msg)
+			}
+		}()
 	}
 	interruptSignal := make(chan os.Signal, 1)
 	signal.Notify(interruptSignal, os.Interrupt, syscall.SIGTERM)
