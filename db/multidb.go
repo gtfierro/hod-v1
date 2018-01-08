@@ -79,7 +79,7 @@ func NewMultiDB(cfg *config.Config) (*MultiDB, error) {
 			}
 			mdb.dbs.Store(buildingname, db)
 			f.Close()
-			continue
+			//continue
 		}
 		mdb.buildings = append(mdb.buildings, buildingname)
 		mdb.loadedfilehashes[buildingttlfile] = filehash

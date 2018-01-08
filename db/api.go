@@ -9,6 +9,7 @@ import (
 	query "github.com/gtfierro/hod/lang"
 	sparql "github.com/gtfierro/hod/lang/ast"
 	"github.com/gtfierro/hod/turtle"
+	logrus "github.com/sirupsen/logrus"
 
 	"github.com/blevesearch/bleve"
 	"github.com/coocood/freecache"
@@ -99,6 +100,7 @@ func (db *DB) runQuery(q *sparql.Query) (QueryResult, error) {
 	// if we have terms that are part of a set of OR statements, then we run
 	// parallel queries for each fully-elaborated "branch" or the OR statement,
 	// and then merge the results together at the end
+	var stats *queryStats
 	if len(ors) > 0 {
 		var rowLock sync.Mutex
 		var wg sync.WaitGroup
@@ -112,11 +114,13 @@ func (db *DB) runQuery(q *sparql.Query) (QueryResult, error) {
 			}
 
 			go func(q *sparql.Query) {
-				results, err := db.getQueryResults(&tmpQuery)
+				results, _stats, err := db.getQueryResults(&tmpQuery)
 				rowLock.Lock()
+
 				if err != nil {
 					queryErr = err
 				} else {
+					stats.merge(_stats)
 					log.Debug("got", len(results))
 					for _, row := range results {
 						unionedRows.ReplaceOrInsert(row)
@@ -135,17 +139,21 @@ func (db *DB) runQuery(q *sparql.Query) (QueryResult, error) {
 		if q.Select.AllVars {
 			q.Select.Vars = q.Variables
 		}
-		results, err := db.getQueryResults(q)
+		results, _stats, err := db.getQueryResults(q)
 		if err != nil {
 			return QueryResult{}, err
 		}
+		stats = &_stats
 		for _, row := range results {
 			unionedRows.ReplaceOrInsert(row)
 		}
 	}
-	if db.showQueryLatencies {
-		log.Noticef("Full Query took %s", time.Since(fullQueryStart))
-	}
+	logrus.WithFields(logrus.Fields{
+		"Execute": stats.ExecutionTime,
+		"Expand":  stats.ExpandTime,
+		"Results": stats.NumResults,
+		"Total":   time.Since(fullQueryStart),
+	}).Fatal("Query")
 
 	var result = newQueryResult()
 	result.selectVars = q.Select.Vars
@@ -226,6 +234,7 @@ func (db *DB) runQueryToSet(q *sparql.Query) ([]*ResultRow, error) {
 	// if we have terms that are part of a set of OR statements, then we run
 	// parallel queries for each fully-elaborated "branch" or the OR statement,
 	// and then merge the results together at the end
+	var stats *queryStats
 	if len(ors) > 0 {
 		var rowLock sync.Mutex
 		var wg sync.WaitGroup
@@ -239,11 +248,12 @@ func (db *DB) runQueryToSet(q *sparql.Query) ([]*ResultRow, error) {
 			}
 
 			go func(q *sparql.Query) {
-				results, err := db.getQueryResults(&tmpQuery)
+				results, _stats, err := db.getQueryResults(&tmpQuery)
 				rowLock.Lock()
 				if err != nil {
 					queryErr = err
 				} else {
+					stats.merge(_stats)
 					result = append(result, results...)
 				}
 				rowLock.Unlock()
@@ -259,15 +269,20 @@ func (db *DB) runQueryToSet(q *sparql.Query) ([]*ResultRow, error) {
 		if q.Select.AllVars {
 			q.Select.Vars = q.Variables
 		}
-		results, err := db.getQueryResults(q)
+		results, _stats, err := db.getQueryResults(q)
+		stats = &_stats
 		if err != nil {
 			return result, err
 		}
 		result = append(result, results...)
 	}
-	if db.showQueryLatencies {
-		log.Noticef("Full Query took %s", time.Since(fullQueryStart))
-	}
+	logrus.WithFields(logrus.Fields{
+		"Where":   q.Select.Vars,
+		"Execute": stats.ExecutionTime,
+		"Expand":  stats.ExpandTime,
+		"Results": stats.NumResults,
+		"Total":   time.Since(fullQueryStart),
+	}).Info("Query")
 	return result, nil
 }
 

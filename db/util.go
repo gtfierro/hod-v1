@@ -2,10 +2,12 @@ package db
 
 import (
 	"fmt"
-	sparql "github.com/gtfierro/hod/lang/ast"
-	"github.com/mitghi/btree"
 	"hash/fnv"
 	"sort"
+	"time"
+
+	sparql "github.com/gtfierro/hod/lang/ast"
+	"github.com/mitghi/btree"
 )
 
 func dumpHashTree(tree *btree.BTree, db *DB, limit int) {
@@ -119,4 +121,20 @@ func hashQuery(q *sparql.Query) []byte {
 	}
 
 	return h.Sum(nil)
+}
+
+type queryStats struct {
+	ExecutionTime time.Duration
+	ExpandTime    time.Duration
+	NumResults    int
+}
+
+func (mq *queryStats) merge(other queryStats) {
+	if mq.ExecutionTime.Nanoseconds() < other.ExecutionTime.Nanoseconds() {
+		mq.ExecutionTime = other.ExecutionTime
+	}
+	if mq.ExpandTime.Nanoseconds() < other.ExpandTime.Nanoseconds() {
+		mq.ExpandTime = other.ExpandTime
+	}
+	mq.NumResults += other.NumResults
 }
