@@ -78,8 +78,9 @@ func NewMultiDB(cfg *config.Config) (*MultiDB, error) {
 				return nil, errors.Wrap(err, "Could not load existing database")
 			}
 			mdb.dbs.Store(buildingname, db)
+			mdb.buildings = append(mdb.buildings, buildingname)
 			f.Close()
-			//continue
+			continue
 		}
 		mdb.buildings = append(mdb.buildings, buildingname)
 		mdb.loadedfilehashes[buildingttlfile] = filehash
