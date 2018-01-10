@@ -4,13 +4,13 @@ import (
 	"sync"
 )
 
-type Row [32]byte
+type Row [512]byte
 
-var EMPTYROW = [32]byte{}
+var EMPTYROW = [512]byte{}
 
 var ROWPOOL = sync.Pool{
 	New: func() interface{} {
-		return &Row{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+		return &Row{}
 	},
 }
 

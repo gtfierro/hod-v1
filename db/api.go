@@ -276,13 +276,15 @@ func (db *DB) runQueryToSet(q *sparql.Query) ([]*ResultRow, error) {
 		}
 		result = append(result, results...)
 	}
-	logrus.WithFields(logrus.Fields{
-		"Where":   q.Select.Vars,
-		"Execute": stats.ExecutionTime,
-		"Expand":  stats.ExpandTime,
-		"Results": stats.NumResults,
-		"Total":   time.Since(fullQueryStart),
-	}).Info("Query")
+	if stats != nil {
+		logrus.WithFields(logrus.Fields{
+			"Where":   q.Select.Vars,
+			"Execute": stats.ExecutionTime,
+			"Expand":  stats.ExpandTime,
+			"Results": stats.NumResults,
+			"Total":   time.Since(fullQueryStart),
+		}).Info("Query")
+	}
 	return result, nil
 }
 
@@ -340,7 +342,7 @@ func (db *DB) queryToDOT(querystring string) (string, error) {
 func (db *DB) queryToClassDOT(querystring string) (string, error) {
 	q, err := query.Parse(querystring)
 	if err != nil {
-		return "", err
+		return "", errors.Wrapf(err, "Couldn't parse %s")
 	}
 	// create DOT template string
 	dot := ""
@@ -350,9 +352,25 @@ func (db *DB) queryToClassDOT(querystring string) (string, error) {
 	typeURI.Namespace = db.namespaces[typeURI.Namespace]
 	typeKey, err := db.GetHash(typeURI)
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "Couldn't get rdf:type")
 	}
 	typeKeyString := typeKey.String()
+
+	uriURI := turtle.ParseURI("bf:uri")
+	uriURI.Namespace = db.namespaces[uriURI.Namespace]
+	uriKey, err := db.GetHash(uriURI)
+	if err != nil {
+		return "", errors.Wrap(err, "Couldn't get bf:uri")
+	}
+	uriKeyString := uriKey.String()
+
+	uuidURI := turtle.ParseURI("bf:uuid")
+	uuidURI.Namespace = db.namespaces[uuidURI.Namespace]
+	uuidKey, err := db.GetHash(uuidURI)
+	if err != nil {
+		return "", errors.Wrap(err, "Couldn't get bf:uuid")
+	}
+	uuidKeyString := uuidKey.String()
 
 	getClass := func(ent *Entity) (classes []turtle.URI, err error) {
 		_classes := ent.OutEdges[typeKeyString]
@@ -367,11 +385,13 @@ func (db *DB) queryToClassDOT(querystring string) (string, error) {
 		for predKeyString, objectList := range ent.OutEdges {
 			predKey.FromSlice([]byte(predKeyString))
 			predURI, err := db.GetURI(predKey)
+			fmt.Println(predURI)
 			if err != nil {
 				reterr = err
 				return
 			}
 			for _, objectKey := range objectList {
+				fmt.Println("  " + db.MustGetURI(objectKey).String())
 				objectEnt, err := db.GetEntityFromHash(objectKey)
 				if err != nil {
 					reterr = err
@@ -396,10 +416,10 @@ func (db *DB) queryToClassDOT(querystring string) (string, error) {
 
 	result, err := db.runQuery(q)
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "Error running query")
 	}
 	for _, row := range result.Rows {
-		for _, uri := range row {
+		for name, uri := range row {
 			ent, err := db.GetEntity(uri)
 			if err != nil {
 				return "", err
@@ -412,14 +432,21 @@ func (db *DB) queryToClassDOT(querystring string) (string, error) {
 			if err != nil {
 				return "", err
 			}
+			if len(ent.OutEdges[uriKeyString]) > 0 {
+				preds = append(preds, uriURI)
+				objs = append(objs, uriURI)
+			} else if len(ent.OutEdges[uuidKeyString]) > 0 {
+				preds = append(preds, uuidURI)
+				objs = append(objs, uuidURI)
+			}
 			// add class as node to graph
 			for _, class := range classList {
-				line := fmt.Sprintf("\"%s\" [fillcolor=\"#4caf50\"];\n", db.abbreviate(class))
+				line := fmt.Sprintf("\"%s|%s\" [fillcolor=\"#4caf50\"];\n", name, db.abbreviate(class))
 				if !strings.Contains(dot, line) {
 					dot += line
 				}
 				for i := 0; i < len(preds); i++ {
-					line := fmt.Sprintf("\"%s\" -> \"%s\" [label=\"%s\"];\n", db.abbreviate(class), db.abbreviate(objs[i]), db.abbreviate(preds[i]))
+					line := fmt.Sprintf("\"%s|%s\" -> \"%s\" [label=\"%s\"];\n", name, db.abbreviate(class), db.abbreviate(objs[i]), db.abbreviate(preds[i]))
 					if !strings.Contains(dot, line) {
 						dot += line
 					}

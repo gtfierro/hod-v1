@@ -256,7 +256,7 @@ func (mdb *MultiDB) QueryToClassDOT(q string) (string, error) {
 	})
 	dot += "}"
 	fmt.Println(dot)
-	return res, err
+	return dot, err
 }
 
 func (mdb *MultiDB) QueryToDOT(q string) (string, error) {

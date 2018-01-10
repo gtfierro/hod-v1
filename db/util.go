@@ -130,6 +130,10 @@ type queryStats struct {
 }
 
 func (mq *queryStats) merge(other queryStats) {
+	if mq == nil {
+		mq = &other
+		return
+	}
 	if mq.ExecutionTime.Nanoseconds() < other.ExecutionTime.Nanoseconds() {
 		mq.ExecutionTime = other.ExecutionTime
 	}
