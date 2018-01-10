@@ -7,7 +7,6 @@
 #
 
 Buildings:
-    soda: buildings/berkeley.ttl
     ciee: buildings/ciee.ttl
 
 # the location of the database files

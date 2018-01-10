@@ -37,9 +37,6 @@ var to_query = function() {
         build += " " + QUERY[key].WHERE.join(' ');
     }
     build += " };";
-    //var x = "SELECT " + select + " WHERE { " + where.join(' ') + " };";
-    //console.log(">", x);
-    //return x;
     return build;
 }
 
