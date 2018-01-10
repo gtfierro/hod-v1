@@ -56,6 +56,7 @@ func StartHodServer(db *hod.MultiDB, cfg *config.Config) *http.Server {
 	r.GET("/query", server.serveQuery)
 	r.GET("/help", server.serveHelp)
 	r.GET("/plan", server.servePlanner)
+	r.GET("/demo", server.serveDemo)
 	//r.GET("/explore", server.serveExplorer)
 	r.GET("/search", server.serveSearch)
 	server.router = r
@@ -204,6 +205,12 @@ func (srv *hodServer) servePlanner(rw http.ResponseWriter, req *http.Request, ps
 	log.Infof("Serve planner from %s", req.RemoteAddr)
 	defer req.Body.Close()
 	http.ServeFile(rw, req, srv.staticpath+"/plan.html")
+}
+
+func (srv *hodServer) serveDemo(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
+	log.Infof("Serve demo from %s", req.RemoteAddr)
+	defer req.Body.Close()
+	http.ServeFile(rw, req, srv.staticpath+"/demo.html")
 }
 
 func (srv *hodServer) serveExplorer(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {

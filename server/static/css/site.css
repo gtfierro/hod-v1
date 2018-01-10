@@ -41,9 +41,6 @@ a:hover {
 .listhighlight {
     color: black;
 }
-header, main, footer {
-  padding-left: 200px;
-}
 
 @media only screen and (max-width : 992px) {
   header, main, footer {
@@ -75,7 +72,7 @@ svg {
 
 .node text {
   stroke:#333;
-  cursos:pointer;
+  cursor:pointer;
 }
 
 .node circle{
