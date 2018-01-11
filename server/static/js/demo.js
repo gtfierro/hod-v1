@@ -21,11 +21,16 @@ function generateVar (len) {
 }
 
 var QUERY = {
-    "brick:Zone_Temperature_Sensor": {
-        SELECT: "?room",
-        WHERE: ["?room rdf:type brick:Room . "],
-    },
+    //"brick:Room": {
+    //    SELECT: "?start",
+    //    WHERE: ["?start rdf:type brick:Room . "],
+    //},
 };
+
+var rebuildquery = function(term) {
+    QUERY = {};
+    QUERY[term] = {SELECT: "?start", WHERE: ["?start rdf:type brick:" + term + " . "]};
+}
 
 var to_query = function() {
     var build = "SELECT";
@@ -69,6 +74,16 @@ var find_node_by_id = function(n, nodeid) {
     return null;
 }
 
+var update_node_by_id = function(n, nodeid, node) {
+    for (var i in n.nodes) {
+        if (n.nodes[i].id == nodeid) {
+            console.log('update', node);
+            n.nodes[i] = node;
+            return;
+        }
+    }
+    return null;
+}
 
 var get_var_name = function(name) {
     var split = name.split('|');
@@ -85,6 +100,13 @@ var get_old_name = function(name) {
     return split[1];
 }
 
+var get_classes = function(term, handleresults) {
+    $.post("/api/search", JSON.stringify({'Query': term, 'Number': 1}), function(data) {
+        console.log("TERMS", data);
+        handleresults(data);
+    });
+}
+
 var submit_query = function() {
   var html = "";
   var begin = moment();
@@ -99,6 +121,7 @@ var submit_query = function() {
       $("#elapsed").text(duration.milliseconds() + " ms");
       var newdata = vis.network.convertDot(data)
       parsedData.options = newdata.options;
+      parsedData.update = newdata.update;
       for (var idx in newdata.nodes) {
         var n = newdata.nodes[idx];
         if (get_var_name(n.id).length < n.id.length) {
@@ -168,9 +191,9 @@ var submit_query = function() {
           hierarchical: {
             enabled: true,
             blockShifting: true,
-            levelSeparation: 200,
+            levelSeparation: 300,
             nodeSpacing: 100,
-            edgeMinimization: true,
+            edgeMinimization: false,
             direction: 'LR'
           }
       };
@@ -203,12 +226,18 @@ var submit_query = function() {
                 SELECT: newvar,
                 WHERE: [orignode.varname + " bf:uri " + newvar + " . "]
             };
+            //clickednode.color = {background: '#f00'}
+            //update_node_by_id(parsedData, clickednode.id, clickednode);
+            //network.redraw();
             return;
         } else if (clickednode.label == "UUID") {
             QUERY[newclass] = {
-                SELECT: newvar,
-                WHERE: [orignode.varname + " bf:uuid " + newvar + " . "]
+                SELECT: newvar+'_uuid',
+                WHERE: [orignode.varname + " bf:uuid " + newvar+'_uuid' + " . "]
             };
+            //clickednode.color = {background: '#f00'}
+            //update_node_by_id(parsedData, clickednode.id, clickednode);
+            //network.redraw();
             return;
         } else {
             var line1 = orignode.varname + " " + edge.label + " " + newvar + " . ";

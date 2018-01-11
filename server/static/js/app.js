@@ -3,6 +3,8 @@ var bus = new Vue({
         loaded: false,
         headers: [],
         items: [],
+        searchterm: "",
+        selected: [],
     }
 })
 
@@ -10,8 +12,26 @@ Vue.component('graph', {
     created: function() {
         submit_query();
     },
+    methods: {
+        research: function(e) {
+            console.log("CHANGE", e);
+            QUERY = {}
+            get_classes(e, function(res) {
+                res.forEach(function(klass) {
+                    var vn = generateVar(5);
+                    QUERY[klass] = {SELECT: vn, WHERE: [vn + " rdf:type " + klass + " . "]};
+                });
+                console.log(to_query());
+                //rebuildquery(e);
+                submit_query();
+            });
+        },
+    },
     template: '\
-        <div id="mynetwork"></div>\
+		<span>\
+			<v-text-field name="brickclass" label="Brick class search" :value="bus.searchterm" class="input-group--focused" @input="research" single-line></v-text-field>\
+			<div id="mynetwork"></div>\
+		</span>\
     '
 })
 
@@ -30,7 +50,8 @@ Vue.component('query', {
       return {
           pagination: {
                 rowsPerPage: 1000
-          }
+          },
+          selected: [],
       }
     },
     computed:  {
@@ -70,9 +91,16 @@ Vue.component('query', {
             console.log(bus.headers);
 
             response.data.Rows.forEach(function(r) {
+                var rowid = [];
                 for (key in r) {
                     r[key] = r[key].Value;
+                    if (key.indexOf('uuid') > 0) {
+                        rowid.push(r[key]);
+                    }
                 }
+                r.rowid = rowid;
+                console.log("rowid", r.rowid);
+                r.selected = false;
                 bus.items.push(r);
             });
             bus.loaded = true;
@@ -86,12 +114,39 @@ Vue.component('query', {
             return to_query();
         }
     },
+    methods: {
+        ping: function(e) {
+            console.log("slected", bus.items.filter(row => row.selected));
+        },
+        plot: function(doall) {
+            var streams = [];
+            bus.items.map(function(row) {
+                if (doall || row.selected) {
+                    for (i in row.rowid) {
+                        streams.push(row.rowid[i]);        
+                    }
+                }
+            });
+            axios.post('/permalink', JSON.stringify({'URL': 'https://plot.xbos.io', 'UUIDs': streams}))
+            .then(function(response) {
+                console.log(response);
+                console.log("PERMALINK", 'https://plot.xbos.io/?'+response.data);
+                window.open('https://plot.xbos.io/?'+response.data);
+            })
+            .catch(function(error) {
+                console.log('error', error);
+            })
+        },
+    },
     template: '\
         <span>\
             <textarea id="renderquery"></textarea>\
-            <div id="renderresults">\
+            <v-btn @click="plot(false)" color="green lighten-1" dark>Plot Selected</v-btn>\
+            <v-btn @click="plot(true)" color="green lighten-1" dark>Plot All</v-btn>\
+            <div id="renderresults" @click="ping">\
                 <v-data-table v-if="bus.loaded" :pagination.sync="pagination" :headers="bus.headers" :items="bus.items" class="elevation-1">\
                     <template slot="items" slot-scope="props">\
+                        <td><v-checkbox primary hide-details v-model="props.item.selected"></v-checkbox></td>\
                         <td v-for="selectVar in get_vars()" :key="selectVar" class="text-xs-right">{{ props.item[selectVar] }}</td>\
                     </template>\
                 </v-data-table>\

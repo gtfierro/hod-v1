@@ -14,6 +14,7 @@ import (
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/op/go-logging"
+	"github.com/parnurzeal/gorequest"
 	"github.com/pkg/profile"
 	"golang.org/x/crypto/acme/autocert"
 )
@@ -29,6 +30,19 @@ func init() {
 	logBackendLeveled := logging.AddModuleLevel(logBackend)
 	logging.SetBackend(logBackendLeveled)
 	logging.SetFormatter(logging.MustStringFormatter(format))
+}
+
+type plotreq struct {
+	URL   string
+	UUIDs []string
+}
+type permalink struct {
+	Autoupdate bool `json:"autoupdate"`
+	Streams    []struct {
+		Stream string `json:"stream"`
+	} `json:"streams"`
+	WindowType  string `json:"window_type"`
+	WindowWidth int64  `json:"window_width"`
 }
 
 type hodServer struct {
@@ -57,6 +71,7 @@ func StartHodServer(db *hod.MultiDB, cfg *config.Config) *http.Server {
 	r.GET("/help", server.serveHelp)
 	r.GET("/plan", server.servePlanner)
 	r.GET("/demo", server.serveDemo)
+	r.POST("/permalink", server.permalink)
 	//r.GET("/explore", server.serveExplorer)
 	r.GET("/search", server.serveSearch)
 	server.router = r
@@ -211,6 +226,40 @@ func (srv *hodServer) serveDemo(rw http.ResponseWriter, req *http.Request, ps ht
 	log.Infof("Serve demo from %s", req.RemoteAddr)
 	defer req.Body.Close()
 	http.ServeFile(rw, req, srv.staticpath+"/demo.html")
+}
+
+func (srv *hodServer) permalink(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
+	log.Infof("Serve permalink from %s", req.RemoteAddr)
+	defer req.Body.Close()
+	var plot plotreq
+	dec := json.NewDecoder(req.Body)
+	if err := dec.Decode(&plot); err != nil {
+		log.Error(err)
+		rw.WriteHeader(400)
+		rw.Write([]byte(err.Error()))
+		return
+	}
+	var pm = &permalink{
+		Autoupdate:  true,
+		WindowType:  "now",
+		WindowWidth: 1e9 * 60 * 60 * 24,
+	}
+	for _, uuid := range plot.UUIDs {
+		pm.Streams = append(pm.Streams, struct {
+			Stream string `json:"stream"`
+		}{uuid})
+	}
+	log.Debug(pm)
+	r := gorequest.New()
+	_, body, errs := r.Post(plot.URL + "/permalink").Send(pm).End()
+	if len(errs) > 0 {
+		log.Error(errs[0])
+		rw.WriteHeader(500)
+		rw.Write([]byte(errs[0].Error()))
+		return
+	}
+	log.Debug(body)
+	rw.Write([]byte(body))
 }
 
 func (srv *hodServer) serveExplorer(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
