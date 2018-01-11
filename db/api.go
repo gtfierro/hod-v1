@@ -435,7 +435,8 @@ func (db *DB) queryToClassDOT(querystring string) (string, error) {
 			if len(ent.OutEdges[uriKeyString]) > 0 {
 				preds = append(preds, uriURI)
 				objs = append(objs, uriURI)
-			} else if len(ent.OutEdges[uuidKeyString]) > 0 {
+			}
+			if len(ent.OutEdges[uuidKeyString]) > 0 {
 				preds = append(preds, uuidURI)
 				objs = append(objs, uuidURI)
 			}
