@@ -45,6 +45,20 @@ var to_query = function() {
     return build;
 }
 
+var to_query_no_explore = function() {
+    var build = "SELECT";
+    for (key in QUERY) {
+        build += " " + QUERY[key].SELECT;
+    }
+    build += " WHERE { "
+    for (key in QUERY) {
+        build += " " + QUERY[key].WHERE.slice(0,2).join(' ');
+    }
+    build += " };";
+    return build;
+}
+
+
 var get_vars = function() {
     var build = [];
     for (key in QUERY) {

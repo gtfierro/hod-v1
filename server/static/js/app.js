@@ -68,7 +68,7 @@ Vue.component('query', {
             matchBrackets: true,
             lineNumbers: true,
         });
-        var q = to_query().split('.').join(".\n")
+        var q = to_query_no_explore().split('.').join(".\n")
         q = q.split('{').join("{\n");
         q = q.split('}').join("}\n");
         cm.setValue(q);
