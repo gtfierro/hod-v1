@@ -15,6 +15,7 @@ import (
 	"github.com/coocood/freecache"
 	"github.com/op/go-logging"
 	"github.com/pkg/errors"
+	logrus "github.com/sirupsen/logrus"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/filter"
 	"github.com/syndtr/goleveldb/leveldb/opt"
@@ -33,6 +34,10 @@ func init() {
 	logBackendLeveled := logging.AddModuleLevel(logBackend)
 	logging.SetBackend(logBackendLeveled)
 	logging.SetFormatter(logging.MustStringFormatter(format))
+
+	logrus.SetFormatter(&logrus.TextFormatter{FullTimestamp: true, ForceColors: true})
+	logrus.SetOutput(os.Stdout)
+	logrus.SetLevel(logrus.InfoLevel)
 }
 
 type DB struct {

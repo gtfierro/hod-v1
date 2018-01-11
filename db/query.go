@@ -18,7 +18,9 @@ import (
 // First we "clean" these by making sure that they have their full
 // namespaces rather than the prefix
 
-func (db *DB) getQueryResults(q *sparql.Query) ([]*ResultRow, error) {
+func (db *DB) getQueryResults(q *sparql.Query) ([]*ResultRow, queryStats, error) {
+	var stats queryStats
+
 	if db.showQueryPlan {
 		fmt.Println("-------------- start query plan -------------")
 	}
@@ -29,7 +31,7 @@ func (db *DB) getQueryResults(q *sparql.Query) ([]*ResultRow, error) {
 	dg := db.sortQueryTerms(q)
 	qp, err := db.formQueryPlan(dg, q)
 	if err != nil {
-		return nil, err
+		return nil, stats, err
 	}
 
 	if db.showDependencyGraph {
@@ -51,22 +53,25 @@ func (db *DB) getQueryResults(q *sparql.Query) ([]*ResultRow, error) {
 	runStart := time.Now()
 	ctx, err := db.executeQueryPlan(qp)
 	if err != nil {
-		return nil, err
+		return nil, stats, err
 	}
 	since := time.Since(runStart)
-	if db.showQueryLatencies {
-		log.Infof("Ran query in %s", since)
-	}
+	//if db.showQueryLatencies {
+	//	log.Infof("Ran query in %s", since)
+	//}
 
 	runStart = time.Now()
 	// ctx2 expand
 	results := ctx.getResults()
-	if db.showQueryLatencies {
-		log.Infof("Expanded tuples in %s", time.Since(runStart))
-		log.Infof("Has %d results", len(results))
-	}
+	//if db.showQueryLatencies {
+	//	log.Infof("Expanded tuples in %s", time.Since(runStart))
+	//	log.Infof("Has %d results", len(results))
+	//}
+	stats.ExecutionTime = since
+	stats.ExpandTime = time.Since(runStart)
+	stats.NumResults = len(results)
 
-	return results, err
+	return results, stats, err
 }
 
 func (db *DB) executeQueryPlan(plan *queryPlan) (*queryContext, error) {
