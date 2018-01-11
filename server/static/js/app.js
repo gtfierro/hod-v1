@@ -80,6 +80,11 @@ Vue.component('query', {
         .then(function(response) {
             console.log('response', response);
             // response.data.Rows
+            bus.headers.push({
+                text: 'plot',
+                align: 'left',
+                sortable: false,
+            })
             get_vars().forEach(function(vn) {
                 bus.headers.push({
                     text: vn,

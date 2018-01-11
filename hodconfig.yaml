@@ -34,7 +34,7 @@ Buildings:
 #EnableHTTP: true
 #
 # Enable BOSSWAVE server
-EnableBOSSWAVE: true
+EnableBOSSWAVE: false
 
 ####
 # configuration for verbosity during operation
