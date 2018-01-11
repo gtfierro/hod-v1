@@ -156,6 +156,11 @@ func (db *DB) runQuery(q *sparql.Query) (QueryResult, error) {
 			"Results": stats.NumResults,
 			"Total":   time.Since(fullQueryStart),
 		}).Info("Query")
+	} else {
+		logrus.WithFields(logrus.Fields{
+			"Where": q.Select.Vars,
+			"Total": time.Since(fullQueryStart),
+		}).Info("Query")
 	}
 
 	var result = newQueryResult()
@@ -276,13 +281,20 @@ func (db *DB) runQueryToSet(q *sparql.Query) ([]*ResultRow, error) {
 		}
 		result = append(result, results...)
 	}
-	logrus.WithFields(logrus.Fields{
-		"Where":   q.Select.Vars,
-		"Execute": stats.ExecutionTime,
-		"Expand":  stats.ExpandTime,
-		"Results": stats.NumResults,
-		"Total":   time.Since(fullQueryStart),
-	}).Info("Query")
+	if stats != nil {
+		logrus.WithFields(logrus.Fields{
+			"Where":   q.Select.Vars,
+			"Execute": stats.ExecutionTime,
+			"Expand":  stats.ExpandTime,
+			"Results": stats.NumResults,
+			"Total":   time.Since(fullQueryStart),
+		}).Info("Query")
+	} else {
+		logrus.WithFields(logrus.Fields{
+			"Where": q.Select.Vars,
+			"Total": time.Since(fullQueryStart),
+		}).Info("Query")
+	}
 	return result, nil
 }
 
