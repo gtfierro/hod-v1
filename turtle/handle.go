@@ -53,6 +53,11 @@ func ParseURI(uri string) URI {
 	parts := strings.Split(uri, "#")
 	parts[0] = strings.TrimRight(parts[0], "#")
 	if len(parts) != 2 {
+		if strings.HasPrefix(uri, "\"") {
+			uri = strings.Trim(uri, "\"")
+			uri = strings.TrimSuffix(uri, "@en")
+			return URI{Value: uri}
+		}
 		// try to parse ":"
 		parts = strings.SplitN(uri, ":", 2)
 		if len(parts) > 1 {

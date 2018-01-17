@@ -28,6 +28,7 @@ var actionTab = actionTable{
 			nil,      /* } */
 			nil,      /* . */
 			nil,      /* uri */
+			nil,      /* quotedstring */
 			nil,      /* url */
 			nil,      /* | */
 			nil,      /* / */
@@ -57,6 +58,7 @@ var actionTab = actionTable{
 			nil,          /* } */
 			nil,          /* . */
 			nil,          /* uri */
+			nil,          /* quotedstring */
 			nil,          /* url */
 			nil,          /* | */
 			nil,          /* / */
@@ -86,6 +88,7 @@ var actionTab = actionTable{
 			nil,      /* } */
 			nil,      /* . */
 			nil,      /* uri */
+			nil,      /* quotedstring */
 			nil,      /* url */
 			nil,      /* | */
 			nil,      /* / */
@@ -115,6 +118,7 @@ var actionTab = actionTable{
 			nil,      /* } */
 			nil,      /* . */
 			nil,      /* uri */
+			nil,      /* quotedstring */
 			nil,      /* url */
 			nil,      /* | */
 			nil,      /* / */
@@ -144,6 +148,7 @@ var actionTab = actionTable{
 			nil,       /* } */
 			nil,       /* . */
 			nil,       /* uri */
+			nil,       /* quotedstring */
 			nil,       /* url */
 			nil,       /* | */
 			nil,       /* / */
@@ -173,6 +178,7 @@ var actionTab = actionTable{
 			nil,       /* } */
 			nil,       /* . */
 			nil,       /* uri */
+			nil,       /* quotedstring */
 			nil,       /* url */
 			nil,       /* | */
 			nil,       /* / */
@@ -202,6 +208,7 @@ var actionTab = actionTable{
 			nil,       /* } */
 			nil,       /* . */
 			nil,       /* uri */
+			nil,       /* quotedstring */
 			nil,       /* url */
 			nil,       /* | */
 			nil,       /* / */
@@ -231,6 +238,7 @@ var actionTab = actionTable{
 			nil,       /* } */
 			nil,       /* . */
 			nil,       /* uri */
+			nil,       /* quotedstring */
 			nil,       /* url */
 			nil,       /* | */
 			nil,       /* / */
@@ -260,6 +268,7 @@ var actionTab = actionTable{
 			nil,       /* } */
 			nil,       /* . */
 			nil,       /* uri */
+			nil,       /* quotedstring */
 			nil,       /* url */
 			nil,       /* | */
 			nil,       /* / */
@@ -289,6 +298,7 @@ var actionTab = actionTable{
 			nil,       /* } */
 			nil,       /* . */
 			nil,       /* uri */
+			nil,       /* quotedstring */
 			nil,       /* url */
 			nil,       /* | */
 			nil,       /* / */
@@ -318,6 +328,7 @@ var actionTab = actionTable{
 			nil,       /* } */
 			nil,       /* . */
 			nil,       /* uri */
+			nil,       /* quotedstring */
 			nil,       /* url */
 			nil,       /* | */
 			nil,       /* / */
@@ -347,6 +358,7 @@ var actionTab = actionTable{
 			nil,       /* } */
 			nil,       /* . */
 			nil,       /* uri */
+			nil,       /* quotedstring */
 			nil,       /* url */
 			nil,       /* | */
 			nil,       /* / */
@@ -376,6 +388,7 @@ var actionTab = actionTable{
 			nil,       /* } */
 			nil,       /* . */
 			nil,       /* uri */
+			nil,       /* quotedstring */
 			nil,       /* url */
 			nil,       /* | */
 			nil,       /* / */
@@ -405,6 +418,7 @@ var actionTab = actionTable{
 			nil,       /* } */
 			nil,       /* . */
 			nil,       /* uri */
+			nil,       /* quotedstring */
 			nil,       /* url */
 			nil,       /* | */
 			nil,       /* / */
@@ -434,6 +448,7 @@ var actionTab = actionTable{
 			nil,       /* } */
 			nil,       /* . */
 			nil,       /* uri */
+			nil,       /* quotedstring */
 			nil,       /* url */
 			nil,       /* | */
 			nil,       /* / */
@@ -463,6 +478,7 @@ var actionTab = actionTable{
 			nil,       /* } */
 			nil,       /* . */
 			nil,       /* uri */
+			nil,       /* quotedstring */
 			nil,       /* url */
 			nil,       /* | */
 			nil,       /* / */
@@ -492,6 +508,7 @@ var actionTab = actionTable{
 			nil,       /* } */
 			nil,       /* . */
 			nil,       /* uri */
+			nil,       /* quotedstring */
 			nil,       /* url */
 			nil,       /* | */
 			nil,       /* / */
@@ -521,6 +538,7 @@ var actionTab = actionTable{
 			nil,       /* } */
 			nil,       /* . */
 			nil,       /* uri */
+			nil,       /* quotedstring */
 			nil,       /* url */
 			nil,       /* | */
 			nil,       /* / */
@@ -550,6 +568,7 @@ var actionTab = actionTable{
 			nil,        /* } */
 			nil,        /* . */
 			nil,        /* uri */
+			nil,        /* quotedstring */
 			nil,        /* url */
 			nil,        /* | */
 			nil,        /* / */
@@ -579,6 +598,7 @@ var actionTab = actionTable{
 			nil,        /* } */
 			nil,        /* . */
 			nil,        /* uri */
+			nil,        /* quotedstring */
 			nil,        /* url */
 			nil,        /* | */
 			nil,        /* / */
@@ -608,6 +628,7 @@ var actionTab = actionTable{
 			nil,       /* } */
 			nil,       /* . */
 			nil,       /* uri */
+			nil,       /* quotedstring */
 			nil,       /* url */
 			nil,       /* | */
 			nil,       /* / */
@@ -637,6 +658,7 @@ var actionTab = actionTable{
 			nil,        /* } */
 			nil,        /* . */
 			nil,        /* uri */
+			nil,        /* quotedstring */
 			nil,        /* url */
 			nil,        /* | */
 			nil,        /* / */
@@ -666,6 +688,7 @@ var actionTab = actionTable{
 			nil,       /* } */
 			nil,       /* . */
 			nil,       /* uri */
+			nil,       /* quotedstring */
 			nil,       /* url */
 			nil,       /* | */
 			nil,       /* / */
@@ -695,6 +718,7 @@ var actionTab = actionTable{
 			nil,        /* } */
 			nil,        /* . */
 			nil,        /* uri */
+			nil,        /* quotedstring */
 			nil,        /* url */
 			nil,        /* | */
 			nil,        /* / */
@@ -724,6 +748,7 @@ var actionTab = actionTable{
 			nil,        /* } */
 			nil,        /* . */
 			nil,        /* uri */
+			nil,        /* quotedstring */
 			nil,        /* url */
 			nil,        /* | */
 			nil,        /* / */
@@ -753,6 +778,7 @@ var actionTab = actionTable{
 			nil,        /* } */
 			nil,        /* . */
 			nil,        /* uri */
+			nil,        /* quotedstring */
 			nil,        /* url */
 			nil,        /* | */
 			nil,        /* / */
@@ -782,6 +808,7 @@ var actionTab = actionTable{
 			nil,        /* } */
 			nil,        /* . */
 			nil,        /* uri */
+			nil,        /* quotedstring */
 			nil,        /* url */
 			nil,        /* | */
 			nil,        /* / */
@@ -803,14 +830,15 @@ var actionTab = actionTable{
 			nil,       /* SELECT */
 			nil,       /* * */
 			nil,       /* COUNT */
-			shift(32), /* string */
-			shift(33), /* var */
+			nil,       /* string */
+			shift(32), /* var */
 			nil,       /* FROM */
 			nil,       /* WHERE */
-			shift(34), /* { */
+			shift(33), /* { */
 			nil,       /* } */
 			nil,       /* . */
-			shift(40), /* uri */
+			shift(39), /* uri */
+			shift(40), /* quotedstring */
 			shift(41), /* url */
 			nil,       /* | */
 			nil,       /* / */
@@ -840,6 +868,7 @@ var actionTab = actionTable{
 			nil,       /* } */
 			nil,       /* . */
 			nil,       /* uri */
+			nil,       /* quotedstring */
 			nil,       /* url */
 			nil,       /* | */
 			nil,       /* / */
@@ -869,6 +898,7 @@ var actionTab = actionTable{
 			nil,        /* } */
 			nil,        /* . */
 			nil,        /* uri */
+			nil,        /* quotedstring */
 			nil,        /* url */
 			nil,        /* | */
 			nil,        /* / */
@@ -898,6 +928,7 @@ var actionTab = actionTable{
 			nil,        /* } */
 			nil,        /* . */
 			nil,        /* uri */
+			nil,        /* quotedstring */
 			nil,        /* url */
 			nil,        /* | */
 			nil,        /* / */
@@ -927,6 +958,7 @@ var actionTab = actionTable{
 			nil,        /* } */
 			nil,        /* . */
 			reduce(27), /* uri, reduce: VarOrTerm */
+			nil,        /* quotedstring */
 			reduce(27), /* url, reduce: VarOrTerm */
 			nil,        /* | */
 			nil,        /* / */
@@ -949,35 +981,6 @@ var actionTab = actionTable{
 			nil,        /* * */
 			nil,        /* COUNT */
 			nil,        /* string */
-			reduce(30), /* var, reduce: GraphTerm */
-			nil,        /* FROM */
-			nil,        /* WHERE */
-			nil,        /* { */
-			nil,        /* } */
-			nil,        /* . */
-			reduce(30), /* uri, reduce: GraphTerm */
-			reduce(30), /* url, reduce: GraphTerm */
-			nil,        /* | */
-			nil,        /* / */
-			reduce(30), /* a, reduce: GraphTerm */
-			reduce(30), /* (, reduce: GraphTerm */
-			nil,        /* ) */
-			nil,        /* ? */
-			nil,        /* + */
-			nil,        /* empty */
-			nil,        /* UNION */
-		},
-	},
-	actionRow{ // S33
-		canRecover: false,
-		actions: [numSymbols]action{
-			nil,        /* INVALID */
-			nil,        /* $ */
-			nil,        /* ; */
-			nil,        /* SELECT */
-			nil,        /* * */
-			nil,        /* COUNT */
-			nil,        /* string */
 			reduce(16), /* var, reduce: Var */
 			nil,        /* FROM */
 			nil,        /* WHERE */
@@ -985,6 +988,7 @@ var actionTab = actionTable{
 			nil,        /* } */
 			nil,        /* . */
 			reduce(16), /* uri, reduce: Var */
+			nil,        /* quotedstring */
 			reduce(16), /* url, reduce: Var */
 			nil,        /* | */
 			nil,        /* / */
@@ -997,6 +1001,36 @@ var actionTab = actionTable{
 			nil,        /* UNION */
 		},
 	},
+	actionRow{ // S33
+		canRecover: false,
+		actions: [numSymbols]action{
+			nil,       /* INVALID */
+			nil,       /* $ */
+			nil,       /* ; */
+			nil,       /* SELECT */
+			nil,       /* * */
+			nil,       /* COUNT */
+			nil,       /* string */
+			shift(32), /* var */
+			nil,       /* FROM */
+			nil,       /* WHERE */
+			shift(45), /* { */
+			nil,       /* } */
+			nil,       /* . */
+			shift(39), /* uri */
+			shift(40), /* quotedstring */
+			shift(41), /* url */
+			nil,       /* | */
+			nil,       /* / */
+			nil,       /* a */
+			nil,       /* ( */
+			nil,       /* ) */
+			nil,       /* ? */
+			nil,       /* + */
+			nil,       /* empty */
+			nil,       /* UNION */
+		},
+	},
 	actionRow{ // S34
 		canRecover: false,
 		actions: [numSymbols]action{
@@ -1006,15 +1040,16 @@ var actionTab = actionTable{
 			nil,       /* SELECT */
 			nil,       /* * */
 			nil,       /* COUNT */
-			shift(32), /* string */
-			shift(33), /* var */
+			nil,       /* string */
+			nil,       /* var */
 			nil,       /* FROM */
 			nil,       /* WHERE */
-			shift(45), /* { */
-			nil,       /* } */
-			nil,       /* . */
-			shift(40), /* uri */
-			shift(41), /* url */
+			shift(33), /* { */
+			shift(50), /* } */
+			shift(51), /* . */
+			nil,       /* uri */
+			nil,       /* quotedstring */
+			nil,       /* url */
 			nil,       /* | */
 			nil,       /* / */
 			nil,       /* a */
@@ -1039,10 +1074,11 @@ var actionTab = actionTable{
 			nil,       /* var */
 			nil,       /* FROM */
 			nil,       /* WHERE */
-			shift(34), /* { */
-			shift(50), /* } */
-			shift(51), /* . */
+			shift(33), /* { */
+			shift(53), /* } */
+			nil,       /* . */
 			nil,       /* uri */
+			nil,       /* quotedstring */
 			nil,       /* url */
 			nil,       /* | */
 			nil,       /* / */
@@ -1056,35 +1092,6 @@ var actionTab = actionTable{
 		},
 	},
 	actionRow{ // S36
-		canRecover: false,
-		actions: [numSymbols]action{
-			nil,       /* INVALID */
-			nil,       /* $ */
-			nil,       /* ; */
-			nil,       /* SELECT */
-			nil,       /* * */
-			nil,       /* COUNT */
-			nil,       /* string */
-			nil,       /* var */
-			nil,       /* FROM */
-			nil,       /* WHERE */
-			shift(34), /* { */
-			shift(53), /* } */
-			nil,       /* . */
-			nil,       /* uri */
-			nil,       /* url */
-			nil,       /* | */
-			nil,       /* / */
-			nil,       /* a */
-			nil,       /* ( */
-			nil,       /* ) */
-			nil,       /* ? */
-			nil,       /* + */
-			nil,       /* empty */
-			nil,       /* UNION */
-		},
-	},
-	actionRow{ // S37
 		canRecover: false,
 		actions: [numSymbols]action{
 			nil,        /* INVALID */
@@ -1101,6 +1108,7 @@ var actionTab = actionTable{
 			reduce(24), /* }, reduce: TriplesBlock */
 			reduce(24), /* ., reduce: TriplesBlock */
 			nil,        /* uri */
+			nil,        /* quotedstring */
 			nil,        /* url */
 			nil,        /* | */
 			nil,        /* / */
@@ -1113,7 +1121,7 @@ var actionTab = actionTable{
 			nil,        /* UNION */
 		},
 	},
-	actionRow{ // S38
+	actionRow{ // S37
 		canRecover: false,
 		actions: [numSymbols]action{
 			nil,       /* INVALID */
@@ -1130,6 +1138,7 @@ var actionTab = actionTable{
 			nil,       /* } */
 			nil,       /* . */
 			shift(58), /* uri */
+			nil,       /* quotedstring */
 			shift(59), /* url */
 			nil,       /* | */
 			nil,       /* / */
@@ -1142,7 +1151,7 @@ var actionTab = actionTable{
 			nil,       /* UNION */
 		},
 	},
-	actionRow{ // S39
+	actionRow{ // S38
 		canRecover: false,
 		actions: [numSymbols]action{
 			nil,        /* INVALID */
@@ -1159,11 +1168,42 @@ var actionTab = actionTable{
 			nil,        /* } */
 			nil,        /* . */
 			reduce(28), /* uri, reduce: VarOrTerm */
+			nil,        /* quotedstring */
 			reduce(28), /* url, reduce: VarOrTerm */
 			nil,        /* | */
 			nil,        /* / */
 			reduce(28), /* a, reduce: VarOrTerm */
 			reduce(28), /* (, reduce: VarOrTerm */
+			nil,        /* ) */
+			nil,        /* ? */
+			nil,        /* + */
+			nil,        /* empty */
+			nil,        /* UNION */
+		},
+	},
+	actionRow{ // S39
+		canRecover: false,
+		actions: [numSymbols]action{
+			nil,        /* INVALID */
+			nil,        /* $ */
+			nil,        /* ; */
+			nil,        /* SELECT */
+			nil,        /* * */
+			nil,        /* COUNT */
+			nil,        /* string */
+			reduce(29), /* var, reduce: GraphTerm */
+			nil,        /* FROM */
+			nil,        /* WHERE */
+			nil,        /* { */
+			nil,        /* } */
+			nil,        /* . */
+			reduce(29), /* uri, reduce: GraphTerm */
+			nil,        /* quotedstring */
+			reduce(29), /* url, reduce: GraphTerm */
+			nil,        /* | */
+			nil,        /* / */
+			reduce(29), /* a, reduce: GraphTerm */
+			reduce(29), /* (, reduce: GraphTerm */
 			nil,        /* ) */
 			nil,        /* ? */
 			nil,        /* + */
@@ -1181,18 +1221,19 @@ var actionTab = actionTable{
 			nil,        /* * */
 			nil,        /* COUNT */
 			nil,        /* string */
-			reduce(29), /* var, reduce: GraphTerm */
+			reduce(30), /* var, reduce: GraphTerm */
 			nil,        /* FROM */
 			nil,        /* WHERE */
 			nil,        /* { */
 			nil,        /* } */
 			nil,        /* . */
-			reduce(29), /* uri, reduce: GraphTerm */
-			reduce(29), /* url, reduce: GraphTerm */
+			reduce(30), /* uri, reduce: GraphTerm */
+			nil,        /* quotedstring */
+			reduce(30), /* url, reduce: GraphTerm */
 			nil,        /* | */
 			nil,        /* / */
-			reduce(29), /* a, reduce: GraphTerm */
-			reduce(29), /* (, reduce: GraphTerm */
+			reduce(30), /* a, reduce: GraphTerm */
+			reduce(30), /* (, reduce: GraphTerm */
 			nil,        /* ) */
 			nil,        /* ? */
 			nil,        /* + */
@@ -1217,6 +1258,7 @@ var actionTab = actionTable{
 			nil,        /* } */
 			nil,        /* . */
 			reduce(31), /* uri, reduce: GraphTerm */
+			nil,        /* quotedstring */
 			reduce(31), /* url, reduce: GraphTerm */
 			nil,        /* | */
 			nil,        /* / */
@@ -1246,6 +1288,7 @@ var actionTab = actionTable{
 			reduce(46), /* }, reduce: RestOfWhereList */
 			nil,        /* . */
 			nil,        /* uri */
+			nil,        /* quotedstring */
 			nil,        /* url */
 			nil,        /* | */
 			nil,        /* / */
@@ -1267,7 +1310,7 @@ var actionTab = actionTable{
 			nil,        /* SELECT */
 			nil,        /* * */
 			nil,        /* COUNT */
-			reduce(51), /* string, reduce: Joiner */
+			nil,        /* string */
 			reduce(51), /* var, reduce: Joiner */
 			nil,        /* FROM */
 			nil,        /* WHERE */
@@ -1275,6 +1318,7 @@ var actionTab = actionTable{
 			reduce(51), /* }, reduce: Joiner */
 			shift(65),  /* . */
 			reduce(51), /* uri, reduce: Joiner */
+			reduce(51), /* quotedstring, reduce: Joiner */
 			reduce(51), /* url, reduce: Joiner */
 			nil,        /* | */
 			nil,        /* / */
@@ -1296,7 +1340,7 @@ var actionTab = actionTable{
 			nil,        /* SELECT */
 			nil,        /* * */
 			nil,        /* COUNT */
-			reduce(52), /* string, reduce: GraphPatternNotTriples */
+			nil,        /* string */
 			reduce(52), /* var, reduce: GraphPatternNotTriples */
 			nil,        /* FROM */
 			nil,        /* WHERE */
@@ -1304,6 +1348,7 @@ var actionTab = actionTable{
 			reduce(52), /* }, reduce: GraphPatternNotTriples */
 			reduce(52), /* ., reduce: GraphPatternNotTriples */
 			reduce(52), /* uri, reduce: GraphPatternNotTriples */
+			reduce(52), /* quotedstring, reduce: GraphPatternNotTriples */
 			reduce(52), /* url, reduce: GraphPatternNotTriples */
 			nil,        /* | */
 			nil,        /* / */
@@ -1325,14 +1370,15 @@ var actionTab = actionTable{
 			nil,       /* SELECT */
 			nil,       /* * */
 			nil,       /* COUNT */
-			shift(32), /* string */
-			shift(33), /* var */
+			nil,       /* string */
+			shift(32), /* var */
 			nil,       /* FROM */
 			nil,       /* WHERE */
 			shift(45), /* { */
 			nil,       /* } */
 			nil,       /* . */
-			shift(40), /* uri */
+			shift(39), /* uri */
+			shift(40), /* quotedstring */
 			shift(41), /* url */
 			nil,       /* | */
 			nil,       /* / */
@@ -1362,6 +1408,7 @@ var actionTab = actionTable{
 			reduce(55), /* }, reduce: GroupGraphPatternSub */
 			shift(69),  /* . */
 			nil,        /* uri */
+			nil,        /* quotedstring */
 			nil,        /* url */
 			nil,        /* | */
 			nil,        /* / */
@@ -1391,6 +1438,7 @@ var actionTab = actionTable{
 			nil,       /* } */
 			shift(70), /* . */
 			nil,       /* uri */
+			nil,       /* quotedstring */
 			nil,       /* url */
 			nil,       /* | */
 			nil,       /* / */
@@ -1420,6 +1468,7 @@ var actionTab = actionTable{
 			nil,        /* } */
 			reduce(52), /* ., reduce: GraphPatternNotTriples */
 			nil,        /* uri */
+			nil,        /* quotedstring */
 			nil,        /* url */
 			nil,        /* | */
 			nil,        /* / */
@@ -1449,6 +1498,7 @@ var actionTab = actionTable{
 			reduce(51), /* }, reduce: Joiner */
 			shift(72),  /* . */
 			nil,        /* uri */
+			nil,        /* quotedstring */
 			nil,        /* url */
 			nil,        /* | */
 			nil,        /* / */
@@ -1478,6 +1528,7 @@ var actionTab = actionTable{
 			nil,        /* } */
 			nil,        /* . */
 			nil,        /* uri */
+			nil,        /* quotedstring */
 			nil,        /* url */
 			nil,        /* | */
 			nil,        /* / */
@@ -1499,14 +1550,15 @@ var actionTab = actionTable{
 			nil,       /* SELECT */
 			nil,       /* * */
 			nil,       /* COUNT */
-			shift(32), /* string */
-			shift(33), /* var */
+			nil,       /* string */
+			shift(32), /* var */
 			nil,       /* FROM */
 			nil,       /* WHERE */
-			shift(34), /* { */
+			shift(33), /* { */
 			shift(75), /* } */
 			nil,       /* . */
-			shift(40), /* uri */
+			shift(39), /* uri */
+			shift(40), /* quotedstring */
 			shift(41), /* url */
 			nil,       /* | */
 			nil,       /* / */
@@ -1532,10 +1584,11 @@ var actionTab = actionTable{
 			nil,       /* var */
 			nil,       /* FROM */
 			nil,       /* WHERE */
-			shift(34), /* { */
+			shift(33), /* { */
 			shift(78), /* } */
 			nil,       /* . */
 			nil,       /* uri */
+			nil,       /* quotedstring */
 			nil,       /* url */
 			nil,       /* | */
 			nil,       /* / */
@@ -1565,6 +1618,7 @@ var actionTab = actionTable{
 			nil,        /* } */
 			nil,        /* . */
 			nil,        /* uri */
+			nil,        /* quotedstring */
 			nil,        /* url */
 			nil,        /* | */
 			nil,        /* / */
@@ -1594,6 +1648,7 @@ var actionTab = actionTable{
 			reduce(47), /* }, reduce: RestOfWhereList */
 			nil,        /* . */
 			nil,        /* uri */
+			nil,        /* quotedstring */
 			nil,        /* url */
 			nil,        /* | */
 			nil,        /* / */
@@ -1615,7 +1670,7 @@ var actionTab = actionTable{
 			nil,        /* SELECT */
 			nil,        /* * */
 			nil,        /* COUNT */
-			reduce(34), /* string, reduce: Path */
+			nil,        /* string */
 			reduce(34), /* var, reduce: Path */
 			nil,        /* FROM */
 			nil,        /* WHERE */
@@ -1623,6 +1678,7 @@ var actionTab = actionTable{
 			nil,        /* } */
 			nil,        /* . */
 			reduce(34), /* uri, reduce: Path */
+			reduce(34), /* quotedstring, reduce: Path */
 			reduce(34), /* url, reduce: Path */
 			reduce(34), /* |, reduce: Path */
 			nil,        /* / */
@@ -1644,7 +1700,7 @@ var actionTab = actionTable{
 			nil,        /* SELECT */
 			nil,        /* * */
 			nil,        /* COUNT */
-			reduce(16), /* string, reduce: Var */
+			nil,        /* string */
 			reduce(16), /* var, reduce: Var */
 			nil,        /* FROM */
 			nil,        /* WHERE */
@@ -1652,6 +1708,7 @@ var actionTab = actionTable{
 			nil,        /* } */
 			nil,        /* . */
 			reduce(16), /* uri, reduce: Var */
+			reduce(16), /* quotedstring, reduce: Var */
 			reduce(16), /* url, reduce: Var */
 			reduce(16), /* |, reduce: Var */
 			nil,        /* / */
@@ -1673,14 +1730,15 @@ var actionTab = actionTable{
 			nil,       /* SELECT */
 			nil,       /* * */
 			nil,       /* COUNT */
-			shift(80), /* string */
-			shift(81), /* var */
+			nil,       /* string */
+			shift(80), /* var */
 			nil,       /* FROM */
 			nil,       /* WHERE */
 			nil,       /* { */
 			nil,       /* } */
 			nil,       /* . */
-			shift(84), /* uri */
+			shift(83), /* uri */
+			shift(84), /* quotedstring */
 			shift(85), /* url */
 			shift(86), /* | */
 			nil,       /* / */
@@ -1702,7 +1760,7 @@ var actionTab = actionTable{
 			nil,        /* SELECT */
 			reduce(39), /* *, reduce: PathPrimary */
 			nil,        /* COUNT */
-			reduce(39), /* string, reduce: PathPrimary */
+			nil,        /* string */
 			reduce(39), /* var, reduce: PathPrimary */
 			nil,        /* FROM */
 			nil,        /* WHERE */
@@ -1710,6 +1768,7 @@ var actionTab = actionTable{
 			nil,        /* } */
 			nil,        /* . */
 			reduce(39), /* uri, reduce: PathPrimary */
+			reduce(39), /* quotedstring, reduce: PathPrimary */
 			reduce(39), /* url, reduce: PathPrimary */
 			reduce(39), /* |, reduce: PathPrimary */
 			reduce(39), /* /, reduce: PathPrimary */
@@ -1731,7 +1790,7 @@ var actionTab = actionTable{
 			nil,        /* SELECT */
 			reduce(41), /* *, reduce: PathPrimary */
 			nil,        /* COUNT */
-			reduce(41), /* string, reduce: PathPrimary */
+			nil,        /* string */
 			reduce(41), /* var, reduce: PathPrimary */
 			nil,        /* FROM */
 			nil,        /* WHERE */
@@ -1739,6 +1798,7 @@ var actionTab = actionTable{
 			nil,        /* } */
 			nil,        /* . */
 			reduce(41), /* uri, reduce: PathPrimary */
+			reduce(41), /* quotedstring, reduce: PathPrimary */
 			reduce(41), /* url, reduce: PathPrimary */
 			reduce(41), /* |, reduce: PathPrimary */
 			reduce(41), /* /, reduce: PathPrimary */
@@ -1760,7 +1820,7 @@ var actionTab = actionTable{
 			nil,        /* SELECT */
 			nil,        /* * */
 			nil,        /* COUNT */
-			reduce(32), /* string, reduce: Path */
+			nil,        /* string */
 			reduce(32), /* var, reduce: Path */
 			nil,        /* FROM */
 			nil,        /* WHERE */
@@ -1768,6 +1828,7 @@ var actionTab = actionTable{
 			nil,        /* } */
 			nil,        /* . */
 			reduce(32), /* uri, reduce: Path */
+			reduce(32), /* quotedstring, reduce: Path */
 			reduce(32), /* url, reduce: Path */
 			reduce(32), /* |, reduce: Path */
 			shift(87),  /* / */
@@ -1789,7 +1850,7 @@ var actionTab = actionTable{
 			nil,        /* SELECT */
 			nil,        /* * */
 			nil,        /* COUNT */
-			reduce(35), /* string, reduce: PathSequence */
+			nil,        /* string */
 			reduce(35), /* var, reduce: PathSequence */
 			nil,        /* FROM */
 			nil,        /* WHERE */
@@ -1797,6 +1858,7 @@ var actionTab = actionTable{
 			nil,        /* } */
 			nil,        /* . */
 			reduce(35), /* uri, reduce: PathSequence */
+			reduce(35), /* quotedstring, reduce: PathSequence */
 			reduce(35), /* url, reduce: PathSequence */
 			reduce(35), /* |, reduce: PathSequence */
 			reduce(35), /* /, reduce: PathSequence */
@@ -1818,7 +1880,7 @@ var actionTab = actionTable{
 			nil,        /* SELECT */
 			shift(88),  /* * */
 			nil,        /* COUNT */
-			reduce(38), /* string, reduce: PathElt */
+			nil,        /* string */
 			reduce(38), /* var, reduce: PathElt */
 			nil,        /* FROM */
 			nil,        /* WHERE */
@@ -1826,6 +1888,7 @@ var actionTab = actionTable{
 			nil,        /* } */
 			nil,        /* . */
 			reduce(38), /* uri, reduce: PathElt */
+			reduce(38), /* quotedstring, reduce: PathElt */
 			reduce(38), /* url, reduce: PathElt */
 			reduce(38), /* |, reduce: PathElt */
 			reduce(38), /* /, reduce: PathElt */
@@ -1847,7 +1910,7 @@ var actionTab = actionTable{
 			nil,        /* SELECT */
 			reduce(40), /* *, reduce: PathPrimary */
 			nil,        /* COUNT */
-			reduce(40), /* string, reduce: PathPrimary */
+			nil,        /* string */
 			reduce(40), /* var, reduce: PathPrimary */
 			nil,        /* FROM */
 			nil,        /* WHERE */
@@ -1855,6 +1918,7 @@ var actionTab = actionTable{
 			nil,        /* } */
 			nil,        /* . */
 			reduce(40), /* uri, reduce: PathPrimary */
+			reduce(40), /* quotedstring, reduce: PathPrimary */
 			reduce(40), /* url, reduce: PathPrimary */
 			reduce(40), /* |, reduce: PathPrimary */
 			reduce(40), /* /, reduce: PathPrimary */
@@ -1884,6 +1948,7 @@ var actionTab = actionTable{
 			nil,        /* } */
 			nil,        /* . */
 			shift(95),  /* uri */
+			nil,        /* quotedstring */
 			shift(96),  /* url */
 			nil,        /* | */
 			nil,        /* / */
@@ -1905,7 +1970,7 @@ var actionTab = actionTable{
 			nil,        /* SELECT */
 			nil,        /* * */
 			nil,        /* COUNT */
-			reduce(50), /* string, reduce: Joiner */
+			nil,        /* string */
 			reduce(50), /* var, reduce: Joiner */
 			nil,        /* FROM */
 			nil,        /* WHERE */
@@ -1913,6 +1978,7 @@ var actionTab = actionTable{
 			reduce(50), /* }, reduce: Joiner */
 			nil,        /* . */
 			reduce(50), /* uri, reduce: Joiner */
+			reduce(50), /* quotedstring, reduce: Joiner */
 			reduce(50), /* url, reduce: Joiner */
 			nil,        /* | */
 			nil,        /* / */
@@ -1934,14 +2000,15 @@ var actionTab = actionTable{
 			nil,        /* SELECT */
 			nil,        /* * */
 			nil,        /* COUNT */
-			shift(32),  /* string */
-			shift(33),  /* var */
+			nil,        /* string */
+			shift(32),  /* var */
 			nil,        /* FROM */
 			nil,        /* WHERE */
 			reduce(49), /* {, reduce: RestOfWhere */
 			reduce(49), /* }, reduce: RestOfWhere */
 			nil,        /* . */
-			shift(40),  /* uri */
+			shift(39),  /* uri */
+			shift(40),  /* quotedstring */
 			shift(41),  /* url */
 			nil,        /* | */
 			nil,        /* / */
@@ -1967,10 +2034,11 @@ var actionTab = actionTable{
 			nil,       /* var */
 			nil,       /* FROM */
 			nil,       /* WHERE */
-			shift(34), /* { */
+			shift(33), /* { */
 			nil,       /* } */
 			nil,       /* . */
 			nil,       /* uri */
+			nil,       /* quotedstring */
 			nil,       /* url */
 			nil,       /* | */
 			nil,       /* / */
@@ -2000,6 +2068,7 @@ var actionTab = actionTable{
 			reduce(51), /* }, reduce: Joiner */
 			shift(72),  /* . */
 			nil,        /* uri */
+			nil,        /* quotedstring */
 			nil,        /* url */
 			nil,        /* | */
 			nil,        /* / */
@@ -2021,14 +2090,15 @@ var actionTab = actionTable{
 			nil,       /* SELECT */
 			nil,       /* * */
 			nil,       /* COUNT */
-			shift(32), /* string */
-			shift(33), /* var */
+			nil,       /* string */
+			shift(32), /* var */
 			nil,       /* FROM */
 			nil,       /* WHERE */
 			nil,       /* { */
 			nil,       /* } */
 			nil,       /* . */
-			shift(40), /* uri */
+			shift(39), /* uri */
+			shift(40), /* quotedstring */
 			shift(41), /* url */
 			nil,       /* | */
 			nil,       /* / */
@@ -2050,14 +2120,15 @@ var actionTab = actionTable{
 			nil,       /* SELECT */
 			nil,       /* * */
 			nil,       /* COUNT */
-			shift(32), /* string */
-			shift(33), /* var */
+			nil,       /* string */
+			shift(32), /* var */
 			nil,       /* FROM */
 			nil,       /* WHERE */
 			nil,       /* { */
 			nil,       /* } */
 			nil,       /* . */
-			shift(40), /* uri */
+			shift(39), /* uri */
+			shift(40), /* quotedstring */
 			shift(41), /* url */
 			nil,       /* | */
 			nil,       /* / */
@@ -2087,6 +2158,7 @@ var actionTab = actionTable{
 			nil,       /* } */
 			nil,       /* . */
 			nil,       /* uri */
+			nil,       /* quotedstring */
 			nil,       /* url */
 			nil,       /* | */
 			nil,       /* / */
@@ -2116,6 +2188,7 @@ var actionTab = actionTable{
 			reduce(50), /* }, reduce: Joiner */
 			nil,        /* . */
 			nil,        /* uri */
+			nil,        /* quotedstring */
 			nil,        /* url */
 			nil,        /* | */
 			nil,        /* / */
@@ -2145,6 +2218,7 @@ var actionTab = actionTable{
 			nil,        /* } */
 			shift(107), /* . */
 			nil,        /* uri */
+			nil,        /* quotedstring */
 			nil,        /* url */
 			nil,        /* | */
 			nil,        /* / */
@@ -2174,6 +2248,7 @@ var actionTab = actionTable{
 			shift(108), /* } */
 			nil,        /* . */
 			nil,        /* uri */
+			nil,        /* quotedstring */
 			nil,        /* url */
 			nil,        /* | */
 			nil,        /* / */
@@ -2203,6 +2278,7 @@ var actionTab = actionTable{
 			nil,        /* } */
 			nil,        /* . */
 			nil,        /* uri */
+			nil,        /* quotedstring */
 			nil,        /* url */
 			nil,        /* | */
 			nil,        /* / */
@@ -2228,10 +2304,11 @@ var actionTab = actionTable{
 			nil,        /* var */
 			nil,        /* FROM */
 			nil,        /* WHERE */
-			shift(34),  /* { */
+			shift(33),  /* { */
 			shift(109), /* } */
 			nil,        /* . */
 			nil,        /* uri */
+			nil,        /* quotedstring */
 			nil,        /* url */
 			nil,        /* | */
 			nil,        /* / */
@@ -2261,6 +2338,7 @@ var actionTab = actionTable{
 			reduce(25), /* }, reduce: TriplesBlock */
 			reduce(25), /* ., reduce: TriplesBlock */
 			nil,        /* uri */
+			nil,        /* quotedstring */
 			nil,        /* url */
 			nil,        /* | */
 			nil,        /* / */
@@ -2290,6 +2368,7 @@ var actionTab = actionTable{
 			nil,        /* } */
 			nil,        /* . */
 			nil,        /* uri */
+			nil,        /* quotedstring */
 			nil,        /* url */
 			nil,        /* | */
 			nil,        /* / */
@@ -2319,6 +2398,7 @@ var actionTab = actionTable{
 			reduce(27), /* }, reduce: VarOrTerm */
 			reduce(27), /* ., reduce: VarOrTerm */
 			nil,        /* uri */
+			nil,        /* quotedstring */
 			nil,        /* url */
 			nil,        /* | */
 			nil,        /* / */
@@ -2344,10 +2424,11 @@ var actionTab = actionTable{
 			nil,        /* var */
 			nil,        /* FROM */
 			nil,        /* WHERE */
-			reduce(30), /* {, reduce: GraphTerm */
-			reduce(30), /* }, reduce: GraphTerm */
-			reduce(30), /* ., reduce: GraphTerm */
+			reduce(16), /* {, reduce: Var */
+			reduce(16), /* }, reduce: Var */
+			reduce(16), /* ., reduce: Var */
 			nil,        /* uri */
+			nil,        /* quotedstring */
 			nil,        /* url */
 			nil,        /* | */
 			nil,        /* / */
@@ -2373,10 +2454,11 @@ var actionTab = actionTable{
 			nil,        /* var */
 			nil,        /* FROM */
 			nil,        /* WHERE */
-			reduce(16), /* {, reduce: Var */
-			reduce(16), /* }, reduce: Var */
-			reduce(16), /* ., reduce: Var */
+			reduce(26), /* {, reduce: Triple */
+			reduce(26), /* }, reduce: Triple */
+			reduce(26), /* ., reduce: Triple */
 			nil,        /* uri */
+			nil,        /* quotedstring */
 			nil,        /* url */
 			nil,        /* | */
 			nil,        /* / */
@@ -2402,10 +2484,11 @@ var actionTab = actionTable{
 			nil,        /* var */
 			nil,        /* FROM */
 			nil,        /* WHERE */
-			reduce(26), /* {, reduce: Triple */
-			reduce(26), /* }, reduce: Triple */
-			reduce(26), /* ., reduce: Triple */
+			reduce(28), /* {, reduce: VarOrTerm */
+			reduce(28), /* }, reduce: VarOrTerm */
+			reduce(28), /* ., reduce: VarOrTerm */
 			nil,        /* uri */
+			nil,        /* quotedstring */
 			nil,        /* url */
 			nil,        /* | */
 			nil,        /* / */
@@ -2431,10 +2514,11 @@ var actionTab = actionTable{
 			nil,        /* var */
 			nil,        /* FROM */
 			nil,        /* WHERE */
-			reduce(28), /* {, reduce: VarOrTerm */
-			reduce(28), /* }, reduce: VarOrTerm */
-			reduce(28), /* ., reduce: VarOrTerm */
+			reduce(29), /* {, reduce: GraphTerm */
+			reduce(29), /* }, reduce: GraphTerm */
+			reduce(29), /* ., reduce: GraphTerm */
 			nil,        /* uri */
+			nil,        /* quotedstring */
 			nil,        /* url */
 			nil,        /* | */
 			nil,        /* / */
@@ -2460,10 +2544,11 @@ var actionTab = actionTable{
 			nil,        /* var */
 			nil,        /* FROM */
 			nil,        /* WHERE */
-			reduce(29), /* {, reduce: GraphTerm */
-			reduce(29), /* }, reduce: GraphTerm */
-			reduce(29), /* ., reduce: GraphTerm */
+			reduce(30), /* {, reduce: GraphTerm */
+			reduce(30), /* }, reduce: GraphTerm */
+			reduce(30), /* ., reduce: GraphTerm */
 			nil,        /* uri */
+			nil,        /* quotedstring */
 			nil,        /* url */
 			nil,        /* | */
 			nil,        /* / */
@@ -2493,6 +2578,7 @@ var actionTab = actionTable{
 			reduce(31), /* }, reduce: GraphTerm */
 			reduce(31), /* ., reduce: GraphTerm */
 			nil,        /* uri */
+			nil,        /* quotedstring */
 			nil,        /* url */
 			nil,        /* | */
 			nil,        /* / */
@@ -2522,6 +2608,7 @@ var actionTab = actionTable{
 			nil,       /* } */
 			nil,       /* . */
 			shift(58), /* uri */
+			nil,       /* quotedstring */
 			shift(59), /* url */
 			nil,       /* | */
 			nil,       /* / */
@@ -2551,6 +2638,7 @@ var actionTab = actionTable{
 			nil,       /* } */
 			nil,       /* . */
 			shift(58), /* uri */
+			nil,       /* quotedstring */
 			shift(59), /* url */
 			nil,       /* | */
 			nil,       /* / */
@@ -2572,7 +2660,7 @@ var actionTab = actionTable{
 			nil,        /* SELECT */
 			nil,        /* * */
 			nil,        /* COUNT */
-			reduce(44), /* string, reduce: PathMod */
+			nil,        /* string */
 			reduce(44), /* var, reduce: PathMod */
 			nil,        /* FROM */
 			nil,        /* WHERE */
@@ -2580,6 +2668,7 @@ var actionTab = actionTable{
 			nil,        /* } */
 			nil,        /* . */
 			reduce(44), /* uri, reduce: PathMod */
+			reduce(44), /* quotedstring, reduce: PathMod */
 			reduce(44), /* url, reduce: PathMod */
 			reduce(44), /* |, reduce: PathMod */
 			reduce(44), /* /, reduce: PathMod */
@@ -2601,7 +2690,7 @@ var actionTab = actionTable{
 			nil,        /* SELECT */
 			nil,        /* * */
 			nil,        /* COUNT */
-			reduce(37), /* string, reduce: PathElt */
+			nil,        /* string */
 			reduce(37), /* var, reduce: PathElt */
 			nil,        /* FROM */
 			nil,        /* WHERE */
@@ -2609,6 +2698,7 @@ var actionTab = actionTable{
 			nil,        /* } */
 			nil,        /* . */
 			reduce(37), /* uri, reduce: PathElt */
+			reduce(37), /* quotedstring, reduce: PathElt */
 			reduce(37), /* url, reduce: PathElt */
 			reduce(37), /* |, reduce: PathElt */
 			reduce(37), /* /, reduce: PathElt */
@@ -2630,7 +2720,7 @@ var actionTab = actionTable{
 			nil,        /* SELECT */
 			nil,        /* * */
 			nil,        /* COUNT */
-			reduce(43), /* string, reduce: PathMod */
+			nil,        /* string */
 			reduce(43), /* var, reduce: PathMod */
 			nil,        /* FROM */
 			nil,        /* WHERE */
@@ -2638,6 +2728,7 @@ var actionTab = actionTable{
 			nil,        /* } */
 			nil,        /* . */
 			reduce(43), /* uri, reduce: PathMod */
+			reduce(43), /* quotedstring, reduce: PathMod */
 			reduce(43), /* url, reduce: PathMod */
 			reduce(43), /* |, reduce: PathMod */
 			reduce(43), /* /, reduce: PathMod */
@@ -2659,7 +2750,7 @@ var actionTab = actionTable{
 			nil,        /* SELECT */
 			nil,        /* * */
 			nil,        /* COUNT */
-			reduce(45), /* string, reduce: PathMod */
+			nil,        /* string */
 			reduce(45), /* var, reduce: PathMod */
 			nil,        /* FROM */
 			nil,        /* WHERE */
@@ -2667,6 +2758,7 @@ var actionTab = actionTable{
 			nil,        /* } */
 			nil,        /* . */
 			reduce(45), /* uri, reduce: PathMod */
+			reduce(45), /* quotedstring, reduce: PathMod */
 			reduce(45), /* url, reduce: PathMod */
 			reduce(45), /* |, reduce: PathMod */
 			reduce(45), /* /, reduce: PathMod */
@@ -2696,6 +2788,7 @@ var actionTab = actionTable{
 			nil,        /* } */
 			nil,        /* . */
 			nil,        /* uri */
+			nil,        /* quotedstring */
 			nil,        /* url */
 			reduce(34), /* |, reduce: Path */
 			nil,        /* / */
@@ -2725,6 +2818,7 @@ var actionTab = actionTable{
 			nil,        /* } */
 			nil,        /* . */
 			nil,        /* uri */
+			nil,        /* quotedstring */
 			nil,        /* url */
 			reduce(16), /* |, reduce: Var */
 			nil,        /* / */
@@ -2754,6 +2848,7 @@ var actionTab = actionTable{
 			nil,        /* } */
 			nil,        /* . */
 			nil,        /* uri */
+			nil,        /* quotedstring */
 			nil,        /* url */
 			shift(112), /* | */
 			nil,        /* / */
@@ -2783,6 +2878,7 @@ var actionTab = actionTable{
 			nil,        /* } */
 			nil,        /* . */
 			nil,        /* uri */
+			nil,        /* quotedstring */
 			nil,        /* url */
 			reduce(39), /* |, reduce: PathPrimary */
 			reduce(39), /* /, reduce: PathPrimary */
@@ -2812,6 +2908,7 @@ var actionTab = actionTable{
 			nil,        /* } */
 			nil,        /* . */
 			nil,        /* uri */
+			nil,        /* quotedstring */
 			nil,        /* url */
 			reduce(41), /* |, reduce: PathPrimary */
 			reduce(41), /* /, reduce: PathPrimary */
@@ -2841,6 +2938,7 @@ var actionTab = actionTable{
 			nil,        /* } */
 			nil,        /* . */
 			nil,        /* uri */
+			nil,        /* quotedstring */
 			nil,        /* url */
 			reduce(32), /* |, reduce: Path */
 			shift(114), /* / */
@@ -2870,6 +2968,7 @@ var actionTab = actionTable{
 			nil,        /* } */
 			nil,        /* . */
 			nil,        /* uri */
+			nil,        /* quotedstring */
 			nil,        /* url */
 			reduce(35), /* |, reduce: PathSequence */
 			reduce(35), /* /, reduce: PathSequence */
@@ -2899,6 +2998,7 @@ var actionTab = actionTable{
 			nil,        /* } */
 			nil,        /* . */
 			nil,        /* uri */
+			nil,        /* quotedstring */
 			nil,        /* url */
 			reduce(38), /* |, reduce: PathElt */
 			reduce(38), /* /, reduce: PathElt */
@@ -2928,6 +3028,7 @@ var actionTab = actionTable{
 			nil,        /* } */
 			nil,        /* . */
 			nil,        /* uri */
+			nil,        /* quotedstring */
 			nil,        /* url */
 			reduce(40), /* |, reduce: PathPrimary */
 			reduce(40), /* /, reduce: PathPrimary */
@@ -2957,6 +3058,7 @@ var actionTab = actionTable{
 			nil,        /* } */
 			nil,        /* . */
 			shift(95),  /* uri */
+			nil,        /* quotedstring */
 			shift(96),  /* url */
 			nil,        /* | */
 			nil,        /* / */
@@ -2986,6 +3088,7 @@ var actionTab = actionTable{
 			reduce(51), /* }, reduce: Joiner */
 			shift(120), /* . */
 			nil,        /* uri */
+			nil,        /* quotedstring */
 			nil,        /* url */
 			nil,        /* | */
 			nil,        /* / */
@@ -3007,7 +3110,7 @@ var actionTab = actionTable{
 			nil,        /* SELECT */
 			nil,        /* * */
 			nil,        /* COUNT */
-			reduce(53), /* string, reduce: GraphPatternNotTriples */
+			nil,        /* string */
 			reduce(53), /* var, reduce: GraphPatternNotTriples */
 			nil,        /* FROM */
 			nil,        /* WHERE */
@@ -3015,6 +3118,7 @@ var actionTab = actionTable{
 			reduce(53), /* }, reduce: GraphPatternNotTriples */
 			reduce(53), /* ., reduce: GraphPatternNotTriples */
 			reduce(53), /* uri, reduce: GraphPatternNotTriples */
+			reduce(53), /* quotedstring, reduce: GraphPatternNotTriples */
 			reduce(53), /* url, reduce: GraphPatternNotTriples */
 			nil,        /* | */
 			nil,        /* / */
@@ -3044,6 +3148,7 @@ var actionTab = actionTable{
 			shift(122), /* } */
 			nil,        /* . */
 			nil,        /* uri */
+			nil,        /* quotedstring */
 			nil,        /* url */
 			nil,        /* | */
 			nil,        /* / */
@@ -3073,6 +3178,7 @@ var actionTab = actionTable{
 			reduce(56), /* }, reduce: GroupGraphPatternSub */
 			shift(69),  /* . */
 			nil,        /* uri */
+			nil,        /* quotedstring */
 			nil,        /* url */
 			nil,        /* | */
 			nil,        /* / */
@@ -3102,6 +3208,7 @@ var actionTab = actionTable{
 			nil,        /* } */
 			reduce(53), /* ., reduce: GraphPatternNotTriples */
 			nil,        /* uri */
+			nil,        /* quotedstring */
 			nil,        /* url */
 			nil,        /* | */
 			nil,        /* / */
@@ -3123,14 +3230,15 @@ var actionTab = actionTable{
 			nil,       /* SELECT */
 			nil,       /* * */
 			nil,       /* COUNT */
-			shift(32), /* string */
-			shift(33), /* var */
+			nil,       /* string */
+			shift(32), /* var */
 			nil,       /* FROM */
 			nil,       /* WHERE */
 			nil,       /* { */
 			nil,       /* } */
 			nil,       /* . */
-			shift(40), /* uri */
+			shift(39), /* uri */
+			shift(40), /* quotedstring */
 			shift(41), /* url */
 			nil,       /* | */
 			nil,       /* / */
@@ -3152,7 +3260,7 @@ var actionTab = actionTable{
 			nil,        /* SELECT */
 			nil,        /* * */
 			nil,        /* COUNT */
-			reduce(54), /* string, reduce: GroupGraphPattern */
+			nil,        /* string */
 			reduce(54), /* var, reduce: GroupGraphPattern */
 			nil,        /* FROM */
 			nil,        /* WHERE */
@@ -3160,6 +3268,7 @@ var actionTab = actionTable{
 			reduce(54), /* }, reduce: GroupGraphPattern */
 			reduce(54), /* ., reduce: GroupGraphPattern */
 			reduce(54), /* uri, reduce: GroupGraphPattern */
+			reduce(54), /* quotedstring, reduce: GroupGraphPattern */
 			reduce(54), /* url, reduce: GroupGraphPattern */
 			nil,        /* | */
 			nil,        /* / */
@@ -3189,6 +3298,7 @@ var actionTab = actionTable{
 			nil,        /* } */
 			nil,        /* . */
 			nil,        /* uri */
+			nil,        /* quotedstring */
 			nil,        /* url */
 			nil,        /* | */
 			nil,        /* / */
@@ -3210,7 +3320,7 @@ var actionTab = actionTable{
 			nil,        /* SELECT */
 			nil,        /* * */
 			nil,        /* COUNT */
-			reduce(33), /* string, reduce: Path */
+			nil,        /* string */
 			reduce(33), /* var, reduce: Path */
 			nil,        /* FROM */
 			nil,        /* WHERE */
@@ -3218,6 +3328,7 @@ var actionTab = actionTable{
 			nil,        /* } */
 			nil,        /* . */
 			reduce(33), /* uri, reduce: Path */
+			reduce(33), /* quotedstring, reduce: Path */
 			reduce(33), /* url, reduce: Path */
 			reduce(33), /* |, reduce: Path */
 			shift(87),  /* / */
@@ -3239,7 +3350,7 @@ var actionTab = actionTable{
 			nil,        /* SELECT */
 			nil,        /* * */
 			nil,        /* COUNT */
-			reduce(36), /* string, reduce: PathSequence */
+			nil,        /* string */
 			reduce(36), /* var, reduce: PathSequence */
 			nil,        /* FROM */
 			nil,        /* WHERE */
@@ -3247,6 +3358,7 @@ var actionTab = actionTable{
 			nil,        /* } */
 			nil,        /* . */
 			reduce(36), /* uri, reduce: PathSequence */
+			reduce(36), /* quotedstring, reduce: PathSequence */
 			reduce(36), /* url, reduce: PathSequence */
 			reduce(36), /* |, reduce: PathSequence */
 			reduce(36), /* /, reduce: PathSequence */
@@ -3276,6 +3388,7 @@ var actionTab = actionTable{
 			nil,        /* } */
 			nil,        /* . */
 			shift(95),  /* uri */
+			nil,        /* quotedstring */
 			shift(96),  /* url */
 			nil,        /* | */
 			nil,        /* / */
@@ -3297,7 +3410,7 @@ var actionTab = actionTable{
 			nil,        /* SELECT */
 			reduce(42), /* *, reduce: PathPrimary */
 			nil,        /* COUNT */
-			reduce(42), /* string, reduce: PathPrimary */
+			nil,        /* string */
 			reduce(42), /* var, reduce: PathPrimary */
 			nil,        /* FROM */
 			nil,        /* WHERE */
@@ -3305,6 +3418,7 @@ var actionTab = actionTable{
 			nil,        /* } */
 			nil,        /* . */
 			reduce(42), /* uri, reduce: PathPrimary */
+			reduce(42), /* quotedstring, reduce: PathPrimary */
 			reduce(42), /* url, reduce: PathPrimary */
 			reduce(42), /* |, reduce: PathPrimary */
 			reduce(42), /* /, reduce: PathPrimary */
@@ -3334,6 +3448,7 @@ var actionTab = actionTable{
 			nil,        /* } */
 			nil,        /* . */
 			shift(95),  /* uri */
+			nil,        /* quotedstring */
 			shift(96),  /* url */
 			nil,        /* | */
 			nil,        /* / */
@@ -3363,6 +3478,7 @@ var actionTab = actionTable{
 			nil,        /* } */
 			nil,        /* . */
 			nil,        /* uri */
+			nil,        /* quotedstring */
 			nil,        /* url */
 			reduce(44), /* |, reduce: PathMod */
 			reduce(44), /* /, reduce: PathMod */
@@ -3392,6 +3508,7 @@ var actionTab = actionTable{
 			nil,        /* } */
 			nil,        /* . */
 			nil,        /* uri */
+			nil,        /* quotedstring */
 			nil,        /* url */
 			reduce(37), /* |, reduce: PathElt */
 			reduce(37), /* /, reduce: PathElt */
@@ -3421,6 +3538,7 @@ var actionTab = actionTable{
 			nil,        /* } */
 			nil,        /* . */
 			nil,        /* uri */
+			nil,        /* quotedstring */
 			nil,        /* url */
 			reduce(43), /* |, reduce: PathMod */
 			reduce(43), /* /, reduce: PathMod */
@@ -3450,6 +3568,7 @@ var actionTab = actionTable{
 			nil,        /* } */
 			nil,        /* . */
 			nil,        /* uri */
+			nil,        /* quotedstring */
 			nil,        /* url */
 			reduce(45), /* |, reduce: PathMod */
 			reduce(45), /* /, reduce: PathMod */
@@ -3479,6 +3598,7 @@ var actionTab = actionTable{
 			nil,        /* } */
 			nil,        /* . */
 			nil,        /* uri */
+			nil,        /* quotedstring */
 			nil,        /* url */
 			shift(112), /* | */
 			nil,        /* / */
@@ -3500,14 +3620,15 @@ var actionTab = actionTable{
 			nil,        /* SELECT */
 			nil,        /* * */
 			nil,        /* COUNT */
-			shift(32),  /* string */
-			shift(33),  /* var */
+			nil,        /* string */
+			shift(32),  /* var */
 			nil,        /* FROM */
 			nil,        /* WHERE */
 			reduce(50), /* {, reduce: Joiner */
 			reduce(50), /* }, reduce: Joiner */
 			nil,        /* . */
-			shift(40),  /* uri */
+			shift(39),  /* uri */
+			shift(40),  /* quotedstring */
 			shift(41),  /* url */
 			nil,        /* | */
 			nil,        /* / */
@@ -3537,6 +3658,7 @@ var actionTab = actionTable{
 			reduce(48), /* }, reduce: RestOfWhere */
 			nil,        /* . */
 			nil,        /* uri */
+			nil,        /* quotedstring */
 			nil,        /* url */
 			nil,        /* | */
 			nil,        /* / */
@@ -3566,6 +3688,7 @@ var actionTab = actionTable{
 			nil,        /* } */
 			reduce(54), /* ., reduce: GroupGraphPattern */
 			nil,        /* uri */
+			nil,        /* quotedstring */
 			nil,        /* url */
 			nil,        /* | */
 			nil,        /* / */
@@ -3595,6 +3718,7 @@ var actionTab = actionTable{
 			reduce(57), /* }, reduce: GroupGraphPatternSub */
 			shift(69),  /* . */
 			nil,        /* uri */
+			nil,        /* quotedstring */
 			nil,        /* url */
 			nil,        /* | */
 			nil,        /* / */
@@ -3624,6 +3748,7 @@ var actionTab = actionTable{
 			nil,        /* } */
 			nil,        /* . */
 			nil,        /* uri */
+			nil,        /* quotedstring */
 			nil,        /* url */
 			reduce(33), /* |, reduce: Path */
 			shift(114), /* / */
@@ -3653,6 +3778,7 @@ var actionTab = actionTable{
 			nil,        /* } */
 			nil,        /* . */
 			nil,        /* uri */
+			nil,        /* quotedstring */
 			nil,        /* url */
 			reduce(36), /* |, reduce: PathSequence */
 			reduce(36), /* /, reduce: PathSequence */
@@ -3682,6 +3808,7 @@ var actionTab = actionTable{
 			nil,        /* } */
 			nil,        /* . */
 			nil,        /* uri */
+			nil,        /* quotedstring */
 			nil,        /* url */
 			reduce(42), /* |, reduce: PathPrimary */
 			reduce(42), /* /, reduce: PathPrimary */

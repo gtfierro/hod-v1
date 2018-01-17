@@ -2,14 +2,18 @@
 _uppercase : 'A'-'Z' ;
 _lowercase : 'a'-'z' ;
 _digit : '0'-'9' ;
+_quote : '"' ;
 _varchar : (_uppercase | _lowercase | _digit | '_' | '-' ) ;
 _varstring : _varchar {_varchar} ;
 _urichar : ( _uppercase | _lowercase | _digit | '_' | '\\' | '-' | '#' | '%' | '$' | '@' ) ;
 _uristring : _uristring {_uristring} ;
+_char : (_uppercase | _lowercase | _digit | '_' | '-' | ' ' | ':') ;
+_charstring : '"' {.} '"' ;
 var : '?' _varstring ;
 uri : _varstring ':' _varstring ;
 url : '<' {.} '>' ; 
 string : _varstring ;
+quotedstring : _charstring ;
 
 << import "github.com/gtfierro/hod/lang/ast" >>
 
@@ -81,7 +85,7 @@ VarOrTerm
 
 GraphTerm
     : uri       << ast.ParseString($0) >>
-    | string    << ast.ParseString($0) >>
+    | quotedstring    << ast.ParseQuotedString($0) >>
     | url       << ast.ParseString($0) >>
     /* TODO: numerical literal? */
     ;

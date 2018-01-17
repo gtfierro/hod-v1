@@ -321,13 +321,13 @@ var productionsTable = ProdTab{
 		},
 	},
 	ProdTabEntry{
-		String: `GraphTerm : string	<< ast.ParseString(X[0]) >>`,
+		String: `GraphTerm : quotedstring	<< ast.ParseQuotedString(X[0]) >>`,
 		Id:         "GraphTerm",
 		NTType:     15,
 		Index:      30,
 		NumSymbols: 1,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
-			return ast.ParseString(X[0])
+			return ast.ParseQuotedString(X[0])
 		},
 	},
 	ProdTabEntry{
