@@ -99,7 +99,7 @@ func main() {
 		},
 		{
 			Name:   "check",
-			Usage:  "Check access to MDAL on behalf of some key",
+			Usage:  "Check access to HodDB on behalf of some key",
 			Action: doCheck,
 			Flags: []cli.Flag{
 				cli.StringFlag{
@@ -120,13 +120,13 @@ func main() {
 				},
 				cli.StringFlag{
 					Name:  "uri, u",
-					Usage: "The base URI of MDAL",
+					Usage: "The base URI of HodDB",
 				},
 			},
 		},
 		{
 			Name:   "grant",
-			Usage:  "Grant access to MDAL to some key",
+			Usage:  "Grant access to HodDB to some key",
 			Action: doGrant,
 			Flags: []cli.Flag{
 				cli.StringFlag{
@@ -149,7 +149,7 @@ func main() {
 				},
 				cli.StringFlag{
 					Name:  "expiry",
-					Usage: "Set the expiry on access to MDAL measured from now e.g. 3d7h20m",
+					Usage: "Set the expiry on access to HodDB measured from now e.g. 3d7h20m",
 				},
 				cli.StringFlag{
 					Name:  "key, k",
@@ -157,7 +157,7 @@ func main() {
 				},
 				cli.StringFlag{
 					Name:  "uri, u",
-					Usage: "The base URI of MDAL",
+					Usage: "The base URI of HodDB",
 				},
 			},
 		},
