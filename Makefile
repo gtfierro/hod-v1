@@ -1,5 +1,5 @@
 APP?=hod
-RELEASE?=0.5.5
+RELEASE?=0.5.6
 COMMIT?=$(shell git rev-parse --short HEAD)
 PROJECT?=github.com/gtfierro/hod
 PERSISTDIR?=/etc/hod
@@ -9,12 +9,12 @@ clean:
 	rm -f ${APP}
 
 build: clean
-	go build \
+	CGO_CFLAGS_ALLOW=.*/github.com/gtfierro/hod/turtle go build \
 		-ldflags "-s -w -X ${PROJECT}/version.Release=${RELEASE} \
 						-X ${PROJECT}/version.Commit=${COMMIT}" \
 						-o ${APP}
 install:
-	go install \
+	CGO_CFLAGS_ALLOW=.*/github.com/gtfierro/hod/turtle go install \
 		-ldflags "-s -w -X ${PROJECT}/version.Release=${RELEASE} \
 						-X ${PROJECT}/version.Commit=${COMMIT}"
 
