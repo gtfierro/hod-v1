@@ -29,11 +29,11 @@ Vue.component('graph', {
     },
     template: '\
 		<span>\
-			<v-text-field name="brickclass" label="Brick class search" :value="bus.searchterm" class="input-group--focused" @input="research" single-line></v-text-field>\
 			<div id="mynetwork"></div>\
 		</span>\
     '
 })
+			/* <v-text-field name="brickclass" label="Brick class search" :value="bus.searchterm" class="input-group--focused" @input="research" single-line></v-text-field>\*/
 
 /*
  *        headers: [
@@ -176,6 +176,19 @@ var vm = new Vue({
             console.log("GRAPH");
             this.page = 'graph';
         },
+        research: function(e) {
+            console.log("CHANGE", e);
+            QUERY = {}
+            get_classes(e, function(res) {
+                res.forEach(function(klass) {
+                    var vn = generateVar(5);
+                    QUERY[klass] = {SELECT: vn, WHERE: [vn + " rdf:type " + klass + " . "]};
+                });
+                console.log(to_query());
+                //rebuildquery(e);
+                submit_query();
+            });
+        },
         doquery: function() {
             console.log("QUERY");
             this.page = 'query';
@@ -193,10 +206,17 @@ var vm = new Vue({
         <v-app>\
             <v-content class="container">\
                 <h1>Query Builder</h1>\
-                <div class="text-xs-left">\
-                    <v-btn @click="dograph" color="green lighten-1" dark>1. Graph</v-btn>\
-                    <v-btn @click="doquery" color="blue lighten-1" dark>2. Query</v-btn>\
-                </div>\
+                <v-layout row>\
+                    <v-flex xs2>\
+                        <v-btn @click="dograph" color="green lighten-1" dark>1. Graph</v-btn>\
+                    </v-flex xs2>\
+                    <v-flex xs2>\
+                        <v-btn @click="doquery" color="blue lighten-1" dark>2. Query</v-btn>\
+                    </v-flex xs2>\
+                    <v-flex xs8>\
+                        <v-text-field name="brickclass" label="Brick class search" :value="bus.searchterm" class="input-group--focused" @input="research" single-line></v-text-field>\
+                    </v-flex xs8>\
+                </v-layout row>\
                 <graph v-if="render_graph"></graph>\
                 <query v-if="render_query"></query>\
             </v-content>\

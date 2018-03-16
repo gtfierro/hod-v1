@@ -140,6 +140,7 @@ var submit_query = function() {
         var n = newdata.nodes[idx];
         if (get_var_name(n.id).length < n.id.length) {
             n.varname = get_var_name(n.id);
+            n.label = get_old_name(n.id);
             n.id = get_old_name(n.id);
             if (n.id == 'bf:uri') {
                 continue;
