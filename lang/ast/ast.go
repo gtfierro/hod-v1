@@ -312,9 +312,7 @@ func ParseString(_var interface{}) (string, error) {
 }
 
 func ParseQuotedString(_var interface{}) (string, error) {
-	l := len(_var.(*token.Token).Lit)
-	fmt.Println(string(_var.(*token.Token).Lit))
-	return string(_var.(*token.Token).Lit[1 : l-1]), nil
+	return string(_var.(*token.Token).Lit), nil
 }
 
 func NewPathSequence(_pred interface{}) ([]PathPattern, error) {
