@@ -325,6 +325,9 @@ func AppendPathSequence(_seq, _pred interface{}) ([]PathPattern, error) {
 
 func NewPathPattern(_pred interface{}) (PathPattern, error) {
 	pred, _ := ParseString(_pred)
+	if pred == "a" {
+		pred = "rdf:type"
+	}
 	return PathPattern{
 		Predicate: turtle.ParseURI(pred),
 		Pattern:   PATTERN_SINGLE,
