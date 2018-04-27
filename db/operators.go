@@ -613,6 +613,8 @@ func (op *resolveVarTripleFromSubject) run(ctx *queryContext) error {
 	rsop_relation.add3Values(subjectVar, predicateVar, objectVar, relation_contents)
 	ctx.rel.join(rsop_relation, []string{subjectVar}, ctx)
 	ctx.markJoined(subjectVar)
+	ctx.markJoined(predicateVar)
+	ctx.markJoined(objectVar)
 	return nil
 }
 
@@ -657,6 +659,8 @@ func (op *resolveVarTripleFromObject) run(ctx *queryContext) error {
 
 	rsop_relation.add3Values(objectVar, predicateVar, subjectVar, relation_contents)
 	ctx.rel.join(rsop_relation, []string{objectVar}, ctx)
+	ctx.markJoined(subjectVar)
+	ctx.markJoined(predicateVar)
 	ctx.markJoined(objectVar)
 	return nil
 }
@@ -708,7 +712,9 @@ func (op *resolveVarTripleFromPredicate) run(ctx *queryContext) error {
 	ctx.markJoined(predicateVar)
 	rsop_relation.add3Values(predicateVar, subjectVar, objectVar, relation_contents)
 	ctx.rel.join(rsop_relation, []string{predicateVar}, ctx)
+	ctx.markJoined(subjectVar)
 	ctx.markJoined(predicateVar)
+	ctx.markJoined(objectVar)
 	return nil
 
 }
@@ -729,7 +735,6 @@ func (op *resolveVarTripleAll) GetTerm() *queryTerm {
 	return op.term
 }
 
-// ?s ?p ?o; start from s
 func (op *resolveVarTripleAll) run(ctx *queryContext) error {
 	return nil
 }

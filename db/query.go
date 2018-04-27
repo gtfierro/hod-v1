@@ -56,17 +56,9 @@ func (db *DB) getQueryResults(q *sparql.Query) ([]*ResultRow, queryStats, error)
 		return nil, stats, err
 	}
 	since := time.Since(runStart)
-	//if db.showQueryLatencies {
-	//	log.Infof("Ran query in %s", since)
-	//}
 
 	runStart = time.Now()
-	// ctx2 expand
 	results := ctx.getResults()
-	//if db.showQueryLatencies {
-	//	log.Infof("Expanded tuples in %s", time.Since(runStart))
-	//	log.Infof("Has %d results", len(results))
-	//}
 	stats.ExecutionTime = since
 	stats.ExpandTime = time.Since(runStart)
 	stats.NumResults = len(results)
