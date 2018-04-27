@@ -47,7 +47,7 @@ func (rel *Relation) add1Value(key1 string, values *keyTree) {
 			return
 		}
 
-		row := NewRowWithNum(len(rel.vars))
+		row := NewRow()
 		row.addValue(key1pos, value)
 		rel.rows = append(rel.rows, row)
 		// add the row to the multiindex
@@ -79,7 +79,7 @@ func (rel *Relation) add2Values(key1, key2 string, values [][]Key) {
 			continue
 		}
 
-		row := NewRowWithNum(len(rel.vars))
+		row := NewRow()
 		row.addValue(key1pos, valuepair[0])
 		row.addValue(key2pos, valuepair[1])
 		rel.rows = append(rel.rows, row)
@@ -127,7 +127,7 @@ func (rel *Relation) add3Values(key1, key2, key3 string, values [][]Key) {
 			continue
 		}
 
-		row := NewRowWithNum(len(rel.vars))
+		row := NewRow()
 		row.addValue(key1pos, valuepair[0])
 		row.addValue(key2pos, valuepair[1])
 		row.addValue(key3pos, valuepair[2])
@@ -180,7 +180,6 @@ innerRows:
 		if otherRowsBitmap.IsEmpty() {
 			innerRow.release()
 			continue innerRows // skip this row because there are no values to join
-			//TODO: delete innerRow?
 		}
 		iter := otherRowsBitmap.Iterator()
 		for iter.HasNext() {

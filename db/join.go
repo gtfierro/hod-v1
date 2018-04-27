@@ -10,7 +10,9 @@ type Row struct {
 
 var ROWPOOL = sync.Pool{
 	New: func() interface{} {
-		return &Row{}
+		return &Row{
+			content: make([]byte, 64),
+		}
 	},
 }
 
@@ -26,9 +28,6 @@ func NewRowWithNum(withnum int) *Row {
 
 func (row *Row) release() {
 	row.content = row.content[:0]
-	//for i := range row.content {
-	//	row.content[i] = 0
-	//}
 	ROWPOOL.Put(row)
 }
 
@@ -52,6 +51,9 @@ func (row *Row) addValue(pos int, value Key) {
 
 func (row Row) valueAt(pos int) Key {
 	var k Key
+	if pos*4+4 > len(row.content) {
+		return k
+	}
 	copy(k[:], row.content[pos*4:pos*4+4])
 	return k
 }
