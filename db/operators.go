@@ -736,5 +736,40 @@ func (op *resolveVarTripleAll) GetTerm() *queryTerm {
 }
 
 func (op *resolveVarTripleAll) run(ctx *queryContext) error {
+	var (
+		subjectVar   = op.term.Subject.String()
+		objectVar    = op.term.Object.String()
+		predicateVar = op.term.Predicates[0].Predicate.String()
+	)
+	var relation = NewRelation([]string{subjectVar, predicateVar, objectVar})
+	var content [][]Key
+	iter := ctx.db.graphDB.NewIterator(nil, nil)
+	for iter.Next() {
+		var subjectHash Key
+		entityHash := iter.Key()
+		copy(subjectHash[:], entityHash[:4])
+		var entity = NewEntity()
+		_, err := entity.UnmarshalMsg(iter.Value())
+		if err != nil {
+			return err
+		}
+
+		for predHashStr, objects := range entity.OutEdges {
+			var predHash Key
+			copy(predHash[:], []byte(predHashStr))
+			for _, objectHash := range objects {
+				content = append(content, []Key{subjectHash, predHash, objectHash})
+			}
+		}
+	}
+	relation.add3Values(subjectVar, predicateVar, objectVar, content)
+	if len(ctx.rel.rows) > 0 {
+		panic("This should not happen! Tell Gabe")
+	}
+	// in this case, we just replace the relation
+	ctx.rel = relation
+	ctx.markJoined(subjectVar)
+	ctx.markJoined(predicateVar)
+	ctx.markJoined(objectVar)
 	return nil
 }
