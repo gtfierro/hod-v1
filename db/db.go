@@ -421,11 +421,11 @@ func (db *DB) loadRelationships(dataset turtle.DataSet) error {
 
 	rdf_namespace, found := dataset.Namespaces["rdf"]
 	if !found {
-		return errors.New("Relationships has no rdf namespace")
+		rdf_namespace = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
 	}
 	owl_namespace, found := dataset.Namespaces["owl"]
 	if !found {
-		return errors.New("Relationships has no owl namespace")
+		owl_namespace = "http://www.w3.org/2002/07/owl#"
 	}
 
 	for _, triple := range dataset.Triples {
