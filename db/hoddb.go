@@ -31,6 +31,8 @@ type HodDB struct {
 	dbdir string
 }
 
+// Creates or loads a new instance of HodDB from the provided config file. If any of the Turtle source files
+// in the "buildings" section have changed, HodDB will load them anew.
 func NewMultiDB(cfg *config.Config) (*HodDB, error) {
 	var mdb = &HodDB{
 		cfg:              cfg,
@@ -108,6 +110,7 @@ func (mdb *HodDB) saveIndexes() error {
 	return enc.Encode(mdb.loadedfilehashes)
 }
 
+// Execute the provided query against HodDB
 func (mdb *HodDB) RunQueryString(querystring string) (QueryResult, error) {
 	var emptyres QueryResult
 	if q, err := query.Parse(querystring); err != nil {
@@ -123,10 +126,12 @@ func (mdb *HodDB) RunQueryString(querystring string) (QueryResult, error) {
 	}
 }
 
+// List the databases loaded into HodDB by name
 func (mdb *HodDB) Databases() []string {
 	return mdb.buildings
 }
 
+// Execute a parsed query against HodDB
 func (mdb *HodDB) RunQuery(q *sparql.Query) (QueryResult, error) {
 	var databases = make(map[string]*DB)
 
@@ -210,6 +215,7 @@ func (mdb *HodDB) loadDataset(name, ttlfile string) error {
 	return nil
 }
 
+// Close HodDB
 func (mdb *HodDB) Close() {
 	mdb.dbs.Range(func(_dbname, _db interface{}) bool {
 		db := _db.(*DB)
@@ -218,6 +224,7 @@ func (mdb *HodDB) Close() {
 	})
 }
 
+// Wildcard search using Bleve through all values in the database
 func (mdb *HodDB) Search(q string, n int) ([]string, error) {
 	// just pick first db for now
 	var (
@@ -235,6 +242,7 @@ func (mdb *HodDB) Search(q string, n int) ([]string, error) {
 	return res, err
 }
 
+// Turn the results of the query into a GraphViz visualization of the classes and their relationships
 func (mdb *HodDB) QueryToClassDOT(q string) (string, error) {
 	// just pick first db for now
 	var (
@@ -263,6 +271,7 @@ func (mdb *HodDB) QueryToClassDOT(q string) (string, error) {
 	return res, err
 }
 
+// Turn the results of the query into a GraphViz visualization of the results
 func (mdb *HodDB) QueryToDOT(q string) (string, error) {
 	// just pick first db for now
 	var (
