@@ -73,7 +73,6 @@ func (db *DB) formQueryPlan(dg *dependencyGraph, q *sparql.Query) (*queryPlan, e
 				newop = &resolveVarTripleFromPredicate{term: term}
 			default: // all are vars
 				newop = &resolveVarTripleAll{term: term}
-				return qp, errors.New("?s ?p ?o queries not supported yet")
 			}
 		// subject/object variable terms
 		case subjectIsVariable && objectIsVariable && !predicateIsVariable:
