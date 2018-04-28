@@ -32,13 +32,13 @@ func init() {
 }
 
 type hodServer struct {
-	db         *hod.MultiDB
+	db         *hod.HodDB
 	port       string
 	staticpath string
 	router     *httprouter.Router
 }
 
-func StartHodServer(db *hod.MultiDB, cfg *config.Config) *http.Server {
+func StartHodServer(db *hod.HodDB, cfg *config.Config) *http.Server {
 	server := &hodServer{
 		db:         db,
 		port:       cfg.ServerPort,

@@ -20,7 +20,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-type MultiDB struct {
+type HodDB struct {
 	buildings []string
 	// database name => *db.DB
 	dbs sync.Map
@@ -31,8 +31,8 @@ type MultiDB struct {
 	dbdir string
 }
 
-func NewMultiDB(cfg *config.Config) (*MultiDB, error) {
-	var mdb = &MultiDB{
+func NewMultiDB(cfg *config.Config) (*HodDB, error) {
+	var mdb = &HodDB{
 		cfg:              cfg,
 		loadedfilehashes: make(map[string][]byte),
 	}
@@ -98,7 +98,7 @@ func NewMultiDB(cfg *config.Config) (*MultiDB, error) {
 	return mdb, nil
 }
 
-func (mdb *MultiDB) saveIndexes() error {
+func (mdb *HodDB) saveIndexes() error {
 	f, err := os.Create(filepath.Join(mdb.dbdir, "fileHashes"))
 	if err != nil {
 		return err
@@ -108,7 +108,7 @@ func (mdb *MultiDB) saveIndexes() error {
 	return enc.Encode(mdb.loadedfilehashes)
 }
 
-func (mdb *MultiDB) RunQueryString(querystring string) (QueryResult, error) {
+func (mdb *HodDB) RunQueryString(querystring string) (QueryResult, error) {
 	var emptyres QueryResult
 	if q, err := query.Parse(querystring); err != nil {
 		e := errors.Wrap(err, "Could not parse hod query")
@@ -123,11 +123,11 @@ func (mdb *MultiDB) RunQueryString(querystring string) (QueryResult, error) {
 	}
 }
 
-func (mdb *MultiDB) Databases() []string {
+func (mdb *HodDB) Databases() []string {
 	return mdb.buildings
 }
 
-func (mdb *MultiDB) RunQuery(q *sparql.Query) (QueryResult, error) {
+func (mdb *HodDB) RunQuery(q *sparql.Query) (QueryResult, error) {
 	var databases = make(map[string]*DB)
 
 	if q.From.AllDBs {
@@ -187,7 +187,7 @@ func (mdb *MultiDB) RunQuery(q *sparql.Query) (QueryResult, error) {
 	return result, nil
 }
 
-func (mdb *MultiDB) loadDataset(name, ttlfile string) error {
+func (mdb *HodDB) loadDataset(name, ttlfile string) error {
 	mdb.cfg.DBPath = filepath.Join(mdb.dbdir, name)
 	mdb.cfg.ReloadBrick = true
 	db, err := NewDB(mdb.cfg)
@@ -210,7 +210,7 @@ func (mdb *MultiDB) loadDataset(name, ttlfile string) error {
 	return nil
 }
 
-func (mdb *MultiDB) Close() {
+func (mdb *HodDB) Close() {
 	mdb.dbs.Range(func(_dbname, _db interface{}) bool {
 		db := _db.(*DB)
 		db.Close()
@@ -218,7 +218,7 @@ func (mdb *MultiDB) Close() {
 	})
 }
 
-func (mdb *MultiDB) Search(q string, n int) ([]string, error) {
+func (mdb *HodDB) Search(q string, n int) ([]string, error) {
 	// just pick first db for now
 	var (
 		res []string
@@ -235,7 +235,7 @@ func (mdb *MultiDB) Search(q string, n int) ([]string, error) {
 	return res, err
 }
 
-func (mdb *MultiDB) QueryToClassDOT(q string) (string, error) {
+func (mdb *HodDB) QueryToClassDOT(q string) (string, error) {
 	// just pick first db for now
 	var (
 		res string
@@ -263,7 +263,7 @@ func (mdb *MultiDB) QueryToClassDOT(q string) (string, error) {
 	return res, err
 }
 
-func (mdb *MultiDB) QueryToDOT(q string) (string, error) {
+func (mdb *HodDB) QueryToDOT(q string) (string, error) {
 	// just pick first db for now
 	var (
 		res string
@@ -280,7 +280,7 @@ func (mdb *MultiDB) QueryToDOT(q string) (string, error) {
 	return res, err
 }
 
-func (mdb *MultiDB) abbreviate(uri turtle.URI) string {
+func (mdb *HodDB) abbreviate(uri turtle.URI) string {
 	// just pick first db for now
 	var (
 		res string

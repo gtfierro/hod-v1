@@ -491,7 +491,7 @@ func gethash() string {
 //	return nil
 //}
 
-func runInteractiveQuery(db *hod.MultiDB) error {
+func runInteractiveQuery(db *hod.HodDB) error {
 	currentUser, err := user.Current()
 	if err != nil {
 		log.Error(err)

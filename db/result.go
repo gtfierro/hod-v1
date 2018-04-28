@@ -41,7 +41,7 @@ func (qr QueryResult) Dump() {
 	fmt.Println(qr.Count)
 }
 
-func (qr QueryResult) DumpToCSV(usePrefixes bool, db *MultiDB, w io.Writer) error {
+func (qr QueryResult) DumpToCSV(usePrefixes bool, db *HodDB, w io.Writer) error {
 	csvwriter := csv.NewWriter(w)
 	if len(qr.Rows) > 0 {
 		for _, row := range qr.Rows {
