@@ -38,6 +38,7 @@ func (db *DB) buildGraph(dataset turtle.DataSet) error {
 		if _, found := predicates[triple.Predicate.String()]; !found {
 			predHash, err := db.GetHash(triple.Predicate)
 			if err != nil {
+				graphtx.Discard()
 				return err
 			}
 			predicates[triple.Predicate.String()] = predHash
@@ -46,6 +47,7 @@ func (db *DB) buildGraph(dataset turtle.DataSet) error {
 			if _, found := predicates[reversePredicate.String()]; !found {
 				predHash, err := db.GetHash(reversePredicate)
 				if err != nil {
+					graphtx.Discard()
 					return err
 				}
 				predicates[reversePredicate.String()] = predHash
@@ -55,6 +57,7 @@ func (db *DB) buildGraph(dataset turtle.DataSet) error {
 		// make subject entity
 		subjHash, err := db.GetHash(triple.Subject)
 		if err != nil {
+			graphtx.Discard()
 			return err
 		}
 		// check if entity exists
@@ -65,18 +68,22 @@ func (db *DB) buildGraph(dataset turtle.DataSet) error {
 			subEnt.PK = subjHash
 			bytes, err := subEnt.MarshalMsg(nil)
 			if err != nil {
+				graphtx.Discard()
 				return err
 			}
 			if err := graphtx.Put(subjHash[:], bytes, nil); err != nil {
+				graphtx.Discard()
 				return err
 			}
 		} else if err != nil {
+			graphtx.Discard()
 			return err
 		}
 
 		// make object entity
 		objHash, err := db.GetHash(triple.Object)
 		if err != nil {
+			graphtx.Discard()
 			return err
 		}
 		// check if entity exists
@@ -87,18 +94,22 @@ func (db *DB) buildGraph(dataset turtle.DataSet) error {
 			objEnt.PK = objHash
 			bytes, err := objEnt.MarshalMsg(nil)
 			if err != nil {
+				graphtx.Discard()
 				return err
 			}
 			if err := graphtx.Put(objHash[:], bytes, nil); err != nil {
+				graphtx.Discard()
 				return err
 			}
 		} else if err != nil {
+			graphtx.Discard()
 			return err
 		}
 
 		// make predicate entity
 		predHash, err := db.GetHash(triple.Predicate)
 		if err != nil {
+			graphtx.Discard()
 			return err
 		}
 		// check if entity exists
@@ -109,34 +120,31 @@ func (db *DB) buildGraph(dataset turtle.DataSet) error {
 			predEnt.PK = predHash
 			bytes, err := predEnt.MarshalMsg(nil)
 			if err != nil {
+				graphtx.Discard()
 				return err
 			}
 			if err := graphtx.Put(predHash[:], bytes, nil); err != nil {
+				graphtx.Discard()
 				return err
 			}
 		} else if err != nil {
+			graphtx.Discard()
 			return err
 		}
 	}
-	if err := graphtx.Commit(); err != nil {
-		return errors.Wrap(err, "Could not commit transaction")
-	}
 
 	log.Noticef("ADDED subjects %d, predicates %d, objects %d", subjAdded, predAdded, objAdded)
-
-	graphtx, err = db.graphDB.OpenTransaction()
-	if err != nil {
-		return errors.Wrap(err, "Could not open transaction on graph dataset")
-	}
 
 	// second pass
 	for _, triple := range dataset.Triples {
 		subject, err := db.GetEntityTx(graphtx, triple.Subject)
 		if err != nil {
+			graphtx.Discard()
 			return err
 		}
 		object, err := db.GetEntityTx(graphtx, triple.Object)
 		if err != nil {
+			graphtx.Discard()
 			return err
 		}
 
@@ -157,17 +165,21 @@ func (db *DB) buildGraph(dataset turtle.DataSet) error {
 		// re-put in graph
 		bytes, err := subject.MarshalMsg(nil)
 		if err != nil {
+			graphtx.Discard()
 			return err
 		}
 		if err := graphtx.Put(subject.PK[:], bytes, nil); err != nil {
+			graphtx.Discard()
 			return err
 		}
 
 		bytes, err = object.MarshalMsg(nil)
 		if err != nil {
+			graphtx.Discard()
 			return err
 		}
 		if err := graphtx.Put(object.PK[:], bytes, nil); err != nil {
+			graphtx.Discard()
 			return err
 		}
 	}
@@ -178,17 +190,22 @@ func (db *DB) buildGraph(dataset turtle.DataSet) error {
 	log.Notice("Starting third pass")
 
 	// third pass
+	extendtx, err := db.extendedDB.OpenTransaction()
+	if err != nil {
+		return errors.Wrap(err, "Could not open transaction on extended DB")
+	}
 	for predicate, predent := range db.predIndex {
-		extendtx, err := db.extendedDB.OpenTransaction()
 		if err != nil {
+			extendtx.Discard()
 			return errors.Wrap(err, "Could not open transaction on extended index")
 		}
 		if err := db.populateIndex(predicate, predent, extendtx); err != nil {
+			extendtx.Discard()
 			return err
 		}
-		if err = extendtx.Commit(); err != nil {
-			return errors.Wrap(err, "Could not commit transaction")
-		}
+	}
+	if err = extendtx.Commit(); err != nil {
+		return errors.Wrap(err, "Could not commit transaction")
 	}
 	return nil
 }
@@ -267,7 +284,6 @@ func (db *DB) populateIndex(predicateURI turtle.URI, predicate *PredicateEntity,
 		}
 		stack := list.New()
 		db.followPathFromObject(object, results, stack, forwardPath)
-		//log.Debug(db.MustGetURI(objectHash).Value, predicate.Value, results.Len())
 		for results.Len() > 0 {
 			objectIndex.AddInPlusEdge(extendedPred, results.DeleteMax())
 		}
@@ -310,7 +326,6 @@ func (db *DB) populateIndex(predicateURI turtle.URI, predicate *PredicateEntity,
 			}
 			stack := list.New()
 			db.followPathFromSubject(subject, results, stack, forwardPath)
-			//log.Debug(db.MustGetURI(subjectHash).Value, predicate.Value, results.Len())
 			for results.Len() > 0 {
 				subjectIndex.AddInPlusEdge(extendedPred, results.DeleteMax())
 			}
@@ -349,7 +364,6 @@ func (db *DB) populateIndex(predicateURI turtle.URI, predicate *PredicateEntity,
 			}
 			stack := list.New()
 			db.followPathFromObject(object, results, stack, forwardPath)
-			//log.Debug(db.MustGetURI(objectHash).Value, predicate.Value, results.Len())
 			for results.Len() > 0 {
 				objectIndex.AddOutPlusEdge(extendedPred, results.DeleteMax())
 			}
