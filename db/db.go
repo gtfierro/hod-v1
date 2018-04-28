@@ -228,9 +228,29 @@ func NewDB(cfg *config.Config) (*DB, error) {
 	}
 
 	if cfg.ShowNamespaces {
+		var dmp strings.Builder
+		lenK := len("Prefix")
+		lenV := len("Namespace")
+
 		for k, v := range db.namespaces {
-			log.Noticef("%s => %s", k, v)
+			if len(k) > lenK {
+				lenK = len(k)
+			}
+			if len(v) > lenV {
+				lenV = len(v)
+			}
 		}
+		fmt.Fprintf(&dmp, "+ %s +\n", strings.Repeat("-", lenK+lenV+3))
+		fmt.Fprintf(&dmp, "| Prefix%s | Namespace%s |\n", strings.Repeat(" ", lenK-len("Prefix")), strings.Repeat(" ", lenV-len("Namespace")))
+		fmt.Fprintf(&dmp, "+ %s +\n", strings.Repeat("-", lenK+lenV+3))
+		for k, v := range db.namespaces {
+			kpad := strings.Repeat(" ", lenK-len(k))
+			vpad := strings.Repeat(" ", lenV-len(v))
+			fmt.Fprintf(&dmp, "| %s%s | %s%s |\n", k, kpad, v, vpad)
+		}
+		fmt.Fprintf(&dmp, "+ %s +\n", strings.Repeat("-", lenK+lenV+3))
+		fmt.Println(dmp.String())
+
 	}
 
 	return db, nil
