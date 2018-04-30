@@ -1,13 +1,20 @@
 package db
 
 import (
+	"os"
 	"testing"
 	"time"
 
 	"github.com/gtfierro/hod/config"
 	query "github.com/gtfierro/hod/lang"
 	"github.com/gtfierro/hod/turtle"
+	logrus "github.com/sirupsen/logrus"
 )
+
+func TestMain(m *testing.M) {
+	logrus.SetLevel(logrus.WarnLevel)
+	os.Exit(m.Run())
+}
 
 func TestDBQuery(t *testing.T) {
 	cfg, err := config.ReadConfig("testhodconfig.yaml")
