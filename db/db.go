@@ -270,19 +270,19 @@ func (db *DB) Close() {
 }
 
 // hashes the given URI into the byte array
-func (db *DB) hashURI(u turtle.URI, dest []byte, salt uint32) {
+func (db *DB) hashURI(u turtle.URI, dest []byte, salt uint64) {
 	var hash uint32
-	if len(dest) < 4 {
-		dest = make([]byte, 4)
+	if len(dest) < 8 {
+		dest = make([]byte, 8)
 	}
 	if salt > 0 {
-		saltbytes := make([]byte, 4)
-		binary.LittleEndian.PutUint32(saltbytes, salt)
+		saltbytes := make([]byte, 8)
+		binary.LittleEndian.PutUint64(saltbytes, salt)
 		hash = murmur.Murmur3(append(u.Bytes(), saltbytes...))
 	} else {
 		hash = murmur.Murmur3(u.Bytes())
 	}
-	binary.LittleEndian.PutUint32(dest, hash)
+	binary.LittleEndian.PutUint32(dest[:4], hash)
 }
 
 func (db *DB) insertEntity(entity turtle.URI, hashdest []byte) error {
@@ -296,7 +296,7 @@ func (db *DB) insertEntity(entity turtle.URI, hashdest []byte) error {
 		return errors.Wrapf(err, "Error checking db membership for %s", entity.String())
 	}
 	// generate the hash
-	var salt = uint32(0)
+	var salt = uint64(0)
 	db.hashURI(entity, hashdest, salt)
 	for {
 		if exists, err := db.pkDB.Has(hashdest, nil); err == nil && exists {
@@ -337,7 +337,7 @@ func (db *DB) insertEntityTx(entity turtle.URI, hashdest []byte, enttx, pktx *le
 		return errors.Wrapf(err, "Error checking db membership for %s", entity.String())
 	}
 	// generate the hash
-	var salt = uint32(0)
+	var salt = uint64(0)
 	db.hashURI(entity, hashdest, salt)
 	for {
 		if exists, err := pktx.Has(hashdest, nil); err == nil && exists {
@@ -505,9 +505,9 @@ func (db *DB) LoadDataset(dataset turtle.DataSet) error {
 	}
 	// load triples and primary keys
 	var (
-		subjectHash   = make([]byte, 4)
-		predicateHash = make([]byte, 4)
-		objectHash    = make([]byte, 4)
+		subjectHash   = make([]byte, 8)
+		predicateHash = make([]byte, 8)
+		objectHash    = make([]byte, 8)
 	)
 	b := db.textidx.NewBatch()
 	for _, triple := range dataset.Triples {
@@ -581,7 +581,7 @@ func (db *DB) LoadDataset(dataset turtle.DataSet) error {
 	return nil
 }
 
-// returns the uint32 hash of the given URI (this is adjusted for uniqueness)
+// returns the uint64 hash of the given URI (this is adjusted for uniqueness)
 func (db *DB) GetHash(entity turtle.URI) (Key, error) {
 	var rethash Key
 	if hash, err := db.entityHashCache.Get(entity.Bytes()); err != nil {

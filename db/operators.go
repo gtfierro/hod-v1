@@ -747,7 +747,7 @@ func (op *resolveVarTripleAll) run(ctx *queryContext) error {
 	for iter.Next() {
 		var subjectHash Key
 		entityHash := iter.Key()
-		copy(subjectHash[:], entityHash[:4])
+		copy(subjectHash[:], entityHash[:8])
 		var entity = NewEntity()
 		_, err := entity.UnmarshalMsg(iter.Value())
 		if err != nil {
