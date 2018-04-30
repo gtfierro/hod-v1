@@ -15,8 +15,7 @@ func TestDBQuery(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	cfg.DBPath = "test_databases/testdb"
-	db, err := NewDB(cfg)
+	db, err := NewHodDB(cfg)
 	defer db.Close()
 	if err != nil {
 		t.Error(err)
@@ -27,26 +26,26 @@ func TestDBQuery(t *testing.T) {
 		results []ResultMap
 	}{
 		{
-			"SELECT ?x WHERE { ?x rdf:type brick:Room };",
+			"SELECT ?x FROM test WHERE { ?x rdf:type brick:Room };",
 			[]ResultMap{{"?x": turtle.ParseURI("http://buildsys.org/ontologies/building_example#room_1")}},
 		},
 		{
-			"SELECT ?x WHERE { bldg:room_1 rdf:type ?x };",
+			"SELECT ?x FROM test WHERE { bldg:room_1 rdf:type ?x };",
 			[]ResultMap{{"?x": turtle.ParseURI("https://brickschema.org/schema/1.0.1/Brick#Room")}},
 		},
 		{
-			"SELECT ?x WHERE { bldg:room_1 ?x brick:Room };",
+			"SELECT ?x FROM test WHERE { bldg:room_1 ?x brick:Room };",
 			[]ResultMap{{"?x": turtle.ParseURI("http://www.w3.org/1999/02/22-rdf-syntax-ns#type")}},
 		},
 		{
-			"SELECT ?x ?y WHERE { ?x bf:feeds ?y };",
+			"SELECT ?x ?y FROM test WHERE { ?x bf:feeds ?y };",
 			[]ResultMap{
 				{"?x": turtle.ParseURI("http://buildsys.org/ontologies/building_example#vav_1"), "?y": turtle.ParseURI("http://buildsys.org/ontologies/building_example#hvaczone_1")},
 				{"?x": turtle.ParseURI("http://buildsys.org/ontologies/building_example#ahu_1"), "?y": turtle.ParseURI("http://buildsys.org/ontologies/building_example#vav_1")},
 			},
 		},
 		{
-			"SELECT ?x ?y WHERE { bldg:room_1 ?x ?y };",
+			"SELECT ?x ?y FROM test WHERE { bldg:room_1 ?x ?y };",
 			[]ResultMap{
 				{"?x": turtle.ParseURI("https://brickschema.org/schema/1.0.1/BrickFrame#isPartOf"), "?y": turtle.ParseURI("http://buildsys.org/ontologies/building_example#floor_1")},
 				{"?x": turtle.ParseURI("https://brickschema.org/schema/1.0.1/BrickFrame#isPartOf"), "?y": turtle.ParseURI("http://buildsys.org/ontologies/building_example#hvaczone_1")},
@@ -55,7 +54,7 @@ func TestDBQuery(t *testing.T) {
 			},
 		},
 		{
-			"SELECT ?x ?y WHERE { ?r rdf:type brick:Room . ?r ?x ?y };",
+			"SELECT ?x ?y FROM test WHERE { ?r rdf:type brick:Room . ?r ?x ?y };",
 			[]ResultMap{
 				{"?x": turtle.ParseURI("https://brickschema.org/schema/1.0.1/BrickFrame#isPartOf"), "?y": turtle.ParseURI("http://buildsys.org/ontologies/building_example#floor_1")},
 				{"?x": turtle.ParseURI("https://brickschema.org/schema/1.0.1/BrickFrame#isPartOf"), "?y": turtle.ParseURI("http://buildsys.org/ontologies/building_example#hvaczone_1")},
@@ -64,7 +63,7 @@ func TestDBQuery(t *testing.T) {
 			},
 		},
 		{
-			"SELECT ?x ?y WHERE { ?r rdf:type brick:Room . ?x ?y ?r };",
+			"SELECT ?x ?y FROM test WHERE { ?r rdf:type brick:Room . ?x ?y ?r };",
 			[]ResultMap{
 				{"?y": turtle.ParseURI("https://brickschema.org/schema/1.0.1/BrickFrame#hasPart"), "?x": turtle.ParseURI("http://buildsys.org/ontologies/building_example#floor_1")},
 				{"?y": turtle.ParseURI("https://brickschema.org/schema/1.0.1/BrickFrame#hasPart"), "?x": turtle.ParseURI("http://buildsys.org/ontologies/building_example#hvaczone_1")},
@@ -78,55 +77,55 @@ func TestDBQuery(t *testing.T) {
 		//			},
 		//		},
 		{
-			"SELECT ?x WHERE { ?x rdf:type <https://brickschema.org/schema/1.0.1/Brick#Room> };",
+			"SELECT ?x FROM test WHERE { ?x rdf:type <https://brickschema.org/schema/1.0.1/Brick#Room> };",
 			[]ResultMap{{"?x": turtle.ParseURI("http://buildsys.org/ontologies/building_example#room_1")}},
 		},
 		{
-			"SELECT ?x WHERE { ?ahu rdf:type brick:AHU . ?ahu bf:feeds ?x };",
+			"SELECT ?x FROM test WHERE { ?ahu rdf:type brick:AHU . ?ahu bf:feeds ?x };",
 			[]ResultMap{{"?x": turtle.ParseURI("http://buildsys.org/ontologies/building_example#vav_1")}},
 		},
 		{
-			"SELECT ?x WHERE { ?ahu rdf:type brick:AHU . ?ahu bf:feeds+ ?x };",
+			"SELECT ?x FROM test WHERE { ?ahu rdf:type brick:AHU . ?ahu bf:feeds+ ?x };",
 			[]ResultMap{{"?x": turtle.ParseURI("http://buildsys.org/ontologies/building_example#hvaczone_1")}, {"?x": turtle.ParseURI("http://buildsys.org/ontologies/building_example#vav_1")}},
 		},
 		{
-			"SELECT ?x WHERE { ?ahu rdf:type brick:AHU . ?x bf:isFedBy+ ?ahu };",
+			"SELECT ?x FROM test WHERE { ?ahu rdf:type brick:AHU . ?x bf:isFedBy+ ?ahu };",
 			[]ResultMap{{"?x": turtle.ParseURI("http://buildsys.org/ontologies/building_example#hvaczone_1")}, {"?x": turtle.ParseURI("http://buildsys.org/ontologies/building_example#vav_1")}},
 		},
 		{
-			"SELECT ?x WHERE { ?ahu rdf:type brick:AHU . ?ahu bf:feeds/bf:feeds ?x };",
+			"SELECT ?x FROM test WHERE { ?ahu rdf:type brick:AHU . ?ahu bf:feeds/bf:feeds ?x };",
 			[]ResultMap{{"?x": turtle.ParseURI("http://buildsys.org/ontologies/building_example#hvaczone_1")}},
 		},
 		{
-			"SELECT ?x WHERE { ?ahu rdf:type brick:AHU . ?ahu bf:feeds/bf:feeds+ ?x };",
+			"SELECT ?x FROM test WHERE { ?ahu rdf:type brick:AHU . ?ahu bf:feeds/bf:feeds+ ?x };",
 			[]ResultMap{{"?x": turtle.ParseURI("http://buildsys.org/ontologies/building_example#hvaczone_1")}},
 		},
 		{
-			"SELECT ?x WHERE { ?ahu rdf:type brick:AHU . ?ahu bf:feeds/bf:feeds? ?x };",
+			"SELECT ?x FROM test WHERE { ?ahu rdf:type brick:AHU . ?ahu bf:feeds/bf:feeds? ?x };",
 			[]ResultMap{{"?x": turtle.ParseURI("http://buildsys.org/ontologies/building_example#hvaczone_1")}, {"?x": turtle.ParseURI("http://buildsys.org/ontologies/building_example#vav_1")}},
 		},
 		{
-			"SELECT ?x WHERE { ?ahu rdf:type brick:AHU . ?x bf:isFedBy/bf:isFedBy? ?ahu };",
+			"SELECT ?x FROM test WHERE { ?ahu rdf:type brick:AHU . ?x bf:isFedBy/bf:isFedBy? ?ahu };",
 			[]ResultMap{{"?x": turtle.ParseURI("http://buildsys.org/ontologies/building_example#hvaczone_1")}, {"?x": turtle.ParseURI("http://buildsys.org/ontologies/building_example#vav_1")}},
 		},
 		{
-			"SELECT ?x WHERE { ?ahu rdf:type brick:AHU . ?ahu bf:feeds* ?x };",
+			"SELECT ?x FROM test WHERE { ?ahu rdf:type brick:AHU . ?ahu bf:feeds* ?x };",
 			[]ResultMap{{"?x": turtle.ParseURI("http://buildsys.org/ontologies/building_example#hvaczone_1")}, {"?x": turtle.ParseURI("http://buildsys.org/ontologies/building_example#vav_1")}, {"?x": turtle.ParseURI("http://buildsys.org/ontologies/building_example#ahu_1")}},
 		},
 		{
-			"SELECT ?x WHERE { ?ahu rdf:type brick:AHU . ?x bf:isFedBy* ?ahu };",
+			"SELECT ?x FROM test WHERE { ?ahu rdf:type brick:AHU . ?x bf:isFedBy* ?ahu };",
 			[]ResultMap{{"?x": turtle.ParseURI("http://buildsys.org/ontologies/building_example#hvaczone_1")}, {"?x": turtle.ParseURI("http://buildsys.org/ontologies/building_example#vav_1")}, {"?x": turtle.ParseURI("http://buildsys.org/ontologies/building_example#ahu_1")}},
 		},
 		{
-			"SELECT ?vav ?room WHERE { ?vav rdf:type brick:VAV . ?room rdf:type brick:Room . ?zone rdf:type brick:HVAC_Zone . ?vav bf:feeds+ ?zone . ?room bf:isPartOf ?zone }; ",
+			"SELECT ?vav ?room FROM test WHERE { ?vav rdf:type brick:VAV . ?room rdf:type brick:Room . ?zone rdf:type brick:HVAC_Zone . ?vav bf:feeds+ ?zone . ?room bf:isPartOf ?zone }; ",
 			[]ResultMap{{"?room": turtle.ParseURI("http://buildsys.org/ontologies/building_example#room_1"), "?vav": turtle.ParseURI("http://buildsys.org/ontologies/building_example#vav_1")}},
 		},
 		{
-			"SELECT ?sensor WHERE { ?sensor rdf:type/rdfs:subClassOf* brick:Zone_Temperature_Sensor };",
+			"SELECT ?sensor FROM test WHERE { ?sensor rdf:type/rdfs:subClassOf* brick:Zone_Temperature_Sensor };",
 			[]ResultMap{{"?sensor": turtle.ParseURI("http://buildsys.org/ontologies/building_example#ztemp_1")}},
 		},
 		{
-			"SELECT ?s ?p WHERE { ?s ?p brick:Zone_Temperature_Sensor . ?s rdfs:subClassOf brick:Zone_Temperature_Sensor };",
+			"SELECT ?s ?p FROM test WHERE { ?s ?p brick:Zone_Temperature_Sensor . ?s rdfs:subClassOf brick:Zone_Temperature_Sensor };",
 			[]ResultMap{
 				{"?s": turtle.ParseURI("https://brickschema.org/schema/1.0.1/Brick#Average_Zone_Temperature_Sensor"), "?p": turtle.ParseURI("http://www.w3.org/2000/01/rdf-schema#subClassOf")},
 				{"?s": turtle.ParseURI("https://brickschema.org/schema/1.0.1/Brick#Coldest_Zone_Temperature_Sensor"), "?p": turtle.ParseURI("http://www.w3.org/2000/01/rdf-schema#subClassOf")},
@@ -146,7 +145,7 @@ func TestDBQuery(t *testing.T) {
 			t.Error(test.query, e)
 			continue
 		}
-		result, err := db.runQuery(q)
+		result, err := db.RunQuery(q)
 		if err != nil {
 			t.Error(err)
 			return
@@ -164,8 +163,7 @@ func TestDBQueryBerkeley(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	cfg.DBPath = "test_databases/berkeleytestdb"
-	db, err := NewDB(cfg)
+	db, err := NewHodDB(cfg)
 	defer db.Close()
 	if err != nil {
 		t.Error(err)
@@ -176,79 +174,79 @@ func TestDBQueryBerkeley(t *testing.T) {
 		resultCount int
 	}{
 		{
-			"COUNT ?x WHERE { ?x rdf:type brick:Room };",
+			"COUNT ?x FROM soda WHERE { ?x rdf:type brick:Room };",
 			243,
 		},
 		{
-			"COUNT ?x WHERE { ?ahu rdf:type brick:AHU . ?ahu bf:feeds ?x };",
+			"COUNT ?x FROM soda WHERE { ?ahu rdf:type brick:AHU . ?ahu bf:feeds ?x };",
 			240,
 		},
 		{
-			"COUNT ?x WHERE { ?ahu rdf:type brick:AHU . ?ahu bf:feeds+ ?x };",
+			"COUNT ?x FROM soda WHERE { ?ahu rdf:type brick:AHU . ?ahu bf:feeds+ ?x };",
 			480,
 		},
 		{
-			"COUNT ?x WHERE { ?ahu rdf:type brick:AHU . ?x bf:isFedBy+ ?ahu };",
+			"COUNT ?x FROM soda WHERE { ?ahu rdf:type brick:AHU . ?x bf:isFedBy+ ?ahu };",
 			480,
 		},
 		{
-			"COUNT ?x WHERE { ?ahu rdf:type brick:AHU . ?ahu bf:feeds/bf:feeds ?x };",
+			"COUNT ?x FROM soda WHERE { ?ahu rdf:type brick:AHU . ?ahu bf:feeds/bf:feeds ?x };",
 			240,
 		},
 		{
-			"COUNT ?x WHERE { ?ahu rdf:type brick:AHU . ?ahu bf:feeds/bf:feeds+ ?x };",
+			"COUNT ?x FROM soda WHERE { ?ahu rdf:type brick:AHU . ?ahu bf:feeds/bf:feeds+ ?x };",
 			240,
 		},
 		{
-			"COUNT ?x WHERE { ?ahu rdf:type brick:AHU . ?ahu bf:feeds/bf:feeds? ?x };",
+			"COUNT ?x FROM soda WHERE { ?ahu rdf:type brick:AHU . ?ahu bf:feeds/bf:feeds? ?x };",
 			480,
 		},
 		{
-			"COUNT ?x WHERE { ?ahu rdf:type brick:AHU . ?x bf:isFedBy/bf:isFedBy? ?ahu };",
+			"COUNT ?x FROM soda WHERE { ?ahu rdf:type brick:AHU . ?x bf:isFedBy/bf:isFedBy? ?ahu };",
 			480,
 		},
 		{
-			"COUNT ?x WHERE { ?ahu rdf:type brick:AHU . ?ahu bf:feeds* ?x };",
+			"COUNT ?x FROM soda WHERE { ?ahu rdf:type brick:AHU . ?ahu bf:feeds* ?x };",
 			485,
 		},
 		{
-			"COUNT ?x WHERE { ?ahu rdf:type brick:AHU . ?x bf:isFedBy* ?ahu };",
+			"COUNT ?x FROM soda WHERE { ?ahu rdf:type brick:AHU . ?x bf:isFedBy* ?ahu };",
 			485,
 		},
 		{
-			"COUNT ?vav ?room WHERE { ?vav rdf:type brick:VAV . ?room rdf:type brick:Room . ?zone rdf:type brick:HVAC_Zone . ?vav bf:feeds+ ?zone . ?room bf:isPartOf ?zone }; ",
+			"COUNT ?vav ?room FROM soda WHERE { ?vav rdf:type brick:VAV . ?room rdf:type brick:Room . ?zone rdf:type brick:HVAC_Zone . ?vav bf:feeds+ ?zone . ?room bf:isPartOf ?zone }; ",
 			243,
 		},
 		{
-			"COUNT ?sensor WHERE { ?sensor rdf:type/rdfs:subClassOf* brick:Zone_Temperature_Sensor };",
+			"COUNT ?sensor FROM soda WHERE { ?sensor rdf:type/rdfs:subClassOf* brick:Zone_Temperature_Sensor };",
 			232,
 		},
 		{
-			"COUNT ?sensor ?room WHERE { ?sensor rdf:type/rdfs:subClassOf* brick:Zone_Temperature_Sensor . ?room rdf:type brick:Room . ?vav rdf:type brick:VAV . ?zone rdf:type brick:HVAC_Zone . ?vav bf:feeds+ ?zone . ?zone bf:hasPart ?room . ?sensor bf:isPointOf ?vav };",
+			"COUNT ?sensor ?room FROM soda WHERE { ?sensor rdf:type/rdfs:subClassOf* brick:Zone_Temperature_Sensor . ?room rdf:type brick:Room . ?vav rdf:type brick:VAV . ?zone rdf:type brick:HVAC_Zone . ?vav bf:feeds+ ?zone . ?zone bf:hasPart ?room . ?sensor bf:isPointOf ?vav };",
 			232,
 		},
 		{
-			"COUNT ?sensor ?room WHERE { ?sensor rdf:type/rdfs:subClassOf* brick:Zone_Temperature_Sensor . ?vav rdf:type brick:VAV . ?zone rdf:type brick:HVAC_Zone . ?room rdf:type brick:Room . ?vav bf:feeds+ ?zone . ?zone bf:hasPart ?room  { ?sensor bf:isPointOf ?vav } UNION { ?sensor bf:isPointOf ?room } };",
+			"COUNT ?sensor ?room FROM soda WHERE { ?sensor rdf:type/rdfs:subClassOf* brick:Zone_Temperature_Sensor . ?vav rdf:type brick:VAV . ?zone rdf:type brick:HVAC_Zone . ?room rdf:type brick:Room . ?vav bf:feeds+ ?zone . ?zone bf:hasPart ?room  { ?sensor bf:isPointOf ?vav } UNION { ?sensor bf:isPointOf ?room } };",
 			232,
 		},
 		{
-			"COUNT ?sensor ?room WHERE { ?sensor rdf:type/rdfs:subClassOf* brick:Zone_Temperature_Sensor . ?room rdf:type brick:Room . ?vav rdf:type brick:VAV . ?zone rdf:type brick:HVAC_Zone . ?vav bf:feeds+ ?zone . ?zone bf:hasPart ?room . ?sensor bf:isPointOf ?room };",
+			"COUNT ?sensor ?room FROM soda WHERE { ?sensor rdf:type/rdfs:subClassOf* brick:Zone_Temperature_Sensor . ?room rdf:type brick:Room . ?vav rdf:type brick:VAV . ?zone rdf:type brick:HVAC_Zone . ?vav bf:feeds+ ?zone . ?zone bf:hasPart ?room . ?sensor bf:isPointOf ?room };",
 			0,
 		},
 		{
-			"COUNT ?vav ?x ?y WHERE { ?vav rdf:type brick:VAV . ?vav bf:hasPoint ?x . ?vav bf:isFedBy ?y };",
+			"COUNT ?vav ?x ?y FROM soda WHERE { ?vav rdf:type brick:VAV . ?vav bf:hasPoint ?x . ?vav bf:isFedBy ?y };",
 			823,
 		},
 		{
-			"COUNT ?ahu WHERE { ?ahu rdf:type brick:AHU . ?ahu bf:feeds soda_hall:vav_C711 };",
+			"COUNT ?ahu FROM soda WHERE { ?ahu rdf:type brick:AHU . ?ahu bf:feeds soda_hall:vav_C711 };",
 			1,
 		},
 		{
-			"COUNT ?ahu WHERE { ?ahu bf:feeds soda_hall:vav_C711 . ?ahu rdf:type brick:AHU };",
+			"COUNT ?ahu FROM soda WHERE { ?ahu bf:feeds soda_hall:vav_C711 . ?ahu rdf:type brick:AHU };",
 			1,
 		},
 		{
-			"COUNT ?vav ?x ?y ?z WHERE { ?vav rdf:type brick:VAV . ?vav bf:feeds+ ?x . ?vav bf:isFedBy+ ?y . ?vav bf:hasPoint+ ?z };",
+			"COUNT ?vav ?x ?y ?z FROM soda WHERE { ?vav rdf:type brick:VAV . ?vav bf:feeds+ ?x . ?vav bf:isFedBy+ ?y . ?vav bf:hasPoint+ ?z };",
 			823,
 		},
 	} {
@@ -258,7 +256,7 @@ func TestDBQueryBerkeley(t *testing.T) {
 			t.Error(test.query, e)
 			continue
 		}
-		result, err := db.runQuery(q)
+		result, err := db.RunQuery(q)
 		if err != nil {
 			t.Error(err)
 			return
@@ -276,8 +274,7 @@ func BenchmarkQueryPerformance1(b *testing.B) {
 		b.Error(err)
 		return
 	}
-	cfg.DBPath = "test_databases/berkeleytestdb"
-	db, err := NewDB(cfg)
+	db, err := NewHodDB(cfg)
 	defer db.Close()
 	if err != nil {
 		b.Error(err)
@@ -287,17 +284,17 @@ func BenchmarkQueryPerformance1(b *testing.B) {
 		name  string
 		query string
 	}{
-		{"SimpleSubjectVarTriple", "SELECT ?x WHERE { ?x rdf:type brick:Room };"},
-		{"LongerQuery1", "SELECT ?vav ?room WHERE { ?vav rdf:type brick:VAV . ?room rdf:type brick:Room . ?zone rdf:type brick:HVAC_Zone . ?vav bf:feeds+ ?zone . ?room bf:isPartOf ?zone }; "},
-		{"LooseQuery", "SELECT ?pred ?obj WHERE { ?vav rdf:type brick:VAV .  ?vav ?pred ?obj }; "},
-		{"LocQuery", " SELECT ?sensor ?room WHERE { ?sensor rdf:type/rdfs:subClassOf* brick:Zone_Temperature_Sensor . ?room rdf:type brick:Room . ?vav rdf:type brick:VAV . ?zone rdf:type brick:HVAC_Zone . ?vav bf:feeds+ ?zone . ?zone bf:hasPart ?room { ?sensor bf:isPointOf ?vav } UNION { ?sensor bf:isPointOf ?room } };"},
-		{"RoomEnum", "COUNT ?x WHERE { ?x rdf:type brick:Room };"},
-		{"AHUFeed0", "COUNT ?x WHERE { ?ahu rdf:type brick:AHU . ?ahu bf:feeds ?x };"},
-		{"AHUFeed1", "COUNT ?x WHERE { ?ahu rdf:type brick:AHU . ?ahu bf:feeds+ ?x };"},
-		{"AHUFeed2", "COUNT ?x WHERE { ?ahu rdf:type brick:AHU . ?ahu bf:feeds* ?x };"},
-		{"AHUFeed1Reverse", "COUNT ?x WHERE { ?ahu rdf:type brick:AHU . ?x bf:isFedBy+ ?ahu };"},
-		{"SensorSubclass", "COUNT ?sensor WHERE { ?sensor rdf:type/rdfs:subClassOf* brick:Zone_Temperature_Sensor };"},
-		{"VAVExplore", "COUNT ?vav ?x ?y WHERE { ?vav rdf:type brick:VAV . ?vav bf:hasPoint ?x . ?vav bf:isFedBy ?y };"},
+		{"SimpleSubjectVarTriple", "SELECT ?x FROM soda WHERE { ?x rdf:type brick:Room };"},
+		{"LongerQuery1", "SELECT ?vav ?room FROM soda WHERE { ?vav rdf:type brick:VAV . ?room rdf:type brick:Room . ?zone rdf:type brick:HVAC_Zone . ?vav bf:feeds+ ?zone . ?room bf:isPartOf ?zone }; "},
+		{"LooseQuery", "SELECT ?pred ?obj FROM soda WHERE { ?vav rdf:type brick:VAV .  ?vav ?pred ?obj }; "},
+		{"LocQuery", " SELECT ?sensor ?room FROM soda WHERE { ?sensor rdf:type/rdfs:subClassOf* brick:Zone_Temperature_Sensor . ?room rdf:type brick:Room . ?vav rdf:type brick:VAV . ?zone rdf:type brick:HVAC_Zone . ?vav bf:feeds+ ?zone . ?zone bf:hasPart ?room { ?sensor bf:isPointOf ?vav } UNION { ?sensor bf:isPointOf ?room } };"},
+		{"RoomEnum", "COUNT ?x FROM soda WHERE { ?x rdf:type brick:Room };"},
+		{"AHUFeed0", "COUNT ?x FROM soda WHERE { ?ahu rdf:type brick:AHU . ?ahu bf:feeds ?x };"},
+		{"AHUFeed1", "COUNT ?x FROM soda WHERE { ?ahu rdf:type brick:AHU . ?ahu bf:feeds+ ?x };"},
+		{"AHUFeed2", "COUNT ?x FROM soda WHERE { ?ahu rdf:type brick:AHU . ?ahu bf:feeds* ?x };"},
+		{"AHUFeed1Reverse", "COUNT ?x FROM soda WHERE { ?ahu rdf:type brick:AHU . ?x bf:isFedBy+ ?ahu };"},
+		{"SensorSubclass", "COUNT ?sensor FROM soda WHERE { ?sensor rdf:type/rdfs:subClassOf* brick:Zone_Temperature_Sensor };"},
+		{"VAVExplore", "COUNT ?vav ?x ?y FROM soda WHERE { ?vav rdf:type brick:VAV . ?vav bf:hasPoint ?x . ?vav bf:isFedBy ?y };"},
 	}
 
 	for _, bm := range benchmarks {
@@ -309,7 +306,7 @@ func BenchmarkQueryPerformance1(b *testing.B) {
 					b.Error(e)
 					continue
 				}
-				db.runQuery(q)
+				db.RunQuery(q)
 			}
 		})
 	}

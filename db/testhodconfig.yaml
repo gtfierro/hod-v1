@@ -1,3 +1,9 @@
+DBPath: _testhoddb
+Buildings:
+    soda: testbuildings/berkeley.ttl
+    test: testbuildings/example.ttl
+BrickClassTTL: "testbuildings/Brick.ttl"
+BrickFrameTTL: "testbuildings/BrickFrame.ttl"
 ReloadBrick: false
 DisableQueryCache: true
 ShowNamespaces: false
@@ -7,3 +13,5 @@ ShowQueryPlanLatencies: false
 ShowOperationLatencies: false
 ShowQueryLatencies: false
 LogLevel: Critical
+EnableBOSSWAVE: false
+EnableHTTP: false

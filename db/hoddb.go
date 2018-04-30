@@ -33,7 +33,7 @@ type HodDB struct {
 
 // Creates or loads a new instance of HodDB from the provided config file. If any of the Turtle source files
 // in the "buildings" section have changed, HodDB will load them anew.
-func NewMultiDB(cfg *config.Config) (*HodDB, error) {
+func NewHodDB(cfg *config.Config) (*HodDB, error) {
 	var mdb = &HodDB{
 		cfg:              cfg,
 		loadedfilehashes: make(map[string][]byte),
