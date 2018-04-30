@@ -1,5 +1,5 @@
 test:
-	- go test -v
+	- CGO_CFLAGS_ALLOW=.*/github.com/gtfierro/hod/turtle go test -v
 	rm -rf test_databases
 	git checkout test_databases
 cover:
