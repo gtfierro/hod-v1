@@ -21,6 +21,7 @@ type Query struct {
 	Select    SelectClause
 	From      FromClause
 	Count     bool
+	Insert    InsertClause
 	Where     WhereClause
 	Variables []string
 }
@@ -33,6 +34,9 @@ func (q Query) CopyWithNewTerms(terms []Triple) Query {
 	}
 	newq.Where.Terms = make([]Triple, len(terms))
 	copy(newq.Where.Terms, terms)
+
+	newq.Insert.Terms = make([]Triple, len(terms))
+	copy(newq.Insert.Terms, terms)
 	return newq
 }
 
@@ -42,6 +46,7 @@ func (q Query) Copy() *Query {
 		From:      q.From,
 		Variables: q.Variables,
 		Where:     q.Where,
+		Insert:    q.Insert,
 		Count:     q.Count,
 	}
 }
@@ -61,6 +66,21 @@ func NewQuery(selectclause, whereclause interface{}, count bool) (Query, error) 
 	return q, nil
 }
 
+func NewInsertQuery(insertclause, whereclause interface{}, count bool) (Query, error) {
+	if debug {
+		fmt.Printf("%# v", pretty.Formatter(whereclause.(WhereClause)))
+	}
+	q := Query{
+		Where:  whereclause.(WhereClause),
+		Insert: insertclause.(InsertClause),
+		Count:  count,
+	}
+	if q.From.Empty() {
+		q.From.AllDBs = true
+	}
+	return q, nil
+}
+
 func NewQueryMulti(selectclause, fromclause, whereclause interface{}, count bool) (Query, error) {
 	if debug {
 		fmt.Printf("%# v", pretty.Formatter(whereclause.(WhereClause)))
@@ -69,6 +89,22 @@ func NewQueryMulti(selectclause, fromclause, whereclause interface{}, count bool
 		Where:  whereclause.(WhereClause),
 		From:   fromclause.(FromClause),
 		Select: selectclause.(SelectClause),
+		Count:  count,
+	}
+	if q.From.Empty() {
+		q.From.AllDBs = true
+	}
+	return q, nil
+}
+
+func NewInsertQueryMulti(insertclause, fromclause, whereclause interface{}, count bool) (Query, error) {
+	if debug {
+		fmt.Printf("%# v", pretty.Formatter(whereclause.(WhereClause)))
+	}
+	q := Query{
+		Where:  whereclause.(WhereClause),
+		From:   fromclause.(FromClause),
+		Insert: insertclause.(InsertClause),
 		Count:  count,
 	}
 	if q.From.Empty() {
@@ -174,6 +210,16 @@ func NewAllSelectClause() (SelectClause, error) {
 
 func NewSelectClause(varlist interface{}) (SelectClause, error) {
 	return SelectClause{Vars: varlist.([]string)}, nil
+}
+
+type InsertClause struct {
+	Terms []Triple
+}
+
+func NewInsertClause(triples interface{}) (InsertClause, error) {
+	return InsertClause{
+		Terms: triples.([]Triple),
+	}, nil
 }
 
 type FromClause struct {

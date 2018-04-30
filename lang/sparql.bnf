@@ -21,6 +21,7 @@ quotedstring : _charstring ;
 QueryUnit
     : SelectQuery ";" << $0, nil >>
     | CountQuery  ";" << $0, nil >>
+    | UpdateQuery ";" << $0, nil >>
     ;
 
 SelectQuery
@@ -33,9 +34,19 @@ CountQuery
     | CountClause WhereClause  << ast.NewQuery($0, $1, true) >>
     ;
 
+UpdateQuery
+    : InsertClause DatasetClause WhereClause << ast.NewInsertQueryMulti($0, $1, $2, false) >>
+    | InsertClause WhereClause << ast.NewInsertQuery($0, $1, false) >>
+    ;
+
 SelectClause
     : "SELECT" "*"      << ast.NewAllSelectClause() >>
     | "SELECT" Varlist  << ast.NewSelectClause($1) >>
+    ;
+
+InsertClause
+    : "INSERT" "{" TriplesBlock "}"         << ast.NewInsertClause($2) >>
+    | "INSERT" "{" TriplesBlock "." "}"     << ast.NewInsertClause($2) >>
     ;
 
 CountClause
