@@ -267,6 +267,7 @@ func (db *DB) Close() {
 	checkError(db.predDB.Close())
 	checkError(db.graphDB.Close())
 	checkError(db.extendedDB.Close())
+	checkError(db.textidx.Close())
 }
 
 // hashes the given URI into the byte array
