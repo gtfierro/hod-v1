@@ -194,12 +194,17 @@ func (db *DB) buildGraph(dataset turtle.DataSet) error {
 	if err != nil {
 		return errors.Wrap(err, "Could not open transaction on extended DB")
 	}
+	snap, err := db.snapshot()
+	if err != nil {
+		return errors.Wrap(err, "Could not open snapshot for pred index")
+	}
+	defer snap.Close()
 	for predicate, predent := range db.predIndex {
 		if err != nil {
 			extendtx.Discard()
 			return errors.Wrap(err, "Could not open transaction on extended index")
 		}
-		if err := db.populateIndex(predicate, predent, extendtx); err != nil {
+		if err := db.populateIndex(snap, predicate, predent, extendtx); err != nil {
 			extendtx.Discard()
 			return err
 		}
@@ -210,14 +215,14 @@ func (db *DB) buildGraph(dataset turtle.DataSet) error {
 	return nil
 }
 
-func (db *DB) populateIndex(predicateURI turtle.URI, predicate *PredicateEntity, extendtx *leveldb.Transaction) error {
+func (db *DB) populateIndex(snap *snapshot, predicateURI turtle.URI, predicate *PredicateEntity, extendtx *leveldb.Transaction) error {
 	forwardPath := sparql.PathPattern{Pattern: sparql.PATTERN_ONE_PLUS}
 	results := newKeyTree()
 	if _, found := db.transitiveEdges[predicateURI]; !found {
 		return nil
 	}
 	forwardPath.Predicate = predicateURI
-	extendedPred := db.MustGetHash(predicateURI)
+	extendedPred := snap.MustGetHash(predicateURI)
 	for subjectStringHash := range predicate.Subjects {
 		var subjectHash Key
 		subjectHash.FromSlice([]byte(subjectStringHash))
@@ -239,12 +244,12 @@ func (db *DB) populateIndex(predicateURI turtle.URI, predicate *PredicateEntity,
 			return err
 		}
 
-		subject, err := db.GetEntityFromHash(subjectHash)
+		subject, err := snap.GetEntityFromHash(subjectHash)
 		if err != nil {
 			return err
 		}
 		stack := list.New()
-		db.followPathFromSubject(subject, results, stack, forwardPath)
+		snap.followPathFromSubject(subject, results, stack, forwardPath)
 		//log.Debug(db.MustGetURI(subjectHash).Value, predicate.Value, results.Len())
 		for results.Len() > 0 {
 			subjectIndex.AddOutPlusEdge(extendedPred, results.DeleteMax())
@@ -278,12 +283,12 @@ func (db *DB) populateIndex(predicateURI turtle.URI, predicate *PredicateEntity,
 			return err
 		}
 
-		object, err := db.GetEntityFromHash(objectHash)
+		object, err := snap.GetEntityFromHash(objectHash)
 		if err != nil {
 			return err
 		}
 		stack := list.New()
-		db.followPathFromObject(object, results, stack, forwardPath)
+		snap.followPathFromObject(object, results, stack, forwardPath)
 		for results.Len() > 0 {
 			objectIndex.AddInPlusEdge(extendedPred, results.DeleteMax())
 		}
@@ -296,9 +301,10 @@ func (db *DB) populateIndex(predicateURI turtle.URI, predicate *PredicateEntity,
 		}
 	}
 
+	//TODO: need to make this in a transaction
 	if reversePredicate, hasReverse := db.relationships[predicateURI]; hasReverse {
 		forwardPath.Predicate = reversePredicate
-		extendedPred = db.MustGetHash(predicateURI)
+		extendedPred = snap.MustGetHash(predicateURI)
 		for subjectStringHash := range predicate.Subjects {
 			var subjectHash Key
 			subjectHash.FromSlice([]byte(subjectStringHash))
@@ -320,12 +326,12 @@ func (db *DB) populateIndex(predicateURI turtle.URI, predicate *PredicateEntity,
 				return err
 			}
 
-			subject, err := db.GetEntityFromHash(subjectHash)
+			subject, err := snap.GetEntityFromHash(subjectHash)
 			if err != nil {
 				return err
 			}
 			stack := list.New()
-			db.followPathFromSubject(subject, results, stack, forwardPath)
+			snap.followPathFromSubject(subject, results, stack, forwardPath)
 			for results.Len() > 0 {
 				subjectIndex.AddInPlusEdge(extendedPred, results.DeleteMax())
 			}
@@ -358,12 +364,12 @@ func (db *DB) populateIndex(predicateURI turtle.URI, predicate *PredicateEntity,
 				return err
 			}
 
-			object, err := db.GetEntityFromHash(objectHash)
+			object, err := snap.GetEntityFromHash(objectHash)
 			if err != nil {
 				return err
 			}
 			stack := list.New()
-			db.followPathFromObject(object, results, stack, forwardPath)
+			snap.followPathFromObject(object, results, stack, forwardPath)
 			for results.Len() > 0 {
 				objectIndex.AddOutPlusEdge(extendedPred, results.DeleteMax())
 			}

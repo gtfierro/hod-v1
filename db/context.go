@@ -2,6 +2,8 @@ package db
 
 import (
 	"fmt"
+
+	"github.com/pkg/errors"
 )
 
 var trees = newBtreePool(BTREE_DEGREE)
@@ -21,17 +23,24 @@ type queryContext struct {
 	joined []string
 
 	db *DB
-
+	// embedded db snapshot
+	*snapshot
 	// embedded query plan
 	*queryPlan
 }
 
-func newQueryContext(plan *queryPlan, db *DB) *queryContext {
+func newQueryContext(plan *queryPlan, db *DB) (*queryContext, error) {
 	variablePosition := make(map[string]int)
 	definitions := make(map[string]*keyTree)
 	for idx, variable := range plan.query.Variables {
 		variablePosition[variable] = idx
 	}
+
+	snap, err := db.snapshot()
+	if err != nil {
+		return nil, errors.Wrap(err, "Could not get snapshot")
+	}
+
 	return &queryContext{
 		variablePosition: variablePosition,
 		definitions:      definitions,
@@ -39,7 +48,8 @@ func newQueryContext(plan *queryPlan, db *DB) *queryContext {
 		rel:              NewRelation(plan.query.Variables),
 		db:               db,
 		queryPlan:        plan,
-	}
+		snapshot:         snap,
+	}, nil
 }
 
 func (ctx *queryContext) cardinalityUnique(varname string) int {
@@ -141,7 +151,7 @@ func (ctx *queryContext) dumpRow(row *Row) {
 	for varName, pos := range ctx.variablePosition {
 		val := row.valueAt(pos)
 		if val != emptyKey {
-			s += varName + "=" + ctx.db.MustGetURI(val).String() + ", "
+			s += varName + "=" + ctx.MustGetURI(val).String() + ", "
 		}
 	}
 	s += "]"
@@ -160,7 +170,7 @@ rowIter:
 			if val == emptyKey {
 				continue rowIter
 			}
-			resultrow.row[idx] = ctx.db.MustGetURI(row.valueAt(ctx.variablePosition[varname]))
+			resultrow.row[idx] = ctx.MustGetURI(row.valueAt(ctx.variablePosition[varname]))
 		}
 		results[idx] = resultrow
 		idx++
