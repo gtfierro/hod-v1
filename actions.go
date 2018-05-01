@@ -74,7 +74,7 @@ func startCLI(c *cli.Context) error {
 		log.Error(err)
 		return err
 	}
-	mdb, err := hod.NewMultiDB(cfg)
+	mdb, err := hod.NewHodDB(cfg)
 	if err != nil {
 		log.Error(err)
 		return err
@@ -88,8 +88,8 @@ func startServer(c *cli.Context) error {
 		log.Error(err)
 		return err
 	}
-	cfg.ReloadBrick = false
-	db, err := hod.NewMultiDB(cfg)
+	cfg.ReloadOntologies = false
+	db, err := hod.NewHodDB(cfg)
 	if err != nil {
 		log.Error(err)
 		return err
@@ -251,8 +251,8 @@ func doQuery(c *cli.Context) error {
 		log.Error(err)
 		return err
 	}
-	cfg.ReloadBrick = false
-	db, err := hod.NewMultiDB(cfg)
+	cfg.ReloadOntologies = false
+	db, err := hod.NewHodDB(cfg)
 	if err != nil {
 		log.Error(err)
 		return err

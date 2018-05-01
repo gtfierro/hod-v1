@@ -34,90 +34,89 @@ type HodDB struct {
 // Creates or loads a new instance of HodDB from the provided config file. If any of the Turtle source files
 // in the "buildings" section have changed, HodDB will load them anew.
 func NewHodDB(cfg *config.Config) (*HodDB, error) {
-	var mdb = &HodDB{
+	var hod = &HodDB{
 		cfg:              cfg,
 		loadedfilehashes: make(map[string][]byte),
 	}
 
 	// create path for dbs
-	mdb.dbdir = strings.TrimSuffix(cfg.DBPath, "/")
-	if err := os.MkdirAll(mdb.dbdir, 0700); err != nil {
-		return nil, errors.Wrapf(err, "Could not create db directory %s", mdb.dbdir)
+	hod.dbdir = strings.TrimSuffix(cfg.DBPath, "/")
+	if err := os.MkdirAll(hod.dbdir, 0700); err != nil {
+		return nil, errors.Wrapf(err, "Could not create db directory %s", hod.dbdir)
 	}
 
-	fileHashPath := filepath.Join(mdb.dbdir, "fileHashes")
+	fileHashPath := filepath.Join(hod.dbdir, "fileHashes")
 	if _, err := os.Stat(fileHashPath); !os.IsNotExist(err) {
 		f, err := os.Open(fileHashPath)
 		if err != nil {
 			return nil, errors.Wrapf(err, "Could not open fileHash %s", fileHashPath)
 		}
 		dec := json.NewDecoder(f)
-		if err := dec.Decode(&mdb.loadedfilehashes); err != nil {
+		if err := dec.Decode(&hod.loadedfilehashes); err != nil {
 			return nil, errors.Wrapf(err, "Could not decode fileHash %s", fileHashPath)
 		}
 	}
 
 	// load files.
 	// For each file, we compute the sha256 hash. If we have already loaded the file and
-	// it hasn't changed, the hash should be in mdb.loadedfilehashes
+	// it hasn't changed, the hash should be in hod.loadedfilehashes
 
 	for buildingname, buildingttlfile := range cfg.Buildings {
 		f, err := os.Open(buildingttlfile)
 		if err != nil {
 			return nil, errors.Wrapf(err, "Could not read input file %s", buildingttlfile)
 		}
+		defer f.Close()
 		filehasher := sha256.New()
 		if _, err := io.Copy(filehasher, f); err != nil {
 			return nil, errors.Wrapf(err, "Could not hash file %s", buildingttlfile)
 		}
 		filehash := filehasher.Sum(nil)
-		if existinghash, found := mdb.loadedfilehashes[buildingttlfile]; found && bytes.Equal(filehash, existinghash) {
+		if existinghash, found := hod.loadedfilehashes[buildingttlfile]; found && bytes.Equal(filehash, existinghash) {
 			log.Infof("TTL file %s has not changed since we last loaded it! Skipping...", buildingttlfile)
-			cfg.ReloadBrick = false
-			cfg.DBPath = filepath.Join(mdb.dbdir, buildingname)
-			db, err := NewDB(cfg)
+			cfg.ReloadOntologies = false
+			cfg.DBPath = filepath.Join(hod.dbdir, buildingname)
+			db, err := newDB(cfg)
 			if err != nil {
 				return nil, errors.Wrap(err, "Could not load existing database")
 			}
-			mdb.dbs.Store(buildingname, db)
-			mdb.buildings = append(mdb.buildings, buildingname)
-			f.Close()
+			hod.dbs.Store(buildingname, db)
+			hod.buildings = append(hod.buildings, buildingname)
 			continue
 		}
-		mdb.buildings = append(mdb.buildings, buildingname)
-		mdb.loadedfilehashes[buildingttlfile] = filehash
-		f.Close()
+		hod.buildings = append(hod.buildings, buildingname)
+		hod.loadedfilehashes[buildingttlfile] = filehash
 
-		if err := mdb.loadDataset(buildingname, buildingttlfile); err != nil {
+		if err := hod.loadDataset(buildingname, buildingttlfile); err != nil {
 			return nil, err
 		}
 	}
 
-	if err := mdb.saveIndexes(); err != nil {
+	if err := hod.saveIndexes(); err != nil {
 		return nil, errors.Wrap(err, "Could not save file indexes")
 	}
 
-	return mdb, nil
+	return hod, nil
 }
 
-func (mdb *HodDB) saveIndexes() error {
-	f, err := os.Create(filepath.Join(mdb.dbdir, "fileHashes"))
+func (hod *HodDB) saveIndexes() error {
+	f, err := os.Create(filepath.Join(hod.dbdir, "fileHashes"))
 	if err != nil {
 		return err
 	}
 	defer f.Close()
 	enc := json.NewEncoder(f)
-	return enc.Encode(mdb.loadedfilehashes)
+	return enc.Encode(hod.loadedfilehashes)
 }
 
 // Execute the provided query against HodDB
-func (mdb *HodDB) RunQueryString(querystring string) (QueryResult, error) {
+func (hod *HodDB) RunQueryString(querystring string) (QueryResult, error) {
 	var emptyres QueryResult
 	if q, err := query.Parse(querystring); err != nil {
 		e := errors.Wrap(err, "Could not parse hod query")
 		log.Error(e)
 		return emptyres, e
-	} else if result, err := mdb.RunQuery(q); err != nil {
+	} else if result, err := hod.RunQuery(q); err != nil {
 		e := errors.Wrap(err, "Could not complete hod query")
 		log.Error(e)
 		return emptyres, e
@@ -127,16 +126,16 @@ func (mdb *HodDB) RunQueryString(querystring string) (QueryResult, error) {
 }
 
 // List the databases loaded into HodDB by name
-func (mdb *HodDB) Databases() []string {
-	return mdb.buildings
+func (hod *HodDB) Databases() []string {
+	return hod.buildings
 }
 
 // Execute a parsed query against HodDB
-func (mdb *HodDB) RunQuery(q *sparql.Query) (QueryResult, error) {
+func (hod *HodDB) RunQuery(q *sparql.Query) (QueryResult, error) {
 	var databases = make(map[string]*DB)
 
 	if q.From.AllDBs {
-		mdb.dbs.Range(func(_dbname, _db interface{}) bool {
+		hod.dbs.Range(func(_dbname, _db interface{}) bool {
 			dbname := _dbname.(string)
 			db := _db.(*DB)
 			databases[dbname] = db
@@ -144,7 +143,7 @@ func (mdb *HodDB) RunQuery(q *sparql.Query) (QueryResult, error) {
 		})
 	} else {
 		for _, dbname := range q.From.Databases {
-			db, ok := mdb.dbs.Load(dbname)
+			db, ok := hod.dbs.Load(dbname)
 			if ok {
 				databases[dbname] = db.(*DB)
 			}
@@ -192,12 +191,12 @@ func (mdb *HodDB) RunQuery(q *sparql.Query) (QueryResult, error) {
 	return result, nil
 }
 
-func (mdb *HodDB) loadDataset(name, ttlfile string) error {
-	mdb.cfg.DBPath = filepath.Join(mdb.dbdir, name)
-	mdb.cfg.ReloadBrick = true
-	db, err := NewDB(mdb.cfg)
+func (hod *HodDB) loadDataset(name, ttlfile string) error {
+	hod.cfg.DBPath = filepath.Join(hod.dbdir, name)
+	hod.cfg.ReloadOntologies = true
+	db, err := newDB(hod.cfg)
 	if err != nil {
-		return errors.Wrapf(err, "Could not create database at %s", mdb.cfg.DBPath)
+		return errors.Wrapf(err, "Could not create database at %s", hod.cfg.DBPath)
 	}
 	p := turtle.GetParser()
 	ds, duration := p.Parse(ttlfile)
@@ -207,17 +206,17 @@ func (mdb *HodDB) loadDataset(name, ttlfile string) error {
 	if err != nil {
 		return errors.Wrapf(err, "Could not load relationships %s", ttlfile)
 	}
-	err = db.LoadDataset(ds)
+	err = db.loadDataset(ds)
 	if err != nil {
 		return errors.Wrapf(err, "Could not load dataset %s", ttlfile)
 	}
-	mdb.dbs.Store(name, db)
+	hod.dbs.Store(name, db)
 	return nil
 }
 
 // Close HodDB
-func (mdb *HodDB) Close() {
-	mdb.dbs.Range(func(_dbname, _db interface{}) bool {
+func (hod *HodDB) Close() {
+	hod.dbs.Range(func(_dbname, _db interface{}) bool {
 		db := _db.(*DB)
 		db.Close()
 		return true
@@ -225,13 +224,13 @@ func (mdb *HodDB) Close() {
 }
 
 // Wildcard search using Bleve through all values in the database
-func (mdb *HodDB) Search(q string, n int) ([]string, error) {
+func (hod *HodDB) Search(q string, n int) ([]string, error) {
 	// just pick first db for now
 	var (
 		res []string
 		err error
 	)
-	mdb.dbs.Range(func(_dbname, _db interface{}) bool {
+	hod.dbs.Range(func(_dbname, _db interface{}) bool {
 		db := _db.(*DB)
 		res, err = db.search(q, n)
 		if err != nil {
@@ -243,7 +242,7 @@ func (mdb *HodDB) Search(q string, n int) ([]string, error) {
 }
 
 // Turn the results of the query into a GraphViz visualization of the classes and their relationships
-func (mdb *HodDB) QueryToClassDOT(q string) (string, error) {
+func (hod *HodDB) QueryToClassDOT(q string) (string, error) {
 	// just pick first db for now
 	var (
 		res string
@@ -257,7 +256,7 @@ func (mdb *HodDB) QueryToClassDOT(q string) (string, error) {
 	dot := ""
 	dot += "digraph G {\n"
 
-	mdb.dbs.Range(func(_dbname, _db interface{}) bool {
+	hod.dbs.Range(func(_dbname, _db interface{}) bool {
 		db := _db.(*DB)
 		res, err = db.queryToClassDOT(q)
 		dot += res
@@ -272,13 +271,13 @@ func (mdb *HodDB) QueryToClassDOT(q string) (string, error) {
 }
 
 // Turn the results of the query into a GraphViz visualization of the results
-func (mdb *HodDB) QueryToDOT(q string) (string, error) {
+func (hod *HodDB) QueryToDOT(q string) (string, error) {
 	// just pick first db for now
 	var (
 		res string
 		err error
 	)
-	mdb.dbs.Range(func(_dbname, _db interface{}) bool {
+	hod.dbs.Range(func(_dbname, _db interface{}) bool {
 		db := _db.(*DB)
 		res, err = db.queryToDOT(q)
 		if err != nil {
@@ -289,13 +288,13 @@ func (mdb *HodDB) QueryToDOT(q string) (string, error) {
 	return res, err
 }
 
-func (mdb *HodDB) abbreviate(uri turtle.URI) string {
+func (hod *HodDB) abbreviate(uri turtle.URI) string {
 	// just pick first db for now
 	var (
 		res string
 		err error
 	)
-	mdb.dbs.Range(func(_dbname, _db interface{}) bool {
+	hod.dbs.Range(func(_dbname, _db interface{}) bool {
 		db := _db.(*DB)
 		res = db.abbreviate(uri)
 		if err != nil {

@@ -2,9 +2,10 @@ DBPath: _testhoddb
 Buildings:
     soda: testbuildings/berkeley.ttl
     test: testbuildings/example.ttl
-BrickClassTTL: "testbuildings/Brick.ttl"
-BrickFrameTTL: "testbuildings/BrickFrame.ttl"
-ReloadBrick: false
+Ontologies:
+    - "testbuildings/Brick.ttl"
+    - "testbuildings/BrickFrame.ttl"
+ReloadOntologies: false
 DisableQueryCache: true
 ShowNamespaces: false
 ShowQueryPlan: false

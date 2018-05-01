@@ -3,6 +3,7 @@ package db
 
 import (
 	"encoding/binary"
+	"fmt"
 
 	"github.com/mitghi/btree"
 )
@@ -23,5 +24,5 @@ func (k *Key) FromSlice(src []byte) {
 }
 
 func (k Key) String() string {
-	return string(k[:])
+	return fmt.Sprintf("%v", k[:])
 }

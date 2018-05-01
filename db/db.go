@@ -83,7 +83,7 @@ type DB struct {
 	textidx bleve.Index
 }
 
-func NewDB(cfg *config.Config) (*DB, error) {
+func newDB(cfg *config.Config) (*DB, error) {
 	path := strings.TrimSuffix(cfg.DBPath, "/")
 	logging.SetLevel(cfg.LogLevel, "hod")
 
@@ -206,21 +206,18 @@ func NewDB(cfg *config.Config) (*DB, error) {
 	}
 
 	// load in Brick
-	if cfg.ReloadBrick {
+	if cfg.ReloadOntologies {
 		p := turtle.GetParser()
-		relships, _ := p.Parse(cfg.BrickFrameTTL)
-		classships, _ := p.Parse(cfg.BrickClassTTL)
-		err = db.loadRelationships(relships)
-		if err != nil {
-			return nil, err
-		}
-		err = db.LoadDataset(relships)
-		if err != nil {
-			return nil, err
-		}
-		err = db.LoadDataset(classships)
-		if err != nil {
-			return nil, err
+		for _, ontologyFile := range cfg.Ontologies {
+			ds, _ := p.Parse(ontologyFile)
+			err = db.loadRelationships(ds)
+			if err != nil {
+				return nil, err
+			}
+			err = db.loadDataset(ds)
+			if err != nil {
+				return nil, err
+			}
 		}
 		err = db.saveIndexes()
 		if err != nil {
@@ -483,7 +480,7 @@ func (db *DB) loadRelationships(dataset turtle.DataSet) error {
 	return nil
 }
 
-func (db *DB) LoadDataset(dataset turtle.DataSet) error {
+func (db *DB) loadDataset(dataset turtle.DataSet) error {
 	db.loading = true
 	start := time.Now()
 	// merge, don't set outright
