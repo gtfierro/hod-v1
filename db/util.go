@@ -7,7 +7,7 @@ import (
 	"time"
 
 	sparql "github.com/gtfierro/hod/lang/ast"
-	"github.com/mitghi/btree"
+	"github.com/gtfierro/btree"
 )
 
 func dumpHashTree(tree *btree.BTree, db *DB, limit int) {

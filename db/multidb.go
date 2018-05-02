@@ -16,7 +16,7 @@ import (
 	sparql "github.com/gtfierro/hod/lang/ast"
 	"github.com/gtfierro/hod/turtle"
 
-	"github.com/mitghi/btree"
+	"github.com/gtfierro/btree"
 	"github.com/pkg/errors"
 )
 

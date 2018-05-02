@@ -4,7 +4,7 @@ package db
 import (
 	"encoding/binary"
 
-	"github.com/mitghi/btree"
+	"github.com/gtfierro/btree"
 )
 
 type Key [4]byte

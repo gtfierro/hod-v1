@@ -3,7 +3,7 @@ package db
 import (
 	"sync"
 
-	"github.com/mitghi/btree"
+	"github.com/gtfierro/btree"
 )
 
 var (

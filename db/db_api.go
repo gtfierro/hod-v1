@@ -15,7 +15,7 @@ import (
 	"github.com/blevesearch/bleve"
 	"github.com/coocood/freecache"
 	"github.com/kr/pretty"
-	"github.com/mitghi/btree"
+	"github.com/gtfierro/btree"
 	"github.com/pkg/errors"
 )
 

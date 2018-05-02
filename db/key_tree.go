@@ -1,7 +1,7 @@
 package db
 
 import (
-	"github.com/mitghi/btree"
+	"github.com/gtfierro/btree"
 )
 
 const BTREE_DEGREE = 4
