@@ -56,6 +56,7 @@ type DB struct {
 	extendedDB *leveldb.DB
 	// store relationships and their inverses
 	relationships map[turtle.URI]turtle.URI
+	relLock       sync.RWMutex
 	// stores which edges can be 'rolled forward' in the index
 	transitiveEdges map[turtle.URI]struct{}
 	// store the namespace prefixes as strings
@@ -210,10 +211,6 @@ func newDB(cfg *config.Config) (*DB, error) {
 		p := turtle.GetParser()
 		for _, ontologyFile := range cfg.Ontologies {
 			ds, _ := p.Parse(ontologyFile)
-			err = db.loadRelationships(ds)
-			if err != nil {
-				return nil, err
-			}
 			err = db.loadDataset(ds)
 			if err != nil {
 				return nil, err
@@ -360,7 +357,7 @@ func (db *DB) insertEntityTx(entity turtle.URI, hashdest []byte, enttx, pktx *le
 	return nil
 }
 
-func (db *DB) loadPredicateEntity(predicate turtle.URI, _predicateHash, _subjectHash, _objectHash []byte, predtx *leveldb.Transaction) error {
+func (db *DB) loadPredicateEntity(predicate turtle.URI, _predicateHash, _subjectHash, _objectHash []byte) error {
 	var (
 		pred          *PredicateEntity
 		rpred         *PredicateEntity
@@ -433,7 +430,9 @@ func (db *DB) saveIndexes() error {
 	return nil
 }
 
-func (db *DB) loadRelationships(dataset turtle.DataSet) error {
+func (db *DB) loadDataset(dataset turtle.DataSet) error {
+	db.loading = true
+	start := time.Now()
 	// iterate through dataset, and pull out all that have a "rdf:type" of "owl:ObjectProperty"
 	// then we want to find the mapping that has "owl:inverseOf"
 	var relationships = make(map[turtle.URI]struct{})
@@ -457,6 +456,7 @@ func (db *DB) loadRelationships(dataset turtle.DataSet) error {
 		}
 	}
 
+	db.relLock.Lock()
 	for _, triple := range dataset.Triples {
 		if triple.Predicate.Namespace == owl_namespace && triple.Predicate.Value == "inverseOf" {
 			// check that the subject/object of the inverseOf relationships are both actually relationships
@@ -476,19 +476,14 @@ func (db *DB) loadRelationships(dataset turtle.DataSet) error {
 		//	triple.Object.Namespace == owl_namespace && triple.Object.Value == "TransitiveProperty" {
 		//}
 	}
-
-	return nil
-}
-
-func (db *DB) loadDataset(dataset turtle.DataSet) error {
-	db.loading = true
-	start := time.Now()
+	db.relLock.Unlock()
 	// merge, don't set outright
 	for abbr, full := range dataset.Namespaces {
 		if abbr != "" {
 			db.namespaces[abbr] = full
 		}
 	}
+
 	// start transactions
 	enttx, err := db.entityDB.OpenTransaction()
 	if err != nil {
@@ -530,7 +525,7 @@ func (db *DB) loadDataset(dataset turtle.DataSet) error {
 		if err := db.insertEntityTx(triple.Object, objectHash, enttx, pktx); err != nil {
 			return err
 		}
-		if err := db.loadPredicateEntity(triple.Predicate, predicateHash, subjectHash, objectHash, predtx); err != nil {
+		if err := db.loadPredicateEntity(triple.Predicate, predicateHash, subjectHash, objectHash); err != nil {
 			return err
 		}
 	}
@@ -540,15 +535,19 @@ func (db *DB) loadDataset(dataset turtle.DataSet) error {
 		return errors.Wrap(err, "Could not save batch text index")
 	}
 
+	db.relLock.RLock()
 	for pred, _ := range db.relationships {
 		if err := db.insertEntityTx(pred, predicateHash, enttx, pktx); err != nil {
+			db.relLock.RUnlock()
 			return err
 		}
 		pred.Value += "+"
 		if err := db.insertEntityTx(pred, predicateHash, enttx, pktx); err != nil {
+			db.relLock.RUnlock()
 			return err
 		}
 	}
+	db.relLock.RUnlock()
 
 	// finish those transactions
 	if err := enttx.Commit(); err != nil {

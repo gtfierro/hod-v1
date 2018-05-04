@@ -202,10 +202,6 @@ func (hod *HodDB) loadDataset(name, ttlfile string) error {
 	ds, duration := p.Parse(ttlfile)
 	rate := float64((float64(ds.NumTriples()) / float64(duration.Nanoseconds())) * 1e9)
 	log.Infof("Loaded %d triples, %d namespaces in %s (%.0f/sec)", ds.NumTriples(), ds.NumNamespaces(), duration, rate)
-	err = db.loadRelationships(ds)
-	if err != nil {
-		return errors.Wrapf(err, "Could not load relationships %s", ttlfile)
-	}
 	err = db.loadDataset(ds)
 	if err != nil {
 		return errors.Wrapf(err, "Could not load dataset %s", ttlfile)
