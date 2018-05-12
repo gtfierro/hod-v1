@@ -244,7 +244,7 @@ func (db *DB) populateIndex(snap *snapshot, predicateURI turtle.URI, predicate *
 			return err
 		}
 
-		subject, err := snap.GetEntityFromHash(subjectHash)
+		subject, err := snap.getEntityByHash(subjectHash)
 		if err != nil {
 			return err
 		}
@@ -283,7 +283,7 @@ func (db *DB) populateIndex(snap *snapshot, predicateURI turtle.URI, predicate *
 			return err
 		}
 
-		object, err := snap.GetEntityFromHash(objectHash)
+		object, err := snap.getEntityByHash(objectHash)
 		if err != nil {
 			return err
 		}
@@ -326,7 +326,7 @@ func (db *DB) populateIndex(snap *snapshot, predicateURI turtle.URI, predicate *
 				return err
 			}
 
-			subject, err := snap.GetEntityFromHash(subjectHash)
+			subject, err := snap.getEntityByHash(subjectHash)
 			if err != nil {
 				return err
 			}
@@ -364,7 +364,7 @@ func (db *DB) populateIndex(snap *snapshot, predicateURI turtle.URI, predicate *
 				return err
 			}
 
-			object, err := snap.GetEntityFromHash(objectHash)
+			object, err := snap.getEntityByHash(objectHash)
 			if err != nil {
 				return err
 			}

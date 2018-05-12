@@ -514,7 +514,7 @@ func (db *DB) getQueryResults(q *sparql.Query) ([]*ResultRow, queryStats, error)
 
 	runStart := time.Now()
 	ctx, err := db.executeQueryPlan(qp)
-	defer ctx.Close()
+	defer ctx.graph.done()
 	if err != nil {
 		return nil, stats, err
 	}

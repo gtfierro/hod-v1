@@ -202,10 +202,29 @@ func (hod *HodDB) loadDataset(name, ttlfile string) error {
 	ds, duration := p.Parse(ttlfile)
 	rate := float64((float64(ds.NumTriples()) / float64(duration.Nanoseconds())) * 1e9)
 	log.Infof("Loaded %d triples, %d namespaces in %s (%.0f/sec)", ds.NumTriples(), ds.NumNamespaces(), duration, rate)
-	err = db.loadDataset(ds)
+	tx, err := db.openTransaction()
 	if err != nil {
-		return errors.Wrapf(err, "Could not load dataset %s", ttlfile)
+		return err
 	}
+	if err := tx.addTriples(ds); err != nil {
+		return err
+	}
+
+	if err := tx.commit(); err != nil {
+		return err
+	}
+	for abbr, full := range ds.Namespaces {
+		if abbr != "" {
+			db.namespaces[abbr] = full
+		}
+	}
+	if err = db.saveIndexes(); err != nil {
+		return err
+	}
+	//err = db.loadDataset(ds)
+	//if err != nil {
+	//	return errors.Wrapf(err, "Could not load dataset %s", ttlfile)
+	//}
 	hod.dbs.Store(name, db)
 	return nil
 }

@@ -22,9 +22,8 @@ type queryContext struct {
 	// names of joined variables
 	joined []string
 
-	db *DB
-	// embedded db snapshot
-	*snapshot
+	graph traversable
+	db    *DB
 	// embedded query plan
 	*queryPlan
 }
@@ -48,7 +47,7 @@ func newQueryContext(plan *queryPlan, db *DB) (*queryContext, error) {
 		rel:              NewRelation(plan.query.Variables),
 		db:               db,
 		queryPlan:        plan,
-		snapshot:         snap,
+		graph:            snap,
 	}, nil
 }
 
@@ -151,7 +150,11 @@ func (ctx *queryContext) dumpRow(row *Row) {
 	for varName, pos := range ctx.variablePosition {
 		val := row.valueAt(pos)
 		if val != emptyKey {
-			s += varName + "=" + ctx.MustGetURI(val).String() + ", "
+			uri, err := ctx.graph.getURI(val)
+			if err != nil {
+				panic(err)
+			}
+			s += varName + "=" + uri.String() + ", "
 		}
 	}
 	s += "]"
@@ -170,7 +173,11 @@ rowIter:
 			if val == emptyKey {
 				continue rowIter
 			}
-			resultrow.row[idx] = ctx.MustGetURI(row.valueAt(ctx.variablePosition[varname]))
+			var err error
+			resultrow.row[idx], err = ctx.graph.getURI(row.valueAt(ctx.variablePosition[varname]))
+			if err != nil {
+				panic(err)
+			}
 		}
 		results[idx] = resultrow
 		idx++

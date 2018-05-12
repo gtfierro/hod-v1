@@ -1,7 +1,6 @@
 package db
 
 import (
-	"encoding/binary"
 	"fmt"
 	"os"
 	"strings"
@@ -20,7 +19,6 @@ import (
 	"github.com/syndtr/goleveldb/leveldb/filter"
 	"github.com/syndtr/goleveldb/leveldb/opt"
 	"github.com/tinylib/msgp/msgp"
-	"github.com/zhangxinngang/murmur"
 )
 
 // logger
@@ -211,16 +209,48 @@ func newDB(cfg *config.Config) (*DB, error) {
 		p := turtle.GetParser()
 		for _, ontologyFile := range cfg.Ontologies {
 			ds, _ := p.Parse(ontologyFile)
-			err = db.loadDataset(ds)
+
+			// TODO: testing
+			tx, err := db.openTransaction()
 			if err != nil {
+				panic(err)
+			}
+			if err := tx.addTriples(ds); err != nil {
+				panic(err)
+			}
+
+			if err := tx.commit(); err != nil {
 				return nil, err
 			}
+
+			for abbr, full := range ds.Namespaces {
+				if abbr != "" {
+					db.namespaces[abbr] = full
+				}
+			}
+
 		}
 		err = db.saveIndexes()
 		if err != nil {
 			return nil, err
 		}
 	}
+
+	//if cfg.ReloadOntologies {
+	//	p := turtle.GetParser()
+	//	for _, ontologyFile := range cfg.Ontologies {
+	//		ds, _ := p.Parse(ontologyFile)
+	//		err = db.loadDataset(ds)
+
+	//		if err != nil {
+	//			return nil, err
+	//		}
+	//	}
+	//	err = db.saveIndexes()
+	//	if err != nil {
+	//		return nil, err
+	//	}
+	//}
 
 	if cfg.ShowNamespaces {
 		var dmp strings.Builder
@@ -265,22 +295,6 @@ func (db *DB) Close() {
 	checkError(db.textidx.Close())
 }
 
-// hashes the given URI into the byte array
-func (db *DB) hashURI(u turtle.URI, dest []byte, salt uint64) {
-	var hash uint32
-	if len(dest) < 8 {
-		dest = make([]byte, 8)
-	}
-	if salt > 0 {
-		saltbytes := make([]byte, 8)
-		binary.LittleEndian.PutUint64(saltbytes, salt)
-		hash = murmur.Murmur3(append(u.Bytes(), saltbytes...))
-	} else {
-		hash = murmur.Murmur3(u.Bytes())
-	}
-	binary.LittleEndian.PutUint32(dest[:4], hash)
-}
-
 func (db *DB) insertEntity(entity turtle.URI, hashdest []byte) error {
 	// check if we've inserted Subject already
 	if exists, err := db.entityDB.Has(entity.Bytes(), nil); err == nil && exists {
@@ -293,12 +307,12 @@ func (db *DB) insertEntity(entity turtle.URI, hashdest []byte) error {
 	}
 	// generate the hash
 	var salt = uint64(0)
-	db.hashURI(entity, hashdest, salt)
+	hashURI(entity, hashdest, salt)
 	for {
 		if exists, err := db.pkDB.Has(hashdest, nil); err == nil && exists {
 			log.Warning("hash exists")
 			salt += 1
-			db.hashURI(entity, hashdest, salt)
+			hashURI(entity, hashdest, salt)
 		} else if err != nil {
 			return errors.Wrapf(err, "Error checking db membership for %v", hashdest)
 		} else {
@@ -334,12 +348,12 @@ func (db *DB) insertEntityTx(entity turtle.URI, hashdest []byte, enttx, pktx *le
 	}
 	// generate the hash
 	var salt = uint64(0)
-	db.hashURI(entity, hashdest, salt)
+	hashURI(entity, hashdest, salt)
 	for {
 		if exists, err := pktx.Has(hashdest, nil); err == nil && exists {
 			log.Warning("hash exists")
 			salt += 1
-			db.hashURI(entity, hashdest, salt)
+			hashURI(entity, hashdest, salt)
 		} else if err != nil {
 			return errors.Wrapf(err, "Error checking db membership for %v", hashdest)
 		} else {

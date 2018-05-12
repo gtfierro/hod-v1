@@ -1,14 +1,40 @@
 package db
 
 import (
+	"encoding/binary"
 	"fmt"
 	"hash/fnv"
 	"sort"
 	"time"
 
 	sparql "github.com/gtfierro/hod/lang/ast"
+	"github.com/gtfierro/hod/turtle"
 	"github.com/mitghi/btree"
+	"github.com/zhangxinngang/murmur"
 )
+
+func hashURI(u turtle.URI, dest []byte, salt uint64) {
+	var hash uint32
+	if len(dest) < 8 {
+		dest = make([]byte, 8)
+	}
+	if salt > 0 {
+		saltbytes := make([]byte, 8)
+		binary.LittleEndian.PutUint64(saltbytes, salt)
+		hash = murmur.Murmur3(append(u.Bytes(), saltbytes...))
+	} else {
+		hash = murmur.Murmur3(u.Bytes())
+	}
+	binary.LittleEndian.PutUint32(dest[:4], hash)
+}
+
+func mustGetURI(graph traversable, hash Key) turtle.URI {
+	if uri, err := graph.getURI(hash); err != nil {
+		panic(err)
+	} else {
+		return uri
+	}
+}
 
 func dumpHashTree(tree *btree.BTree, db *DB, limit int) {
 	max := tree.Max()
