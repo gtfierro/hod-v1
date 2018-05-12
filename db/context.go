@@ -109,16 +109,6 @@ func (ctx *queryContext) unionDefinitions(varname string, values *keyTree) {
 	ctx.definitions[varname] = values
 }
 
-func (ctx *queryContext) addDefinition(varname string, value Key) {
-	tree := ctx.definitions[varname]
-	if tree == nil || tree.Len() == 0 {
-		ctx.definitions[varname] = newKeyTree()
-		ctx.definitions[varname].Add(value)
-	} else {
-		tree.Add(value)
-	}
-}
-
 // remove the values from 'values' that aren't in the values we already have
 func (ctx *queryContext) restrictToResolved(varname string, values *keyTree) {
 	tree, found := ctx.definitions[varname]
