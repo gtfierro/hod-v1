@@ -277,6 +277,7 @@ func (db *DB) runQueryToSet(q *sparql.Query) ([]*ResultRow, error) {
 	}
 	if stats != nil {
 		logrus.WithFields(logrus.Fields{
+			"Name":    db.name,
 			"Where":   q.Select.Vars,
 			"Execute": stats.ExecutionTime,
 			"Expand":  stats.ExpandTime,
@@ -285,6 +286,7 @@ func (db *DB) runQueryToSet(q *sparql.Query) ([]*ResultRow, error) {
 		}).Info("Query")
 	} else {
 		logrus.WithFields(logrus.Fields{
+			"Name":  db.name,
 			"Where": q.Select.Vars,
 			"Total": time.Since(fullQueryStart),
 		}).Info("Query")

@@ -41,6 +41,7 @@ func init() {
 // TODO: evict hash when writes happen
 type DB struct {
 	path string
+	name string
 	// store []byte(entity URI) => primary key
 	entityDB *leveldb.DB
 	// store primary key => [](entity URI)
@@ -82,7 +83,7 @@ type DB struct {
 	textidx bleve.Index
 }
 
-func newDB(cfg *config.Config) (*DB, error) {
+func newDB(name string, cfg *config.Config) (*DB, error) {
 	path := strings.TrimSuffix(cfg.DBPath, "/")
 	logging.SetLevel(cfg.LogLevel, "hod")
 
@@ -133,6 +134,7 @@ func newDB(cfg *config.Config) (*DB, error) {
 
 	db := &DB{
 		path:                   path,
+		name:                   name,
 		entityDB:               entityDB,
 		extendedDB:             extendedDB,
 		pkDB:                   pkDB,

@@ -76,7 +76,7 @@ func NewHodDB(cfg *config.Config) (*HodDB, error) {
 			log.Infof("TTL file %s has not changed since we last loaded it! Skipping...", buildingttlfile)
 			cfg.ReloadOntologies = false
 			cfg.DBPath = filepath.Join(hod.dbdir, buildingname)
-			db, err := newDB(cfg)
+			db, err := newDB(buildingname, cfg)
 			if err != nil {
 				return nil, errors.Wrap(err, "Could not load existing database")
 			}
@@ -194,7 +194,7 @@ func (hod *HodDB) RunQuery(q *sparql.Query) (QueryResult, error) {
 func (hod *HodDB) loadDataset(name, ttlfile string) error {
 	hod.cfg.DBPath = filepath.Join(hod.dbdir, name)
 	hod.cfg.ReloadOntologies = true
-	db, err := newDB(hod.cfg)
+	db, err := newDB(name, hod.cfg)
 	if err != nil {
 		return errors.Wrapf(err, "Could not create database at %s", hod.cfg.DBPath)
 	}
