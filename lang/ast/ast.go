@@ -36,7 +36,6 @@ type Query struct {
 }
 
 func (q Query) IsInsert() bool {
-	fmt.Println(q.Type, INSERT_QUERY)
 	return (q.Type & INSERT_QUERY) == INSERT_QUERY
 }
 
