@@ -10,11 +10,13 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/gtfierro/hod/config"
 	query "github.com/gtfierro/hod/lang"
 	sparql "github.com/gtfierro/hod/lang/ast"
 	"github.com/gtfierro/hod/turtle"
+	logrus "github.com/sirupsen/logrus"
 
 	"github.com/mitghi/btree"
 	"github.com/pkg/errors"
@@ -136,6 +138,7 @@ func (hod *HodDB) Databases() []string {
 // Execute a parsed query against HodDB
 func (hod *HodDB) RunQuery(q *sparql.Query) (QueryResult, error) {
 	var databases = make(map[string]*DB)
+	fullQueryStart := time.Now()
 
 	if q.From.AllDBs {
 		hod.dbs.Range(func(_dbname, _db interface{}) bool {
@@ -158,13 +161,15 @@ func (hod *HodDB) RunQuery(q *sparql.Query) (QueryResult, error) {
 	//var rowlock sync.Mutex
 	unionedRows := btree.New(4, "")
 	var result QueryResult
+	var stats = new(queryStats)
 
 	for dbname, db := range databases {
 		//go func() {
 
 		// handle SELECT query
 		//if q.IsSelect() {
-		singleresult, _, err := db.runQuery(q)
+		singleresult, _stats, err := db.runQuery(q)
+		stats.merge(_stats)
 		if err != nil {
 			log.Error(errors.Wrapf(err, "Error running query on %s", dbname))
 		}
@@ -173,7 +178,6 @@ func (hod *HodDB) RunQuery(q *sparql.Query) (QueryResult, error) {
 			unionedRows.ReplaceOrInsert(row)
 		}
 		result.Count = unionedRows.Len()
-		log.Debug("Got", dbname, result.Count)
 		if !q.Count {
 			i := unionedRows.DeleteMax()
 			for i != nil {
@@ -191,7 +195,6 @@ func (hod *HodDB) RunQuery(q *sparql.Query) (QueryResult, error) {
 
 		// handle INSERT query
 		if q.IsInsert() {
-			log.Debugf("%+v", q)
 			db.handleInsert(q, result)
 		}
 		//rowlock.Unlock()
@@ -199,6 +202,14 @@ func (hod *HodDB) RunQuery(q *sparql.Query) (QueryResult, error) {
 		wg.Done()
 		//}()
 	}
+
+	logrus.WithFields(logrus.Fields{
+		"Where":     q.Select.Vars,
+		"#Results":  stats.NumResults,
+		"#Inserted": stats.NumInserted,
+		"#Deleted":  stats.NumDeleted,
+		"Total":     time.Since(fullQueryStart),
+	}).Info("Query")
 
 	wg.Wait()
 

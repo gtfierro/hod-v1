@@ -24,10 +24,10 @@ func prettyprint(v interface{}) {
 	fmt.Printf("%# v", pretty.Formatter(v))
 }
 
-func (db *DB) runQueryString(q string) ([]*ResultRow, *queryStats, error) {
+func (db *DB) runQueryString(q string) ([]*ResultRow, queryStats, error) {
 	var (
 		rows  []*ResultRow
-		stats *queryStats
+		stats queryStats
 	)
 	if q, err := query.Parse(q); err != nil {
 		e := errors.Wrap(err, "Could not parse hod query")
@@ -183,7 +183,7 @@ func (db *DB) runQueryString(q string) ([]*ResultRow, *queryStats, error) {
 //	return result, nil
 //}
 
-func (db *DB) runQuery(q *sparql.Query) ([]*ResultRow, *queryStats, error) {
+func (db *DB) runQuery(q *sparql.Query) ([]*ResultRow, queryStats, error) {
 	var result []*ResultRow
 
 	fullQueryStart := time.Now()
@@ -211,7 +211,7 @@ func (db *DB) runQuery(q *sparql.Query) ([]*ResultRow, *queryStats, error) {
 	// if we have terms that are part of a set of OR statements, then we run
 	// parallel queries for each fully-elaborated "branch" or the OR statement,
 	// and then merge the results together at the end
-	var stats *queryStats
+	var stats queryStats
 	if len(ors) > 0 {
 		var rowLock sync.Mutex
 		var wg sync.WaitGroup
@@ -243,28 +243,20 @@ func (db *DB) runQuery(q *sparql.Query) ([]*ResultRow, *queryStats, error) {
 		}
 	} else {
 		results, _stats, err := db.getQueryResults(q)
-		stats = &_stats
+		stats = _stats
 		if err != nil {
 			return result, stats, err
 		}
 		result = append(result, results...)
 	}
-	if stats != nil {
-		logrus.WithFields(logrus.Fields{
-			"Name":    db.name,
-			"Where":   q.Select.Vars,
-			"Execute": stats.ExecutionTime,
-			"Expand":  stats.ExpandTime,
-			"Results": stats.NumResults,
-			"Total":   time.Since(fullQueryStart),
-		}).Info("Query")
-	} else {
-		logrus.WithFields(logrus.Fields{
-			"Name":  db.name,
-			"Where": q.Select.Vars,
-			"Total": time.Since(fullQueryStart),
-		}).Info("Query")
-	}
+	logrus.WithFields(logrus.Fields{
+		"Name":    db.name,
+		"Where":   q.Select.Vars,
+		"Execute": stats.ExecutionTime,
+		"Expand":  stats.ExpandTime,
+		"Results": stats.NumResults,
+		"Total":   time.Since(fullQueryStart),
+	}).Info("Query")
 	return result, stats, nil
 }
 

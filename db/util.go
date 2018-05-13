@@ -153,6 +153,8 @@ type queryStats struct {
 	ExecutionTime time.Duration
 	ExpandTime    time.Duration
 	NumResults    int
+	NumInserted   int
+	NumDeleted    int
 }
 
 func (mq *queryStats) merge(other queryStats) {
@@ -167,4 +169,6 @@ func (mq *queryStats) merge(other queryStats) {
 		mq.ExpandTime = other.ExpandTime
 	}
 	mq.NumResults += other.NumResults
+	mq.NumInserted += other.NumInserted
+	mq.NumDeleted += other.NumDeleted
 }
