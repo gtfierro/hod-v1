@@ -3,7 +3,7 @@ test:
 	rm -rf test_databases
 	git checkout test_databases
 cover:
-	- go test -v -coverprofile=coverage.out
+	- CGO_CFLAGS_ALLOW=.*/github.com/gtfierro/hod/turtle go test -v -coverprofile=coverage.out
 	rm -rf test_databases
 	git checkout test_databases
 	go tool cover -html=coverage.out -o=coverage.html

@@ -5,8 +5,6 @@ PROJECT?=github.com/gtfierro/hod
 PERSISTDIR?=/etc/hod
 PORT?=47808
 
-clean:
-	rm -f ${APP}
 
 build: clean
 	CGO_CFLAGS_ALLOW=.*/github.com/gtfierro/hod/turtle go build \
@@ -17,9 +15,14 @@ install:
 	CGO_CFLAGS_ALLOW=.*/github.com/gtfierro/hod/turtle go install \
 		-ldflags "-s -w -X ${PROJECT}/version.Release=${RELEASE} \
 						-X ${PROJECT}/version.Commit=${COMMIT}"
+clean:
+	rm -f ${APP}
 
 run: build
 		${APP}
+
+vet:
+	CGO_CFLAGS_ALLOW=.*/github.com/gtfierro/hod/turtle go vet .
 
 container: build
 	cp hod container/.
