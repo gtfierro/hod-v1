@@ -73,7 +73,8 @@ DatasetClause
     ;
 
 WhereClause
-    : "WHERE" "{" TriplesBlock "}"                  << ast.NewWhereClause($2) >>
+    : "WHERE" "{"  "}"                  << ast.NewWhereClause([]ast.Triple{}) >>
+    | "WHERE" "{" TriplesBlock "}"                  << ast.NewWhereClause($2) >>
     | "WHERE" "{" TriplesBlock "." "}"                  << ast.NewWhereClause($2) >>
     | "WHERE" "{" TriplesBlock RestOfWhereList "}"  << ast.NewWhereClauseWithGraphGroup($2, $3) >>
     | "WHERE" "{" TriplesBlock "." RestOfWhereList "}"  << ast.NewWhereClauseWithGraphGroup($2, $4) >>
