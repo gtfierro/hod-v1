@@ -110,19 +110,22 @@ func (hod *HodDB) saveIndexes() error {
 }
 
 // Execute the provided query against HodDB
-func (hod *HodDB) RunQueryString(querystring string) (QueryResult, error) {
-	var emptyres QueryResult
-	if q, err := query.Parse(querystring); err != nil {
-		e := errors.Wrap(err, "Could not parse hod query")
-		log.Error(e)
-		return emptyres, e
-	} else if result, err := hod.RunQuery(q); err != nil {
-		e := errors.Wrap(err, "Could not complete hod query")
-		log.Error(e)
-		return emptyres, e
-	} else {
-		return result, nil
+func (hod *HodDB) RunQueryString(querystring string) (result QueryResult, err error) {
+	var (
+		q *sparql.Query
+	)
+	if q, err = query.Parse(querystring); err != nil {
+		err = errors.Wrap(err, "Could not parse hod query")
+		log.Error(err)
+		return
 	}
+
+	if result, err = hod.RunQuery(q); err != nil {
+		err = errors.Wrap(err, "Could not complete hod query")
+		log.Error(err)
+		return
+	}
+	return
 }
 
 // List the databases loaded into HodDB by name
@@ -158,7 +161,10 @@ func (hod *HodDB) RunQuery(q *sparql.Query) (QueryResult, error) {
 
 	for dbname, db := range databases {
 		//go func() {
-		singleresult, err := db.runQueryToSet(q)
+
+		// handle SELECT query
+		//if q.IsSelect() {
+		singleresult, _, err := db.runQuery(q)
 		if err != nil {
 			log.Error(errors.Wrapf(err, "Error running query on %s", dbname))
 		}
@@ -166,24 +172,32 @@ func (hod *HodDB) RunQuery(q *sparql.Query) (QueryResult, error) {
 		for _, row := range singleresult {
 			unionedRows.ReplaceOrInsert(row)
 		}
+		result.Count = unionedRows.Len()
+		log.Debug("Got", dbname, result.Count)
+		if !q.Count {
+			i := unionedRows.DeleteMax()
+			for i != nil {
+				row := i.(*ResultRow)
+				m := make(ResultMap)
+				for idx, vname := range q.Select.Vars {
+					m[vname] = row.row[idx]
+				}
+				result.Rows = append(result.Rows, m)
+				finishResultRow(row)
+				i = unionedRows.DeleteMax()
+			}
+		}
+		//}
+
+		// handle INSERT query
+		if q.IsInsert() {
+			log.Debugf("%+v", q)
+			db.handleInsert(q, result)
+		}
 		//rowlock.Unlock()
 		//TODO: merge these or decide how to grouop them
 		wg.Done()
 		//}()
-	}
-	result.Count = unionedRows.Len()
-	if !q.Count {
-		i := unionedRows.DeleteMax()
-		for i != nil {
-			row := i.(*ResultRow)
-			m := make(ResultMap)
-			for idx, vname := range q.Select.Vars {
-				m[vname] = row.row[idx]
-			}
-			result.Rows = append(result.Rows, m)
-			finishResultRow(row)
-			i = unionedRows.DeleteMax()
-		}
 	}
 
 	wg.Wait()

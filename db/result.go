@@ -22,13 +22,28 @@ type QueryResult struct {
 	selectVars []string
 	Rows       []ResultMap
 	Count      int
-	Elapsed    time.Duration `msg:"-"`
+	Elapsed    time.Duration
 }
 
 func newQueryResult() QueryResult {
 	return QueryResult{
 		Rows: emptyResultMapList,
 	}
+}
+
+func (qr *QueryResult) fromRows(rows []*ResultRow, vars []string, toMap bool) {
+	qr.Count = len(rows)
+	if toMap {
+		for _, row := range rows {
+			m := make(ResultMap)
+			for idx, vname := range vars {
+				m[vname] = row.row[idx]
+			}
+			qr.Rows = append(qr.Rows, m)
+			finishResultRow(row)
+		}
+	}
+	return
 }
 
 func (qr QueryResult) Dump() {
