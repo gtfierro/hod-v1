@@ -137,10 +137,6 @@ func (db *DB) runQuery(q *sparql.Query) (QueryResult, error) {
 			return QueryResult{}, queryErr
 		}
 	} else {
-		q.PopulateVars()
-		if q.Select.AllVars {
-			q.Select.Vars = q.Variables
-		}
 		results, _stats, err := db.getQueryResults(q)
 		if err != nil {
 			return QueryResult{}, err
@@ -272,10 +268,6 @@ func (db *DB) runQueryToSet(q *sparql.Query) ([]*ResultRow, error) {
 			return result, queryErr
 		}
 	} else {
-		q.PopulateVars()
-		if q.Select.AllVars {
-			q.Select.Vars = q.Variables
-		}
 		results, _stats, err := db.getQueryResults(q)
 		stats = &_stats
 		if err != nil {

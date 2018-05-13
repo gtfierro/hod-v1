@@ -213,13 +213,16 @@ func newDB(cfg *config.Config) (*DB, error) {
 			// TODO: testing
 			tx, err := db.openTransaction()
 			if err != nil {
+				tx.discard()
 				panic(err)
 			}
 			if err := tx.addTriples(ds); err != nil {
+				tx.discard()
 				panic(err)
 			}
 
 			if err := tx.commit(); err != nil {
+				tx.discard()
 				return nil, err
 			}
 

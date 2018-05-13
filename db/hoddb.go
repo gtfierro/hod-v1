@@ -204,13 +204,16 @@ func (hod *HodDB) loadDataset(name, ttlfile string) error {
 	log.Infof("Loaded %d triples, %d namespaces in %s (%.0f/sec)", ds.NumTriples(), ds.NumNamespaces(), duration, rate)
 	tx, err := db.openTransaction()
 	if err != nil {
+		tx.discard()
 		return err
 	}
 	if err := tx.addTriples(ds); err != nil {
+		tx.discard()
 		return err
 	}
 
 	if err := tx.commit(); err != nil {
+		tx.discard()
 		return err
 	}
 	for abbr, full := range ds.Namespaces {
