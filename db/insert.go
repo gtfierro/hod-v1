@@ -3,33 +3,38 @@ package db
 import (
 	sparql "github.com/gtfierro/hod/lang/ast"
 	"github.com/gtfierro/hod/turtle"
+	"time"
 )
 
-func (db *DB) handleInsert(q *sparql.Query, result QueryResult) error {
-	var insert turtle.DataSet
-	for _, insertTerm := range q.Insert.Terms {
+func (db *DB) handleInsert(insert sparql.InsertClause, result QueryResult) (queryStats, error) {
+	insertStart := time.Now()
+	var additions turtle.DataSet
+	var stats queryStats
+	for _, insertTerm := range insert.Terms {
 		if result.Count == 0 {
-			insert.AddTripleURIs(insertTerm.Subject, insertTerm.Predicates[0].Predicate, insertTerm.Object)
+			additions.AddTripleURIs(insertTerm.Subject, insertTerm.Predicates[0].Predicate, insertTerm.Object)
 		} else {
 			for _, row := range result.Rows {
+				newterm := insertTerm.Copy()
 				// replace all variables with content from query
-				if insertTerm.Subject.IsVariable() {
-					if value, found := row[insertTerm.Subject.Value]; found {
-						insertTerm.Subject = value
+				if newterm.Subject.IsVariable() {
+					if value, found := row[newterm.Subject.Value]; found {
+						newterm.Subject = value
 					}
 				}
-				pred := insertTerm.Predicates[0].Predicate
+				pred := newterm.Predicates[0].Predicate
 				if pred.IsVariable() {
 					if value, found := row[pred.Value]; found {
-						insertTerm.Predicates[0].Predicate = value
+						newterm.Predicates[0].Predicate = value
 					}
 				}
-				if insertTerm.Object.IsVariable() {
-					if value, found := row[insertTerm.Object.Value]; found {
-						insertTerm.Object = value
+				if newterm.Object.IsVariable() {
+					if value, found := row[newterm.Object.Value]; found {
+						newterm.Object = value
 					}
 				}
-				insert.AddTripleURIs(insertTerm.Subject, insertTerm.Predicates[0].Predicate, insertTerm.Object)
+				additions.AddTripleURIs(newterm.Subject, newterm.Predicates[0].Predicate, newterm.Object)
+				stats.NumInserted += 1
 			}
 		}
 	}
@@ -37,19 +42,20 @@ func (db *DB) handleInsert(q *sparql.Query, result QueryResult) error {
 	tx, err := db.openTransaction()
 	if err != nil {
 		tx.discard()
-		return err
+		return stats, err
 	}
-	if err := tx.addTriples(insert); err != nil {
+	if err := tx.addTriples(additions); err != nil {
 		tx.discard()
-		return err
+		return stats, err
 	}
 	if err := tx.commit(); err != nil {
 		tx.discard()
-		return err
+		return stats, err
 	}
 	err = db.saveIndexes()
 	if err != nil {
-		return err
+		return stats, err
 	}
-	return nil
+	stats.InsertTime = time.Since(insertStart)
+	return stats, nil
 }

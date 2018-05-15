@@ -368,9 +368,10 @@ func (tx *transaction) addTriple(triple turtle.Triple) error {
 	if err != nil {
 		return err
 	}
-	pred.AddSubjectObject(subjectHash, objectHash)
-	if err := tx.savePredicate(pred); err != nil {
-		return err
+	if pred.AddSubjectObject(subjectHash, objectHash) {
+		if err := tx.savePredicate(pred); err != nil {
+			return err
+		}
 	}
 
 	subject, err := tx.getEntityByURI(triple.Subject)
@@ -381,13 +382,15 @@ func (tx *transaction) addTriple(triple turtle.Triple) error {
 	if err != nil {
 		return err
 	}
-	subject.AddOutEdge(predicateHash, object.PK)
-	object.AddInEdge(predicateHash, subject.PK)
-	if err = tx.putEntity(subject); err != nil {
-		return err
+	if subject.AddOutEdge(predicateHash, object.PK) {
+		if err = tx.putEntity(subject); err != nil {
+			return err
+		}
 	}
-	if err = tx.putEntity(object); err != nil {
-		return err
+	if object.AddInEdge(predicateHash, subject.PK) {
+		if err = tx.putEntity(object); err != nil {
+			return err
+		}
 	}
 
 	return nil

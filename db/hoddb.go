@@ -195,7 +195,14 @@ func (hod *HodDB) RunQuery(q *sparql.Query) (QueryResult, error) {
 
 		// handle INSERT query
 		if q.IsInsert() {
-			db.handleInsert(q, result)
+			insertstats, err := db.handleInsert(q.Insert, result)
+			if err != nil {
+				return result, err
+			}
+			stats.merge(insertstats)
+		}
+		if !q.IsSelect() {
+			result.Rows = result.Rows[:0]
 		}
 		//rowlock.Unlock()
 		//TODO: merge these or decide how to grouop them
@@ -204,11 +211,14 @@ func (hod *HodDB) RunQuery(q *sparql.Query) (QueryResult, error) {
 	}
 
 	logrus.WithFields(logrus.Fields{
-		"Where":     q.Select.Vars,
-		"#Results":  stats.NumResults,
-		"#Inserted": stats.NumInserted,
-		"#Deleted":  stats.NumDeleted,
-		"Total":     time.Since(fullQueryStart),
+		"SelectVars": q.Select.Vars,
+		"#Results":   stats.NumResults,
+		"#Inserted":  stats.NumInserted,
+		"#Deleted":   stats.NumDeleted,
+		"Insert":     stats.InsertTime,
+		"Where":      stats.WhereTime,
+		"Expand":     stats.ExpandTime,
+		"Total":      time.Since(fullQueryStart),
 	}).Info("Query")
 
 	wg.Wait()

@@ -150,11 +150,12 @@ func hashQuery(q *sparql.Query) []byte {
 }
 
 type queryStats struct {
-	ExecutionTime time.Duration
-	ExpandTime    time.Duration
-	NumResults    int
-	NumInserted   int
-	NumDeleted    int
+	WhereTime   time.Duration
+	InsertTime  time.Duration
+	ExpandTime  time.Duration
+	NumResults  int
+	NumInserted int
+	NumDeleted  int
 }
 
 func (mq *queryStats) merge(other queryStats) {
@@ -162,11 +163,14 @@ func (mq *queryStats) merge(other queryStats) {
 		mq = &other
 		return
 	}
-	if mq.ExecutionTime.Nanoseconds() < other.ExecutionTime.Nanoseconds() {
-		mq.ExecutionTime = other.ExecutionTime
+	if mq.WhereTime.Nanoseconds() < other.WhereTime.Nanoseconds() {
+		mq.WhereTime = other.WhereTime
 	}
 	if mq.ExpandTime.Nanoseconds() < other.ExpandTime.Nanoseconds() {
 		mq.ExpandTime = other.ExpandTime
+	}
+	if mq.InsertTime.Nanoseconds() < other.InsertTime.Nanoseconds() {
+		mq.InsertTime = other.InsertTime
 	}
 	mq.NumResults += other.NumResults
 	mq.NumInserted += other.NumInserted

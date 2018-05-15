@@ -10,7 +10,7 @@ import (
 	query "github.com/gtfierro/hod/lang"
 	sparql "github.com/gtfierro/hod/lang/ast"
 	"github.com/gtfierro/hod/turtle"
-	logrus "github.com/sirupsen/logrus"
+	//logrus "github.com/sirupsen/logrus"
 	"github.com/syndtr/goleveldb/leveldb"
 
 	"github.com/blevesearch/bleve"
@@ -42,151 +42,10 @@ func (db *DB) runQueryString(q string) ([]*ResultRow, queryStats, error) {
 	}
 }
 
-//// To run a query, the following things need to happen:
-//// - resolve abbreviated triples to their full URI (this needs to be resolved on a db-by-db basis)
-//// - expand the query's embedded graphgroup clauses
-//func (db *DB) runQuery(q *sparql.Query) (QueryResult, error) {
-//	var result []*ResultRow
-//	fullQueryStart := time.Now()
-//
-//	// expand out the prefixes
-//	q.IterTriples(func(triple sparql.Triple) sparql.Triple {
-//		triple.Subject = db.expand(triple.Subject)
-//		triple.Object = db.expand(triple.Object)
-//		for idx2, pred := range triple.Predicates {
-//			triple.Predicates[idx2] = db.expand(pred)
-//		}
-//		return triple
-//	})
-//
-//	// expand the graphgroup unions
-//	var ors [][]sparql.Triple
-//	if q.Where.GraphGroup != nil {
-//		for _, group := range q.Where.GraphGroup.Expand() {
-//			newterms := make([]sparql.Triple, len(q.Where.Terms))
-//			copy(newterms, q.Where.Terms)
-//			ors = append(ors, append(newterms, group...))
-//		}
-//	}
-//
-//	//// check query hash
-//	//var queryhash []byte
-//	//if db.queryCacheEnabled {
-//	//	queryhash = hashQuery(q)
-//	//	if ans, err := db.queryCache.Get(queryhash); err == nil {
-//	//		var res QueryResult
-//	//		if _, err := res.UnmarshalMsg(ans); err != nil {
-//	//			log.Error(errors.Wrap(err, "Could not fetch query from cache. Running..."))
-//	//		} else {
-//	//			// successful!
-//	//			res.Elapsed = time.Since(fullQueryStart)
-//	//			return res, nil
-//	//		}
-//	//	} else if err != nil && err == freecache.ErrNotFound {
-//	//		log.Notice("Could not fetch query from cache")
-//	//	} else if err != nil {
-//	//		log.Error(errors.Wrap(err, "Could not access query cache"))
-//	//	}
-//	//}
-//
-//	// if we have terms that are part of a set of OR statements, then we run
-//	// parallel queries for each fully-elaborated "branch" or the OR statement,
-//	// and then merge the results together at the end
-//	var stats *queryStats
-//	if len(ors) > 0 {
-//		var rowLock sync.Mutex
-//		var wg sync.WaitGroup
-//		var queryErr error
-//		wg.Add(len(ors))
-//		for _, group := range ors {
-//			tmpQuery := q.CopyWithNewTerms(group)
-//			tmpQuery.PopulateVars()
-//			if tmpQuery.Select.AllVars {
-//				tmpQuery.Select.Vars = tmpQuery.Variables
-//			}
-//
-//			go func(q *sparql.Query) {
-//				results, _stats, err := db.getQueryResults(&tmpQuery)
-//				rowLock.Lock()
-//				if err != nil {
-//					queryErr = err
-//				} else {
-//					stats.merge(_stats)
-//					result = append(result, results...)
-//				}
-//				rowLock.Unlock()
-//				wg.Done()
-//			}(&tmpQuery)
-//		}
-//		wg.Wait()
-//		if queryErr != nil {
-//			return result, queryErr
-//		}
-//	} else {
-//		results, _stats, err := db.getQueryResults(q)
-//		stats = &_stats
-//		if err != nil {
-//			return QueryResult{}, err
-//		}
-//		stats = &_stats
-//		if err != nil {
-//			return result, err
-//		}
-//		result = append(result, results...)
-//	}
-//	if stats != nil {
-//		logrus.WithFields(logrus.Fields{
-//			"Where":   q.Select.Vars,
-//			"Execute": stats.ExecutionTime,
-//			"Expand":  stats.ExpandTime,
-//			"Results": stats.NumResults,
-//			"Total":   time.Since(fullQueryStart),
-//		}).Info("Query")
-//	} else {
-//		logrus.WithFields(logrus.Fields{
-//			"Where": q.Select.Vars,
-//			"Total": time.Since(fullQueryStart),
-//		}).Info("Query")
-//	}
-//
-//	var result = newQueryResult()
-//	result.selectVars = q.Select.Vars
-//	result.Elapsed = time.Since(fullQueryStart)
-//
-//	// return the rows
-//	result.Count = unionedRows.Len()
-//	if !q.Count {
-//		i := unionedRows.DeleteMax()
-//		for i != nil {
-//			row := i.(*ResultRow)
-//			m := make(ResultMap)
-//			for idx, vname := range q.Select.Vars {
-//				m[vname] = row.row[idx]
-//			}
-//			result.Rows = append(result.Rows, m)
-//			finishResultRow(row)
-//			i = unionedRows.DeleteMax()
-//		}
-//	}
-//
-//	if db.queryCacheEnabled {
-//		// set this in the cache
-//		marshalled, err := result.MarshalMsg(nil)
-//		if err != nil {
-//			log.Error(errors.Wrap(err, "Could not marshal results"))
-//		}
-//		if err := db.queryCache.Set(queryhash, marshalled, -1); err != nil {
-//			log.Error(errors.Wrap(err, "Could not cache results"))
-//		}
-//	}
-//
-//	return result, nil
-//}
-
 func (db *DB) runQuery(q *sparql.Query) ([]*ResultRow, queryStats, error) {
 	var result []*ResultRow
 
-	fullQueryStart := time.Now()
+	whereStart := time.Now()
 
 	// expand out the prefixes
 	q.IterTriples(func(triple sparql.Triple) sparql.Triple {
@@ -249,14 +108,15 @@ func (db *DB) runQuery(q *sparql.Query) ([]*ResultRow, queryStats, error) {
 		}
 		result = append(result, results...)
 	}
-	logrus.WithFields(logrus.Fields{
-		"Name":    db.name,
-		"Where":   q.Select.Vars,
-		"Execute": stats.ExecutionTime,
-		"Expand":  stats.ExpandTime,
-		"Results": stats.NumResults,
-		"Total":   time.Since(fullQueryStart),
-	}).Info("Query")
+	stats.WhereTime = time.Since(whereStart)
+	//logrus.WithFields(logrus.Fields{
+	//	"Name":    db.name,
+	//	"Where":   q.Select.Vars,
+	//	"Execute": stats.WhereTime,
+	//	"Expand":  stats.ExpandTime,
+	//	"Results": stats.NumResults,
+	//	"Total":   time.Since(whereStart),
+	//}).Info("Query")
 	return result, stats, nil
 }
 
@@ -491,7 +351,7 @@ func (db *DB) getQueryResults(q *sparql.Query) ([]*ResultRow, queryStats, error)
 
 	runStart = time.Now()
 	results := ctx.getResults()
-	stats.ExecutionTime = since
+	stats.WhereTime = since
 	stats.ExpandTime = time.Since(runStart)
 	stats.NumResults = len(results)
 
