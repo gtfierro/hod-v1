@@ -369,6 +369,16 @@ func (t Triple) String() string {
 	return s + " | " + t.Object.String() + ">"
 }
 
+func (t Triple) Copy() Triple {
+	var p = make([]PathPattern, len(t.Predicates))
+	copy(p, t.Predicates)
+	return Triple{
+		Subject:    t.Subject,
+		Object:     t.Object,
+		Predicates: p,
+	}
+}
+
 func NewTriple(subject, predicates, object interface{}) (Triple, error) {
 	return Triple{
 		Subject:    subject.(turtle.URI),
