@@ -52,22 +52,6 @@ func benchLoad(c *cli.Context) error {
 	return nil
 }
 
-//func startCLI(c *cli.Context) error {
-//	cfg, err := config.ReadConfig(c.String("config"))
-//	if err != nil {
-//		log.Error(err)
-//		return err
-//	}
-//	cfg.ReloadBrick = false
-//	db, err := hod.NewDB(cfg)
-//	if err != nil {
-//		log.Error(err)
-//		return err
-//	}
-//	defer db.Close()
-//	return runInteractiveQuery(db)
-//}
-
 func startCLI(c *cli.Context) error {
 	cfg, err := config.ReadConfig(c.String("config"))
 	if err != nil {
@@ -525,10 +509,10 @@ func runInteractiveQuery(db *hod.HodDB) error {
 		}
 		rl.SetPrompt(cyan("(hod)> "))
 		rl.SaveHistory(bufQuery)
-		q, err := query.Parse(bufQuery)
+		_, err = query.Parse(bufQuery)
 		if err != nil {
 			log.Error(err)
-		} else if res, err := db.RunQuery(q); err != nil {
+		} else if res, err := db.RunQueryString(bufQuery); err != nil {
 			log.Error(err)
 		} else {
 			res.Dump()
