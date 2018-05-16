@@ -48,12 +48,17 @@ func (qr *QueryResult) fromRows(rows []*ResultRow, vars []string, toMap bool) {
 }
 
 func (qr QueryResult) Dump() {
-	if len(qr.Rows) == 0 {
-		fmt.Println("Count:", qr.Count)
+	if qr.Count == 0 {
+		fmt.Println("No results")
+		return
 	}
 	var dmp strings.Builder
 
 	rowlens := make(map[string]int, len(qr.selectVars))
+
+	for _, varname := range qr.selectVars {
+		rowlens[varname] = len(varname)
+	}
 
 	for _, row := range qr.Rows {
 		for varname, value := range row {
