@@ -146,7 +146,7 @@ func TestDBQuery(t *testing.T) {
 			},
 		},
 	} {
-		time.Sleep(100 * time.Millisecond)
+		//time.Sleep(100 * time.Millisecond)
 		q, e := query.Parse(test.query)
 		if e != nil {
 			t.Error(test.query, e)

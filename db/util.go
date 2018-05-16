@@ -2,14 +2,12 @@ package db
 
 import (
 	"encoding/binary"
-	"fmt"
 	"hash/fnv"
 	"sort"
 	"time"
 
 	sparql "github.com/gtfierro/hod/lang/ast"
 	"github.com/gtfierro/hod/turtle"
-	"github.com/mitghi/btree"
 	"github.com/zhangxinngang/murmur"
 )
 
@@ -36,33 +34,33 @@ func mustGetURI(graph traversable, hash Key) turtle.URI {
 	}
 }
 
-func dumpHashTree(tree *btree.BTree, db *DB, limit int) {
-	max := tree.Max()
-	iter := func(i btree.Item) bool {
-		if limit == 0 {
-			return false // stop iteration
-		} else if limit > 0 {
-			limit -= 1 //
-		}
-		fmt.Println(db.MustGetURI(i.(Key)))
-		return i != max
-	}
-	tree.Ascend(iter)
-}
+//func dumpHashTree(tree *btree.BTree, db *DB, limit int) {
+//	max := tree.Max()
+//	iter := func(i btree.Item) bool {
+//		if limit == 0 {
+//			return false // stop iteration
+//		} else if limit > 0 {
+//			limit -= 1 //
+//		}
+//		fmt.Println(db.MustGetURI(i.(Key)))
+//		return i != max
+//	}
+//	tree.Ascend(iter)
+//}
 
-func dumpEntityTree(tree *btree.BTree, db *DB, limit int) {
-	max := tree.Max()
-	iter := func(i btree.Item) bool {
-		if limit == 0 {
-			return false // stop iteration
-		} else if limit > 0 {
-			limit -= 1 //
-		}
-		fmt.Println(db.MustGetURI(i.(*Entity).PK))
-		return i != max
-	}
-	tree.Ascend(iter)
-}
+//func dumpEntityTree(tree *btree.BTree, db *DB, limit int) {
+//	max := tree.Max()
+//	iter := func(i btree.Item) bool {
+//		if limit == 0 {
+//			return false // stop iteration
+//		} else if limit > 0 {
+//			limit -= 1 //
+//		}
+//		fmt.Println(db.MustGetURI(i.(*Entity).PK))
+//		return i != max
+//	}
+//	tree.Ascend(iter)
+//}
 
 func compareResultMapList(rml1, rml2 []ResultMap) bool {
 	var (

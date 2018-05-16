@@ -5,7 +5,6 @@ import (
 	"os"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/gtfierro/hod/config"
 	"github.com/gtfierro/hod/turtle"
@@ -61,13 +60,6 @@ type DB struct {
 	// store the namespace prefixes as strings
 	namespaces map[string]string
 	// cache for entity hashes
-	entityHashCache   *freecache.Cache
-	entityObjectCache map[Key]*Entity
-	eocLock           sync.RWMutex
-	entityIndexCache  map[Key]*EntityExtendedIndex
-	eicLock           sync.RWMutex
-	uriCache          map[Key]turtle.URI
-	uriLock           sync.RWMutex
 	// config options for output
 	showDependencyGraph    bool
 	showQueryPlan          bool
@@ -149,10 +141,6 @@ func newDB(name string, cfg *config.Config) (*DB, error) {
 		showQueryPlanLatencies: cfg.ShowQueryPlanLatencies,
 		showOperationLatencies: cfg.ShowOperationLatencies,
 		showQueryLatencies:     cfg.ShowQueryLatencies,
-		entityHashCache:        freecache.NewCache(16 * 1024 * 1024), // 16 MB
-		entityObjectCache:      make(map[Key]*Entity),
-		entityIndexCache:       make(map[Key]*EntityExtendedIndex),
-		uriCache:               make(map[Key]turtle.URI),
 		queryCacheEnabled:      !cfg.DisableQueryCache,
 		loading:                false,
 		textidx:                index,
@@ -446,154 +434,5 @@ func (db *DB) saveIndexes() error {
 		return err
 	}
 
-	return nil
-}
-
-func (db *DB) loadDataset(dataset turtle.DataSet) error {
-	db.loading = true
-	start := time.Now()
-	// iterate through dataset, and pull out all that have a "rdf:type" of "owl:ObjectProperty"
-	// then we want to find the mapping that has "owl:inverseOf"
-	var relationships = make(map[turtle.URI]struct{})
-
-	rdf_namespace, found := dataset.Namespaces["rdf"]
-	if !found {
-		rdf_namespace = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
-	}
-	owl_namespace, found := dataset.Namespaces["owl"]
-	if !found {
-		owl_namespace = "http://www.w3.org/2002/07/owl#"
-	}
-
-	for _, triple := range dataset.Triples {
-		if triple.Predicate.Namespace == rdf_namespace &&
-			triple.Predicate.Value == "type" &&
-			triple.Object.Namespace == owl_namespace &&
-			triple.Object.Value == "ObjectProperty" {
-			relationships[triple.Subject] = struct{}{}
-			db.transitiveEdges[triple.Subject] = struct{}{}
-		}
-	}
-
-	db.relLock.Lock()
-	for _, triple := range dataset.Triples {
-		if triple.Predicate.Namespace == owl_namespace && triple.Predicate.Value == "inverseOf" {
-			// check that the subject/object of the inverseOf relationships are both actually relationships
-			if _, found := relationships[triple.Subject]; !found {
-				continue
-			}
-			if _, found := relationships[triple.Object]; !found {
-				continue
-			}
-			db.relationships[triple.Subject] = triple.Object
-			db.relationships[triple.Object] = triple.Subject
-			db.transitiveEdges[triple.Subject] = struct{}{}
-			db.transitiveEdges[triple.Object] = struct{}{}
-		}
-		// check if a relationship is transitive
-		//if triple.Predicate.Namespace == owl_namespace && triple.Predicate.Value == "a" &&
-		//	triple.Object.Namespace == owl_namespace && triple.Object.Value == "TransitiveProperty" {
-		//}
-	}
-	db.relLock.Unlock()
-	// merge, don't set outright
-	for abbr, full := range dataset.Namespaces {
-		if abbr != "" {
-			db.namespaces[abbr] = full
-		}
-	}
-
-	// start transactions
-	enttx, err := db.entityDB.OpenTransaction()
-	if err != nil {
-		return errors.Wrap(err, "Could not open transaction on entity dataset")
-	}
-	pktx, err := db.pkDB.OpenTransaction()
-	if err != nil {
-		return errors.Wrap(err, "Could not open transaction on pk dataset")
-	}
-	predtx, err := db.predDB.OpenTransaction()
-	if err != nil {
-		return errors.Wrap(err, "Could not open transaction on pred dataset")
-	}
-	// load triples and primary keys
-	var (
-		subjectHash   = make([]byte, 8)
-		predicateHash = make([]byte, 8)
-		objectHash    = make([]byte, 8)
-	)
-	b := db.textidx.NewBatch()
-	for _, triple := range dataset.Triples {
-		// add classes to the text idx
-		if triple.Predicate.String() == "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" && triple.Object.String() == "http://www.w3.org/2002/07/owl#Class" {
-			sub := strings.Replace(triple.Subject.String(), "_", " ", -1)
-			if err := b.Index(triple.Subject.String(), sub); err != nil && len(triple.Subject.String()) > 0 {
-				return errors.Wrapf(err, "Could not add subject %s to text index (%s)", triple.Subject, triple)
-			}
-		}
-
-		if err := db.insertEntityTx(triple.Subject, subjectHash, enttx, pktx); err != nil {
-			return err
-		}
-		if err := db.insertEntityTx(db.relationships[triple.Predicate], predicateHash, enttx, pktx); err != nil {
-			return err
-		}
-		if err := db.insertEntityTx(triple.Predicate, predicateHash, enttx, pktx); err != nil {
-			return err
-		}
-		if err := db.insertEntityTx(triple.Object, objectHash, enttx, pktx); err != nil {
-			return err
-		}
-		if err := db.loadPredicateEntity(triple.Predicate, predicateHash, subjectHash, objectHash); err != nil {
-			return err
-		}
-	}
-
-	// batch the text index update
-	if err := db.textidx.Batch(b); err != nil {
-		return errors.Wrap(err, "Could not save batch text index")
-	}
-
-	db.relLock.RLock()
-	for pred, _ := range db.relationships {
-		if err := db.insertEntityTx(pred, predicateHash, enttx, pktx); err != nil {
-			db.relLock.RUnlock()
-			return err
-		}
-		pred.Value += "+"
-		if err := db.insertEntityTx(pred, predicateHash, enttx, pktx); err != nil {
-			db.relLock.RUnlock()
-			return err
-		}
-	}
-	db.relLock.RUnlock()
-
-	// finish those transactions
-	if err := enttx.Commit(); err != nil {
-		return errors.Wrap(err, "Could not commit transaction")
-	}
-	if err := pktx.Commit(); err != nil {
-		return errors.Wrap(err, "Could not commit transaction")
-	}
-	if err := predtx.Commit(); err != nil {
-		return errors.Wrap(err, "Could not commit transaction")
-	}
-	log.Infof("Built lookup tables in %s", time.Since(start))
-
-	start = time.Now()
-	if err := db.buildGraph(dataset); err != nil {
-		return errors.Wrap(err, "Could not build graph")
-	}
-	log.Infof("Built graph in %s", time.Since(start))
-
-	for pfx, uri := range db.namespaces {
-		fmt.Printf("%s => %s\n", pfx, uri)
-	}
-	// save indexes after loading database
-	err = db.saveIndexes()
-	if err != nil {
-		return err
-	}
-	db.loading = false
 	return nil
 }

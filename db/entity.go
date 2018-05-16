@@ -3,7 +3,6 @@ package db
 
 import (
 	"encoding/binary"
-	"fmt"
 
 	"github.com/mitghi/btree"
 )
@@ -125,18 +124,18 @@ func (e *PredicateEntity) AddSubjectObject(subject, object Key) bool {
 	return changed
 }
 
-func (e *PredicateEntity) Dump(db *DB) {
-	fmt.Printf("dump predicate> %s %p\n", db.MustGetURI(e.PK), e)
-	for sub, objmap := range e.Subjects {
-		var s, o Key
-		s.FromSlice([]byte(sub))
-		fmt.Println("   subject>", db.MustGetURI(s))
-		for obj := range objmap {
-			o.FromSlice([]byte(obj))
-			fmt.Println("     object>", db.MustGetURI(o))
-		}
-	}
-}
+//func (e *PredicateEntity) Dump(db *DB) {
+//	fmt.Printf("dump predicate> %s %p\n", db.MustGetURI(e.PK), e)
+//	for sub, objmap := range e.Subjects {
+//		var s, o Key
+//		s.FromSlice([]byte(sub))
+//		fmt.Println("   subject>", db.MustGetURI(s))
+//		for obj := range objmap {
+//			o.FromSlice([]byte(obj))
+//			fmt.Println("     object>", db.MustGetURI(o))
+//		}
+//	}
+//}
 
 type EntityExtendedIndex struct {
 	PK           Key              `msg:"p"`

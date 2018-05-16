@@ -10,13 +10,9 @@ import (
 	query "github.com/gtfierro/hod/lang"
 	sparql "github.com/gtfierro/hod/lang/ast"
 	"github.com/gtfierro/hod/turtle"
-	//logrus "github.com/sirupsen/logrus"
-	"github.com/syndtr/goleveldb/leveldb"
 
 	"github.com/blevesearch/bleve"
-	"github.com/coocood/freecache"
 	"github.com/kr/pretty"
-	//"github.com/mitghi/btree"
 	"github.com/pkg/errors"
 )
 
@@ -172,98 +168,100 @@ func (db *DB) queryToDOT(querystring string) (string, error) {
 
 // executes a query and returns a DOT string of the classes involved
 func (db *DB) queryToClassDOT(querystring string) (string, error) {
-	q, err := query.Parse(querystring)
+	_, err := query.Parse(querystring)
 	if err != nil {
 		return "", err
 	}
-	// create DOT template string
-	dot := ""
+	//// create DOT template string
+	//dot := ""
 
-	// get rdf:type predicate hash as a string
-	typeURI := turtle.ParseURI("rdf:type")
-	typeURI.Namespace = db.namespaces[typeURI.Namespace]
-	typeKey, err := db.GetHash(typeURI)
-	if err != nil {
-		return "", err
-	}
-	typeKeyString := typeKey.String()
+	//// get rdf:type predicate hash as a string
+	//typeURI := turtle.ParseURI("rdf:type")
+	//typeURI.Namespace = db.namespaces[typeURI.Namespace]
+	//snap := db.getSnapshot()
+	//typeKey, err := snap.getHash(typeURI)
+	//if err != nil {
+	//	return "", err
+	//}
+	//typeKeyString := typeKey.String()
 
-	getClass := func(ent *Entity) (classes []turtle.URI, err error) {
-		_classes := ent.OutEdges[typeKeyString]
-		for _, class := range _classes {
-			classes = append(classes, db.MustGetURI(class))
-		}
-		return
-	}
+	//getClass := func(ent *Entity) (classes []turtle.URI, err error) {
+	//	_classes := ent.OutEdges[typeKeyString]
+	//	for _, class := range _classes {
+	//		classes = append(classes, mustGetURI(snap, class))
+	//	}
+	//	return
+	//}
 
-	getEdges := func(ent *Entity) (predicates, objects []turtle.URI, reterr error) {
-		var predKey Key
-		for predKeyString, objectList := range ent.OutEdges {
-			predKey.FromSlice([]byte(predKeyString))
-			predURI, err := db.GetURI(predKey)
-			if err != nil {
-				reterr = err
-				return
-			}
-			for _, objectKey := range objectList {
-				objectEnt, err := db.GetEntityFromHash(objectKey)
-				if err != nil {
-					reterr = err
-					return
-				}
-				objectClasses, err := getClass(objectEnt)
-				if err != nil {
-					reterr = err
-					return
-				}
-				for _, class := range objectClasses {
-					if predURI.Value != "type" && class.Value != "Class" {
-						predicates = append(predicates, predURI)
-						objects = append(objects, class)
-					}
-				}
+	//getEdges := func(ent *Entity) (predicates, objects []turtle.URI, reterr error) {
+	//	var predKey Key
+	//	for predKeyString, objectList := range ent.OutEdges {
+	//		predKey.FromSlice([]byte(predKeyString))
+	//		predURI, err := snap.getURI(predKey)
+	//		if err != nil {
+	//			reterr = err
+	//			return
+	//		}
+	//		for _, objectKey := range objectList {
+	//			objectEnt, err := snap.getEntityByHash(objectKey)
+	//			if err != nil {
+	//				reterr = err
+	//				return
+	//			}
+	//			objectClasses, err := getClass(objectEnt)
+	//			if err != nil {
+	//				reterr = err
+	//				return
+	//			}
+	//			for _, class := range objectClasses {
+	//				if predURI.Value != "type" && class.Value != "Class" {
+	//					predicates = append(predicates, predURI)
+	//					objects = append(objects, class)
+	//				}
+	//			}
 
-			}
-		}
-		return
-	}
+	//		}
+	//	}
+	//	return
+	//}
 
-	result, _, err := db.runQuery(q)
-	if err != nil {
-		return "", err
-	}
-	for _, row := range result {
-		for _, uri := range row.row {
-			ent, err := db.GetEntity(uri)
-			if err != nil {
-				return "", err
-			}
-			classList, err := getClass(ent)
-			if err != nil {
-				return "", err
-			}
-			preds, objs, err := getEdges(ent)
-			if err != nil {
-				return "", err
-			}
-			// add class as node to graph
-			for _, class := range classList {
-				line := fmt.Sprintf("\"%s\" [fillcolor=\"#4caf50\"];\n", db.abbreviate(class))
-				if !strings.Contains(dot, line) {
-					dot += line
-				}
-				for i := 0; i < len(preds); i++ {
-					line := fmt.Sprintf("\"%s\" -> \"%s\" [label=\"%s\"];\n", db.abbreviate(class), db.abbreviate(objs[i]), db.abbreviate(preds[i]))
-					if !strings.Contains(dot, line) {
-						dot += line
-					}
-				}
-			}
+	//result, _, err := db.runQuery(q)
+	//if err != nil {
+	//	return "", err
+	//}
+	//for _, row := range result {
+	//	for _, uri := range row.row {
+	//		ent, err := db.GetEntity(uri)
+	//		if err != nil {
+	//			return "", err
+	//		}
+	//		classList, err := getClass(ent)
+	//		if err != nil {
+	//			return "", err
+	//		}
+	//		preds, objs, err := getEdges(ent)
+	//		if err != nil {
+	//			return "", err
+	//		}
+	//		// add class as node to graph
+	//		for _, class := range classList {
+	//			line := fmt.Sprintf("\"%s\" [fillcolor=\"#4caf50\"];\n", db.abbreviate(class))
+	//			if !strings.Contains(dot, line) {
+	//				dot += line
+	//			}
+	//			for i := 0; i < len(preds); i++ {
+	//				line := fmt.Sprintf("\"%s\" -> \"%s\" [label=\"%s\"];\n", db.abbreviate(class), db.abbreviate(objs[i]), db.abbreviate(preds[i]))
+	//				if !strings.Contains(dot, line) {
+	//					dot += line
+	//				}
+	//			}
+	//		}
 
-		}
-	}
+	//	}
+	//}
 
-	return dot, nil
+	//return dot, nil
+	return "", nil
 }
 
 func (db *DB) abbreviate(uri turtle.URI) string {
@@ -396,191 +394,18 @@ func (db *DB) sortQueryTerms(q *sparql.Query) *dependencyGraph {
 	return dg
 }
 
-// returns the uint64 hash of the given URI (this is adjusted for uniqueness)
-func (db *DB) GetHash(entity turtle.URI) (Key, error) {
-	var rethash Key
-	if hash, err := db.entityHashCache.Get(entity.Bytes()); err != nil {
-		if err == freecache.ErrNotFound {
-			val, err := db.entityDB.Get(entity.Bytes(), nil)
-			if err != nil {
-				return emptyKey, errors.Wrapf(err, "Could not get Entity for %s", entity)
-			}
-			copy(rethash[:], val)
-			if rethash == emptyKey {
-				return emptyKey, errors.New("Got bad hash")
-			}
-			db.entityHashCache.Set(entity.Bytes(), rethash[:], -1) // no expiry
-			return rethash, nil
-		} else {
-			return emptyKey, errors.Wrapf(err, "Could not get Entity for %s", entity)
-		}
-	} else {
-		copy(rethash[:], hash)
-	}
-	return rethash, nil
-}
-
-func (db *DB) MustGetHash(entity turtle.URI) Key {
-	val, err := db.GetHash(entity)
-	if err != nil {
-		log.Error(errors.Wrapf(err, "Could not get hash for %s", entity))
-		return emptyKey
-	}
-	return val
-}
-
-func (db *DB) GetURI(hash Key) (turtle.URI, error) {
-	db.uriLock.RLock()
-	if uri, found := db.uriCache[hash]; found {
-		db.uriLock.RUnlock()
-		return uri, nil
-	}
-	db.uriLock.RUnlock()
-	db.uriLock.Lock()
-	defer db.uriLock.Unlock()
-	val, err := db.pkDB.Get(hash[:], nil)
-	if err != nil {
-		return turtle.URI{}, err
-	}
-	uri := turtle.ParseURI(string(val))
-	db.uriCache[hash] = uri
-	return uri, nil
-}
-
-func (db *DB) MustGetURI(hash Key) turtle.URI {
-	if hash == emptyKey {
-		return turtle.URI{}
-	}
-	uri, err := db.GetURI(hash)
-	if err != nil {
-		log.Error(errors.Wrapf(err, "Could not get URI for %v", hash))
-		return turtle.URI{}
-	}
-	return uri
-}
-
-func (db *DB) MustGetURIStringHash(hash string) turtle.URI {
-	var c Key
-	copy(c[:], []byte(hash))
-	return db.MustGetURI(c)
-}
-
-func (db *DB) GetEntity(uri turtle.URI) (*Entity, error) {
-	hash, err := db.GetHash(uri)
-	if err != nil {
-		return nil, err
-	}
-	return db.GetEntityFromHash(hash)
-}
-
-func (db *DB) GetEntityFromHash(hash Key) (*Entity, error) {
-	db.eocLock.RLock()
-	if ent, found := db.entityObjectCache[hash]; found {
-		db.eocLock.RUnlock()
-		return ent, nil
-	}
-	db.eocLock.RUnlock()
-	db.eocLock.Lock()
-	defer db.eocLock.Unlock()
-	bytes, err := db.graphDB.Get(hash[:], nil)
-	if err != nil {
-		return nil, errors.Wrapf(err, "Could not get Entity from graph for %s", db.MustGetURI(hash))
-	}
-	ent := NewEntity()
-	_, err = ent.UnmarshalMsg(bytes)
-	db.entityObjectCache[hash] = ent
-	return ent, err
-}
-
-func (db *DB) MustGetEntityFromHash(hash Key) *Entity {
-	e, err := db.GetEntityFromHash(hash)
-	if err != nil {
-		log.Error(errors.Wrap(err, "Could not get entity"))
-		return nil
-	}
-	return e
-}
-
-func (db *DB) MustGetEntityIndexFromHash(hash Key) *EntityExtendedIndex {
-	e, err := db.GetEntityIndexFromHash(hash)
-	if err != nil {
-		log.Error(errors.Wrap(err, "Could not get entity index"))
-		return nil
-	}
-	return e
-}
-
-func (db *DB) DumpEntity(ent *Entity) {
-	fmt.Println("DUMPING", db.MustGetURI(ent.PK))
-	for edge, list := range ent.OutEdges {
-		fmt.Printf(" OUT: %s \n", db.MustGetURIStringHash(edge).Value)
-		for _, l := range list {
-			fmt.Printf("     -> %s\n", db.MustGetURI(l).Value)
-		}
-	}
-	for edge, list := range ent.InEdges {
-		fmt.Printf(" In: %s \n", db.MustGetURIStringHash(edge).Value)
-		for _, l := range list {
-			fmt.Printf("     <- %s\n", db.MustGetURI(l).Value)
-		}
-	}
-}
-
-func (db *DB) GetEntityTx(graphtx *leveldb.Transaction, uri turtle.URI) (*Entity, error) {
-	var entity = NewEntity()
-	hash, err := db.GetHash(uri)
-	if err != nil {
-		return nil, err
-	}
-	bytes, err := graphtx.Get(hash[:], nil)
-	if err != nil {
-		return nil, err
-	}
-	_, err = entity.UnmarshalMsg(bytes)
-	if err != nil {
-		return nil, err
-	}
-	return entity, nil
-}
-
-func (db *DB) GetEntityFromHashTx(graphtx *leveldb.Transaction, hash Key) (*Entity, error) {
-	bytes, err := graphtx.Get(hash[:], nil)
-	if err != nil {
-		return nil, err
-	}
-	ent := NewEntity()
-	_, err = ent.UnmarshalMsg(bytes)
-	return ent, err
-}
-
-func (db *DB) GetEntityIndexFromHashTx(extendtx *leveldb.Transaction, hash Key) (*EntityExtendedIndex, error) {
-	bytes, err := extendtx.Get(hash[:], nil)
-	if err != nil {
-		return nil, err
-	}
-	ent := NewEntityExtendedIndex()
-	_, err = ent.UnmarshalMsg(bytes)
-	return ent, err
-}
-
-func (db *DB) GetEntityIndexFromHash(hash Key) (*EntityExtendedIndex, error) {
-	db.eicLock.RLock()
-	if ent, found := db.entityIndexCache[hash]; found {
-		db.eicLock.RUnlock()
-		return ent, nil
-	}
-	db.eicLock.RUnlock()
-	db.eicLock.Lock()
-	defer db.eicLock.Unlock()
-	bytes, err := db.extendedDB.Get(hash[:], nil)
-	if err != nil && err != leveldb.ErrNotFound {
-		return nil, errors.Wrapf(err, "Could not get EntityIndex from graph for %s", db.MustGetURI(hash))
-	} else if err == leveldb.ErrNotFound {
-		db.entityIndexCache[hash] = nil
-		return nil, nil
-	}
-	ent := NewEntityExtendedIndex()
-	_, err = ent.UnmarshalMsg(bytes)
-	db.entityIndexCache[hash] = ent
-	return ent, err
-}
+//func (db *DB) DumpEntity(ent *Entity) {
+//	fmt.Println("DUMPING", db.MustGetURI(ent.PK))
+//	for edge, list := range ent.OutEdges {
+//		fmt.Printf(" OUT: %s \n", db.MustGetURIStringHash(edge).Value)
+//		for _, l := range list {
+//			fmt.Printf("     -> %s\n", db.MustGetURI(l).Value)
+//		}
+//	}
+//	for edge, list := range ent.InEdges {
+//		fmt.Printf(" In: %s \n", db.MustGetURIStringHash(edge).Value)
+//		for _, l := range list {
+//			fmt.Printf("     <- %s\n", db.MustGetURI(l).Value)
+//		}
+//	}
+//}

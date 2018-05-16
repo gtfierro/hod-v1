@@ -3,7 +3,7 @@ package db
 import (
 	"container/list"
 
-	"github.com/coocood/freecache"
+	//"github.com/coocood/freecache"
 	sparql "github.com/gtfierro/hod/lang/ast"
 	"github.com/gtfierro/hod/turtle"
 	"github.com/pkg/errors"
@@ -83,20 +83,11 @@ func (snap *snapshot) done() error {
 /*** Get URI methods ***/
 
 func (snap *snapshot) getURI(hash Key) (turtle.URI, error) {
-	snap.db.uriLock.RLock()
-	if uri, found := snap.db.uriCache[hash]; found {
-		snap.db.uriLock.RUnlock()
-		return uri, nil
-	}
-	snap.db.uriLock.RUnlock()
-	snap.db.uriLock.Lock()
-	defer snap.db.uriLock.Unlock()
 	val, err := snap.pkSnapshot.Get(hash[:], nil)
 	if err != nil {
 		return turtle.URI{}, err
 	}
 	uri := turtle.ParseURI(string(val))
-	snap.db.uriCache[hash] = uri
 	return uri, nil
 }
 
@@ -139,23 +130,13 @@ func (snap *snapshot) getPredicateByHash(hash Key) (*PredicateEntity, error) {
 
 func (snap *snapshot) getHash(entity turtle.URI) (Key, error) {
 	var rethash Key
-	if hash, err := snap.db.entityHashCache.Get(entity.Bytes()); err != nil {
-		if err == freecache.ErrNotFound {
-			val, err := snap.entitySnapshot.Get(entity.Bytes(), nil)
-			if err != nil {
-				return emptyKey, errors.Wrapf(err, "Could not get Entity for %s", entity)
-			}
-			copy(rethash[:], val)
-			if rethash == emptyKey {
-				return emptyKey, errors.New("Got bad hash")
-			}
-			snap.db.entityHashCache.Set(entity.Bytes(), rethash[:], -1) // no expiry
-			return rethash, nil
-		} else {
-			return emptyKey, errors.Wrapf(err, "Could not get Entity for %s", entity)
-		}
-	} else {
-		copy(rethash[:], hash)
+	val, err := snap.entitySnapshot.Get(entity.Bytes(), nil)
+	if err != nil {
+		return emptyKey, errors.Wrapf(err, "Could not get Entity for %s", entity)
+	}
+	copy(rethash[:], val)
+	if rethash == emptyKey {
+		return emptyKey, errors.New("Got bad hash")
 	}
 	return rethash, nil
 }
@@ -189,21 +170,12 @@ func (snap *snapshot) MustGetEntityFromHash(hash Key) *Entity {
 }
 
 func (snap *snapshot) getEntityByHash(hash Key) (*Entity, error) {
-	snap.db.eocLock.RLock()
-	if ent, found := snap.db.entityObjectCache[hash]; found {
-		snap.db.eocLock.RUnlock()
-		return ent, nil
-	}
-	snap.db.eocLock.RUnlock()
-	snap.db.eocLock.Lock()
-	defer snap.db.eocLock.Unlock()
 	bytes, err := snap.graphSnapshot.Get(hash[:], nil)
 	if err != nil {
 		return nil, errors.Wrapf(err, "Could not get Entity from graph for %s", snap.MustGetURI(hash))
 	}
 	ent := NewEntity()
 	_, err = ent.UnmarshalMsg(bytes)
-	snap.db.entityObjectCache[hash] = ent
 	return ent, err
 }
 
@@ -217,24 +189,14 @@ func (snap *snapshot) getExtendedIndexByURI(uri turtle.URI) (*EntityExtendedInde
 
 /*** Entity Index methods ***/
 func (snap *snapshot) getExtendedIndexByHash(hash Key) (*EntityExtendedIndex, error) {
-	snap.db.eicLock.RLock()
-	if ent, found := snap.db.entityIndexCache[hash]; found {
-		snap.db.eicLock.RUnlock()
-		return ent, nil
-	}
-	snap.db.eicLock.RUnlock()
-	snap.db.eicLock.Lock()
-	defer snap.db.eicLock.Unlock()
 	bytes, err := snap.extendedSnapshot.Get(hash[:], nil)
 	if err != nil && err != leveldb.ErrNotFound {
 		return nil, errors.Wrapf(err, "Could not get EntityIndex from graph for %s", snap.MustGetURI(hash))
 	} else if err == leveldb.ErrNotFound {
-		snap.db.entityIndexCache[hash] = nil
 		return nil, nil
 	}
 	ent := NewEntityExtendedIndex()
 	_, err = ent.UnmarshalMsg(bytes)
-	snap.db.entityIndexCache[hash] = ent
 	return ent, err
 }
 

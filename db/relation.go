@@ -1,7 +1,6 @@
 package db
 
 import (
-	"fmt"
 	"github.com/RoaringBitmap/roaring"
 )
 
@@ -196,20 +195,20 @@ innerRows:
 	rel.rows = joinedRows
 }
 
-func (rel *Relation) dumpRows(ctx *queryContext) {
-	for _, row := range rel.rows {
-		rel.dumpRow(row, ctx)
-	}
-}
+//func (rel *Relation) dumpRows(ctx *queryContext) {
+//	for _, row := range rel.rows {
+//		rel.dumpRow(row, ctx)
+//	}
+//}
 
-func (rel *Relation) dumpRow(row *Row, ctx *queryContext) {
-	s := "["
-	for varName, pos := range rel.vars {
-		val := row.valueAt(pos)
-		if val != emptyKey {
-			s += varName + "=" + ctx.db.MustGetURI(val).String() + ", "
-		}
-	}
-	s += "]"
-	fmt.Println(s)
-}
+//func (rel *Relation) dumpRow(row *Row, ctx *queryContext) {
+//	s := "["
+//	for varName, pos := range rel.vars {
+//		val := row.valueAt(pos)
+//		if val != emptyKey {
+//			s += varName + "=" + ctx.db.MustGetURI(val).String() + ", "
+//		}
+//	}
+//	s += "]"
+//	fmt.Println(s)
+//}

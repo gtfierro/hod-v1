@@ -201,9 +201,7 @@ func (hod *HodDB) RunQuery(q *sparql.Query) (QueryResult, error) {
 				return result, err
 			}
 			stats.merge(insertstats)
-		}
-		if !q.IsSelect() {
-			result.Rows = result.Rows[:0]
+			result.Count = 0
 		}
 		//rowlock.Unlock()
 		//TODO: merge these or decide how to grouop them
