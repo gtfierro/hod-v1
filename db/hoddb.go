@@ -161,6 +161,7 @@ func (hod *HodDB) RunQuery(q *sparql.Query) (QueryResult, error) {
 	//var rowlock sync.Mutex
 	unionedRows := btree.New(4, "")
 	var result QueryResult
+	result.selectVars = q.Select.Vars
 	var stats = new(queryStats)
 
 	for dbname, db := range databases {

@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"strings"
 	"sync"
 	"time"
 
@@ -47,13 +48,45 @@ func (qr *QueryResult) fromRows(rows []*ResultRow, vars []string, toMap bool) {
 }
 
 func (qr QueryResult) Dump() {
-	if len(qr.Rows) > 0 {
-		for _, row := range qr.Rows {
-			fmt.Println(row)
-		}
-		return
+	if len(qr.Rows) == 0 {
+		fmt.Println("Count:", qr.Count)
 	}
-	fmt.Println(qr.Count)
+	var dmp strings.Builder
+
+	rowlens := make(map[string]int, len(qr.selectVars))
+
+	for _, row := range qr.Rows {
+		for varname, value := range row {
+			if rowlens[varname] < len(value.String()) {
+				rowlens[varname] = len(value.String())
+			}
+		}
+	}
+
+	totallen := 0
+	for _, length := range rowlens {
+		totallen += length + 2
+	}
+
+	fmt.Fprintf(&dmp, "+%s+\n", strings.Repeat("-", totallen+len(rowlens)-1))
+	// header
+	fmt.Fprintf(&dmp, "|")
+	for _, varname := range qr.selectVars {
+		fmt.Fprintf(&dmp, " %s%s|", varname, strings.Repeat(" ", rowlens[varname]-len(varname)+1))
+	}
+	fmt.Fprintf(&dmp, "\n")
+	fmt.Fprintf(&dmp, "+%s+\n", strings.Repeat("-", totallen+len(rowlens)-1))
+
+	for _, row := range qr.Rows {
+		fmt.Fprintf(&dmp, "|")
+		for _, varname := range qr.selectVars {
+			valuelen := len(row[varname].String())
+			fmt.Fprintf(&dmp, " %s%s |", row[varname], strings.Repeat(" ", rowlens[varname]-valuelen))
+		}
+		fmt.Fprintf(&dmp, "\n")
+	}
+	fmt.Println(dmp.String())
+	fmt.Println("Count:", qr.Count)
 }
 
 func (qr QueryResult) DumpToCSV(usePrefixes bool, db *HodDB, w io.Writer) error {
