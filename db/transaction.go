@@ -346,6 +346,13 @@ func (tx *transaction) addTriples(dataset turtle.DataSet) error {
 // - add the class name to the text index
 // - add reverse edges to the graph
 // - populate predicate index
+//
+// for each part of the triple (subject, predicate, object), we check if its already in the entity database.
+// If it is, we can skip it. If not, we generate a murmur3 hash for the entity, and then
+// 0. check if we've already inserted the entity (skip if we already have)
+// 1. check if the hash is unique (check membership in pk db) - if it isn't then we add a salt and check again
+// 2. insert hash => []byte(entity) into pk db
+// 3. insert []byte(entity) => hash into entity db
 func (tx *transaction) addTriple(triple turtle.Triple) error {
 	// insert subject, predicate and object
 	tx.addURI(triple.Subject)
