@@ -151,6 +151,11 @@ func main() {
 					Name:  "expiry",
 					Usage: "Set the expiry on access to MDAL measured from now e.g. 3d7h20m",
 				},
+				cli.IntFlag{
+					Name:  "ttl",
+					Usage: "Set the TTL",
+					Value: 0,
+				},
 				cli.StringFlag{
 					Name:  "key, k",
 					Usage: "The key or alias to check",
