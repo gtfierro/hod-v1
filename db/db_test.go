@@ -318,3 +318,39 @@ func BenchmarkQueryPerformance1(b *testing.B) {
 		})
 	}
 }
+
+func BenchmarkINSERTPerformance1(b *testing.B) {
+	cfg, err := config.ReadConfig("testhodconfig.yaml")
+	if err != nil {
+		b.Error(err)
+		return
+	}
+	db, err := NewHodDB(cfg)
+	defer db.Close()
+	if err != nil {
+		b.Error(err)
+		return
+	}
+	benchmarks := []struct {
+		name  string
+		query string
+	}{
+		{"Insert 1 triple", "INSERT { bldg:abc rdf:type brick:Room2 } WHERE {};"},
+		{"Insert 2 triple", "INSERT { bldg:abc rdf:type brick:Room3 . brick:Room3 rdf:type owl:Class } WHERE {};"},
+		{"Insert 2 triple with where", "INSERT { ?x rdf:type brick:Room4 . brick:Room4 rdf:type owl:Class } WHERE { ?x rdf:type brick:Room };"},
+	}
+
+	for _, bm := range benchmarks {
+		b.Run(bm.name, func(b *testing.B) {
+			b.ReportAllocs()
+			for i := 0; i < b.N; i++ {
+				q, e := query.Parse(bm.query)
+				if e != nil {
+					b.Error(e)
+					continue
+				}
+				db.RunQuery(q)
+			}
+		})
+	}
+}
