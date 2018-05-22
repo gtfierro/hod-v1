@@ -3,8 +3,8 @@ Buildings:
     soda: testbuildings/berkeley.ttl
     test: testbuildings/example.ttl
 Ontologies:
-    - "testbuildings/Brick.ttl"
     - "testbuildings/BrickFrame.ttl"
+    - "testbuildings/Brick.ttl"
 ReloadOntologies: false
 DisableQueryCache: true
 ShowNamespaces: false

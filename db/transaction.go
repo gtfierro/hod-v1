@@ -33,6 +33,7 @@ type transaction struct {
 	triplesAdded         int
 	hashes               map[turtle.URI]Key
 	inverseRelationships map[Key]Key
+	t                    *traversal
 }
 
 func (db *DB) openTransaction() (tx *transaction, err error) {
@@ -40,6 +41,8 @@ func (db *DB) openTransaction() (tx *transaction, err error) {
 		hashes:               make(map[turtle.URI]Key),
 		inverseRelationships: make(map[Key]Key),
 	}
+	t := &traversal{under: tx}
+	tx.t = t
 	getTransaction := func(db *leveldb.DB) (*leveldb.Transaction, error) {
 		if ltx, err := db.OpenTransaction(); err != nil {
 			if tx.entity != nil {
@@ -496,7 +499,7 @@ func (tx *transaction) rollupPredicate(predicateHash Key) error {
 		}
 
 		stack := list.New()
-		followPathFromSubject(tx, subject, results, stack, forwardPath)
+		tx.t.followPathFromSubject(subject, results, stack, forwardPath)
 		for results.Len() > 0 {
 			objectIndex, err := tx.getExtendedIndexByHash(results.Max())
 			if err != nil {
@@ -535,7 +538,7 @@ func (tx *transaction) rollupPredicate(predicateHash Key) error {
 		}
 
 		stack := list.New()
-		followPathFromObject(tx, object, results, stack, forwardPath)
+		tx.t.followPathFromObject(object, results, stack, forwardPath)
 		for results.Len() > 0 {
 			subjectIndex, err := tx.getExtendedIndexByHash(results.Max())
 			if err != nil {

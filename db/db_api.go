@@ -360,7 +360,7 @@ func (db *DB) getQueryResults(q *sparql.Query) ([]*ResultRow, queryStats, error)
 
 	runStart := time.Now()
 	ctx, err := db.executeQueryPlan(qp)
-	defer ctx.graph.done()
+	defer ctx.t.under.done()
 	if err != nil {
 		return nil, stats, err
 	}

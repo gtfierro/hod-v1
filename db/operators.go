@@ -36,7 +36,7 @@ func (rs *resolveSubject) GetTerm() *queryTerm {
 
 func (rs *resolveSubject) run(ctx *queryContext) error {
 	// fetch the object from the graph
-	object, err := ctx.graph.getHash(rs.term.Object)
+	object, err := ctx.t.getHash(rs.term.Object)
 	if err != nil && err != leveldb.ErrNotFound {
 		return errors.Wrap(err, fmt.Sprintf("%+v", rs.term))
 	} else if err == leveldb.ErrNotFound {
@@ -44,7 +44,7 @@ func (rs *resolveSubject) run(ctx *queryContext) error {
 	}
 	subjectVar := rs.term.Subject.String()
 	// get all subjects reachable from the given object along the path
-	subjects, err := getSubjectFromPredObject(ctx.graph, object, rs.term.Predicates)
+	subjects, err := ctx.t.getSubjectFromPredObject(object, rs.term.Predicates)
 	if err != nil {
 		return err
 	}
@@ -86,14 +86,14 @@ func (ro *resolveObject) GetTerm() *queryTerm {
 
 func (ro *resolveObject) run(ctx *queryContext) error {
 	// fetch the subject from the graph
-	subject, err := ctx.graph.getHash(ro.term.Subject)
+	subject, err := ctx.t.getHash(ro.term.Subject)
 	if err != nil && err != leveldb.ErrNotFound {
 		return errors.Wrap(err, fmt.Sprintf("%+v", ro.term))
 	} else if err == leveldb.ErrNotFound {
 		return nil
 	}
 	objectVar := ro.term.Object.String()
-	objects := getObjectFromSubjectPred(ctx.graph, subject, ro.term.Predicates)
+	objects := ctx.t.getObjectFromSubjectPred(subject, ro.term.Predicates)
 	if err != nil {
 		return err
 	}
@@ -133,14 +133,14 @@ func (op *resolvePredicate) GetTerm() *queryTerm {
 
 func (op *resolvePredicate) run(ctx *queryContext) error {
 	// fetch the subject from the graph
-	subject, err := ctx.graph.getEntityByURI(op.term.Subject)
+	subject, err := ctx.t.getEntityByURI(op.term.Subject)
 	if err != nil && err != leveldb.ErrNotFound {
 		return errors.Wrap(err, fmt.Sprintf("%+v", op.term))
 	} else if err == leveldb.ErrNotFound {
 		return nil
 	}
 	// now get object
-	object, err := ctx.graph.getEntityByURI(op.term.Object)
+	object, err := ctx.t.getEntityByURI(op.term.Object)
 	if err != nil && err != leveldb.ErrNotFound {
 		return errors.Wrap(err, fmt.Sprintf("%+v", op.term))
 	} else if err == leveldb.ErrNotFound {
@@ -150,7 +150,7 @@ func (op *resolvePredicate) run(ctx *queryContext) error {
 	predicateVar := op.term.Predicates[0].Predicate.String()
 	// get all preds w/ the given end object, starting from the given subject
 
-	predicates := getPredicateFromSubjectObject(ctx.graph, subject, object)
+	predicates := ctx.t.getPredicateFromSubjectObject(subject, object)
 
 	// new stuff
 	if !ctx.defined(predicateVar) {
@@ -210,7 +210,7 @@ func (rso *restrictSubjectObjectByPredicate) run(ctx *queryContext) error {
 		rsop_relation = NewRelation([]string{subjectVar, objectVar})
 
 		subjects.Iter(func(subject Key) {
-			reachableObjects := getObjectFromSubjectPred(ctx.graph, subject, rso.term.Predicates)
+			reachableObjects := ctx.t.getObjectFromSubjectPred(subject, rso.term.Predicates)
 			// we restrict the values in reachableObjects to those that we already have inside 'objectVar'
 			ctx.restrictToResolved(objectVar, reachableObjects)
 			reachableObjects.Iter(func(objectKey Key) {
@@ -226,7 +226,7 @@ func (rso *restrictSubjectObjectByPredicate) run(ctx *queryContext) error {
 		rsop_relation = NewRelation([]string{objectVar, subjectVar})
 
 		objects.Iter(func(object Key) {
-			reachableSubjects, err := getSubjectFromPredObject(ctx.graph, object, rso.term.Predicates)
+			reachableSubjects, err := ctx.t.getSubjectFromPredObject(object, rso.term.Predicates)
 			if err != nil {
 				itererr = err
 				return
@@ -248,7 +248,7 @@ func (rso *restrictSubjectObjectByPredicate) run(ctx *queryContext) error {
 		rsop_relation = NewRelation([]string{subjectVar, objectVar})
 
 		subjects.Iter(func(subject Key) {
-			reachableObjects := getObjectFromSubjectPred(ctx.graph, subject, rso.term.Predicates)
+			reachableObjects := ctx.t.getObjectFromSubjectPred(subject, rso.term.Predicates)
 			ctx.restrictToResolved(objectVar, reachableObjects)
 
 			reachableObjects.Iter(func(objectKey Key) {
@@ -263,7 +263,7 @@ func (rso *restrictSubjectObjectByPredicate) run(ctx *queryContext) error {
 		rsop_relation = NewRelation([]string{objectVar, subjectVar})
 
 		objects.Iter(func(object Key) {
-			reachableSubjects, err := getSubjectFromPredObject(ctx.graph, object, rso.term.Predicates)
+			reachableSubjects, err := ctx.t.getSubjectFromPredObject(object, rso.term.Predicates)
 			if err != nil {
 				itererr = err
 				return
@@ -321,7 +321,7 @@ func (rsv *resolveSubjectFromVarObject) run(ctx *queryContext) error {
 
 	objects := ctx.getValuesForVariable(objectVar)
 	objects.Iter(func(object Key) {
-		reachableSubjects, err := getSubjectFromPredObject(ctx.graph, object, rsv.term.Predicates)
+		reachableSubjects, err := ctx.t.getSubjectFromPredObject(object, rsv.term.Predicates)
 		if err != nil {
 			itererr = err
 			return
@@ -375,7 +375,7 @@ func (rov *resolveObjectFromVarSubject) run(ctx *queryContext) error {
 
 	subjects := ctx.getValuesForVariable(subjectVar)
 	subjects.Iter(func(subject Key) {
-		reachableObjects := getObjectFromSubjectPred(ctx.graph, subject, rov.term.Predicates)
+		reachableObjects := ctx.t.getObjectFromSubjectPred(subject, rov.term.Predicates)
 		ctx.restrictToResolved(objectVar, reachableObjects)
 
 		reachableObjects.Iter(func(objectKey Key) {
@@ -431,7 +431,7 @@ func (op *resolveSubjectObjectFromPred) GetTerm() *queryTerm {
 }
 
 func (rso *resolveSubjectObjectFromPred) run(ctx *queryContext) error {
-	subsobjs, err := getSubjectObjectFromPred(ctx.graph, rso.term.Predicates)
+	subsobjs, err := ctx.t.getSubjectObjectFromPred(rso.term.Predicates)
 	if err != nil {
 		return err
 	}
@@ -481,7 +481,7 @@ func (op *resolveSubjectPredFromObject) run(ctx *queryContext) error {
 	predicateVar := op.term.Predicates[0].Predicate.String()
 
 	// fetch the object from the graph
-	object, err := ctx.graph.getEntityByURI(op.term.Object)
+	object, err := ctx.t.getEntityByURI(op.term.Object)
 	if err != nil && err != leveldb.ErrNotFound {
 		return errors.Wrap(err, fmt.Sprintf("%+v", op.term))
 	} else if err == leveldb.ErrNotFound {
@@ -489,7 +489,7 @@ func (op *resolveSubjectPredFromObject) run(ctx *queryContext) error {
 	}
 
 	// get all predicates from it
-	predicates := getPredicatesFromObject(ctx.graph, object)
+	predicates := ctx.t.getPredicatesFromObject(object)
 
 	var sub_pred_pairs [][]Key
 	var itererr error
@@ -497,13 +497,13 @@ func (op *resolveSubjectPredFromObject) run(ctx *queryContext) error {
 		if !ctx.validValue(predicateVar, predicate) {
 			return
 		}
-		pred, err := ctx.graph.getURI(predicate)
+		pred, err := ctx.t.getURI(predicate)
 		if err != nil {
 			itererr = err
 			return
 		}
 		path := []sparql.PathPattern{{Predicate: pred, Pattern: sparql.PATTERN_SINGLE}}
-		subjects, err := getSubjectFromPredObject(ctx.graph, object.PK, path)
+		subjects, err := ctx.t.getSubjectFromPredObject(object.PK, path)
 		if err != nil {
 			itererr = err
 			return
@@ -560,7 +560,7 @@ func (op *resolvePredObjectFromSubject) run(ctx *queryContext) error {
 	predicateVar := op.term.Predicates[0].Predicate.String()
 
 	// fetch the subject from the graph
-	subject, err := ctx.graph.getEntityByURI(op.term.Subject)
+	subject, err := ctx.t.getEntityByURI(op.term.Subject)
 	if err != nil && err != leveldb.ErrNotFound {
 		return errors.Wrap(err, fmt.Sprintf("%+v", op.term))
 	} else if err == leveldb.ErrNotFound {
@@ -568,14 +568,14 @@ func (op *resolvePredObjectFromSubject) run(ctx *queryContext) error {
 	}
 
 	// We take each reachable predicate (from the subject) and enumerate it with each reachable object
-	predicates := getPredicatesFromSubject(ctx.graph, subject)
+	predicates := ctx.t.getPredicatesFromSubject(subject)
 	var pred_obj_pairs [][]Key
 	var itererr error
 	predicates.Iter(func(predicate Key) {
 		if !ctx.validValue(predicateVar, predicate) {
 			return
 		}
-		pred, err := ctx.graph.getURI(predicate)
+		pred, err := ctx.t.getURI(predicate)
 		if err != nil {
 			itererr = err
 			return
@@ -584,7 +584,7 @@ func (op *resolvePredObjectFromSubject) run(ctx *queryContext) error {
 		if err != nil {
 			return
 		}
-		objects := getObjectFromSubjectPred(ctx.graph, subject.PK, path)
+		objects := ctx.t.getObjectFromSubjectPred(subject.PK, path)
 
 		objects.Iter(func(object Key) {
 			if !ctx.validValue(objectVar, object) {
@@ -656,7 +656,7 @@ func (op *resolveVarTripleFromSubject) run(ctx *queryContext) error {
 	subjects := ctx.definitions[subjectVar]
 	subjects.Iter(func(subjectKey Key) {
 		var predKey Key
-		subject, err := ctx.graph.getEntityByHash(subjectKey)
+		subject, err := ctx.t.getEntityByHash(subjectKey)
 		if err != nil {
 			log.Error(err)
 			return
@@ -707,7 +707,7 @@ func (op *resolveVarTripleFromObject) run(ctx *queryContext) error {
 	objects := ctx.definitions[objectVar]
 	objects.Iter(func(objectKey Key) {
 		var predKey Key
-		object, err := ctx.graph.getEntityByHash(objectKey)
+		object, err := ctx.t.getEntityByHash(objectKey)
 		if err != nil {
 			log.Error(err)
 			return
@@ -761,7 +761,7 @@ func (op *resolveVarTripleFromPredicate) run(ctx *queryContext) error {
 		var subjectKey Key
 		// TODO: use?
 		// subsobjs := ctx.getSubjectObjectFromPred(rso.term.Predicates)
-		uri, err := ctx.graph.getURI(predicateKey)
+		uri, err := ctx.t.getURI(predicateKey)
 		if err != nil {
 			itererr = err
 			return

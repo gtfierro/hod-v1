@@ -71,6 +71,8 @@ type DB struct {
 	queryCacheEnabled bool
 	loading           bool
 
+	cache *dbcache
+
 	// text index
 	textidx bleve.Index
 }
@@ -144,6 +146,7 @@ func newDB(name string, cfg *config.Config) (*DB, error) {
 		queryCacheEnabled:      !cfg.DisableQueryCache,
 		loading:                false,
 		textidx:                index,
+		cache:                  newCache(16),
 	}
 
 	if db.queryCacheEnabled {

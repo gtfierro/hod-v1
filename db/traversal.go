@@ -22,11 +22,125 @@ type traversable interface {
 	done() error
 }
 
+type traversal struct {
+	under traversable
+	cache *dbcache
+}
+
+func (t *traversal) getHash(uri turtle.URI) (Key, error) {
+	if t.cache == nil {
+		return t.under.getHash(uri)
+	}
+	if hash, found := t.cache.getHash(uri); !found {
+		hash, err := t.under.getHash(uri)
+		if err == nil {
+			t.cache.setHash(uri, hash)
+		}
+		return hash, err
+	} else {
+		return hash, nil
+	}
+}
+
+func (t *traversal) getURI(hash Key) (turtle.URI, error) {
+	if t.cache == nil {
+		return t.under.getURI(hash)
+	}
+	if uri, found := t.cache.getURI(hash); !found {
+		uri, err := t.under.getURI(hash)
+		if err != nil {
+			t.cache.setURI(hash, uri)
+		}
+		return uri, err
+	} else {
+		return uri, nil
+	}
+}
+
+func (t *traversal) getEntityByURI(uri turtle.URI) (*Entity, error) {
+	if t.cache == nil {
+		return t.under.getEntityByURI(uri)
+	}
+	hash, err := t.getHash(uri)
+	if err != nil {
+		return nil, err
+	}
+	return t.getEntityByHash(hash)
+}
+
+func (t *traversal) getEntityByHash(hash Key) (*Entity, error) {
+	if t.cache == nil {
+		return t.under.getEntityByHash(hash)
+	}
+	if ent, found := t.cache.getEntityByHash(hash); !found {
+		ent, err := t.under.getEntityByHash(hash)
+		if err != nil {
+			b, _ := ent.MarshalMsg(nil)
+			t.cache.setEntityBytesByHash(hash, b)
+		}
+		return ent, err
+	} else {
+		return ent, nil
+	}
+}
+
+func (t *traversal) getExtendedIndexByURI(uri turtle.URI) (*EntityExtendedIndex, error) {
+	if t.cache == nil {
+		return t.under.getExtendedIndexByURI(uri)
+	}
+	hash, err := t.getHash(uri)
+	if err != nil {
+		return nil, err
+	}
+	return t.getExtendedIndexByHash(hash)
+}
+
+func (t *traversal) getExtendedIndexByHash(hash Key) (*EntityExtendedIndex, error) {
+	if t.cache == nil {
+		return t.under.getExtendedIndexByHash(hash)
+	}
+	if ext, found := t.cache.getExtendedIndexByHash(hash); !found {
+		ext, err := t.under.getExtendedIndexByHash(hash)
+		if err != nil {
+			t.cache.setExtendedIndexByHash(hash, ext)
+		}
+		return ext, err
+	} else {
+		return ext, nil
+	}
+}
+
+func (t *traversal) getPredicateByURI(uri turtle.URI) (*PredicateEntity, error) {
+	if t.cache == nil {
+		return t.under.getPredicateByURI(uri)
+	}
+	hash, err := t.getHash(uri)
+	if err != nil {
+		return nil, err
+	}
+	return t.getPredicateByHash(hash)
+}
+
+func (t *traversal) getPredicateByHash(hash Key) (*PredicateEntity, error) {
+	if t.cache == nil {
+		return t.under.getPredicateByHash(hash)
+	}
+	if pred, found := t.cache.getPredicateByHash(hash); !found {
+		pred, err := t.under.getPredicateByHash(hash)
+		if err != nil {
+			t.cache.setPredicateByHash(hash, pred)
+		}
+		return pred, err
+	} else {
+		return pred, nil
+	}
+}
+
 // takes the inverse of every relationship. If no inverse exists, returns nil
-func reversePathPattern(graph traversable, path []sparql.PathPattern) []sparql.PathPattern {
+func (t *traversal) reversePathPattern(path []sparql.PathPattern) []sparql.PathPattern {
 	var reverse = make([]sparql.PathPattern, len(path))
 	for idx, pred := range path {
-		if inverse, found := graph.getReverseRelationship(pred.Predicate); found {
+		if inverse, found := t.under.getReverseRelationship(pred.Predicate); found {
 			pred.Predicate = inverse
 			reverse[idx] = pred
 		} else {
@@ -37,11 +151,11 @@ func reversePathPattern(graph traversable, path []sparql.PathPattern) []sparql.P
 }
 
 // follow the pattern from the given object's InEdges, placing the results in the btree
-func followPathFromObject(graph traversable, object *Entity, results *keyTree, searchstack *list.List, pattern sparql.PathPattern) error {
+func (t *traversal) followPathFromObject(object *Entity, results *keyTree, searchstack *list.List, pattern sparql.PathPattern) error {
 	stack := list.New()
 	stack.PushFront(object)
 
-	predHash, err := graph.getHash(pattern.Predicate)
+	predHash, err := t.getHash(pattern.Predicate)
 	if err != nil && err == leveldb.ErrNotFound {
 		log.Infof("Adding unseen predicate %s", pattern.Predicate)
 		panic("GOT TO HERE")
@@ -90,7 +204,7 @@ func followPathFromObject(graph traversable, object *Entity, results *keyTree, s
 		case sparql.PATTERN_ZERO_PLUS:
 			results.Add(entity.PK)
 			// faster index
-			if index, err := graph.getExtendedIndexByHash(entity.PK); err != nil {
+			if index, err := t.getExtendedIndexByHash(entity.PK); err != nil {
 				return err
 			} else if index != nil {
 				if endpoints, found := index.InPlusEdges[string(predHash[:])]; found {
@@ -107,7 +221,7 @@ func followPathFromObject(graph traversable, object *Entity, results *keyTree, s
 			}
 			// here, these entities are all connected by the required predicate
 			for _, entityHash := range endpoints {
-				nextEntity, err := graph.getEntityByHash(entityHash)
+				nextEntity, err := t.getEntityByHash(entityHash)
 				if err != nil {
 					return err
 				}
@@ -119,7 +233,7 @@ func followPathFromObject(graph traversable, object *Entity, results *keyTree, s
 			}
 		case sparql.PATTERN_ONE_PLUS:
 			// faster index
-			index, err := graph.getExtendedIndexByHash(entity.PK)
+			index, err := t.getExtendedIndexByHash(entity.PK)
 			if err != nil {
 				return err
 			}
@@ -138,7 +252,7 @@ func followPathFromObject(graph traversable, object *Entity, results *keyTree, s
 			}
 			// here, these entities are all connected by the required predicate
 			for _, entityHash := range edges {
-				nextEntity, err := graph.getEntityByHash(entityHash)
+				nextEntity, err := t.getEntityByHash(entityHash)
 				if err != nil {
 					return err
 				}
@@ -153,11 +267,11 @@ func followPathFromObject(graph traversable, object *Entity, results *keyTree, s
 }
 
 // follow the pattern from the given subject's OutEdges, placing the results in the btree
-func followPathFromSubject(graph traversable, subject *Entity, results *keyTree, searchstack *list.List, pattern sparql.PathPattern) error {
+func (t *traversal) followPathFromSubject(subject *Entity, results *keyTree, searchstack *list.List, pattern sparql.PathPattern) error {
 	stack := list.New()
 	stack.PushFront(subject)
 
-	predHash, err := graph.getHash(pattern.Predicate)
+	predHash, err := t.getHash(pattern.Predicate)
 	if err != nil {
 		return errors.Wrapf(err, "Not found: %v", pattern.Predicate)
 	}
@@ -201,7 +315,7 @@ func followPathFromSubject(graph traversable, subject *Entity, results *keyTree,
 		case sparql.PATTERN_ZERO_PLUS:
 			results.Add(entity.PK)
 			// faster index
-			index, err := graph.getExtendedIndexByHash(entity.PK)
+			index, err := t.getExtendedIndexByHash(entity.PK)
 			if err != nil {
 				return err
 			}
@@ -221,7 +335,7 @@ func followPathFromSubject(graph traversable, subject *Entity, results *keyTree,
 			}
 			// here, these entities are all connected by the required predicate
 			for _, entityHash := range endpoints {
-				nextEntity, err := graph.getEntityByHash(entityHash)
+				nextEntity, err := t.getEntityByHash(entityHash)
 				if err != nil {
 					return err
 				}
@@ -233,7 +347,7 @@ func followPathFromSubject(graph traversable, subject *Entity, results *keyTree,
 			}
 		case sparql.PATTERN_ONE_PLUS:
 			// faster index
-			index, err := graph.getExtendedIndexByHash(entity.PK)
+			index, err := t.getExtendedIndexByHash(entity.PK)
 			if err != nil {
 				return err
 			}
@@ -252,7 +366,7 @@ func followPathFromSubject(graph traversable, subject *Entity, results *keyTree,
 			}
 			// here, these entities are all connected by the required predicate
 			for _, entityHash := range edges {
-				nextEntity, err := graph.getEntityByHash(entityHash)
+				nextEntity, err := t.getEntityByHash(entityHash)
 				if err != nil {
 					return err
 				}
@@ -266,7 +380,7 @@ func followPathFromSubject(graph traversable, subject *Entity, results *keyTree,
 	return nil
 }
 
-func getSubjectFromPredObject(graph traversable, objectHash Key, path []sparql.PathPattern) (*keyTree, error) {
+func (t *traversal) getSubjectFromPredObject(objectHash Key, path []sparql.PathPattern) (*keyTree, error) {
 	// first get the initial object entity from the db
 	// then we're going to conduct a BFS search starting from this entity looking for all entities
 	// that have the required path sequence. We place the results in a BTree to maintain uniqueness
@@ -275,7 +389,7 @@ func getSubjectFromPredObject(graph traversable, objectHash Key, path []sparql.P
 	// At each 'step', we are looking at an entity and some offset into the path.
 
 	// get the object, look in its "in" edges for the path pattern
-	objEntity, err := graph.getEntityByHash(objectHash)
+	objEntity, err := t.getEntityByHash(objectHash)
 	if err != nil {
 		return nil, errors.Wrapf(err, "Not found: %v", objectHash)
 	}
@@ -302,13 +416,13 @@ func getSubjectFromPredObject(graph traversable, objectHash Key, path []sparql.P
 			}
 			// mark this entity as traversed
 			traversed.ReplaceOrInsert(entity.PK)
-			followPathFromObject(graph, entity, reachable, stack, segment)
+			t.followPathFromObject(entity, reachable, stack, segment)
 		}
 
 		// if we aren't done, then we push these items onto the stack
 		if idx < len(path)-1 {
 			reachable.Iter(func(key Key) {
-				ent, err := graph.getEntityByHash(key)
+				ent, err := t.getEntityByHash(key)
 				if err != nil {
 					log.Error(err)
 					return
@@ -323,8 +437,8 @@ func getSubjectFromPredObject(graph traversable, objectHash Key, path []sparql.P
 }
 
 // Given object and predicate, get all subjects
-func getObjectFromSubjectPred(graph traversable, subjectHash Key, path []sparql.PathPattern) *keyTree {
-	subEntity, err := graph.getEntityByHash(subjectHash)
+func (t *traversal) getObjectFromSubjectPred(subjectHash Key, path []sparql.PathPattern) *keyTree {
+	subEntity, err := t.getEntityByHash(subjectHash)
 	if err != nil {
 		log.Error(errors.Wrapf(err, "Not found: %v", subjectHash))
 		return nil
@@ -352,13 +466,13 @@ func getObjectFromSubjectPred(graph traversable, subjectHash Key, path []sparql.
 			}
 			// mark this entity as traversed
 			traversed.ReplaceOrInsert(entity.PK)
-			followPathFromSubject(graph, entity, reachable, stack, segment)
+			t.followPathFromSubject(entity, reachable, stack, segment)
 		}
 
 		// if we aren't done, then we push these items onto the stack
 		if idx < len(path)-1 {
 			reachable.Iter(func(key Key) {
-				ent, err := graph.getEntityByHash(key)
+				ent, err := t.getEntityByHash(key)
 				if err != nil {
 					log.Error(err)
 					return
@@ -373,9 +487,9 @@ func getObjectFromSubjectPred(graph traversable, subjectHash Key, path []sparql.
 }
 
 // Given a predicate, it returns pairs of (subject, object) that are connected by that relationship
-func getSubjectObjectFromPred(graph traversable, path []sparql.PathPattern) (soPair [][]Key, err error) {
+func (t *traversal) getSubjectObjectFromPred(path []sparql.PathPattern) (soPair [][]Key, err error) {
 	var pe *PredicateEntity
-	pe, err = graph.getPredicateByURI(path[0].Predicate)
+	pe, err = t.getPredicateByURI(path[0].Predicate)
 	if err != nil {
 		err = errors.Wrapf(err, "Can't find predicate %v", path[0].Predicate)
 		return
@@ -391,7 +505,7 @@ func getSubjectObjectFromPred(graph traversable, path []sparql.PathPattern) (soP
 	return soPair, nil
 }
 
-func getPredicateFromSubjectObject(graph traversable, subject, object *Entity) *keyTree {
+func (t *traversal) getPredicateFromSubjectObject(subject, object *Entity) *keyTree {
 	reachable := newKeyTree()
 
 	for edge, objects := range subject.InEdges {
@@ -418,7 +532,7 @@ func getPredicateFromSubjectObject(graph traversable, subject, object *Entity) *
 	return reachable
 }
 
-func getPredicatesFromObject(graph traversable, object *Entity) *keyTree {
+func (t *traversal) getPredicatesFromObject(object *Entity) *keyTree {
 	reachable := newKeyTree()
 	var edgepk Key
 	for edge := range object.InEdges {
@@ -429,7 +543,7 @@ func getPredicatesFromObject(graph traversable, object *Entity) *keyTree {
 	return reachable
 }
 
-func getPredicatesFromSubject(graph traversable, subject *Entity) *keyTree {
+func (t *traversal) getPredicatesFromSubject(subject *Entity) *keyTree {
 	reachable := newKeyTree()
 	var edgepk Key
 	for edge := range subject.OutEdges {
