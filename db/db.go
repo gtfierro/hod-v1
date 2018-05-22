@@ -215,6 +215,9 @@ func newDB(name string, cfg *config.Config) (*DB, error) {
 				tx.discard()
 				return nil, err
 			}
+			if err := db.buildTextIndex(ds); err != nil {
+				return nil, err
+			}
 
 			for abbr, full := range ds.Namespaces {
 				if abbr != "" {
@@ -286,6 +289,24 @@ func (db *DB) Close() {
 	checkError(db.graphDB.Close())
 	checkError(db.extendedDB.Close())
 	checkError(db.textidx.Close())
+}
+
+func (db *DB) buildTextIndex(dataset turtle.DataSet) error {
+	b := db.textidx.NewBatch()
+	for _, triple := range dataset.Triples {
+		// add classes to the text idx
+		if triple.Predicate.String() == "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" && triple.Object.String() == "http://www.w3.org/2002/07/owl#Class" {
+			sub := strings.Replace(triple.Subject.String(), "_", " ", -1)
+			log.Debug(triple.Subject.String())
+			if err := b.Index(triple.Subject.String(), sub); err != nil && len(triple.Subject.String()) > 0 {
+				return errors.Wrapf(err, "Could not add subject %s to text index (%s)", triple.Subject, triple)
+			}
+		}
+	}
+	if err := db.textidx.Batch(b); err != nil {
+		return errors.Wrap(err, "Could not save batch text index")
+	}
+	return nil
 }
 
 func (db *DB) insertEntity(entity turtle.URI, hashdest []byte) error {

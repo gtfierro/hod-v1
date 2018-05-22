@@ -250,6 +250,9 @@ func (hod *HodDB) loadDataset(name, ttlfile string) error {
 		tx.discard()
 		return err
 	}
+	if err := db.buildTextIndex(ds); err != nil {
+		return err
+	}
 	for abbr, full := range ds.Namespaces {
 		if abbr != "" {
 			db.namespaces[abbr] = full
@@ -284,10 +287,11 @@ func (hod *HodDB) Search(q string, n int) ([]string, error) {
 	)
 	hod.dbs.Range(func(_dbname, _db interface{}) bool {
 		db := _db.(*DB)
-		res, err = db.search(q, n)
+		_res, err := db.search(q, n)
 		if err != nil {
 			return true
 		}
+		res = append(res, _res...)
 		return false
 	})
 	return res, err
@@ -319,7 +323,7 @@ func (hod *HodDB) QueryToClassDOT(q string) (string, error) {
 	})
 	dot += "}"
 	fmt.Println(dot)
-	return res, err
+	return dot, err
 }
 
 // Turn the results of the query into a GraphViz visualization of the results

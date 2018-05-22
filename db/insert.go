@@ -52,6 +52,9 @@ func (db *DB) handleInsert(insert sparql.InsertClause, result QueryResult) (quer
 		tx.discard()
 		return stats, err
 	}
+	if err := db.buildTextIndex(additions); err != nil {
+		return stats, err
+	}
 	err = db.saveIndexes()
 	if err != nil {
 		return stats, err

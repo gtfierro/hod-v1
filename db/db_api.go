@@ -168,100 +168,119 @@ func (db *DB) queryToDOT(querystring string) (string, error) {
 
 // executes a query and returns a DOT string of the classes involved
 func (db *DB) queryToClassDOT(querystring string) (string, error) {
-	_, err := query.Parse(querystring)
+	q, err := query.Parse(querystring)
 	if err != nil {
 		return "", err
 	}
 	//// create DOT template string
-	//dot := ""
+	dot := ""
 
-	//// get rdf:type predicate hash as a string
-	//typeURI := turtle.ParseURI("rdf:type")
-	//typeURI.Namespace = db.namespaces[typeURI.Namespace]
-	//snap := db.getSnapshot()
-	//typeKey, err := snap.getHash(typeURI)
-	//if err != nil {
-	//	return "", err
-	//}
-	//typeKeyString := typeKey.String()
+	// get rdf:type predicate hash as a string
+	typeURI := turtle.ParseURI("rdf:type")
+	typeURI.Namespace = db.namespaces[typeURI.Namespace]
+	snap, err := db.snapshot()
+	if err != nil {
+		return "", err
+	}
+	typeKey, err := snap.getHash(typeURI)
+	if err != nil {
+		return "", err
+	}
+	log.Debug(typeURI, typeKey)
+	typeKeyString := string(typeKey[:])
 
-	//getClass := func(ent *Entity) (classes []turtle.URI, err error) {
-	//	_classes := ent.OutEdges[typeKeyString]
-	//	for _, class := range _classes {
-	//		classes = append(classes, mustGetURI(snap, class))
-	//	}
-	//	return
-	//}
+	getClass := func(ent *Entity) (classes []turtle.URI, err error) {
+		_classes := ent.OutEdges[typeKeyString]
+		//		for name := range ent.OutEdges {
+		//			var k Key
+		//			copy(k[:], []byte(name))
+		//			uri, err := snap.getURI(k)
+		//			if err != nil {
+		//				panic(err)
+		//			}
+		//			log.Debug(uri, k, typeKey)
+		//		}
+		for _, class := range _classes {
+			classes = append(classes, mustGetURI(snap, class))
+		}
+		return
+	}
 
-	//getEdges := func(ent *Entity) (predicates, objects []turtle.URI, reterr error) {
-	//	var predKey Key
-	//	for predKeyString, objectList := range ent.OutEdges {
-	//		predKey.FromSlice([]byte(predKeyString))
-	//		predURI, err := snap.getURI(predKey)
-	//		if err != nil {
-	//			reterr = err
-	//			return
-	//		}
-	//		for _, objectKey := range objectList {
-	//			objectEnt, err := snap.getEntityByHash(objectKey)
-	//			if err != nil {
-	//				reterr = err
-	//				return
-	//			}
-	//			objectClasses, err := getClass(objectEnt)
-	//			if err != nil {
-	//				reterr = err
-	//				return
-	//			}
-	//			for _, class := range objectClasses {
-	//				if predURI.Value != "type" && class.Value != "Class" {
-	//					predicates = append(predicates, predURI)
-	//					objects = append(objects, class)
-	//				}
-	//			}
+	getEdges := func(ent *Entity) (predicates, objects []turtle.URI, reterr error) {
+		var predKey Key
+		for predKeyString, objectList := range ent.OutEdges {
+			predKey.FromSlice([]byte(predKeyString))
+			predURI, err := snap.getURI(predKey)
+			if err != nil {
+				reterr = err
+				return
+			}
+			for _, objectKey := range objectList {
+				objectEnt, err := snap.getEntityByHash(objectKey)
+				if err != nil {
+					reterr = err
+					return
+				}
+				objectClasses, err := getClass(objectEnt)
+				if err != nil {
+					reterr = err
+					return
+				}
+				for _, class := range objectClasses {
+					if predURI.Value != "type" && class.Value != "Class" {
+						predicates = append(predicates, predURI)
+						objects = append(objects, class)
+					}
+				}
+				if predURI.Value == "uuid" {
+					predicates = append(predicates, predURI)
+					objects = append(objects, turtle.URI{Namespace: "bf", Value: "uuid"})
+				}
 
-	//		}
-	//	}
-	//	return
-	//}
+			}
+		}
+		return
+	}
 
-	//result, _, err := db.runQuery(q)
-	//if err != nil {
-	//	return "", err
-	//}
-	//for _, row := range result {
-	//	for _, uri := range row.row {
-	//		ent, err := db.GetEntity(uri)
-	//		if err != nil {
-	//			return "", err
-	//		}
-	//		classList, err := getClass(ent)
-	//		if err != nil {
-	//			return "", err
-	//		}
-	//		preds, objs, err := getEdges(ent)
-	//		if err != nil {
-	//			return "", err
-	//		}
-	//		// add class as node to graph
-	//		for _, class := range classList {
-	//			line := fmt.Sprintf("\"%s\" [fillcolor=\"#4caf50\"];\n", db.abbreviate(class))
-	//			if !strings.Contains(dot, line) {
-	//				dot += line
-	//			}
-	//			for i := 0; i < len(preds); i++ {
-	//				line := fmt.Sprintf("\"%s\" -> \"%s\" [label=\"%s\"];\n", db.abbreviate(class), db.abbreviate(objs[i]), db.abbreviate(preds[i]))
-	//				if !strings.Contains(dot, line) {
-	//					dot += line
-	//				}
-	//			}
-	//		}
+	result, _, err := db.runQuery(q)
+	if err != nil {
+		return "", err
+	}
+	for _, row := range result {
+		for _, uri := range row.row {
+			ent, err := snap.getEntityByURI(uri)
+			if err != nil {
+				log.Debug(err)
+				return "", err
+			}
+			classList, err := getClass(ent)
+			if err != nil {
+				log.Debug(err)
+				return "", err
+			}
+			preds, objs, err := getEdges(ent)
+			if err != nil {
+				log.Debug(err)
+				return "", err
+			}
+			// add class as node to graph
+			for _, class := range classList {
+				line := fmt.Sprintf("\"%s\" [fillcolor=\"#4caf50\"];\n", db.abbreviate(class))
+				if !strings.Contains(dot, line) {
+					dot += line
+				}
+				for i := 0; i < len(preds); i++ {
+					line := fmt.Sprintf("\"%s\" -> \"%s\" [label=\"%s\"];\n", db.abbreviate(class), db.abbreviate(objs[i]), db.abbreviate(preds[i]))
+					if !strings.Contains(dot, line) {
+						dot += line
+					}
+				}
+			}
 
-	//	}
-	//}
+		}
+	}
 
-	//return dot, nil
-	return "", nil
+	return dot, nil
 }
 
 func (db *DB) abbreviate(uri turtle.URI) string {

@@ -90,6 +90,7 @@ func (qr QueryResult) Dump() {
 		}
 		fmt.Fprintf(&dmp, "\n")
 	}
+	fmt.Fprintf(&dmp, "+%s+\n", strings.Repeat("-", totallen+len(rowlens)-1))
 	fmt.Println(dmp.String())
 	fmt.Println("Count:", qr.Count)
 }
