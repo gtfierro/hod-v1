@@ -300,7 +300,6 @@ func (db *DB) buildTextIndex(dataset turtle.DataSet) error {
 		// add classes to the text idx
 		if triple.Predicate.String() == "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" && triple.Object.String() == "http://www.w3.org/2002/07/owl#Class" {
 			sub := strings.Replace(triple.Subject.String(), "_", " ", -1)
-			log.Debug(triple.Subject.String())
 			if err := b.Index(triple.Subject.String(), sub); err != nil && len(triple.Subject.String()) > 0 {
 				return errors.Wrapf(err, "Could not add subject %s to text index (%s)", triple.Subject, triple)
 			}

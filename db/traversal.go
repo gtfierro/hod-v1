@@ -48,7 +48,7 @@ func (t *traversal) getURI(hash Key) (turtle.URI, error) {
 	}
 	if uri, found := t.cache.getURI(hash); !found {
 		uri, err := t.under.getURI(hash)
-		if err != nil {
+		if err == nil {
 			t.cache.setURI(hash, uri)
 		}
 		return uri, err
@@ -74,9 +74,8 @@ func (t *traversal) getEntityByHash(hash Key) (*Entity, error) {
 	}
 	if ent, found := t.cache.getEntityByHash(hash); !found {
 		ent, err := t.under.getEntityByHash(hash)
-		if err != nil {
-			b, _ := ent.MarshalMsg(nil)
-			t.cache.setEntityBytesByHash(hash, b)
+		if err == nil {
+			t.cache.setEntityByHash(hash, ent)
 		}
 		return ent, err
 	} else {
@@ -101,7 +100,7 @@ func (t *traversal) getExtendedIndexByHash(hash Key) (*EntityExtendedIndex, erro
 	}
 	if ext, found := t.cache.getExtendedIndexByHash(hash); !found {
 		ext, err := t.under.getExtendedIndexByHash(hash)
-		if err != nil {
+		if err == nil {
 			t.cache.setExtendedIndexByHash(hash, ext)
 		}
 		return ext, err
@@ -127,7 +126,7 @@ func (t *traversal) getPredicateByHash(hash Key) (*PredicateEntity, error) {
 	}
 	if pred, found := t.cache.getPredicateByHash(hash); !found {
 		pred, err := t.under.getPredicateByHash(hash)
-		if err != nil {
+		if err == nil {
 			t.cache.setPredicateByHash(hash, pred)
 		}
 		return pred, err

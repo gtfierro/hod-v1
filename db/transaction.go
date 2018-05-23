@@ -34,12 +34,14 @@ type transaction struct {
 	hashes               map[turtle.URI]Key
 	inverseRelationships map[Key]Key
 	t                    *traversal
+	cache                *dbcache
 }
 
 func (db *DB) openTransaction() (tx *transaction, err error) {
 	tx = &transaction{
 		hashes:               make(map[turtle.URI]Key),
 		inverseRelationships: make(map[Key]Key),
+		cache:                db.cache,
 	}
 	t := &traversal{under: tx}
 	tx.t = t
@@ -402,6 +404,10 @@ func (tx *transaction) addTriple(triple turtle.Triple) error {
 			return err
 		}
 	}
+
+	tx.cache.evict(subjectHash)
+	tx.cache.evict(objectHash)
+	tx.cache.evict(predicateHash)
 
 	return nil
 }

@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/gtfierro/hod/config"
@@ -97,6 +98,22 @@ func NewHodDB(cfg *config.Config) (*HodDB, error) {
 	if err := hod.saveIndexes(); err != nil {
 		return nil, errors.Wrap(err, "Could not save file indexes")
 	}
+
+	go func() {
+		ticker := time.NewTicker(30 * time.Second)
+		for _ = range ticker.C {
+			fields := make(map[string]interface{})
+			hod.dbs.Range(func(_dbname, _db interface{}) bool {
+				dbname := _dbname.(string)
+				db := _db.(*DB)
+				hit := atomic.LoadUint64(&db.cache.hit)
+				total := atomic.LoadUint64(&db.cache.total)
+				fields[dbname] = fmt.Sprintf("%0.2f%% (%d)", 100*float64(hit)/float64(total), total)
+				return true
+			})
+			logrus.WithFields(logrus.Fields(fields)).Info("CacheHit")
+		}
+	}()
 
 	return hod, nil
 }
