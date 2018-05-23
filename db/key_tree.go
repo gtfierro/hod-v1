@@ -4,9 +4,9 @@ import (
 	"github.com/mitghi/btree"
 )
 
-const BTREE_DEGREE = 4
+const BTREE_DEGREE = 8
 
-var fl = btree.NewFreeList(262144)
+var fl = btree.NewFreeList(1024 * 1024 * 128)
 
 type keyTree struct {
 	tree *btree.BTree
