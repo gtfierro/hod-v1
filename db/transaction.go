@@ -265,7 +265,7 @@ func (tx *transaction) addTriples(dataset turtle.DataSet) error {
 	var predicatesAdded int
 	pred, err := tx.getPredicateByURI(INVERSEOF)
 	if err != nil && err != leveldb.ErrNotFound {
-		return errors.Wrap(err, "Could not load INVERSEOF predicate")
+		logrus.WithError(err).Error("Could not load INVERSEOF pred")
 	} else if err == nil {
 		for subject, objectMap := range pred.Subjects {
 			for object := range objectMap {
@@ -470,7 +470,7 @@ func (tx *transaction) addURI(uri turtle.URI) error {
 func (tx *transaction) rollupPredicate(predicateHash Key) error {
 	var err error
 	forwardPath := sparql.PathPattern{Pattern: sparql.PATTERN_ONE_PLUS}
-	results := newKeyTree()
+	results := newKeymap()
 	forwardPath.Predicate, err = tx.getURI(predicateHash)
 	if err != nil {
 		return err

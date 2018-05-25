@@ -6,6 +6,8 @@ import (
 	"github.com/mitghi/btree"
 )
 
+const BTREE_DEGREE = 8
+
 var (
 	traversedBTreePool *btreePool
 )

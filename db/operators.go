@@ -317,7 +317,7 @@ func (rsv *resolveSubjectFromVarObject) run(ctx *queryContext) error {
 	var relation_contents [][]Key
 	var itererr error
 
-	newSubjects := newKeyTree()
+	newSubjects := newKeymap()
 
 	objects := ctx.getValuesForVariable(objectVar)
 	objects.Iter(func(object Key) {
@@ -371,7 +371,7 @@ func (rov *resolveObjectFromVarSubject) run(ctx *queryContext) error {
 	var rsop_relation = NewRelation([]string{subjectVar, objectVar})
 	var relation_contents [][]Key
 
-	newObjects := newKeyTree()
+	newObjects := newKeymap()
 
 	subjects := ctx.getValuesForVariable(subjectVar)
 	subjects.Iter(func(subject Key) {
@@ -533,8 +533,8 @@ func (op *resolveSubjectPredFromObject) run(ctx *queryContext) error {
 		ctx.rel.add2Values(subjectVar, predicateVar, sub_pred_pairs)
 	}
 
-	ctx.defineVariable(predicateVar, newKeyTree())
-	ctx.defineVariable(subjectVar, newKeyTree())
+	ctx.defineVariable(predicateVar, newKeymap())
+	ctx.defineVariable(subjectVar, newKeymap())
 
 	return nil
 }
@@ -613,8 +613,8 @@ func (op *resolvePredObjectFromSubject) run(ctx *queryContext) error {
 		// if nothing has been joined yet, then we are populating this relation for the first time.
 		// from that predicate
 		ctx.rel.add2Values(predicateVar, objectVar, pred_obj_pairs)
-		ctx.defineVariable(predicateVar, newKeyTree())
-		ctx.defineVariable(objectVar, newKeyTree())
+		ctx.defineVariable(predicateVar, newKeymap())
+		ctx.defineVariable(objectVar, newKeymap())
 	}
 	ctx.markJoined(predicateVar)
 	ctx.markJoined(objectVar)

@@ -1,6 +1,7 @@
 package db
 
 import (
+	"bytes"
 	"sync"
 )
 
@@ -56,4 +57,8 @@ func (row Row) valueAt(pos int) Key {
 	}
 	copy(k[:], row.content[pos*8:pos*8+8])
 	return k
+}
+
+func (row Row) equals(other Row) bool {
+	return bytes.Equal(row.content[:], other.content[:])
 }

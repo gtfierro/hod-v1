@@ -150,7 +150,7 @@ func (t *traversal) reversePathPattern(path []sparql.PathPattern) []sparql.PathP
 }
 
 // follow the pattern from the given object's InEdges, placing the results in the btree
-func (t *traversal) followPathFromObject(object *Entity, results *keyTree, searchstack *list.List, pattern sparql.PathPattern) error {
+func (t *traversal) followPathFromObject(object *Entity, results *keymap, searchstack *list.List, pattern sparql.PathPattern) error {
 	stack := list.New()
 	stack.PushFront(object)
 
@@ -266,7 +266,7 @@ func (t *traversal) followPathFromObject(object *Entity, results *keyTree, searc
 }
 
 // follow the pattern from the given subject's OutEdges, placing the results in the btree
-func (t *traversal) followPathFromSubject(subject *Entity, results *keyTree, searchstack *list.List, pattern sparql.PathPattern) error {
+func (t *traversal) followPathFromSubject(subject *Entity, results *keymap, searchstack *list.List, pattern sparql.PathPattern) error {
 	stack := list.New()
 	stack.PushFront(subject)
 
@@ -379,7 +379,7 @@ func (t *traversal) followPathFromSubject(subject *Entity, results *keyTree, sea
 	return nil
 }
 
-func (t *traversal) getSubjectFromPredObject(objectHash Key, path []sparql.PathPattern) (*keyTree, error) {
+func (t *traversal) getSubjectFromPredObject(objectHash Key, path []sparql.PathPattern) (*keymap, error) {
 	// first get the initial object entity from the db
 	// then we're going to conduct a BFS search starting from this entity looking for all entities
 	// that have the required path sequence. We place the results in a BTree to maintain uniqueness
@@ -406,7 +406,7 @@ func (t *traversal) getSubjectFromPredObject(objectHash Key, path []sparql.PathP
 		for traversed.Max() != nil {
 			traversed.DeleteMax()
 		}
-		reachable := newKeyTree()
+		reachable := newKeymap()
 		for stack.Len() > 0 {
 			entity := stack.Remove(stack.Front()).(*Entity)
 			// if we have already traversed this entity, skip it
@@ -432,11 +432,11 @@ func (t *traversal) getSubjectFromPredObject(objectHash Key, path []sparql.PathP
 			return reachable, nil
 		}
 	}
-	return newKeyTree(), nil
+	return newKeymap(), nil
 }
 
 // Given object and predicate, get all subjects
-func (t *traversal) getObjectFromSubjectPred(subjectHash Key, path []sparql.PathPattern) *keyTree {
+func (t *traversal) getObjectFromSubjectPred(subjectHash Key, path []sparql.PathPattern) *keymap {
 	subEntity, err := t.getEntityByHash(subjectHash)
 	if err != nil {
 		log.Error(errors.Wrapf(err, "Not found: %v", subjectHash))
@@ -456,7 +456,7 @@ func (t *traversal) getObjectFromSubjectPred(subjectHash Key, path []sparql.Path
 		for traversed.Max() != nil {
 			traversed.DeleteMax()
 		}
-		reachable := newKeyTree()
+		reachable := newKeymap()
 		for stack.Len() > 0 {
 			entity := stack.Remove(stack.Front()).(*Entity)
 			// if we have already traversed this entity, skip it
@@ -482,7 +482,7 @@ func (t *traversal) getObjectFromSubjectPred(subjectHash Key, path []sparql.Path
 			return reachable
 		}
 	}
-	return newKeyTree()
+	return newKeymap()
 }
 
 // Given a predicate, it returns pairs of (subject, object) that are connected by that relationship
@@ -504,8 +504,8 @@ func (t *traversal) getSubjectObjectFromPred(path []sparql.PathPattern) (soPair 
 	return soPair, nil
 }
 
-func (t *traversal) getPredicateFromSubjectObject(subject, object *Entity) *keyTree {
-	reachable := newKeyTree()
+func (t *traversal) getPredicateFromSubjectObject(subject, object *Entity) *keymap {
+	reachable := newKeymap()
 
 	for edge, objects := range subject.InEdges {
 		for _, edgeObject := range objects {
@@ -531,8 +531,8 @@ func (t *traversal) getPredicateFromSubjectObject(subject, object *Entity) *keyT
 	return reachable
 }
 
-func (t *traversal) getPredicatesFromObject(object *Entity) *keyTree {
-	reachable := newKeyTree()
+func (t *traversal) getPredicatesFromObject(object *Entity) *keymap {
+	reachable := newKeymap()
 	var edgepk Key
 	for edge := range object.InEdges {
 		edgepk.FromSlice([]byte(edge))
@@ -542,8 +542,8 @@ func (t *traversal) getPredicatesFromObject(object *Entity) *keyTree {
 	return reachable
 }
 
-func (t *traversal) getPredicatesFromSubject(subject *Entity) *keyTree {
-	reachable := newKeyTree()
+func (t *traversal) getPredicatesFromSubject(subject *Entity) *keymap {
+	reachable := newKeymap()
 	var edgepk Key
 	for edge := range subject.OutEdges {
 		edgepk.FromSlice([]byte(edge))

@@ -7,7 +7,7 @@ import (
 )
 
 var trees = newBtreePool(BTREE_DEGREE)
-var emptyHashTree = newKeyTree()
+var emptyHashTree = newKeymap()
 
 type queryContext struct {
 	// maps variable name to a position in a row
@@ -15,7 +15,7 @@ type queryContext struct {
 	selectVars       []string
 
 	// variable definitions
-	definitions map[string]*keyTree
+	definitions map[string]*keymap
 
 	rel *Relation
 
@@ -30,7 +30,7 @@ type queryContext struct {
 
 func newQueryContext(plan *queryPlan, db *DB) (*queryContext, error) {
 	variablePosition := make(map[string]int)
-	definitions := make(map[string]*keyTree)
+	definitions := make(map[string]*keymap)
 	for idx, variable := range plan.query.Variables {
 		variablePosition[variable] = idx
 	}
@@ -84,7 +84,7 @@ func (ctx *queryContext) markJoined(varname string) {
 	ctx.joined = append(ctx.joined, varname)
 }
 
-func (ctx *queryContext) getValuesForVariable(varname string) *keyTree {
+func (ctx *queryContext) getValuesForVariable(varname string) *keymap {
 	tree, found := ctx.definitions[varname]
 	if found {
 		return tree
@@ -92,7 +92,7 @@ func (ctx *queryContext) getValuesForVariable(varname string) *keyTree {
 	return emptyHashTree
 }
 
-func (ctx *queryContext) defineVariable(varname string, values *keyTree) {
+func (ctx *queryContext) defineVariable(varname string, values *keymap) {
 	tree := ctx.definitions[varname]
 	if tree == nil || tree.Len() == 0 {
 		ctx.definitions[varname] = values
@@ -104,13 +104,13 @@ func (ctx *queryContext) defined(varname string) bool {
 	return found
 }
 
-func (ctx *queryContext) unionDefinitions(varname string, values *keyTree) {
+func (ctx *queryContext) unionDefinitions(varname string, values *keymap) {
 	ctx.restrictToResolved(varname, values)
 	ctx.definitions[varname] = values
 }
 
 // remove the values from 'values' that aren't in the values we already have
-func (ctx *queryContext) restrictToResolved(varname string, values *keyTree) {
+func (ctx *queryContext) restrictToResolved(varname string, values *keymap) {
 	tree, found := ctx.definitions[varname]
 	if !found {
 		return // do not change the tree

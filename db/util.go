@@ -26,6 +26,18 @@ func hashURI(u turtle.URI, dest []byte, salt uint64) {
 	binary.LittleEndian.PutUint32(dest[:4], hash)
 }
 
+func hashRow(row *Row) uint32 {
+	return murmur.Murmur3(row.content[:])
+}
+
+func hashRowWithPos(row *Row, positions []int) uint32 {
+	var b []byte
+	for _, pos := range positions {
+		b = append(b, row.content[pos*8:pos*8+8]...)
+	}
+	return murmur.Murmur3(b)
+}
+
 func mustGetURI(graph traversable, hash Key) turtle.URI {
 	if uri, err := graph.getURI(hash); err != nil {
 		panic(err)
