@@ -187,27 +187,33 @@ func (hod *HodDB) RunQuery(q *sparql.Query) (QueryResult, error) {
 		// handle SELECT query
 		//if q.IsSelect() {
 		singleresult, _stats, err := db.runQuery(q)
+		log.Debugf("%+v", _stats)
 		stats.merge(_stats)
 		if err != nil {
 			log.Error(errors.Wrapf(err, "Error running query on %s", dbname))
 		}
 		//rowlock.Lock()
+
 		for _, row := range singleresult {
 			unionedRows.ReplaceOrInsert(row)
 		}
-		result.Count = unionedRows.Len()
 		if !q.Count {
 			i := unionedRows.DeleteMax()
 			for i != nil {
 				row := i.(*ResultRow)
-				m := make(ResultMap)
-				for idx, vname := range q.Select.Vars {
-					m[vname] = row.row[idx]
+				if !q.IsInsert() {
+					m := make(ResultMap)
+					for idx, vname := range q.Select.Vars {
+						m[vname] = row.row[idx]
+					}
+					result.Rows = append(result.Rows, m)
 				}
-				result.Rows = append(result.Rows, m)
+				result.Count += 1
 				finishResultRow(row)
 				i = unionedRows.DeleteMax()
 			}
+		} else {
+			result.Count = unionedRows.Len()
 		}
 		//}
 
@@ -218,7 +224,6 @@ func (hod *HodDB) RunQuery(q *sparql.Query) (QueryResult, error) {
 				return result, err
 			}
 			stats.merge(insertstats)
-			result.Count = 0
 		}
 		//rowlock.Unlock()
 		//TODO: merge these or decide how to grouop them

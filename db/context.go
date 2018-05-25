@@ -152,11 +152,21 @@ func (ctx *queryContext) dumpRow(row *Row) {
 }
 
 func (ctx *queryContext) getResults() (results []*ResultRow) {
-
 	results = make([]*ResultRow, len(ctx.rel.rows))
-	idx := 0
+	var jtest = make(map[uint32]struct{})
+	numRows := 0
+	var positions = make([]int, len(ctx.selectVars))
+	for idx, varname := range ctx.selectVars {
+		positions[idx] = ctx.variablePosition[varname]
+	}
 rowIter:
 	for _, row := range ctx.rel.rows {
+		hash := hashRowWithPos(row, positions)
+		if _, found := jtest[hash]; found {
+			continue
+		}
+		jtest[hash] = struct{}{}
+
 		resultrow := getResultRow(len(ctx.selectVars))
 		for idx, varname := range ctx.selectVars {
 			val := row.valueAt(ctx.variablePosition[varname])
@@ -169,10 +179,9 @@ rowIter:
 				panic(err)
 			}
 		}
-		results[idx] = resultrow
-		idx++
+		results[numRows] = resultrow
+		numRows++
 		row.release()
 	}
-	results = results[:idx]
-	return
+	return results[:numRows]
 }
