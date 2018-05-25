@@ -589,3 +589,21 @@ func (tx *transaction) getReverseRelationship(forward turtle.URI) (reverse turtl
 	}
 	return
 }
+
+func (tx *transaction) iterAllEntities(F func(Key, *Entity) bool) error {
+	iter := tx.graph.NewIterator(nil, nil)
+	for iter.Next() {
+		var subjectHash Key
+		entityHash := iter.Key()
+		copy(subjectHash[:], entityHash[:8])
+		var entity = NewEntity()
+		_, err := entity.UnmarshalMsg(iter.Value())
+		if err != nil {
+			return err
+		}
+		if F(subjectHash, entity) {
+			return nil
+		}
+	}
+	return nil
+}

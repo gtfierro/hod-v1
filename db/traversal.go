@@ -17,6 +17,7 @@ type traversable interface {
 	getExtendedIndexByHash(Key) (*EntityExtendedIndex, error)
 	getPredicateByURI(turtle.URI) (*PredicateEntity, error)
 	getPredicateByHash(Key) (*PredicateEntity, error)
+	iterAllEntities(func(Key, *Entity) bool) error
 
 	getReverseRelationship(turtle.URI) (turtle.URI, bool)
 	done() error
@@ -551,4 +552,8 @@ func (t *traversal) getPredicatesFromSubject(subject *Entity) *keymap {
 	}
 
 	return reachable
+}
+
+func (t *traversal) iterAllEntities(F func(Key, *Entity) bool) error {
+	return t.under.iterAllEntities(F)
 }
