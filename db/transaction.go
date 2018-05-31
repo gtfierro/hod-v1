@@ -30,6 +30,7 @@ type transaction struct {
 	graph                *leveldb.Transaction
 	ext                  *leveldb.Transaction
 	pred                 *leveldb.Transaction
+	predbatch            map[Key]*PredicateEntity
 	triplesAdded         int
 	hashes               map[turtle.URI]Key
 	inverseRelationships map[Key]Key
@@ -41,6 +42,7 @@ func (db *DB) openTransaction() (tx *transaction, err error) {
 	tx = &transaction{
 		hashes:               make(map[turtle.URI]Key),
 		inverseRelationships: make(map[Key]Key),
+		predbatch:            make(map[Key]*PredicateEntity),
 		cache:                db.cache,
 	}
 	t := &traversal{under: tx}
@@ -118,6 +120,17 @@ func (tx *transaction) commit() error {
 }
 
 func (tx *transaction) done() error {
+	var b = new(leveldb.Batch)
+	for key, predent := range tx.predbatch {
+		bytes, err := predent.MarshalMsg(nil)
+		if err != nil {
+			return err
+		}
+		b.Put(key[:], bytes)
+	}
+	if err := tx.pred.Write(b, nil); err != nil {
+		return err
+	}
 	return tx.commit()
 }
 
@@ -211,6 +224,9 @@ func (tx *transaction) getPredicateByURI(uri turtle.URI) (*PredicateEntity, erro
 }
 
 func (tx *transaction) getPredicateByHash(hash Key) (*PredicateEntity, error) {
+	if pred, found := tx.predbatch[hash]; found {
+		return pred, nil
+	}
 	var pred = NewPredicateEntity()
 	bytes, err := tx.pred.Get(hash[:], nil)
 	if err != nil && err != leveldb.ErrNotFound {
@@ -218,21 +234,14 @@ func (tx *transaction) getPredicateByHash(hash Key) (*PredicateEntity, error) {
 	} else if err == leveldb.ErrNotFound {
 		// add predicate entity to predhash db
 		pred.PK = hash
-		return pred, tx.savePredicate(pred)
+		tx.predbatch[pred.PK] = pred
+		return pred, nil
+	} else if _, err = pred.UnmarshalMsg(bytes); err == nil {
+		tx.predbatch[pred.PK] = pred
+		return pred, nil
 	} else {
-		// load predicate entity from db
-		_, err = pred.UnmarshalMsg(bytes)
 		return pred, err
 	}
-}
-
-func (tx *transaction) savePredicate(pred *PredicateEntity) error {
-	if bytes, err := pred.MarshalMsg(nil); err != nil {
-		return errors.Wrap(err, "Error serializing predicate from transaction")
-	} else if err := tx.pred.Put(pred.PK[:], bytes, nil); err != nil {
-		return errors.Wrap(err, "Error inserting predicate in transaction")
-	}
-	return nil
 }
 
 func (tx *transaction) addTriples(dataset turtle.DataSet) error {
@@ -381,9 +390,7 @@ func (tx *transaction) addTriple(triple turtle.Triple) error {
 		return err
 	}
 	if pred.AddSubjectObject(subjectHash, objectHash) {
-		if err := tx.savePredicate(pred); err != nil {
-			return err
-		}
+		tx.predbatch[pred.PK] = pred
 	}
 
 	subject, err := tx.getEntityByURI(triple.Subject)

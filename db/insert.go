@@ -48,7 +48,7 @@ func (db *DB) handleInsert(insert sparql.InsertClause, result QueryResult) (quer
 		tx.discard()
 		return stats, err
 	}
-	if err := tx.commit(); err != nil {
+	if err := tx.done(); err != nil {
 		tx.discard()
 		return stats, err
 	}

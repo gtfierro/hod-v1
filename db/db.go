@@ -214,7 +214,7 @@ func newDB(name string, cfg *config.Config) (*DB, error) {
 				panic(err)
 			}
 
-			if err := tx.commit(); err != nil {
+			if err := tx.done(); err != nil {
 				tx.discard()
 				return nil, err
 			}

@@ -268,7 +268,7 @@ func (hod *HodDB) loadDataset(name, ttlfile string) error {
 		return err
 	}
 
-	if err := tx.commit(); err != nil {
+	if err := tx.done(); err != nil {
 		tx.discard()
 		return err
 	}
