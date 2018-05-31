@@ -64,35 +64,52 @@ func NewHodDB(cfg *config.Config) (*HodDB, error) {
 	// For each file, we compute the sha256 hash. If we have already loaded the file and
 	// it hasn't changed, the hash should be in hod.loadedfilehashes
 
+	var loadwg sync.WaitGroup
+	var errchan = make(chan error, len(cfg.Buildings))
+	loadwg.Add(len(cfg.Buildings))
 	for buildingname, buildingttlfile := range cfg.Buildings {
-		f, err := os.Open(buildingttlfile)
-		if err != nil {
-			return nil, errors.Wrapf(err, "Could not read input file %s", buildingttlfile)
-		}
-		defer f.Close()
-		filehasher := sha256.New()
-		if _, err := io.Copy(filehasher, f); err != nil {
-			return nil, errors.Wrapf(err, "Could not hash file %s", buildingttlfile)
-		}
-		filehash := filehasher.Sum(nil)
-		if existinghash, found := hod.loadedfilehashes[buildingttlfile]; found && bytes.Equal(filehash, existinghash) {
-			log.Infof("TTL file %s has not changed since we last loaded it! Skipping...", buildingttlfile)
-			cfg.ReloadOntologies = false
-			cfg.DBPath = filepath.Join(hod.dbdir, buildingname)
-			db, err := newDB(buildingname, cfg)
+		buildingname := buildingname
+		buildingttlfile := buildingttlfile
+		go func() {
+			defer loadwg.Done()
+			f, err := os.Open(buildingttlfile)
 			if err != nil {
-				return nil, errors.Wrap(err, "Could not load existing database")
+				errchan <- errors.Wrapf(err, "Could not read input file %s", buildingttlfile)
+				return
 			}
-			hod.dbs.Store(buildingname, db)
+			defer f.Close()
+			filehasher := sha256.New()
+			if _, err := io.Copy(filehasher, f); err != nil {
+				errchan <- errors.Wrapf(err, "Could not hash file %s", buildingttlfile)
+				return
+			}
+			filehash := filehasher.Sum(nil)
+			if existinghash, found := hod.loadedfilehashes[buildingttlfile]; found && bytes.Equal(filehash, existinghash) {
+				log.Infof("TTL file %s has not changed since we last loaded it! Skipping...", buildingttlfile)
+				cfg.ReloadOntologies = false
+				cfg.DBPath = filepath.Join(hod.dbdir, buildingname)
+				db, err := newDB(buildingname, cfg)
+				if err != nil {
+					errchan <- errors.Wrap(err, "Could not load existing database")
+					return
+				}
+				hod.dbs.Store(buildingname, db)
+				hod.buildings = append(hod.buildings, buildingname)
+				return
+			}
 			hod.buildings = append(hod.buildings, buildingname)
-			continue
-		}
-		hod.buildings = append(hod.buildings, buildingname)
-		hod.loadedfilehashes[buildingttlfile] = filehash
+			hod.loadedfilehashes[buildingttlfile] = filehash
 
-		if err := hod.loadDataset(buildingname, buildingttlfile); err != nil {
-			return nil, err
-		}
+			if err := hod.loadDataset(buildingname, buildingttlfile); err != nil {
+				errchan <- err
+				return
+			}
+		}()
+	}
+	close(errchan)
+	loadwg.Wait()
+	for err := range errchan {
+		return nil, err
 	}
 
 	if err := hod.saveIndexes(); err != nil {
