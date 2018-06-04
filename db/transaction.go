@@ -299,6 +299,11 @@ func (tx *transaction) addTriples(dataset turtle.DataSet) error {
 		if err != nil {
 			return errors.Wrapf(err, "Could not load predicate %s", _uri)
 		}
+		revPred, err := tx.getPredicateByHash(reversePredicate)
+		_uri, _ = tx.getURI(reversePredicate)
+		if err != nil {
+			return errors.Wrapf(err, "Could not load reverse predicate %s", _uri)
+		}
 
 		for subjectStr, objectMap := range pred.Subjects {
 			subject.FromSlice([]byte(subjectStr))
@@ -313,15 +318,22 @@ func (tx *transaction) addTriples(dataset turtle.DataSet) error {
 					return errors.Wrap(err, "Could not load object")
 				}
 				subjectEnt.AddInEdge(reversePredicate, object)
+				subjectEnt.AddOutEdge(predicate, object)
 				objectEnt.AddOutEdge(reversePredicate, subject)
+				objectEnt.AddInEdge(predicate, subject)
 				if err = tx.putEntity(subjectEnt); err != nil {
 					return err
 				}
 				if err = tx.putEntity(objectEnt); err != nil {
 					return err
 				}
+
+				revPred.AddSubjectObject(object, subject)
 			}
+
 		}
+		tx.predbatch[reversePredicate] = revPred
+
 	}
 	reverseEdgeBuildEnd := time.Now()
 
