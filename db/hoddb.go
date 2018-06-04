@@ -207,7 +207,8 @@ func (hod *HodDB) RunQuery(q *sparql.Query) (QueryResult, error) {
 		log.Debugf("%+v", _stats)
 		stats.merge(_stats)
 		if err != nil {
-			log.Error(errors.Wrapf(err, "Error running query on %s", dbname))
+			err := errors.Wrapf(err, "Error running query on %s", dbname)
+			result.Errors = append(result.Errors, err.Error())
 		}
 		//rowlock.Lock()
 

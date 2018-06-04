@@ -115,6 +115,7 @@ func startServer(c *cli.Context) error {
 			Elapsed int64
 			Rows    []ResultMap
 			Error   string
+			Errors  []string
 		}
 
 		handleBOSSWAVEQuery := func(msg *bw2bind.SimpleMessage) {
@@ -190,6 +191,7 @@ func startServer(c *cli.Context) error {
 
 			response = hodResponse{
 				Count:   result.Count,
+				Errors:  result.Errors,
 				Elapsed: result.Elapsed.Nanoseconds(),
 				Nonce:   inq.Nonce,
 			}

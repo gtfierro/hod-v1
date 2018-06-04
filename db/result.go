@@ -24,6 +24,7 @@ type QueryResult struct {
 	Rows       []ResultMap
 	Count      int
 	Elapsed    time.Duration
+	Errors     []string
 }
 
 func newQueryResult() QueryResult {
