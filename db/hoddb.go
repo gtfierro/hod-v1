@@ -20,8 +20,25 @@ import (
 	logrus "github.com/sirupsen/logrus"
 
 	"github.com/mitghi/btree"
+	"github.com/op/go-logging"
 	"github.com/pkg/errors"
 )
+
+// logger
+var log *logging.Logger
+
+func init() {
+	log = logging.MustGetLogger("hod")
+	var format = "%{color}%{level} %{shortfile} %{time:Jan 02 15:04:05} %{color:reset} ▶ %{message}"
+	var logBackend = logging.NewLogBackend(os.Stderr, "", 0)
+	logBackendLeveled := logging.AddModuleLevel(logBackend)
+	logging.SetBackend(logBackendLeveled)
+	logging.SetFormatter(logging.MustStringFormatter(format))
+
+	logrus.SetFormatter(&logrus.TextFormatter{FullTimestamp: true, ForceColors: true})
+	logrus.SetOutput(os.Stdout)
+	logrus.SetLevel(logrus.InfoLevel)
+}
 
 type HodDB struct {
 	buildings []string
@@ -42,6 +59,7 @@ func NewHodDB(cfg *config.Config) (*HodDB, error) {
 		cfg:              cfg,
 		loadedfilehashes: make(map[string][]byte),
 	}
+	logging.SetLevel(cfg.LogLevel, "hod")
 
 	// create path for dbs
 	hod.dbdir = strings.TrimSuffix(cfg.DBPath, "/")

@@ -11,31 +11,14 @@ import (
 
 	"github.com/blevesearch/bleve"
 	"github.com/coocood/freecache"
-	"github.com/op/go-logging"
 	"github.com/pkg/errors"
-	logrus "github.com/sirupsen/logrus"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/filter"
 	"github.com/syndtr/goleveldb/leveldb/opt"
 	"github.com/tinylib/msgp/msgp"
 )
 
-// logger
-var log *logging.Logger
 var emptyKey = Key{}
-
-func init() {
-	log = logging.MustGetLogger("hod")
-	var format = "%{color}%{level} %{shortfile} %{time:Jan 02 15:04:05} %{color:reset} ▶ %{message}"
-	var logBackend = logging.NewLogBackend(os.Stderr, "", 0)
-	logBackendLeveled := logging.AddModuleLevel(logBackend)
-	logging.SetBackend(logBackendLeveled)
-	logging.SetFormatter(logging.MustStringFormatter(format))
-
-	logrus.SetFormatter(&logrus.TextFormatter{FullTimestamp: true, ForceColors: true})
-	logrus.SetOutput(os.Stdout)
-	logrus.SetLevel(logrus.InfoLevel)
-}
 
 // TODO: evict hash when writes happen
 type DB struct {
@@ -79,7 +62,6 @@ type DB struct {
 
 func newDB(name string, cfg *config.Config) (*DB, error) {
 	path := strings.TrimSuffix(cfg.DBPath, "/")
-	logging.SetLevel(cfg.LogLevel, "hod")
 
 	options := &opt.Options{
 		Filter: filter.NewBloomFilter(32),
