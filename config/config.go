@@ -47,6 +47,23 @@ type Config struct {
 	EnableBlockProfile bool
 }
 
+func (cfg *Config) Copy() *Config {
+	return &Config{
+		DBPath:                 cfg.DBPath,
+		ReloadOntologies:       cfg.ReloadOntologies,
+		DisableQueryCache:      cfg.DisableQueryCache,
+		Buildings:              cfg.Buildings,
+		Ontologies:             cfg.Ontologies,
+		ShowNamespaces:         cfg.ShowNamespaces,
+		ShowDependencyGraph:    cfg.ShowDependencyGraph,
+		ShowQueryPlan:          cfg.ShowQueryPlan,
+		ShowQueryPlanLatencies: cfg.ShowQueryPlanLatencies,
+		ShowOperationLatencies: cfg.ShowOperationLatencies,
+		ShowQueryLatencies:     cfg.ShowQueryLatencies,
+		LogLevel:               cfg.LogLevel,
+	}
+}
+
 func init() {
 	prefix := os.Getenv("GOPATH")
 	// switch prefix to default GOPATH /home/{user}/go

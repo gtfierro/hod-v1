@@ -89,6 +89,7 @@ func NewHodDB(cfg *config.Config) (*HodDB, error) {
 	for buildingname, buildingttlfile := range cfg.Buildings {
 		buildingname := buildingname
 		buildingttlfile := buildingttlfile
+		cfg := cfg.Copy()
 		go func() {
 			defer loadwg.Done()
 			f, err := os.Open(buildingttlfile)
@@ -290,11 +291,12 @@ func (hod *HodDB) RunQuery(q *sparql.Query) (QueryResult, error) {
 }
 
 func (hod *HodDB) loadDataset(name, ttlfile string) error {
-	hod.cfg.DBPath = filepath.Join(hod.dbdir, name)
-	hod.cfg.ReloadOntologies = true
-	db, err := newDB(name, hod.cfg)
+	cfg := hod.cfg.Copy()
+	cfg.DBPath = filepath.Join(hod.dbdir, name)
+	cfg.ReloadOntologies = true
+	db, err := newDB(name, cfg)
 	if err != nil {
-		return errors.Wrapf(err, "Could not create database at %s", hod.cfg.DBPath)
+		return errors.Wrapf(err, "Could not create database at %s", cfg.DBPath)
 	}
 	p := turtle.GetParser()
 	ds, duration := p.Parse(ttlfile)
