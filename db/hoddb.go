@@ -106,8 +106,8 @@ func NewHodDB(cfg *config.Config) (*HodDB, error) {
 			}
 		}()
 	}
-	close(errchan)
 	loadwg.Wait()
+	close(errchan)
 	for err := range errchan {
 		return nil, err
 	}
