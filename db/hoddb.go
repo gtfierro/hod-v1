@@ -29,6 +29,7 @@ type HodDB struct {
 	dbs sync.Map
 	// filename => sha256 hash
 	loadedfilehashes map[string][]byte
+	sync.Mutex
 	// store the config so we can make more databases
 	cfg   *config.Config
 	dbdir string
@@ -84,7 +85,10 @@ func NewHodDB(cfg *config.Config) (*HodDB, error) {
 				return
 			}
 			filehash := filehasher.Sum(nil)
-			if existinghash, found := hod.loadedfilehashes[buildingttlfile]; found && bytes.Equal(filehash, existinghash) {
+			hod.Lock()
+			existinghash, found := hod.loadedfilehashes[buildingttlfile]
+			hod.Unlock()
+			if found && bytes.Equal(filehash, existinghash) {
 				log.Infof("TTL file %s has not changed since we last loaded it! Skipping...", buildingttlfile)
 				cfg.ReloadOntologies = false
 				cfg.DBPath = filepath.Join(hod.dbdir, buildingname)
@@ -98,7 +102,9 @@ func NewHodDB(cfg *config.Config) (*HodDB, error) {
 				return
 			}
 			hod.buildings = append(hod.buildings, buildingname)
+			hod.Lock()
 			hod.loadedfilehashes[buildingttlfile] = filehash
+			hod.Unlock()
 
 			if err := hod.loadDataset(buildingname, buildingttlfile); err != nil {
 				errchan <- err
