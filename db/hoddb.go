@@ -19,7 +19,7 @@ import (
 	"github.com/gtfierro/hod/turtle"
 	logrus "github.com/sirupsen/logrus"
 
-	"github.com/mitghi/btree"
+	"github.com/gtfierro/btree"
 	"github.com/op/go-logging"
 	"github.com/pkg/errors"
 )

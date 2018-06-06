@@ -13,7 +13,7 @@ import (
 
 	"github.com/gtfierro/hod/turtle"
 
-	"github.com/mitghi/btree"
+	"github.com/gtfierro/btree"
 )
 
 var emptyResultMapList = []ResultMap{}

@@ -5,7 +5,7 @@ import (
 	"encoding/binary"
 	"fmt"
 
-	"github.com/mitghi/btree"
+	"github.com/gtfierro/btree"
 )
 
 type Key [8]byte
