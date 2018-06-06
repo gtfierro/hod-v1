@@ -289,7 +289,7 @@ func (db *DB) abbreviate(uri turtle.URI) string {
 			return abbv + ":" + uri.Value
 		}
 	}
-	return uri.Value
+	return ""
 }
 
 func (db *DB) expand(uri turtle.URI) turtle.URI {
@@ -314,7 +314,10 @@ func (db *DB) search(q string, n int) ([]string, error) {
 		return res, err
 	}
 	for _, doc := range searchResults.Hits {
-		res = append(res, db.abbreviate(turtle.ParseURI(doc.ID)))
+		abb := db.abbreviate(turtle.ParseURI(doc.ID))
+		if abb != "" {
+			res = append(res, abb)
+		}
 	}
 	return res, nil
 }
