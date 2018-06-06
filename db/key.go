@@ -3,11 +3,12 @@ package db
 
 import (
 	"encoding/binary"
+	"fmt"
 
 	"github.com/gtfierro/btree"
 )
 
-type Key [4]byte
+type Key [8]byte
 
 func (k Key) Less(than btree.Item, ctx interface{}) bool {
 	t := than.(Key)
@@ -15,7 +16,7 @@ func (k Key) Less(than btree.Item, ctx interface{}) bool {
 }
 
 func (k Key) LessThan(other Key) bool {
-	return binary.LittleEndian.Uint32(k[:]) < binary.LittleEndian.Uint32(other[:])
+	return binary.LittleEndian.Uint64(k[:]) < binary.LittleEndian.Uint64(other[:])
 }
 
 func (k *Key) FromSlice(src []byte) {
@@ -23,5 +24,5 @@ func (k *Key) FromSlice(src []byte) {
 }
 
 func (k Key) String() string {
-	return string(k[:])
+	return fmt.Sprintf("%v", k[:])
 }

@@ -96,7 +96,7 @@ func transform(_subject, _predicate, _object *C.char, sub_len, pred_len, obj_len
 	subject := C.GoStringN(_subject, sub_len)
 	predicate := C.GoStringN(_predicate, pred_len)
 	object := C.GoStringN(_object, obj_len)
-	p.dataset.addTriple(subject, predicate, object)
+	p.dataset.AddTripleStrings(subject, predicate, object)
 }
 
 //export registerNamespace

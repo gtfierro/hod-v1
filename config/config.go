@@ -12,13 +12,14 @@ import (
 
 type Config struct {
 	DBPath            string
-	BrickFrameTTL     string
-	BrickClassTTL     string
-	ReloadBrick       bool
+	ReloadOntologies  bool
 	DisableQueryCache bool
 
-	// for multidb
+	// datasets to load
 	Buildings map[string]string
+
+	// ontologies to load
+	Ontologies []string
 
 	EnableHTTP     bool
 	EnableBOSSWAVE bool
@@ -46,6 +47,23 @@ type Config struct {
 	EnableBlockProfile bool
 }
 
+func (cfg *Config) Copy() *Config {
+	return &Config{
+		DBPath:                 cfg.DBPath,
+		ReloadOntologies:       cfg.ReloadOntologies,
+		DisableQueryCache:      cfg.DisableQueryCache,
+		Buildings:              cfg.Buildings,
+		Ontologies:             cfg.Ontologies,
+		ShowNamespaces:         cfg.ShowNamespaces,
+		ShowDependencyGraph:    cfg.ShowDependencyGraph,
+		ShowQueryPlan:          cfg.ShowQueryPlan,
+		ShowQueryPlanLatencies: cfg.ShowQueryPlanLatencies,
+		ShowOperationLatencies: cfg.ShowOperationLatencies,
+		ShowQueryLatencies:     cfg.ShowQueryLatencies,
+		LogLevel:               cfg.LogLevel,
+	}
+}
+
 func init() {
 	prefix := os.Getenv("GOPATH")
 	// switch prefix to default GOPATH /home/{user}/go
@@ -58,11 +76,15 @@ func init() {
 	}
 	// set defaults for config
 	viper.SetDefault("DBPath", "_hoddb")
-	viper.SetDefault("BrickFrameTTL", prefix+"/src/github.com/gtfierro/hod/BrickFrame.ttl")
-	viper.SetDefault("BrickClassTTL", prefix+"/src/github.com/gtfierro/hod/Brick.ttl")
-	viper.SetDefault("ReloadBrick", true)
+	viper.SetDefault("ReloadOntologies", true)
 	viper.SetDefault("DisableQueryCache", false)
 	viper.SetDefault("Buildings", make(map[string]string))
+	viper.SetDefault("Ontologies", []string{
+		prefix + "/src/github.com/gtfierro/hod/BrickFrame.ttl",
+		prefix + "/src/github.com/gtfierro/hod/Brick.ttl",
+		prefix + "/src/github.com/gtfierro/hod/BrickUse.ttl",
+		prefix + "/src/github.com/gtfierro/hod/BrickTag.ttl",
+	})
 
 	viper.SetDefault("EnableHTTP", true)
 	viper.SetDefault("EnableBOSSWAVE", false)
@@ -110,13 +132,12 @@ func ReadConfig(file string) (*Config, error) {
 
 	c := &Config{
 		DBPath:                 viper.GetString("DBPath"),
-		BrickFrameTTL:          viper.GetString("BrickFrameTTL"),
-		BrickClassTTL:          viper.GetString("BrickClassTTL"),
-		ReloadBrick:            viper.GetBool("ReloadBrick"),
+		ReloadOntologies:       viper.GetBool("ReloadOntologies"),
 		EnableHTTP:             viper.GetBool("EnableHTTP"),
 		EnableBOSSWAVE:         viper.GetBool("EnableBOSSWAVE"),
 		DisableQueryCache:      viper.GetBool("DisableQueryCache"),
 		Buildings:              viper.GetStringMapString("Buildings"),
+		Ontologies:             viper.GetStringSlice("Ontologies"),
 		ShowNamespaces:         viper.GetBool("ShowNamespaces"),
 		ShowDependencyGraph:    viper.GetBool("ShowDependencyGraph"),
 		ShowQueryPlan:          viper.GetBool("ShowQueryPlan"),

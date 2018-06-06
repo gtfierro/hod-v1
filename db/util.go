@@ -1,42 +1,78 @@
 package db
 
 import (
-	"fmt"
+	"encoding/binary"
 	"hash/fnv"
 	"sort"
 	"time"
 
 	sparql "github.com/gtfierro/hod/lang/ast"
-	"github.com/gtfierro/btree"
+	"github.com/gtfierro/hod/turtle"
+	"github.com/zhangxinngang/murmur"
 )
 
-func dumpHashTree(tree *btree.BTree, db *DB, limit int) {
-	max := tree.Max()
-	iter := func(i btree.Item) bool {
-		if limit == 0 {
-			return false // stop iteration
-		} else if limit > 0 {
-			limit -= 1 //
-		}
-		fmt.Println(db.MustGetURI(i.(Key)))
-		return i != max
+func hashURI(u turtle.URI, dest []byte, salt uint64) {
+	var hash uint32
+	if len(dest) < 8 {
+		dest = make([]byte, 8)
 	}
-	tree.Ascend(iter)
+	if salt > 0 {
+		saltbytes := make([]byte, 8)
+		binary.LittleEndian.PutUint64(saltbytes, salt)
+		hash = murmur.Murmur3(append(u.Bytes(), saltbytes...))
+	} else {
+		hash = murmur.Murmur3(u.Bytes())
+	}
+	binary.LittleEndian.PutUint32(dest[:4], hash)
 }
 
-func dumpEntityTree(tree *btree.BTree, db *DB, limit int) {
-	max := tree.Max()
-	iter := func(i btree.Item) bool {
-		if limit == 0 {
-			return false // stop iteration
-		} else if limit > 0 {
-			limit -= 1 //
-		}
-		fmt.Println(db.MustGetURI(i.(*Entity).PK))
-		return i != max
-	}
-	tree.Ascend(iter)
+func hashRow(row *Row) uint32 {
+	return murmur.Murmur3(row.content[:])
 }
+
+func hashRowWithPos(row *Row, positions []int) uint32 {
+	var b []byte
+	for _, pos := range positions {
+		b = append(b, row.content[pos*8:pos*8+8]...)
+	}
+	return murmur.Murmur3(b)
+}
+
+func mustGetURI(graph traversable, hash Key) turtle.URI {
+	if uri, err := graph.getURI(hash); err != nil {
+		panic(err)
+	} else {
+		return uri
+	}
+}
+
+//func dumpHashTree(tree *btree.BTree, db *DB, limit int) {
+//	max := tree.Max()
+//	iter := func(i btree.Item) bool {
+//		if limit == 0 {
+//			return false // stop iteration
+//		} else if limit > 0 {
+//			limit -= 1 //
+//		}
+//		fmt.Println(db.MustGetURI(i.(Key)))
+//		return i != max
+//	}
+//	tree.Ascend(iter)
+//}
+
+//func dumpEntityTree(tree *btree.BTree, db *DB, limit int) {
+//	max := tree.Max()
+//	iter := func(i btree.Item) bool {
+//		if limit == 0 {
+//			return false // stop iteration
+//		} else if limit > 0 {
+//			limit -= 1 //
+//		}
+//		fmt.Println(db.MustGetURI(i.(*Entity).PK))
+//		return i != max
+//	}
+//	tree.Ascend(iter)
+//}
 
 func compareResultMapList(rml1, rml2 []ResultMap) bool {
 	var (
@@ -124,9 +160,12 @@ func hashQuery(q *sparql.Query) []byte {
 }
 
 type queryStats struct {
-	ExecutionTime time.Duration
-	ExpandTime    time.Duration
-	NumResults    int
+	WhereTime   time.Duration
+	InsertTime  time.Duration
+	ExpandTime  time.Duration
+	NumResults  int
+	NumInserted int
+	NumDeleted  int
 }
 
 func (mq *queryStats) merge(other queryStats) {
@@ -134,11 +173,16 @@ func (mq *queryStats) merge(other queryStats) {
 		mq = &other
 		return
 	}
-	if mq.ExecutionTime.Nanoseconds() < other.ExecutionTime.Nanoseconds() {
-		mq.ExecutionTime = other.ExecutionTime
+	if mq.WhereTime.Nanoseconds() < other.WhereTime.Nanoseconds() {
+		mq.WhereTime = other.WhereTime
 	}
 	if mq.ExpandTime.Nanoseconds() < other.ExpandTime.Nanoseconds() {
 		mq.ExpandTime = other.ExpandTime
 	}
+	if mq.InsertTime.Nanoseconds() < other.InsertTime.Nanoseconds() {
+		mq.InsertTime = other.InsertTime
+	}
 	mq.NumResults += other.NumResults
+	mq.NumInserted += other.NumInserted
+	mq.NumDeleted += other.NumDeleted
 }

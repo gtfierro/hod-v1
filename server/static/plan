@@ -1,0 +1,132 @@
+<html>
+  <head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="lib/codemirror.css">
+    <script src="js/moment.js"></script>
+    <script src="lib/codemirror.js"></script>
+    <script src="addon/edit/matchbrackets.js"></script>
+    <script src="mode/sparql/sparql.js"></script>
+    <script src="mode/python/python.js"></script>
+    <script type="text/javascript" src="js/vis.min.js"></script>
+    <link href="css/vis-network.min.css" rel="stylesheet" type="text/css" />
+    <!--Import Google Icon Font-->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <!--Import materialize.css-->
+    <link type="text/css" rel="stylesheet" href="css/materialize.min.css"  media="screen,projection"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link type="text/css" rel="stylesheet" href="css/site.css" />
+  	<title>HodDB Query</title>
+    <ul id="slide-out" style="width:350px" class="side-nav fixed blue lighten-5">
+        <li><h3 class="center-align" !important>HodDB</h3></li>
+        <li><a class="tooltipped" data-position="right" data-delay="100" data-tooltip="Execute BRICK queries" href="/query">Query<i class="material-icons">keyboard_arrow_right</i></a></li>
+        <li class="active"><a class="tooltipped" data-position="right" data-delay="100" data-tooltip="Visualize the construction of BRICK queries" href="/plan">Planner<i class="material-icons">keyboard_arrow_right</i></a></li>
+        <!--<li><a class="tooltipped" data-position="right" data-delay="100" data-tooltip="Explore BRICK graphs" href="/explore">Explore<i class="material-icons">keyboard_arrow_right</i></a></li>-->
+        <li><a class="tooltipped" data-position="right" data-delay="100" data-tooltip="Visualize the construction of BRICK queries" href="/search">Search<i class="material-icons">keyboard_arrow_right</i></a></li>
+        <li><a class="tooltipped" data-position="right" data-delay="100" data-tooltip="Documentation and other resources" href="/help">Help<i class="material-icons">keyboard_arrow_right</i></a></li>
+        <li><hr></li>
+        <li class="subheader center-align">Common Queries</li>
+        <li class="collection-item"><a id="query_vavselect" class="listhighlight">VAV Select<i class="material-icons">code</i></a><li>
+        <li class="collection-item"><a id="query_tempselect" class="listhighlight">Zone Temperature Sensors<i class="material-icons">code</i></a><li>
+        <li class="collection-item"><a id="query_vavcmd" class="listhighlight">VAV Commands<i class="material-icons">code</i></a><li>
+        <li class="collection-item"><a id="query_floors" class="listhighlight">Spatial Building Structure<i class="material-icons">code</i></a><li>
+        <li style="position: absolute; bottom: 100px; left: 30px;" class="collection-item bottom-align">vHOD_VERSION</li>
+    </ul>
+    <a href="#" data-activates="slide-out" class="button-collapse"><i class="material-icons">menu</i></a>
+  </head>
+  <body>
+    <!--Import jQuery before materialize.js-->
+    <script type="text/javascript" src="js/jquery-2.1.1.min.js"></script>
+    <script type="text/javascript" src="js/materialize.min.js"></script>
+    <main>
+    <div class="container">
+      <h5 class="col s12 center-align">Query Planner</h3>
+      <div class="row">
+        <div class="col s12">
+          <form id="queryform" form="queryform" class="col s12">
+            <textarea id="queryarea" name="queryarea">
+SELECT ?vav WHERE {
+    ?vav rdf:type brick:VAV
+};</textarea>
+          </form>
+        </div>
+      </div>
+      <div class="row">
+        <div id="errortext" class="col s12 card-panel red lighten-2" hidden>
+          <p></p>
+        </div>
+        <div class="col s12">
+          <div id="mynetwork"></div>
+        </div>
+      </div>
+    </div>
+    </main>
+    <script type="text/javascript" src="js/commonqueries.js"></script>
+    <script type="text/javascript">
+          var textarea = document.getElementById("queryarea");
+          var cm = CodeMirror.fromTextArea(textarea, {
+            mode:  "application/sparql-query",
+            matchBrackets: true,
+            lineNumbers: true
+          });
+          cm.refresh();
+
+          var submit_query = function(query) {
+            var html = "";
+            var begin = moment();
+            console.log(query);
+            $("#errortext").hide();
+            $.post("/api/querydot", query, function(data) {
+                console.log(network);
+                if (network != null) {
+                    network.destroy();
+                }
+                var end = moment();
+                var duration = moment.duration(end - begin);
+                $("#elapsed").text(duration.milliseconds() + " ms");
+                console.log(data);
+                var parsedData = vis.network.convertDot(data);
+                var container = document.getElementById('mynetwork');
+                var data = {
+                  nodes: parsedData.nodes,
+                  edges: parsedData.edges
+                };
+                var options = parsedData.options;
+                options.interaction = {
+                  hover: true
+                };
+                options.layout = {
+                    hierarchical: {
+                      enabled: true,
+                      levelSeparation: 400,
+                      nodeSpacing: 250,
+                      edgeMinimization: true,
+                      direction: 'LR'
+                    }
+                };
+
+                var network = new vis.Network(container, data, options);
+                network.redraw();
+            }).fail(function(e) {
+                $("#errortext").show();
+                $("#errortext > p").text(e.responseText);
+            });
+          }
+
+          // init collapsible parts
+          $('.collapsible').collapsible();
+
+          $('.button-collapse').sideNav({
+            menuWidth: 350, // Default is 240
+            }
+          );
+
+          cm.on("change", function(e, x) {
+            submit_query(cm.getValue());
+          });
+
+          // run once
+          var querytext = $("#queryarea").val();
+          submit_query(querytext);
+    </script>
+  </body>
+</html>

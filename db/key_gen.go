@@ -45,6 +45,6 @@ func (z *Key) UnmarshalMsg(bts []byte) (o []byte, err error) {
 
 // Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
 func (z *Key) Msgsize() (s int) {
-	s = msgp.ArrayHeaderSize + (4 * (msgp.ByteSize))
+	s = msgp.ArrayHeaderSize + (8 * (msgp.ByteSize))
 	return
 }

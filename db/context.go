@@ -2,10 +2,12 @@ package db
 
 import (
 	"fmt"
+
+	"github.com/pkg/errors"
 )
 
 var trees = newBtreePool(BTREE_DEGREE)
-var emptyHashTree = newKeyTree()
+var emptyHashTree = newKeymap()
 
 type queryContext struct {
 	// maps variable name to a position in a row
@@ -13,25 +15,31 @@ type queryContext struct {
 	selectVars       []string
 
 	// variable definitions
-	definitions map[string]*keyTree
+	definitions map[string]*keymap
 
 	rel *Relation
 
 	// names of joined variables
 	joined []string
 
+	t  *traversal
 	db *DB
-
 	// embedded query plan
 	*queryPlan
 }
 
-func newQueryContext(plan *queryPlan, db *DB) *queryContext {
+func newQueryContext(plan *queryPlan, db *DB) (*queryContext, error) {
 	variablePosition := make(map[string]int)
-	definitions := make(map[string]*keyTree)
+	definitions := make(map[string]*keymap)
 	for idx, variable := range plan.query.Variables {
 		variablePosition[variable] = idx
 	}
+
+	snap, err := db.snapshot()
+	if err != nil {
+		return nil, errors.Wrap(err, "Could not get snapshot")
+	}
+
 	return &queryContext{
 		variablePosition: variablePosition,
 		definitions:      definitions,
@@ -39,7 +47,8 @@ func newQueryContext(plan *queryPlan, db *DB) *queryContext {
 		rel:              NewRelation(plan.query.Variables),
 		db:               db,
 		queryPlan:        plan,
-	}
+		t:                &traversal{snap, db.cache},
+	}, nil
 }
 
 func (ctx *queryContext) cardinalityUnique(varname string) int {
@@ -75,7 +84,7 @@ func (ctx *queryContext) markJoined(varname string) {
 	ctx.joined = append(ctx.joined, varname)
 }
 
-func (ctx *queryContext) getValuesForVariable(varname string) *keyTree {
+func (ctx *queryContext) getValuesForVariable(varname string) *keymap {
 	tree, found := ctx.definitions[varname]
 	if found {
 		return tree
@@ -83,7 +92,7 @@ func (ctx *queryContext) getValuesForVariable(varname string) *keyTree {
 	return emptyHashTree
 }
 
-func (ctx *queryContext) defineVariable(varname string, values *keyTree) {
+func (ctx *queryContext) defineVariable(varname string, values *keymap) {
 	tree := ctx.definitions[varname]
 	if tree == nil || tree.Len() == 0 {
 		ctx.definitions[varname] = values
@@ -95,23 +104,13 @@ func (ctx *queryContext) defined(varname string) bool {
 	return found
 }
 
-func (ctx *queryContext) unionDefinitions(varname string, values *keyTree) {
+func (ctx *queryContext) unionDefinitions(varname string, values *keymap) {
 	ctx.restrictToResolved(varname, values)
 	ctx.definitions[varname] = values
 }
 
-func (ctx *queryContext) addDefinition(varname string, value Key) {
-	tree := ctx.definitions[varname]
-	if tree == nil || tree.Len() == 0 {
-		ctx.definitions[varname] = newKeyTree()
-		ctx.definitions[varname].Add(value)
-	} else {
-		tree.Add(value)
-	}
-}
-
 // remove the values from 'values' that aren't in the values we already have
-func (ctx *queryContext) restrictToResolved(varname string, values *keyTree) {
+func (ctx *queryContext) restrictToResolved(varname string, values *keymap) {
 	tree, found := ctx.definitions[varname]
 	if !found {
 		return // do not change the tree
@@ -141,7 +140,11 @@ func (ctx *queryContext) dumpRow(row *Row) {
 	for varName, pos := range ctx.variablePosition {
 		val := row.valueAt(pos)
 		if val != emptyKey {
-			s += varName + "=" + ctx.db.MustGetURI(val).String() + ", "
+			uri, err := ctx.t.getURI(val)
+			if err != nil {
+				panic(err)
+			}
+			s += varName + "=" + uri.String() + ", "
 		}
 	}
 	s += "]"
@@ -149,23 +152,36 @@ func (ctx *queryContext) dumpRow(row *Row) {
 }
 
 func (ctx *queryContext) getResults() (results []*ResultRow) {
-
 	results = make([]*ResultRow, len(ctx.rel.rows))
-	idx := 0
+	var jtest = make(map[uint32]struct{})
+	numRows := 0
+	var positions = make([]int, len(ctx.selectVars))
+	for idx, varname := range ctx.selectVars {
+		positions[idx] = ctx.variablePosition[varname]
+	}
 rowIter:
 	for _, row := range ctx.rel.rows {
+		hash := hashRowWithPos(row, positions)
+		if _, found := jtest[hash]; found {
+			continue
+		}
+		jtest[hash] = struct{}{}
+
 		resultrow := getResultRow(len(ctx.selectVars))
 		for idx, varname := range ctx.selectVars {
 			val := row.valueAt(ctx.variablePosition[varname])
 			if val == emptyKey {
 				continue rowIter
 			}
-			resultrow.row[idx] = ctx.db.MustGetURI(row.valueAt(ctx.variablePosition[varname]))
+			var err error
+			resultrow.row[idx], err = ctx.t.getURI(row.valueAt(ctx.variablePosition[varname]))
+			if err != nil {
+				panic(err)
+			}
 		}
-		results[idx] = resultrow
-		idx++
+		results[numRows] = resultrow
+		numRows++
 		row.release()
 	}
-	results = results[:idx]
-	return
+	return results[:numRows]
 }

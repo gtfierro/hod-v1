@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"strings"
 	"sync"
 	"time"
 
@@ -22,7 +23,8 @@ type QueryResult struct {
 	selectVars []string
 	Rows       []ResultMap
 	Count      int
-	Elapsed    time.Duration `msg:"-"`
+	Elapsed    time.Duration
+	Errors     []string
 }
 
 func newQueryResult() QueryResult {
@@ -31,17 +33,70 @@ func newQueryResult() QueryResult {
 	}
 }
 
-func (qr QueryResult) Dump() {
-	if len(qr.Rows) > 0 {
-		for _, row := range qr.Rows {
-			fmt.Println(row)
+func (qr *QueryResult) fromRows(rows []*ResultRow, vars []string, toMap bool) {
+	qr.Count = len(rows)
+	if toMap {
+		for _, row := range rows {
+			m := make(ResultMap)
+			for idx, vname := range vars {
+				m[vname] = row.row[idx]
+			}
+			qr.Rows = append(qr.Rows, m)
+			finishResultRow(row)
 		}
-		return
 	}
-	fmt.Println(qr.Count)
+	return
 }
 
-func (qr QueryResult) DumpToCSV(usePrefixes bool, db *MultiDB, w io.Writer) error {
+func (qr QueryResult) Dump() {
+	if qr.Count == 0 {
+		fmt.Println("No results")
+		return
+	}
+	var dmp strings.Builder
+
+	rowlens := make(map[string]int, len(qr.selectVars))
+
+	for _, varname := range qr.selectVars {
+		rowlens[varname] = len(varname)
+	}
+
+	for _, row := range qr.Rows {
+		for varname, value := range row {
+			if rowlens[varname] < len(value.String()) {
+				rowlens[varname] = len(value.String())
+			}
+		}
+	}
+
+	totallen := 0
+	for _, length := range rowlens {
+		totallen += length + 2
+	}
+
+	fmt.Fprintf(&dmp, "+%s+\n", strings.Repeat("-", totallen+len(rowlens)-1))
+	// header
+	fmt.Fprintf(&dmp, "|")
+	for _, varname := range qr.selectVars {
+		fmt.Fprintf(&dmp, " %s%s|", varname, strings.Repeat(" ", rowlens[varname]-len(varname)+1))
+	}
+	fmt.Fprintf(&dmp, "\n")
+	fmt.Fprintf(&dmp, "+%s+\n", strings.Repeat("-", totallen+len(rowlens)-1))
+
+	for _, row := range qr.Rows {
+		fmt.Fprintf(&dmp, "|")
+		for _, varname := range qr.selectVars {
+			valuelen := len(row[varname].String())
+			fmt.Fprintf(&dmp, " %s%s |", row[varname], strings.Repeat(" ", rowlens[varname]-valuelen))
+		}
+		fmt.Fprintf(&dmp, "\n")
+	}
+	fmt.Fprintf(&dmp, "+%s+\n", strings.Repeat("-", totallen+len(rowlens)-1))
+	fmt.Println(dmp.String())
+	fmt.Println("Count:", qr.Count)
+}
+
+func (qr QueryResult) DumpToCSV(usePrefixes bool, db *HodDB, w io.Writer) error {
 	csvwriter := csv.NewWriter(w)
 	if len(qr.Rows) > 0 {
 		for _, row := range qr.Rows {

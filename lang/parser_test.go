@@ -44,7 +44,32 @@ func TestQueryParse(t *testing.T) {
 			"SELECT ?x ?y ?z WHERE { { ?y bf:isFedBy ?x . ?y bf:hasPoint ?z } UNION { ?y bf:feeds ?x } };",
 		},
 		{
-			"SELECT ?x ?y ?z WHERE { ?y rdf:type VAV { ?y bf:isFedBy ?x . ?y bf:hasPoint ?z } UNION { ?y bf:feeds ?x } };",
+			"SELECT ?x ?y ?z WHERE { ?y rdf:type brick:VAV { ?y bf:isFedBy ?x . ?y bf:hasPoint ?z } UNION { ?y bf:feeds ?x } };",
+		},
+	} {
+		q, err := Parse(test.str)
+		if err != nil {
+			t.Error(err)
+		}
+		fmt.Printf("%# v", pretty.Formatter(q))
+	}
+}
+
+func TestInsertQueryParse(t *testing.T) {
+	for _, test := range []struct {
+		str string
+	}{
+		{
+			"INSERT { ?x rdf:type brick:Location } WHERE { ?ax rdf:type brick:Room };",
+		},
+		{
+			"INSERT { ?x rdf:type brick:Location . ?x bf:isLocatedIn brick:Floor } WHERE { ?ax rdf:type brick:Room };",
+		},
+		{
+			"INSERT { ?x rdf:type brick:Location . ?x bf:isLocatedIn brick:Floor } FROM ciee WHERE { ?ax rdf:type brick:Room };",
+		},
+		{
+			"INSERT { ?x rdf:type ?y } WHERE { ?x rdf:type/rdfs:subClassOf* ?y };",
 		},
 	} {
 		q, err := Parse(test.str)

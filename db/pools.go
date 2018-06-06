@@ -6,6 +6,8 @@ import (
 	"github.com/gtfierro/btree"
 )
 
+const BTREE_DEGREE = 8
+
 var (
 	traversedBTreePool *btreePool
 )
