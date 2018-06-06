@@ -82,6 +82,8 @@ func init() {
 	viper.SetDefault("Ontologies", []string{
 		prefix + "/src/github.com/gtfierro/hod/BrickFrame.ttl",
 		prefix + "/src/github.com/gtfierro/hod/Brick.ttl",
+		prefix + "/src/github.com/gtfierro/hod/BrickUse.ttl",
+		prefix + "/src/github.com/gtfierro/hod/BrickTag.ttl",
 	})
 
 	viper.SetDefault("EnableHTTP", true)
