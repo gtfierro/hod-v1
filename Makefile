@@ -5,16 +5,18 @@ PROJECT?=github.com/gtfierro/hod
 PERSISTDIR?=/etc/hod
 PORT?=47808
 
-
-build: clean
+build: clean generate
 	CGO_CFLAGS_ALLOW=.*/github.com/gtfierro/hod/turtle go build \
 		-ldflags "-s -w -X ${PROJECT}/version.Release=${RELEASE} \
 						-X ${PROJECT}/version.Commit=${COMMIT}" \
 						-o ${APP}
-install:
+install: generate
 	CGO_CFLAGS_ALLOW=.*/github.com/gtfierro/hod/turtle go install \
 		-ldflags "-s -w -X ${PROJECT}/version.Release=${RELEASE} \
 						-X ${PROJECT}/version.Commit=${COMMIT}"
+generate:
+	cd server && go generate
+
 clean:
 	rm -f ${APP}
 
