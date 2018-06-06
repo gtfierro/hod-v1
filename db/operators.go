@@ -622,8 +622,6 @@ func (op *resolvePredObjectFromSubject) run(ctx *queryContext) error {
 	return nil
 }
 
-// TODO: implement these for ?s ?p ?o constructs
-// TODO: also requires query planner
 type resolveVarTripleFromSubject struct {
 	term *queryTerm
 }
@@ -759,7 +757,6 @@ func (op *resolveVarTripleFromPredicate) run(ctx *queryContext) error {
 	var itererr error
 	predicates.Iter(func(predicateKey Key) {
 		var subjectKey Key
-		// TODO: use?
 		// subsobjs := ctx.getSubjectObjectFromPred(rso.term.Predicates)
 		uri, err := ctx.t.getURI(predicateKey)
 		if err != nil {

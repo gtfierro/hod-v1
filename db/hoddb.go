@@ -269,7 +269,6 @@ func (hod *HodDB) RunQuery(q *sparql.Query) (QueryResult, error) {
 			stats.merge(insertstats)
 		}
 		//rowlock.Unlock()
-		//TODO: merge these or decide how to grouop them
 		wg.Done()
 		//}()
 	}

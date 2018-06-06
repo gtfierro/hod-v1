@@ -20,7 +20,6 @@ import (
 
 var emptyKey = Key{}
 
-// TODO: evict hash when writes happen
 type DB struct {
 	path string
 	name string
@@ -185,7 +184,6 @@ func newDB(name string, cfg *config.Config) (*DB, error) {
 		for _, ontologyFile := range cfg.Ontologies {
 			ds, _ := p.Parse(ontologyFile)
 
-			// TODO: testing
 			tx, err := db.openTransaction()
 			if err != nil {
 				tx.discard()
