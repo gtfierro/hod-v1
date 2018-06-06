@@ -35,6 +35,13 @@ type Query struct {
 	Type      QueryType
 }
 
+func (q Query) Dump() {
+	for _, triple := range q.Where.Terms {
+		fmt.Println(triple.String())
+	}
+	fmt.Println("----")
+}
+
 func (q Query) IsInsert() bool {
 	return (q.Type & INSERT_QUERY) == INSERT_QUERY
 }
