@@ -1,3 +1,4 @@
+//go:generate statik -src=static
 package server
 
 import (
@@ -11,8 +12,9 @@ import (
 	"github.com/gtfierro/hod/config"
 	hod "github.com/gtfierro/hod/db"
 	query "github.com/gtfierro/hod/lang"
+	_ "github.com/gtfierro/hod/server/statik"
+	"github.com/rakyll/statik/fs"
 
-	"github.com/julienschmidt/httprouter"
 	"github.com/op/go-logging"
 	"github.com/pkg/profile"
 	"golang.org/x/crypto/acme/autocert"
@@ -35,7 +37,6 @@ type hodServer struct {
 	db         *hod.HodDB
 	port       string
 	staticpath string
-	router     *httprouter.Router
 }
 
 func StartHodServer(db *hod.HodDB, cfg *config.Config) *http.Server {
@@ -45,20 +46,11 @@ func StartHodServer(db *hod.HodDB, cfg *config.Config) *http.Server {
 		staticpath: cfg.StaticPath,
 	}
 	log.Info("Static Path", cfg.StaticPath)
-	r := httprouter.New()
 
-	r.POST("/api/query", server.handleQuery)
-	r.POST("/api/querydot", server.handleQueryDot)
-	r.POST("/api/queryclassdot", server.handleQueryClassDot)
-	r.POST("/api/search", server.handleSearch)
-	r.ServeFiles("/static/*filepath", http.Dir(cfg.StaticPath+"/static"))
-	r.GET("/", server.serveQuery)
-	r.GET("/query", server.serveQuery)
-	r.GET("/help", server.serveHelp)
-	r.GET("/plan", server.servePlanner)
-	//r.GET("/explore", server.serveExplorer)
-	r.GET("/search", server.serveSearch)
-	server.router = r
+	statikFS, err := fs.New()
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	// enable profiling if configured
 	if cfg.EnableCPUProfile {
@@ -89,7 +81,11 @@ func StartHodServer(db *hod.HodDB, cfg *config.Config) *http.Server {
 		log.Fatalf("Error resolving address %s (%s)", addrString, err.Error())
 	}
 
-	http.Handle("/", server.router)
+	http.Handle("/", http.FileServer(statikFS))
+	http.HandleFunc("/api/query", server.handleQuery)
+	http.HandleFunc("/api/querydot", server.handleQueryDot)
+	http.HandleFunc("/api/queryclassdot", server.handleQueryClassDot)
+	http.HandleFunc("/api/search", server.handleSearch)
 	log.Notice("Starting HTTP Server on ", addrString)
 
 	var srv *http.Server
@@ -117,7 +113,7 @@ func StartHodServer(db *hod.HodDB, cfg *config.Config) *http.Server {
 	return srv
 }
 
-func (srv *hodServer) handleQuery(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
+func (srv *hodServer) handleQuery(rw http.ResponseWriter, req *http.Request) {
 	defer req.Body.Close()
 
 	log.Infof("Query from %s", req.RemoteAddr)
@@ -160,7 +156,7 @@ func (srv *hodServer) handleQuery(rw http.ResponseWriter, req *http.Request, ps 
 	return
 }
 
-func (srv *hodServer) handleSearch(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
+func (srv *hodServer) handleSearch(rw http.ResponseWriter, req *http.Request) {
 	defer req.Body.Close()
 
 	var search = struct {
@@ -188,37 +184,7 @@ func (srv *hodServer) handleSearch(rw http.ResponseWriter, req *http.Request, ps
 	return
 }
 
-func (srv *hodServer) serveHelp(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
-	log.Infof("Serve help from %s", req.RemoteAddr)
-	defer req.Body.Close()
-	http.ServeFile(rw, req, srv.staticpath+"/help.html")
-}
-
-func (srv *hodServer) serveQuery(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
-	log.Infof("Serve query from %s", req.RemoteAddr)
-	defer req.Body.Close()
-	http.ServeFile(rw, req, srv.staticpath+"/query.html")
-}
-
-func (srv *hodServer) servePlanner(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
-	log.Infof("Serve planner from %s", req.RemoteAddr)
-	defer req.Body.Close()
-	http.ServeFile(rw, req, srv.staticpath+"/plan.html")
-}
-
-func (srv *hodServer) serveExplorer(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
-	log.Infof("Serve explorer from %s", req.RemoteAddr)
-	defer req.Body.Close()
-	http.ServeFile(rw, req, srv.staticpath+"/explore.html")
-}
-
-func (srv *hodServer) serveSearch(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
-	log.Infof("Serve search from %s", req.RemoteAddr)
-	defer req.Body.Close()
-	http.ServeFile(rw, req, srv.staticpath+"/search.html")
-}
-
-func (srv *hodServer) handleQueryDot(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
+func (srv *hodServer) handleQueryDot(rw http.ResponseWriter, req *http.Request) {
 	defer req.Body.Close()
 	log.Infof("QueryDot from %s", req.RemoteAddr)
 
@@ -244,7 +210,7 @@ func (srv *hodServer) handleQueryDot(rw http.ResponseWriter, req *http.Request, 
 	return
 }
 
-func (srv *hodServer) handleQueryClassDot(rw http.ResponseWriter, req *http.Request, ps httprouter.Params) {
+func (srv *hodServer) handleQueryClassDot(rw http.ResponseWriter, req *http.Request) {
 	defer req.Body.Close()
 	log.Infof("QueryDot from %s", req.RemoteAddr)
 

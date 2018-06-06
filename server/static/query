@@ -1,0 +1,217 @@
+<html>
+  <head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="lib/codemirror.css">
+    <script src="js/moment.js"></script>
+    <script src="lib/codemirror.js"></script>
+    <script src="addon/edit/matchbrackets.js"></script>
+    <script src="mode/sparql/sparql.js"></script>
+    <script src="mode/python/python.js"></script>
+    <!--Import Google Icon Font-->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <!--Import materialize.css-->
+    <link type="text/css" rel="stylesheet" href="css/materialize.min.css"  media="screen,projection"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link type="text/css" rel="stylesheet" href="css/site.css" />
+  	<title>HodDB Query</title>
+    <ul id="slide-out" class="side-nav fixed blue lighten-5">
+        <li><h3 class="center-align" !important>HodDB</h3></li>
+        <li class="active"><a class="tooltipped" data-position="right" data-delay="100" data-tooltip="Execute BRICK queries" href="/query">Query<i class="material-icons">keyboard_arrow_right</i></a></li>
+        <li><a class="tooltipped" data-position="right" data-delay="100" data-tooltip="Visualize the construction of BRICK queries" href="/plan">Planner<i class="material-icons">keyboard_arrow_right</i></a></li>
+        <!--<li><a class="tooltipped" data-position="right" data-delay="100" data-tooltip="Explore BRICK graphs" href="/explore">Explore<i class="material-icons">keyboard_arrow_right</i></a></li>-->
+        <li><a class="tooltipped" data-position="right" data-delay="100" data-tooltip="Visualize the construction of BRICK queries" href="/search">Search<i class="material-icons">keyboard_arrow_right</i></a></li>
+        <li><a class="tooltipped" data-position="right" data-delay="100" data-tooltip="Documentation and other resources" href="/help">Help<i class="material-icons">keyboard_arrow_right</i></a></li>
+        <li><div class="divider"></div></li>
+        <li class="subheader center-align">Common Queries</li>
+        <li class="collection-item"><a id="query_vavselect" class="listhighlight">VAV Select<i class="material-icons">code</i></a><li>
+        <li class="collection-item"><a id="query_tempselect" class="listhighlight">Zone Temperature Sensors<i class="material-icons">code</i></a><li>
+        <li class="collection-item"><a id="query_vavcmd" class="listhighlight">VAV Commands<i class="material-icons">code</i></a><li>
+        <li class="collection-item"><a id="query_floors" class="listhighlight">Spatial Building Structure<i class="material-icons">code</i></a><li>
+        <li style="position: absolute; bottom: 100px; left: 30px;" class="collection-item bottom-align">v0.5.4</li>
+    </ul>
+    <a href="#" data-activates="slide-out" class="button-collapse"><i class="material-icons">menu</i></a>
+  </head>
+  <body>
+    <!--Import jQuery before materialize.js-->
+    <script type="text/javascript" src="js/jquery-2.1.1.min.js"></script>
+    <script type="text/javascript" src="js/materialize.min.js"></script>
+    <main>
+    <div class="container">
+      <div class="row">
+        <h5 class="col s12 center-align">Query</h3>
+        <div class="input-field col s2">
+          <button class="btn waves-effect waves-light green" form="queryform" type="submit" name="action">Run Query</button>
+        </div>
+        <div class="col s2">
+          <p>
+            <input type="checkbox" class="filled-in" id="fullURI"/>
+            <label for="fullURI">Full URI</label>
+          </p>
+        </div>
+        <div class="col s2">
+          <p>
+            <input type="checkbox" class="filled-in" id="showJSON" />
+            <label for="showJSON">Show JSON</label>
+          </p>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col s12">
+          <form id="queryform" form="queryform" class="col s12">
+            <textarea id="queryarea" name="queryarea">
+SELECT ?vav WHERE {
+    ?vav rdf:type brick:VAV
+};</textarea>
+          </form>
+        </div>
+        <div class="row">
+          <div id="errortext" class="col s12 card-panel red lighten-2" hidden>
+          <p></p>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <h4 id="resultsheader" class="col s12" hidden>Results</h4>
+        <div class="col s2">
+          <p id="resultsnum"></p>
+        </div>
+        <div class="col s2">
+          <p id="elapsed"></p>
+        </div>
+        <div class="col s4">
+          <p>
+            <button class="btn waves-effect waves-light red lighten-3" id="downloadCSV">Download CSV</button>
+          </p>
+        </div>
+        <div class="col s6"></div>
+        <div class="col s12">
+          <table class="highlight bordered" id="resultstable"></table>
+        </div>
+        <div class="col s12" id="resultsjson">
+        </div>
+      </div>
+    </div>
+    </main>
+    <script type="text/javascript" src="js/commonqueries.js"></script>
+    <script type="text/javascript">
+          var textarea = document.getElementById("queryarea");
+          var cm = CodeMirror.fromTextArea(textarea, {
+            mode:  "application/sparql-query",
+            matchBrackets: true,
+            lineNumbers: true
+          });
+          cm.refresh();
+
+          // thanks to https://code-maven.com/create-and-download-csv-with-javascript
+          function download_csv(hodresponse) {
+             var firstrow = hodresponse.Rows[0];
+             var csv = '';
+             for (var key in firstrow) {
+               csv += key + ',';
+             }
+             csv = csv.slice(0,csv.length-1); // strip tailing comma
+             csv += '\n';
+             hodresponse.Rows.forEach(function(row) {
+               var newrow = [];
+               for (key in row) {
+                 if (row[key].Namespace) {
+                    newrow.push(row[key].Namespace + '#' + row[key].Value);
+                 } else {
+                    newrow.push(row[key].Value);
+                 }
+               }
+               csv += '"' + newrow.join('","') + '"' + '\n';
+             });
+
+             console.log(csv);
+             var hiddenElement = document.createElement('a');
+             hiddenElement.href = 'data:text/csv;charset=utf-8,' + encodeURI(csv);
+             hiddenElement.target = '_blank';
+             hiddenElement.download = 'hoddb.csv';
+             hiddenElement.click();
+          }
+
+          var submit_query = function(query) {
+            $("#errortext").hide();
+            $("#resultsjson").hide();
+            $("#resultstable").hide();
+            var useFullURI = $("#fullURI")[0].checked;
+            var showJSON = $("#showJSON")[0].checked;
+            var html = "";
+
+            $.post("/api/query", query, function(data) {
+                $("#elapsed").text((data.Elapsed / 1e6).toFixed(2) + " ms");
+                $("#resultsheader").show();
+                $("#downloadCSV").click(function(e) {
+                    e.preventDefault();
+                    download_csv(data);
+                    return false;
+                });
+
+                var url = new URL(window.document.location);
+                url.searchParams.set("query", query);
+                // replace URL without reloading
+                history.pushState(null,null,url);
+                if (showJSON) {
+                    $("#resultsjson").show();
+                    html = "<code>" + JSON.stringify(data) + "</code>";
+                    $("#resultsjson").html(html);
+                } else {
+                    $("#resultstable").show();
+                    if (data.Count > 0) {
+                        var firstrow = data.Rows[0];
+                        html += "<thead><tr>";
+                        for (var key in firstrow) {
+                            html += "<td><b>" + key + "</b></td>";
+                        }
+                        html += "</tr></thead><tbody>";
+                        data.Rows.forEach(function(element) {
+                            html += "<tr>"
+                            for (var key in element) {
+                                if (useFullURI) {
+                                    var newstuff = element[key].Namespace + "#" + element[key].Value;
+                                } else {
+                                    var newstuff = element[key].Value;
+                                }
+                                html += "<td>" + newstuff + "</td>"
+                            }
+                            html += "</tr>"
+                        });
+                        html += "</tbody>";
+                    }
+                    $("#resultstable").html(html);
+                    $("#resultsnum").text(data.Count + " results");
+                }
+            }).fail(function(e) {
+                $("#errortext").show();
+                $("#errortext > p").text(e.responseText);
+            });
+          }
+
+          var url = new URL(window.document.location);
+          var query = url.searchParams.get("query");
+          console.log(query);
+          if (query != null) {
+              cm.setValue(query);
+              submit_query(query);
+              cm.refresh();
+          }
+
+          // init collapsible parts
+          $('.collapsible').collapsible();
+
+          $('.button-collapse').sideNav({
+            menuWidth: 350, // Default is 240
+            }
+          );
+
+          // handle querying
+          $("#queryform").submit(function(event) {
+            var querytext = $("#queryarea").val();
+            submit_query(querytext);
+            event.preventDefault();
+          });
+    </script>
+  </body>
+</html>

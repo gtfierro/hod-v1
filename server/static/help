@@ -1,0 +1,63 @@
+<html>
+  <head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="static/lib/codemirror.css">
+    <script src="static/js/moment.js"></script>
+    <script src="static/lib/codemirror.js"></script>
+    <script src="static/addon/edit/matchbrackets.js"></script>
+    <script src="static/mode/sparql/sparql.js"></script>
+    <script src="static/mode/python/python.js"></script>
+    <!--Import Google Icon Font-->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <!--Import materialize.css-->
+    <link type="text/css" rel="stylesheet" href="static/css/materialize.min.css"  media="screen,projection"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link type="text/css" rel="stylesheet" href="static/css/site.css" />
+  	<title>HodDB Query</title>
+    <ul id="slide-out" style="width:350px" class="side-nav fixed blue lighten-5">
+        <li><h3 class="center-align" !important>HodDB</h3></li>
+        <li><a class="tooltipped" data-position="right" data-delay="100" data-tooltip="Execute BRICK queries" href="/query">Query<i class="material-icons">keyboard_arrow_right</i></a></li>
+        <li><a class="tooltipped" data-position="right" data-delay="100" data-tooltip="Visualize the construction of BRICK queries" href="/plan">Planner<i class="material-icons">keyboard_arrow_right</i></a></li>
+        <!--<li><a class="tooltipped" data-position="right" data-delay="100" data-tooltip="Explore BRICK graphs" href="/explore">Explore<i class="material-icons">keyboard_arrow_right</i></a></li>-->
+        <li><a class="tooltipped" data-position="right" data-delay="100" data-tooltip="Visualize the construction of BRICK queries" href="/search">Search<i class="material-icons">keyboard_arrow_right</i></a></li>
+        <li class="active"><a class="tooltipped" data-position="right" data-delay="100" data-tooltip="Documentation and other resources" href="/help">Help<i class="material-icons">keyboard_arrow_right</i></a></li>
+        <li style="position: absolute; bottom: 100px; left: 30px;" class="collection-item bottom-align">v0.5.4</li>
+    </ul>
+    <a href="#" data-activates="slide-out" class="button-collapse"><i class="material-icons">menu</i></a>
+  </head>
+  <body>
+    <!--Import jQuery before materialize.js-->
+    <script type="text/javascript" src="static/js/jquery-2.1.1.min.js"></script>
+    <script type="text/javascript" src="static/js/materialize.min.js"></script>
+    <main>
+    <div class="container">
+      <div class="row">
+        <div class="col s12">
+          <a href="http://hoddb.org"><h3 class="helptitle">hoddb.org</h3></a>
+          <p>
+            HodDB docs, examples, source code
+          </p>
+          <a href="/query"><h3 class="helptitle">Query</h3></a>
+          <p>
+            Run interactive queries against Hod
+          </p>
+          <a href="/visualize"><h3 class="helptitle">Visualize</h3></a>
+          <p>
+            As you type Hod queries into the editor, this page renders the variables and relationships involved in the query as a directed graph.
+            Variables to be returned are highlighted in red.
+          </p>
+        </div>
+      </div>
+    </div>
+    </main>
+
+    <script type="text/javascript">
+          // init collapsible parts
+          $('.collapsible').collapsible();
+          $('.button-collapse').sideNav({
+            menuWidth: 350, // Default is 240
+            }
+          );
+    </script>
+  </body>
+</html>
