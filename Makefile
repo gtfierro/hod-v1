@@ -1,5 +1,5 @@
 APP?=hod
-RELEASE?=0.5.6
+RELEASE?=0.6.0-sparql-update
 COMMIT?=$(shell git rev-parse --short HEAD)
 PROJECT?=github.com/gtfierro/hod
 PERSISTDIR?=/etc/hod
