@@ -1,0 +1,46 @@
+module github.com/gtfierro/hod
+
+require (
+	github.com/RoaringBitmap/roaring v0.4.9
+	github.com/Smerity/govarint v0.0.0-20150407073650-7265e41f48f1
+	github.com/blevesearch/bleve v0.7.0
+	github.com/cespare/xxhash v1.0.0
+	github.com/chzyer/readline v0.0.0-20171208011716-f6d7a1f6fbf3
+	github.com/cihub/seelog v0.0.0-20170130134532-f561c5e57575
+	github.com/coocood/freecache v1.0.1
+	github.com/couchbase/vellum v0.0.0-20180427141700-eb6ae3743b3f
+	github.com/edsrzf/mmap-go v0.0.0-20170320065105-0bce6a688712
+	github.com/fatih/color v1.7.0
+	github.com/fsnotify/fsnotify v1.4.7
+	github.com/glycerine/go-unsnap-stream v0.0.0-20180323001048-9f0cb55181dd
+	github.com/gtfierro/btree v0.0.0-20170220091241-bb3ec345bd67
+	github.com/hashicorp/hcl v0.0.0-20180404174102-ef8a98b0bbce
+	github.com/immesys/bw2 v0.0.0-20171120164622-5f1765760311
+	github.com/immesys/bw2bind v0.0.0-20180305202200-f9fb62314c70
+	github.com/julienschmidt/httprouter v0.0.0-20180411154501-adbc77eec0d9
+	github.com/kr/pretty v0.1.0
+	github.com/magiconair/properties v1.8.0
+	github.com/mgutz/ansi v0.0.0-20170206155736-9520e82c474b
+	github.com/mitchellh/mapstructure v0.0.0-20180511142126-bb74f1db0675
+	github.com/montanaflynn/stats v0.0.0-20171201202039-1bf9dbcd8cbe
+	github.com/op/go-logging v0.0.0-20160315200505-970db520ece7
+	github.com/pelletier/go-toml v1.1.0
+	github.com/philhofer/fwd v1.0.0
+	github.com/pkg/errors v0.8.0
+	github.com/pkg/profile v1.2.1
+	github.com/rakyll/statik v0.1.1
+	github.com/sirupsen/logrus v1.0.5
+	github.com/spf13/afero v1.1.0
+	github.com/spf13/cast v1.2.0
+	github.com/spf13/jwalterweatherman v0.0.0-20180109140146-7c0cea34c8ec
+	github.com/spf13/pflag v1.0.1
+	github.com/spf13/viper v1.0.2
+	github.com/syndtr/goleveldb v0.0.0-20180521045021-5d6fca44a948
+	github.com/tinylib/msgp v1.0.2
+	github.com/ugorji/go v1.1.1
+	github.com/urfave/cli v1.20.0
+	github.com/zhangxinngang/murmur v0.0.0-20140309145047-4e88ee1a5950
+	golang.org/x/crypto v0.0.0-20180527072434-ab813273cd59
+	gopkg.in/vmihailenco/msgpack.v2 v2.9.1
+	gopkg.in/yaml.v2 v2.2.1
+)
