@@ -1,6 +1,7 @@
 package db
 
 import (
+	"bytes"
 	"sync"
 )
 
@@ -22,7 +23,7 @@ func NewRow() *Row {
 
 func NewRowWithNum(withnum int) *Row {
 	row := ROWPOOL.Get().(*Row)
-	row.content = make([]byte, withnum*4+4)
+	row.content = make([]byte, withnum*8+8)
 	return row
 }
 
@@ -41,19 +42,23 @@ func (row *Row) copy() *Row {
 }
 
 func (row *Row) addValue(pos int, value Key) {
-	if len(row.content) < pos*4+4 {
-		nrow := make([]byte, pos*4+4)
+	if len(row.content) < pos*8+8 {
+		nrow := make([]byte, pos*8+8)
 		copy(nrow, row.content)
 		row.content = nrow
 	}
-	copy(row.content[pos*4:], value[:])
+	copy(row.content[pos*8:], value[:])
 }
 
 func (row Row) valueAt(pos int) Key {
 	var k Key
-	if pos*4+4 > len(row.content) {
+	if pos*8+8 > len(row.content) {
 		return k
 	}
-	copy(k[:], row.content[pos*4:pos*4+4])
+	copy(k[:], row.content[pos*8:pos*8+8])
 	return k
+}
+
+func (row Row) equals(other Row) bool {
+	return bytes.Equal(row.content[:], other.content[:])
 }

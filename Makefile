@@ -1,25 +1,30 @@
 APP?=hod
-RELEASE?=0.5.6
+RELEASE?=0.6.0
 COMMIT?=$(shell git rev-parse --short HEAD)
 PROJECT?=github.com/gtfierro/hod
 PERSISTDIR?=/etc/hod
 PORT?=47808
 
-clean:
-	rm -f ${APP}
-
-build: clean
+build: clean generate
 	CGO_CFLAGS_ALLOW=.*/github.com/gtfierro/hod/turtle go build \
 		-ldflags "-s -w -X ${PROJECT}/version.Release=${RELEASE} \
 						-X ${PROJECT}/version.Commit=${COMMIT}" \
 						-o ${APP}
-install:
+install: generate
 	CGO_CFLAGS_ALLOW=.*/github.com/gtfierro/hod/turtle go install \
 		-ldflags "-s -w -X ${PROJECT}/version.Release=${RELEASE} \
 						-X ${PROJECT}/version.Commit=${COMMIT}"
+generate:
+	cd server && go generate
+
+clean:
+	rm -f ${APP}
 
 run: build
 		${APP}
+
+vet:
+	CGO_CFLAGS_ALLOW=.*/github.com/gtfierro/hod/turtle go vet .
 
 container: build
 	cp hod container/.

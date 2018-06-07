@@ -3,9 +3,8 @@ package db
 
 import (
 	"encoding/binary"
-	"fmt"
 
-	"github.com/mitghi/btree"
+	"github.com/gtfierro/btree"
 )
 
 type PredIndex map[string]*PredicateEntity
@@ -97,35 +96,46 @@ func NewPredicateEntity() *PredicateEntity {
 	}
 }
 
-func (e *PredicateEntity) AddSubjectObject(subject, object Key) {
+// adds subject/object to Predicate index entry. Returns true if this changed the entity
+func (e *PredicateEntity) AddSubjectObject(subject, object Key) bool {
+	changed := false
 	// if we have the subject
-	if _, found := e.Subjects[string(subject[:])]; found {
+	if submap, found := e.Subjects[string(subject[:])]; found {
 		// find the map of related objects
-		e.Subjects[string(subject[:])][string(object[:])] = 0
+		if _, foundobj := submap[string(object[:])]; !foundobj {
+			e.Subjects[string(subject[:])][string(object[:])] = 0
+			changed = true
+		}
 	} else {
 		e.Subjects[string(subject[:])] = map[string]uint32{string(object[:]): 0}
+		changed = true
 	}
 
-	if _, found := e.Objects[string(object[:])]; found {
+	if objmap, found := e.Objects[string(object[:])]; found {
 		// find the map of related objects
-		e.Objects[string(object[:])][string(subject[:])] = 0
+		if _, foundsub := objmap[string(subject[:])]; !foundsub {
+			e.Objects[string(object[:])][string(subject[:])] = 0
+			changed = true
+		}
 	} else {
 		e.Objects[string(object[:])] = map[string]uint32{string(subject[:]): 0}
+		changed = true
 	}
+	return changed
 }
 
-func (e *PredicateEntity) Dump(db *DB) {
-	fmt.Printf("dump predicate> %s %p\n", db.MustGetURI(e.PK), e)
-	for sub, objmap := range e.Subjects {
-		var s, o Key
-		s.FromSlice([]byte(sub))
-		fmt.Println("   subject>", db.MustGetURI(s))
-		for obj := range objmap {
-			o.FromSlice([]byte(obj))
-			fmt.Println("     object>", db.MustGetURI(o))
-		}
-	}
-}
+//func (e *PredicateEntity) Dump(db *DB) {
+//	fmt.Printf("dump predicate> %s %p\n", db.MustGetURI(e.PK), e)
+//	for sub, objmap := range e.Subjects {
+//		var s, o Key
+//		s.FromSlice([]byte(sub))
+//		fmt.Println("   subject>", db.MustGetURI(s))
+//		for obj := range objmap {
+//			o.FromSlice([]byte(obj))
+//			fmt.Println("     object>", db.MustGetURI(o))
+//		}
+//	}
+//}
 
 type EntityExtendedIndex struct {
 	PK           Key              `msg:"p"`

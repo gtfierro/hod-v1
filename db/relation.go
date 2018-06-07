@@ -1,7 +1,6 @@
 package db
 
 import (
-	"fmt"
 	"github.com/RoaringBitmap/roaring"
 )
 
@@ -28,7 +27,7 @@ func NewRelation(vars []string) *Relation {
 	return rel
 }
 
-func (rel *Relation) add1Value(key1 string, values *keyTree) {
+func (rel *Relation) add1Value(key1 string, values *keymap) {
 	key1pos, found := rel.vars[key1]
 	if !found {
 		rel.vars[key1] = len(rel.vars) + 1
@@ -39,6 +38,9 @@ func (rel *Relation) add1Value(key1 string, values *keyTree) {
 	// For each value (for this variable), we want to check
 	// if the bitmap is non-zero. If it is, then this value already
 	// exists inside the relation. Otherwise, we can add it ourselves
+	if len(rel.rows) == 0 {
+		rel.rows = make([]*Row, 0, values.Len())
+	}
 	values.Iter(func(value Key) {
 		bitmap := rel.multiindex[key1][value]
 
@@ -70,6 +72,9 @@ func (rel *Relation) add2Values(key1, key2 string, values [][]Key) {
 		rel.multiindex[key2] = make(map[Key]*roaring.Bitmap)
 	}
 
+	if len(rel.rows) == 0 {
+		rel.rows = make([]*Row, 0, len(values))
+	}
 	for _, valuepair := range values {
 		bitmap1 := rel.multiindex[key1][valuepair[0]]
 		bitmap2 := rel.multiindex[key2][valuepair[1]]
@@ -117,6 +122,9 @@ func (rel *Relation) add3Values(key1, key2, key3 string, values [][]Key) {
 		rel.multiindex[key3] = make(map[Key]*roaring.Bitmap)
 	}
 
+	if len(rel.rows) == 0 {
+		rel.rows = make([]*Row, 0, len(values))
+	}
 	for _, valuepair := range values {
 		bitmap1 := rel.multiindex[key1][valuepair[0]]
 		bitmap2 := rel.multiindex[key2][valuepair[1]]
@@ -161,7 +169,7 @@ func (rel *Relation) join(other *Relation, on []string, ctx *queryContext) {
 		otherJoinKeyPos = append(otherJoinKeyPos, other.vars[varname])
 	}
 
-	var joinedRows []*Row
+	var joinedRows = make([]*Row, 0, len(rel.rows))
 innerRows:
 	for _, innerRow := range rel.rows {
 		// find all the rows in [other] that share the values
@@ -196,20 +204,20 @@ innerRows:
 	rel.rows = joinedRows
 }
 
-func (rel *Relation) dumpRows(ctx *queryContext) {
-	for _, row := range rel.rows {
-		rel.dumpRow(row, ctx)
-	}
-}
+//func (rel *Relation) dumpRows(ctx *queryContext) {
+//	for _, row := range rel.rows {
+//		rel.dumpRow(row, ctx)
+//	}
+//}
 
-func (rel *Relation) dumpRow(row *Row, ctx *queryContext) {
-	s := "["
-	for varName, pos := range rel.vars {
-		val := row.valueAt(pos)
-		if val != emptyKey {
-			s += varName + "=" + ctx.db.MustGetURI(val).String() + ", "
-		}
-	}
-	s += "]"
-	fmt.Println(s)
-}
+//func (rel *Relation) dumpRow(row *Row, ctx *queryContext) {
+//	s := "["
+//	for varName, pos := range rel.vars {
+//		val := row.valueAt(pos)
+//		if val != emptyKey {
+//			s += varName + "=" + ctx.db.MustGetURI(val).String() + ", "
+//		}
+//	}
+//	s += "]"
+//	fmt.Println(s)
+//}

@@ -8,6 +8,14 @@ import (
 	"strings"
 )
 
+type QueryType uint
+
+const (
+	SELECT_QUERY QueryType = 1 << iota
+	INSERT_QUERY
+	DELETE_QUERY
+)
+
 var debug = false
 
 func SetDebug() {
@@ -21,8 +29,25 @@ type Query struct {
 	Select    SelectClause
 	From      FromClause
 	Count     bool
+	Insert    InsertClause
 	Where     WhereClause
 	Variables []string
+	Type      QueryType
+}
+
+func (q Query) Dump() {
+	for _, triple := range q.Where.Terms {
+		fmt.Println(triple.String())
+	}
+	fmt.Println("----")
+}
+
+func (q Query) IsInsert() bool {
+	return (q.Type & INSERT_QUERY) == INSERT_QUERY
+}
+
+func (q Query) IsSelect() bool {
+	return (q.Type & SELECT_QUERY) == SELECT_QUERY
 }
 
 func (q Query) CopyWithNewTerms(terms []Triple) Query {
@@ -30,9 +55,13 @@ func (q Query) CopyWithNewTerms(terms []Triple) Query {
 		Select:    q.Select,
 		From:      q.From,
 		Variables: q.Variables,
+		Type:      q.Type,
 	}
 	newq.Where.Terms = make([]Triple, len(terms))
 	copy(newq.Where.Terms, terms)
+
+	newq.Insert.Terms = make([]Triple, len(terms))
+	copy(newq.Insert.Terms, terms)
 	return newq
 }
 
@@ -42,7 +71,9 @@ func (q Query) Copy() *Query {
 		From:      q.From,
 		Variables: q.Variables,
 		Where:     q.Where,
+		Insert:    q.Insert,
 		Count:     q.Count,
+		Type:      q.Type,
 	}
 }
 
@@ -54,9 +85,36 @@ func NewQuery(selectclause, whereclause interface{}, count bool) (Query, error) 
 		Where:  whereclause.(WhereClause),
 		Select: selectclause.(SelectClause),
 		Count:  count,
+		Type:   SELECT_QUERY,
 	}
 	if q.From.Empty() {
 		q.From.AllDBs = true
+	}
+	q.PopulateVars()
+	if q.Select.AllVars {
+		q.Select.Vars = q.Variables
+	}
+	return q, nil
+}
+
+func NewInsertQuery(insertclause, whereclause interface{}, count bool) (Query, error) {
+	if debug {
+		fmt.Printf("%# v", pretty.Formatter(whereclause.(WhereClause)))
+		fmt.Printf("%# v", pretty.Formatter(insertclause.(InsertClause)))
+	}
+	q := Query{
+		Where:  whereclause.(WhereClause),
+		Select: SelectClause{AllVars: true},
+		Insert: insertclause.(InsertClause),
+		Count:  count,
+		Type:   INSERT_QUERY,
+	}
+	if q.From.Empty() {
+		q.From.AllDBs = true
+	}
+	q.PopulateVars()
+	if q.Select.AllVars {
+		q.Select.Vars = q.Variables
 	}
 	return q, nil
 }
@@ -74,6 +132,33 @@ func NewQueryMulti(selectclause, fromclause, whereclause interface{}, count bool
 	if q.From.Empty() {
 		q.From.AllDBs = true
 	}
+	q.PopulateVars()
+	if q.Select.AllVars {
+		q.Select.Vars = q.Variables
+	}
+	return q, nil
+}
+
+func NewInsertQueryMulti(insertclause, fromclause, whereclause interface{}, count bool) (Query, error) {
+	if debug {
+		fmt.Printf("%# v", pretty.Formatter(whereclause.(WhereClause)))
+		fmt.Printf("%# v", pretty.Formatter(insertclause.(InsertClause)))
+	}
+	q := Query{
+		Where:  whereclause.(WhereClause),
+		Select: SelectClause{AllVars: true},
+		From:   fromclause.(FromClause),
+		Insert: insertclause.(InsertClause),
+		Count:  count,
+		Type:   INSERT_QUERY,
+	}
+	if q.From.Empty() {
+		q.From.AllDBs = true
+	}
+	q.PopulateVars()
+	if q.Select.AllVars {
+		q.Select.Vars = q.Variables
+	}
 	return q, nil
 }
 
@@ -81,6 +166,13 @@ func (q *Query) PopulateVars() {
 	vars := make(map[string]int)
 	// get all variables
 	for _, triple := range q.Where.Terms {
+		AddIfVar(triple.Subject, vars)
+		AddIfVar(triple.Object, vars)
+		for _, path := range triple.Predicates {
+			AddIfVar(path.Predicate, vars)
+		}
+	}
+	for _, triple := range q.Insert.Terms {
 		AddIfVar(triple.Subject, vars)
 		AddIfVar(triple.Object, vars)
 		for _, path := range triple.Predicates {
@@ -99,6 +191,9 @@ func (q *Query) PopulateVars() {
 func (q Query) IterTriples(f func(t Triple) Triple) {
 	for idx, triple := range q.Where.Terms {
 		q.Where.Terms[idx] = f(triple)
+	}
+	for idx, triple := range q.Insert.Terms {
+		q.Insert.Terms[idx] = f(triple)
 	}
 	if q.Where.GraphGroup != nil {
 		q.Where.GraphGroup.IterTriples(f)
@@ -174,6 +269,16 @@ func NewAllSelectClause() (SelectClause, error) {
 
 func NewSelectClause(varlist interface{}) (SelectClause, error) {
 	return SelectClause{Vars: varlist.([]string)}, nil
+}
+
+type InsertClause struct {
+	Terms []Triple
+}
+
+func NewInsertClause(triples interface{}) (InsertClause, error) {
+	return InsertClause{
+		Terms: triples.([]Triple),
+	}, nil
 }
 
 type FromClause struct {
@@ -269,6 +374,16 @@ func (t Triple) String() string {
 		s += " " + pp.String()
 	}
 	return s + " | " + t.Object.String() + ">"
+}
+
+func (t Triple) Copy() Triple {
+	var p = make([]PathPattern, len(t.Predicates))
+	copy(p, t.Predicates)
+	return Triple{
+		Subject:    t.Subject,
+		Object:     t.Object,
+		Predicates: p,
+	}
 }
 
 func NewTriple(subject, predicates, object interface{}) (Triple, error) {

@@ -52,29 +52,13 @@ func benchLoad(c *cli.Context) error {
 	return nil
 }
 
-//func startCLI(c *cli.Context) error {
-//	cfg, err := config.ReadConfig(c.String("config"))
-//	if err != nil {
-//		log.Error(err)
-//		return err
-//	}
-//	cfg.ReloadBrick = false
-//	db, err := hod.NewDB(cfg)
-//	if err != nil {
-//		log.Error(err)
-//		return err
-//	}
-//	defer db.Close()
-//	return runInteractiveQuery(db)
-//}
-
 func startCLI(c *cli.Context) error {
 	cfg, err := config.ReadConfig(c.String("config"))
 	if err != nil {
 		log.Error(err)
 		return err
 	}
-	mdb, err := hod.NewMultiDB(cfg)
+	mdb, err := hod.NewHodDB(cfg)
 	if err != nil {
 		log.Error(err)
 		return err
@@ -88,8 +72,8 @@ func startServer(c *cli.Context) error {
 		log.Error(err)
 		return err
 	}
-	cfg.ReloadBrick = false
-	db, err := hod.NewMultiDB(cfg)
+	cfg.ReloadOntologies = false
+	db, err := hod.NewHodDB(cfg)
 	if err != nil {
 		log.Error(err)
 		return err
@@ -131,6 +115,7 @@ func startServer(c *cli.Context) error {
 			Elapsed int64
 			Rows    []ResultMap
 			Error   string
+			Errors  []string
 		}
 
 		handleBOSSWAVEQuery := func(msg *bw2bind.SimpleMessage) {
@@ -206,6 +191,7 @@ func startServer(c *cli.Context) error {
 
 			response = hodResponse{
 				Count:   result.Count,
+				Errors:  result.Errors,
 				Elapsed: result.Elapsed.Nanoseconds(),
 				Nonce:   inq.Nonce,
 			}
@@ -251,8 +237,8 @@ func doQuery(c *cli.Context) error {
 		log.Error(err)
 		return err
 	}
-	cfg.ReloadBrick = false
-	db, err := hod.NewMultiDB(cfg)
+	cfg.ReloadOntologies = false
+	db, err := hod.NewHodDB(cfg)
 	if err != nil {
 		log.Error(err)
 		return err
@@ -491,7 +477,7 @@ func gethash() string {
 //	return nil
 //}
 
-func runInteractiveQuery(db *hod.MultiDB) error {
+func runInteractiveQuery(db *hod.HodDB) error {
 	currentUser, err := user.Current()
 	if err != nil {
 		log.Error(err)
@@ -525,10 +511,10 @@ func runInteractiveQuery(db *hod.MultiDB) error {
 		}
 		rl.SetPrompt(cyan("(hod)> "))
 		rl.SaveHistory(bufQuery)
-		q, err := query.Parse(bufQuery)
+		_, err = query.Parse(bufQuery)
 		if err != nil {
 			log.Error(err)
-		} else if res, err := db.RunQuery(q); err != nil {
+		} else if res, err := db.RunQueryString(bufQuery); err != nil {
 			log.Error(err)
 		} else {
 			res.Dump()

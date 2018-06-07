@@ -1,7 +1,7 @@
 package db
 
 import (
-	"github.com/mitghi/btree"
+	"github.com/gtfierro/btree"
 	"testing"
 )
 
@@ -29,7 +29,7 @@ func BenchmarkInsertTree100(b *testing.B) {
 		trees[i] = btree.New(BTREE_DEGREE, "")
 	}
 	for i := 0; i < b.N; i++ {
-		bits := [4]byte{byte(i), byte(i + 1), byte(i + 2), byte(i + 3)}
+		bits := [8]byte{byte(i), byte(i + 1), byte(i + 2), byte(i + 3), 0, 0, 0, 0}
 		trees[i].ReplaceOrInsert(Key(bits))
 	}
 }
@@ -38,8 +38,8 @@ func BenchmarkIntersectTreesBtree50(b *testing.B) {
 	A := btree.New(BTREE_DEGREE, "")
 	B := btree.New(BTREE_DEGREE, "")
 	for i := 0; i < 100; i++ {
-		bitsa := [4]byte{byte(i), byte(i + 1), byte(i + 2), byte(i + 3)}
-		bitsb := [4]byte{byte(i + 50), byte(i + 50 + 1), byte(i + 50 + 2), byte(i + 50 + 3)}
+		bitsa := [8]byte{byte(i), byte(i + 1), byte(i + 2), byte(i + 3)}
+		bitsb := [8]byte{byte(i + 50), byte(i + 50 + 1), byte(i + 50 + 2), byte(i + 50 + 3), 0, 0, 0, 0}
 		A.ReplaceOrInsert(Key(bitsa))
 		B.ReplaceOrInsert(Key(bitsb))
 	}
@@ -53,8 +53,8 @@ func BenchmarkIntersectTreesBtree01(b *testing.B) {
 	A := btree.New(BTREE_DEGREE, "")
 	B := btree.New(BTREE_DEGREE, "")
 	for i := 0; i < 100; i++ {
-		bitsa := [4]byte{byte(i), byte(i + 1), byte(i + 2), byte(i + 3)}
-		bitsb := [4]byte{byte(i + 99), byte(i + 99 + 1), byte(i + 99 + 2), byte(i + 99 + 3)}
+		bitsa := [8]byte{byte(i), byte(i + 1), byte(i + 2), byte(i + 3)}
+		bitsb := [8]byte{byte(i + 99), byte(i + 99 + 1), byte(i + 99 + 2), byte(i + 99 + 3), 0, 0, 0, 0}
 		A.ReplaceOrInsert(Key(bitsa))
 		B.ReplaceOrInsert(Key(bitsb))
 	}
@@ -68,8 +68,8 @@ func BenchmarkIntersectTreesBtreeAll(b *testing.B) {
 	A := btree.New(BTREE_DEGREE, "")
 	B := btree.New(BTREE_DEGREE, "")
 	for i := 0; i < 100; i++ {
-		bitsa := [4]byte{byte(i), byte(i + 1), byte(i + 2), byte(i + 3)}
-		bitsb := [4]byte{byte(i), byte(i + 1), byte(i + 2), byte(i + 3)}
+		bitsa := [8]byte{byte(i), byte(i + 1), byte(i + 2), byte(i + 3), 0, 0, 0, 0}
+		bitsb := [8]byte{byte(i), byte(i + 1), byte(i + 2), byte(i + 3), 0, 0, 0, 0}
 		A.ReplaceOrInsert(Key(bitsa))
 		B.ReplaceOrInsert(Key(bitsb))
 	}
@@ -83,8 +83,8 @@ func BenchmarkIntersectTreesBtreeNone(b *testing.B) {
 	A := btree.New(BTREE_DEGREE, "")
 	B := btree.New(BTREE_DEGREE, "")
 	for i := 0; i < 100; i++ {
-		bitsa := [4]byte{byte(i), byte(i + 1), byte(i + 2), byte(i + 3)}
-		bitsb := [4]byte{byte(i + 100), byte(i + 101), byte(i + 102), byte(i + 103)}
+		bitsa := [8]byte{byte(i), byte(i + 1), byte(i + 2), byte(i + 3), 0, 0, 0, 0}
+		bitsb := [8]byte{byte(i + 100), byte(i + 101), byte(i + 102), byte(i + 103), 0, 0, 0, 0}
 		A.ReplaceOrInsert(Key(bitsa))
 		B.ReplaceOrInsert(Key(bitsb))
 	}
@@ -96,7 +96,7 @@ func BenchmarkIntersectTreesBtreeNone(b *testing.B) {
 
 func BenchmarkBTreeHas3(b *testing.B) {
 	t := btree.New(BTREE_DEGREE, "")
-	e := Key([4]byte{1, 2, 3, 4})
+	e := Key([8]byte{1, 2, 3, 4})
 	for i := 0; i < b.N; i++ {
 		t.Has(e)
 	}
@@ -104,7 +104,7 @@ func BenchmarkBTreeHas3(b *testing.B) {
 
 func BenchmarkBTreeInsertDuplicate3(b *testing.B) {
 	t := btree.New(BTREE_DEGREE, "")
-	e := Key([4]byte{1, 2, 3, 4})
+	e := Key([8]byte{1, 2, 3, 4, 0, 0, 0, 0})
 	for i := 0; i < b.N; i++ {
 		t.ReplaceOrInsert(e)
 	}
@@ -112,7 +112,7 @@ func BenchmarkBTreeInsertDuplicate3(b *testing.B) {
 
 func BenchmarkBTreeInsertDuplicateWithHas3(b *testing.B) {
 	t := btree.New(BTREE_DEGREE, "")
-	e := Key([4]byte{1, 2, 3, 4})
+	e := Key([8]byte{1, 2, 3, 4, 0, 0, 0, 0})
 	for i := 0; i < b.N; i++ {
 		if !t.Has(e) {
 			t.ReplaceOrInsert(e)
@@ -122,7 +122,7 @@ func BenchmarkBTreeInsertDuplicateWithHas3(b *testing.B) {
 
 func BenchmarkBTreeHas2(b *testing.B) {
 	t := btree.New(BTREE_DEGREE, "")
-	e := Key([4]byte{1, 2, 3, 4})
+	e := Key([8]byte{1, 2, 3, 4, 0, 0, 0, 0})
 	for i := 0; i < b.N; i++ {
 		t.Has(e)
 	}
@@ -130,7 +130,7 @@ func BenchmarkBTreeHas2(b *testing.B) {
 
 func BenchmarkBTreeInsertDuplicate2(b *testing.B) {
 	t := btree.New(BTREE_DEGREE, "")
-	e := Key([4]byte{1, 2, 3, 4})
+	e := Key([8]byte{1, 2, 3, 4, 0, 0, 0, 0})
 	for i := 0; i < b.N; i++ {
 		t.ReplaceOrInsert(e)
 	}
@@ -138,7 +138,7 @@ func BenchmarkBTreeInsertDuplicate2(b *testing.B) {
 
 func BenchmarkBTreeInsertDuplicateWithHas2(b *testing.B) {
 	t := btree.New(BTREE_DEGREE, "")
-	e := Key([4]byte{1, 2, 3, 4})
+	e := Key([8]byte{1, 2, 3, 4, 0, 0, 0, 0})
 	for i := 0; i < b.N; i++ {
 		if !t.Has(e) {
 			t.ReplaceOrInsert(e)

@@ -10,12 +10,9 @@ import (
 	query "github.com/gtfierro/hod/lang"
 	sparql "github.com/gtfierro/hod/lang/ast"
 	"github.com/gtfierro/hod/turtle"
-	logrus "github.com/sirupsen/logrus"
 
 	"github.com/blevesearch/bleve"
-	"github.com/coocood/freecache"
 	"github.com/kr/pretty"
-	"github.com/mitghi/btree"
 	"github.com/pkg/errors"
 )
 
@@ -23,206 +20,35 @@ func prettyprint(v interface{}) {
 	fmt.Printf("%# v", pretty.Formatter(v))
 }
 
-func (db *DB) runQueryString(q string) (QueryResult, error) {
-	var emptyres QueryResult
+func (db *DB) runQueryString(q string) ([]*ResultRow, queryStats, error) {
+	var (
+		rows  []*ResultRow
+		stats queryStats
+	)
 	if q, err := query.Parse(q); err != nil {
 		e := errors.Wrap(err, "Could not parse hod query")
 		log.Error(e)
-		return emptyres, e
-	} else if result, err := db.runQuery(q); err != nil {
+		return rows, stats, e
+	} else if rows, stats, err = db.runQuery(q); err != nil {
 		e := errors.Wrap(err, "Could not complete hod query")
 		log.Error(e)
-		return emptyres, e
+		return rows, stats, e
 	} else {
-		return result, nil
+		return rows, stats, nil
 	}
 }
 
-func (db *DB) runQuery(q *sparql.Query) (QueryResult, error) {
-	fullQueryStart := time.Now()
-
-	// "clean" the query by expanding out the prefixes
-	// make sure to first do the Filters, then the Or clauses
-	q.IterTriples(func(triple sparql.Triple) sparql.Triple {
-		if !strings.HasPrefix(triple.Subject.Value, "?") {
-			if full, found := db.namespaces[triple.Subject.Namespace]; found {
-				triple.Subject.Namespace = full
-			}
-		}
-		if !strings.HasPrefix(triple.Object.Value, "?") {
-			if full, found := db.namespaces[triple.Object.Namespace]; found {
-				triple.Object.Namespace = full
-			}
-		}
-		for idx2, pred := range triple.Predicates {
-			if !strings.HasPrefix(pred.Predicate.Value, "?") {
-				if full, found := db.namespaces[pred.Predicate.Namespace]; found {
-					pred.Predicate.Namespace = full
-				}
-				triple.Predicates[idx2] = pred
-			}
-		}
-		return triple
-	})
-
-	// expand the graphgroup unions
-	var ors [][]sparql.Triple
-	if q.Where.GraphGroup != nil {
-		for _, group := range q.Where.GraphGroup.Expand() {
-			newterms := make([]sparql.Triple, len(q.Where.Terms))
-			copy(newterms, q.Where.Terms)
-			ors = append(ors, append(newterms, group...))
-		}
-	}
-
-	// check query hash
-	var queryhash []byte
-	if db.queryCacheEnabled {
-		queryhash = hashQuery(q)
-		if ans, err := db.queryCache.Get(queryhash); err == nil {
-			var res QueryResult
-			if _, err := res.UnmarshalMsg(ans); err != nil {
-				log.Error(errors.Wrap(err, "Could not fetch query from cache. Running..."))
-			} else {
-				// successful!
-				res.Elapsed = time.Since(fullQueryStart)
-				return res, nil
-			}
-		} else if err != nil && err == freecache.ErrNotFound {
-			log.Notice("Could not fetch query from cache")
-		} else if err != nil {
-			log.Error(errors.Wrap(err, "Could not access query cache"))
-		}
-	}
-
-	unionedRows := btree.New(BTREE_DEGREE, "")
-	defer cleanResultRows(unionedRows)
-
-	// if we have terms that are part of a set of OR statements, then we run
-	// parallel queries for each fully-elaborated "branch" or the OR statement,
-	// and then merge the results together at the end
-	var stats *queryStats
-	if len(ors) > 0 {
-		var rowLock sync.Mutex
-		var wg sync.WaitGroup
-		var queryErr error
-		wg.Add(len(ors))
-		for _, group := range ors {
-			tmpQuery := q.CopyWithNewTerms(group)
-			tmpQuery.PopulateVars()
-			if tmpQuery.Select.AllVars {
-				tmpQuery.Select.Vars = tmpQuery.Variables
-			}
-
-			go func(q *sparql.Query) {
-				results, _stats, err := db.getQueryResults(&tmpQuery)
-				rowLock.Lock()
-
-				if err != nil {
-					queryErr = err
-				} else {
-					stats.merge(_stats)
-					log.Debug("got", len(results))
-					for _, row := range results {
-						unionedRows.ReplaceOrInsert(row)
-					}
-				}
-				rowLock.Unlock()
-				wg.Done()
-			}(&tmpQuery)
-		}
-		wg.Wait()
-		if queryErr != nil {
-			return QueryResult{}, queryErr
-		}
-	} else {
-		q.PopulateVars()
-		if q.Select.AllVars {
-			q.Select.Vars = q.Variables
-		}
-		results, _stats, err := db.getQueryResults(q)
-		if err != nil {
-			return QueryResult{}, err
-		}
-		stats = &_stats
-		for _, row := range results {
-			unionedRows.ReplaceOrInsert(row)
-		}
-	}
-	if stats != nil {
-		logrus.WithFields(logrus.Fields{
-			"Where":   q.Select.Vars,
-			"Execute": stats.ExecutionTime,
-			"Expand":  stats.ExpandTime,
-			"Results": stats.NumResults,
-			"Total":   time.Since(fullQueryStart),
-		}).Info("Query")
-	} else {
-		logrus.WithFields(logrus.Fields{
-			"Where": q.Select.Vars,
-			"Total": time.Since(fullQueryStart),
-		}).Info("Query")
-	}
-
-	var result = newQueryResult()
-	result.selectVars = q.Select.Vars
-	result.Elapsed = time.Since(fullQueryStart)
-
-	// return the rows
-	result.Count = unionedRows.Len()
-	if !q.Count {
-		i := unionedRows.DeleteMax()
-		for i != nil {
-			row := i.(*ResultRow)
-			m := make(ResultMap)
-			for idx, vname := range q.Select.Vars {
-				m[vname] = row.row[idx]
-			}
-			result.Rows = append(result.Rows, m)
-			finishResultRow(row)
-			i = unionedRows.DeleteMax()
-		}
-	}
-
-	if db.queryCacheEnabled {
-		// set this in the cache
-		marshalled, err := result.MarshalMsg(nil)
-		if err != nil {
-			log.Error(errors.Wrap(err, "Could not marshal results"))
-		}
-		if err := db.queryCache.Set(queryhash, marshalled, -1); err != nil {
-			log.Error(errors.Wrap(err, "Could not cache results"))
-		}
-	}
-
-	return result, nil
-}
-
-func (db *DB) runQueryToSet(q *sparql.Query) ([]*ResultRow, error) {
+func (db *DB) runQuery(q *sparql.Query) ([]*ResultRow, queryStats, error) {
 	var result []*ResultRow
 
-	fullQueryStart := time.Now()
+	whereStart := time.Now()
 
-	// "clean" the query by expanding out the prefixes
-	// make sure to first do the Filters, then the Or clauses
+	// expand out the prefixes
 	q.IterTriples(func(triple sparql.Triple) sparql.Triple {
-		if !strings.HasPrefix(triple.Subject.Value, "?") {
-			if full, found := db.namespaces[triple.Subject.Namespace]; found {
-				triple.Subject.Namespace = full
-			}
-		}
-		if !strings.HasPrefix(triple.Object.Value, "?") {
-			if full, found := db.namespaces[triple.Object.Namespace]; found {
-				triple.Object.Namespace = full
-			}
-		}
+		triple.Subject = db.expand(triple.Subject)
+		triple.Object = db.expand(triple.Object)
 		for idx2, pred := range triple.Predicates {
-			if !strings.HasPrefix(pred.Predicate.Value, "?") {
-				if full, found := db.namespaces[pred.Predicate.Namespace]; found {
-					pred.Predicate.Namespace = full
-				}
-				triple.Predicates[idx2] = pred
-			}
+			triple.Predicates[idx2].Predicate = db.expand(pred.Predicate)
 		}
 		return triple
 	})
@@ -240,7 +66,7 @@ func (db *DB) runQueryToSet(q *sparql.Query) ([]*ResultRow, error) {
 	// if we have terms that are part of a set of OR statements, then we run
 	// parallel queries for each fully-elaborated "branch" or the OR statement,
 	// and then merge the results together at the end
-	var stats *queryStats
+	var stats queryStats
 	if len(ors) > 0 {
 		var rowLock sync.Mutex
 		var wg sync.WaitGroup
@@ -268,35 +94,26 @@ func (db *DB) runQueryToSet(q *sparql.Query) ([]*ResultRow, error) {
 		}
 		wg.Wait()
 		if queryErr != nil {
-			return result, queryErr
+			return result, stats, queryErr
 		}
 	} else {
-		q.PopulateVars()
-		if q.Select.AllVars {
-			q.Select.Vars = q.Variables
-		}
 		results, _stats, err := db.getQueryResults(q)
-		stats = &_stats
+		stats = _stats
 		if err != nil {
-			return result, err
+			return result, stats, err
 		}
 		result = append(result, results...)
 	}
-	if stats != nil {
-		logrus.WithFields(logrus.Fields{
-			"Where":   q.Select.Vars,
-			"Execute": stats.ExecutionTime,
-			"Expand":  stats.ExpandTime,
-			"Results": stats.NumResults,
-			"Total":   time.Since(fullQueryStart),
-		}).Info("Query")
-	} else {
-		logrus.WithFields(logrus.Fields{
-			"Where": q.Select.Vars,
-			"Total": time.Since(fullQueryStart),
-		}).Info("Query")
-	}
-	return result, nil
+	stats.WhereTime = time.Since(whereStart)
+	//logrus.WithFields(logrus.Fields{
+	//	"Name":    db.name,
+	//	"Where":   q.Select.Vars,
+	//	"Execute": stats.WhereTime,
+	//	"Expand":  stats.ExpandTime,
+	//	"Results": stats.NumResults,
+	//	"Total":   time.Since(whereStart),
+	//}).Info("Query")
+	return result, stats, nil
 }
 
 // takes a query and returns a DOT representation to visualize
@@ -355,22 +172,36 @@ func (db *DB) queryToClassDOT(querystring string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	// create DOT template string
+	//// create DOT template string
 	dot := ""
 
 	// get rdf:type predicate hash as a string
 	typeURI := turtle.ParseURI("rdf:type")
 	typeURI.Namespace = db.namespaces[typeURI.Namespace]
-	typeKey, err := db.GetHash(typeURI)
+	snap, err := db.snapshot()
 	if err != nil {
 		return "", err
 	}
-	typeKeyString := typeKey.String()
+	typeKey, err := snap.getHash(typeURI)
+	if err != nil {
+		return "", err
+	}
+	log.Debug(typeURI, typeKey)
+	typeKeyString := string(typeKey[:])
 
 	getClass := func(ent *Entity) (classes []turtle.URI, err error) {
 		_classes := ent.OutEdges[typeKeyString]
+		//		for name := range ent.OutEdges {
+		//			var k Key
+		//			copy(k[:], []byte(name))
+		//			uri, err := snap.getURI(k)
+		//			if err != nil {
+		//				panic(err)
+		//			}
+		//			log.Debug(uri, k, typeKey)
+		//		}
 		for _, class := range _classes {
-			classes = append(classes, db.MustGetURI(class))
+			classes = append(classes, mustGetURI(snap, class))
 		}
 		return
 	}
@@ -379,13 +210,13 @@ func (db *DB) queryToClassDOT(querystring string) (string, error) {
 		var predKey Key
 		for predKeyString, objectList := range ent.OutEdges {
 			predKey.FromSlice([]byte(predKeyString))
-			predURI, err := db.GetURI(predKey)
+			predURI, err := snap.getURI(predKey)
 			if err != nil {
 				reterr = err
 				return
 			}
 			for _, objectKey := range objectList {
-				objectEnt, err := db.GetEntityFromHash(objectKey)
+				objectEnt, err := snap.getEntityByHash(objectKey)
 				if err != nil {
 					reterr = err
 					return
@@ -401,28 +232,35 @@ func (db *DB) queryToClassDOT(querystring string) (string, error) {
 						objects = append(objects, class)
 					}
 				}
+				if predURI.Value == "uuid" {
+					predicates = append(predicates, predURI)
+					objects = append(objects, turtle.URI{Namespace: "bf", Value: "uuid"})
+				}
 
 			}
 		}
 		return
 	}
 
-	result, err := db.runQuery(q)
+	result, _, err := db.runQuery(q)
 	if err != nil {
 		return "", err
 	}
-	for _, row := range result.Rows {
-		for _, uri := range row {
-			ent, err := db.GetEntity(uri)
+	for _, row := range result {
+		for _, uri := range row.row {
+			ent, err := snap.getEntityByURI(uri)
 			if err != nil {
+				log.Debug(err)
 				return "", err
 			}
 			classList, err := getClass(ent)
 			if err != nil {
+				log.Debug(err)
 				return "", err
 			}
 			preds, objs, err := getEdges(ent)
 			if err != nil {
+				log.Debug(err)
 				return "", err
 			}
 			// add class as node to graph
@@ -451,7 +289,16 @@ func (db *DB) abbreviate(uri turtle.URI) string {
 			return abbv + ":" + uri.Value
 		}
 	}
-	return uri.Value
+	return ""
+}
+
+func (db *DB) expand(uri turtle.URI) turtle.URI {
+	if !strings.HasPrefix(uri.Value, "?") {
+		if full, found := db.namespaces[uri.Namespace]; found {
+			uri.Namespace = full
+		}
+	}
+	return uri
 }
 
 // Searches all of the values in the database; basic wildcard search
@@ -467,7 +314,10 @@ func (db *DB) search(q string, n int) ([]string, error) {
 		return res, err
 	}
 	for _, doc := range searchResults.Hits {
-		res = append(res, db.abbreviate(turtle.ParseURI(doc.ID)))
+		abb := db.abbreviate(turtle.ParseURI(doc.ID))
+		if abb != "" {
+			res = append(res, abb)
+		}
 	}
 	return res, nil
 }
@@ -513,6 +363,7 @@ func (db *DB) getQueryResults(q *sparql.Query) ([]*ResultRow, queryStats, error)
 
 	runStart := time.Now()
 	ctx, err := db.executeQueryPlan(qp)
+	defer ctx.t.under.done()
 	if err != nil {
 		return nil, stats, err
 	}
@@ -520,7 +371,7 @@ func (db *DB) getQueryResults(q *sparql.Query) ([]*ResultRow, queryStats, error)
 
 	runStart = time.Now()
 	results := ctx.getResults()
-	stats.ExecutionTime = since
+	stats.WhereTime = since
 	stats.ExpandTime = time.Since(runStart)
 	stats.NumResults = len(results)
 
@@ -528,7 +379,10 @@ func (db *DB) getQueryResults(q *sparql.Query) ([]*ResultRow, queryStats, error)
 }
 
 func (db *DB) executeQueryPlan(plan *queryPlan) (*queryContext, error) {
-	ctx := newQueryContext(plan, db)
+	ctx, err := newQueryContext(plan, db)
+	if err != nil {
+		return nil, errors.Wrap(err, "Could not get snapshot")
+	}
 
 	for _, op := range ctx.operations {
 		now := time.Now()
@@ -561,3 +415,19 @@ func (db *DB) sortQueryTerms(q *sparql.Query) *dependencyGraph {
 	dg.terms = terms
 	return dg
 }
+
+//func (db *DB) DumpEntity(ent *Entity) {
+//	fmt.Println("DUMPING", db.MustGetURI(ent.PK))
+//	for edge, list := range ent.OutEdges {
+//		fmt.Printf(" OUT: %s \n", db.MustGetURIStringHash(edge).Value)
+//		for _, l := range list {
+//			fmt.Printf("     -> %s\n", db.MustGetURI(l).Value)
+//		}
+//	}
+//	for edge, list := range ent.InEdges {
+//		fmt.Printf(" In: %s \n", db.MustGetURIStringHash(edge).Value)
+//		for _, l := range list {
+//			fmt.Printf("     <- %s\n", db.MustGetURI(l).Value)
+//		}
+//	}
+//}

@@ -83,17 +83,6 @@ func (qt *queryTerm) dump(indent int) {
 	}
 }
 
-func (qt *queryTerm) dependsOn(other *queryTerm) bool {
-	for _, v := range qt.variables {
-		for _, vv := range other.variables {
-			if vv == v {
-				return true
-			}
-		}
-	}
-	return false
-}
-
 func (qt *queryTerm) overlap(other *queryTerm) int {
 	count := 0
 	for _, v := range qt.variables {
@@ -104,25 +93,6 @@ func (qt *queryTerm) overlap(other *queryTerm) int {
 		}
 	}
 	return count
-}
-
-// removes all terms in the removeList from removeFrom and returns
-// the result
-func filterTermList(removeFrom, removeList []*queryTerm) []*queryTerm {
-	var ret = []*queryTerm{}
-	for _, a := range removeFrom {
-		keep := true
-		for _, b := range removeList {
-			if a.equals(b) {
-				keep = false
-				break
-			}
-		}
-		if keep {
-			ret = append(ret, a)
-		}
-	}
-	return ret
 }
 
 type queryTermList []*queryTerm

@@ -1,5 +1,5 @@
-@prefix brick: <http://buildsys.org/ontologies/Brick#> .
-@prefix brickframe: <http://buildsys.org/ontologies/BrickFrame#> .
+@prefix bf: <https://brickschema.org/schema/1.0.3/bf#> .
+@prefix brick: <https://brickschema.org/schema/1.0.3/Brick#> .
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
 @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
@@ -38,30 +38,30 @@ rice:AHU3_CHW_Return_Temppgm2UIP09 a brick:Chilled_Water_Return_Temperature .
 rice:AHU3_HW_Supply_Temppgm2UIP11 a brick:Hot_Water_Supply_Temperature .
 
 rice:AHU_1 a brick:AHU ;
-    brickframe:feeds rice:VAV1 ;
-    brickframe:isPartOf rice:RICE .
+    bf:feeds rice:VAV1 ;
+    bf:isPartOf rice:RICE .
 
 rice:AHU_2 a brick:AHU ;
-    brickframe:feeds rice:VAV2 ;
-    brickframe:isPartOf rice:RICE .
+    bf:feeds rice:VAV2 ;
+    bf:isPartOf rice:RICE .
 
 rice:AHU_3 a brick:AHU ;
-    brickframe:feeds rice:VAV3 ;
-    brickframe:isPartOf rice:RICE .
+    bf:feeds rice:VAV3 ;
+    bf:isPartOf rice:RICE .
 
 rice:AHU_3_Supply_Fan_Temp a brick:Discharge_Air_Temperature_Sensor .
 
 rice:AHU_4 a brick:AHU ;
-    brickframe:feeds rice:VAV4 ;
-    brickframe:isPartOf rice:RICE .
+    bf:feeds rice:VAV4 ;
+    bf:isPartOf rice:RICE .
 
-rice:AHU_5 brickframe:feeds rice:VAV5 .
+rice:AHU_5 bf:feeds rice:VAV5 .
 
-rice:AHU_6 brickframe:feeds rice:VAV6 .
+rice:AHU_6 bf:feeds rice:VAV6 .
 
-rice:AHU_7 brickframe:feeds rice:VAV7 .
+rice:AHU_7 bf:feeds rice:VAV7 .
 
-rice:AHU_8 brickframe:feeds rice:VAV8 .
+rice:AHU_8 bf:feeds rice:VAV8 .
 
 rice:Active_Cool_DAT_Stptscc2AV003 a brick:Discharge_Air_Temperature_Cooling_Setpoint .
 
@@ -184,7 +184,7 @@ rice:FP_VAV_Hot_Water_Return_Temp a brick:Hot_Water_Return_Temperature .
 rice:FP_VAV_Hot_Water_Supply_Temp a brick:Hot_Water_Supply_Temperature .
 
 rice:Floor_0 a brick:Floor ;
-    brickframe:hasPart rice:Room11,
+    bf:hasPart rice:Room11,
         rice:Room13,
         rice:Room15,
         rice:Room17,
@@ -199,10 +199,10 @@ rice:Floor_0 a brick:Floor ;
         rice:Room58,
         rice:Room59,
         rice:Room7 ;
-    brickframe:isPartOf rice:RICE .
+    bf:isPartOf rice:RICE .
 
 rice:Floor_1 a brick:Floor ;
-    brickframe:hasPart rice:Room101,
+    bf:hasPart rice:Room101,
         rice:Room102,
         rice:Room103,
         rice:Room104,
@@ -220,10 +220,10 @@ rice:Floor_1 a brick:Floor ;
         rice:Room154,
         rice:Room156,
         rice:Room160 ;
-    brickframe:isPartOf rice:RICE .
+    bf:isPartOf rice:RICE .
 
 rice:Floor_2 a brick:Floor ;
-    brickframe:hasPart rice:Room201,
+    bf:hasPart rice:Room201,
         rice:Room202,
         rice:Room203,
         rice:Room204,
@@ -246,22 +246,22 @@ rice:Floor_2 a brick:Floor ;
         rice:Room252,
         rice:Room259,
         rice:Room276 ;
-    brickframe:isPartOf rice:RICE .
+    bf:isPartOf rice:RICE .
 
 rice:Floor_3 a brick:Floor ;
-    brickframe:hasPart rice:Room305,
+    bf:hasPart rice:Room305,
         rice:Room306,
         rice:Room308,
         rice:Room322,
         rice:Room324,
         rice:Room326 ;
-    brickframe:isPartOf rice:RICE .
+    bf:isPartOf rice:RICE .
 
 rice:Floor_4 a brick:Floor ;
-    brickframe:isPartOf rice:RICE .
+    bf:isPartOf rice:RICE .
 
 rice:Floor_5 a brick:Floor ;
-    brickframe:hasPart rice:Room501,
+    bf:hasPart rice:Room501,
         rice:Room502,
         rice:Room503,
         rice:Room504,
@@ -289,7 +289,7 @@ rice:Floor_5 a brick:Floor ;
         rice:Room552,
         rice:Room557,
         rice:Room561 ;
-    brickframe:isPartOf rice:RICE .
+    bf:isPartOf rice:RICE .
 
 rice:Freeze_Protect_Low_Limitpgm1AV013 a brick:Freeze_Protect_Low_Limit .
 
@@ -969,7 +969,7 @@ brick:Zone_Temperature_Setpoint a brick:Point,
 
 rice:HVAC_Zone1 a brick:HVAC_Zone,
         owl:NamedIndividual ;
-    brickframe:hasPart rice:Room102,
+    bf:hasPart rice:Room102,
         rice:Room103,
         rice:Room106,
         rice:Room11,
@@ -993,7 +993,7 @@ rice:HVAC_Zone1 a brick:HVAC_Zone,
 
 rice:HVAC_Zone2 a brick:HVAC_Zone,
         owl:NamedIndividual ;
-    brickframe:hasPart rice:Room101,
+    bf:hasPart rice:Room101,
         rice:Room105,
         rice:Room108,
         rice:Room122,
@@ -1024,7 +1024,7 @@ rice:HVAC_Zone2 a brick:HVAC_Zone,
 
 rice:HVAC_Zone3 a brick:HVAC_Zone,
         owl:NamedIndividual ;
-    brickframe:hasPart rice:Room103,
+    bf:hasPart rice:Room103,
         rice:Room104,
         rice:Room107,
         rice:Room128,
@@ -1046,7 +1046,7 @@ rice:HVAC_Zone3 a brick:HVAC_Zone,
 
 rice:HVAC_Zone4 a brick:HVAC_Zone,
         owl:NamedIndividual ;
-    brickframe:hasPart rice:Room102,
+    bf:hasPart rice:Room102,
         rice:Room106,
         rice:Room11,
         rice:Room154,
@@ -1064,7 +1064,7 @@ rice:HVAC_Zone4 a brick:HVAC_Zone,
 
 rice:HVAC_Zone5 a brick:HVAC_Zone,
         owl:NamedIndividual ;
-    brickframe:hasPart rice:Room101,
+    bf:hasPart rice:Room101,
         rice:Room154,
         rice:Room156,
         rice:Room202,
@@ -1079,7 +1079,7 @@ rice:HVAC_Zone5 a brick:HVAC_Zone,
 
 rice:HVAC_Zone6 a brick:HVAC_Zone,
         owl:NamedIndividual ;
-    brickframe:hasPart rice:Room156,
+    bf:hasPart rice:Room156,
         rice:Room201,
         rice:Room212,
         rice:Room507,
@@ -1089,73 +1089,73 @@ rice:HVAC_Zone6 a brick:HVAC_Zone,
 
 rice:HVAC_Zone7 a brick:HVAC_Zone,
         owl:NamedIndividual ;
-    brickframe:hasPart rice:Room506,
+    bf:hasPart rice:Room506,
         rice:Room552 .
 
 rice:HVAC_Zone8 a brick:HVAC_Zone,
         owl:NamedIndividual ;
-    brickframe:hasPart rice:Room527,
+    bf:hasPart rice:Room527,
         rice:Room557 .
 
 rice:Room1071 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:RMI1071_Space_Temperature_Local ;
-    brickframe:hasPoint rice:RMI1071_Space_Temperature_Local .
+    bf:isLocationOf rice:RMI1071_Space_Temperature_Local ;
+    bf:hasPoint rice:RMI1071_Space_Temperature_Local .
 
 rice:Room1072 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:RMI1072_Space_Temperature_Local ;
-    brickframe:hasPoint rice:RMI1072_Space_Temperature_Local .
+    bf:isLocationOf rice:RMI1072_Space_Temperature_Local ;
+    bf:hasPoint rice:RMI1072_Space_Temperature_Local .
 
 rice:Room1091 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:RMI1091_Space_Temperature_Local ;
-    brickframe:hasPoint rice:RMI1091_Space_Temperature_Local .
+    bf:isLocationOf rice:RMI1091_Space_Temperature_Local ;
+    bf:hasPoint rice:RMI1091_Space_Temperature_Local .
 
 rice:Room1092 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:RMI1092_Space_Temperature_Local ;
-    brickframe:hasPoint rice:RMI1092_Space_Temperature_Local .
+    bf:isLocationOf rice:RMI1092_Space_Temperature_Local ;
+    bf:hasPoint rice:RMI1092_Space_Temperature_Local .
 
 rice:Room160 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:RMIC160_Space_Relative_Humidity_Local ;
-    brickframe:hasPoint rice:RMIC160_Space_Relative_Humidity_Local .
+    bf:isLocationOf rice:RMIC160_Space_Relative_Humidity_Local ;
+    bf:hasPoint rice:RMIC160_Space_Relative_Humidity_Local .
 
 rice:Room326 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:Space_Humidity_RMI326 ;
-    brickframe:hasPoint rice:Space_Humidity_RMI326 .
+    bf:isLocationOf rice:Space_Humidity_RMI326 ;
+    bf:hasPoint rice:Space_Humidity_RMI326 .
 
 rice:Room505 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:RMI505_Space_Temperature_Perimeter ;
-    brickframe:hasPoint rice:RMI505_Space_Temperature_Perimeter .
+    bf:isLocationOf rice:RMI505_Space_Temperature_Perimeter ;
+    bf:hasPoint rice:RMI505_Space_Temperature_Perimeter .
 
 rice:Room512 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:RMI512_Space_Temperature_Perimeter ;
-    brickframe:hasPoint rice:RMI512_Space_Temperature_Perimeter .
+    bf:isLocationOf rice:RMI512_Space_Temperature_Perimeter ;
+    bf:hasPoint rice:RMI512_Space_Temperature_Perimeter .
 
 rice:Room514 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:rmi514_Space_CO2_Concentration ;
-    brickframe:hasPoint rice:rmi514_Space_CO2_Concentration .
+    bf:isLocationOf rice:rmi514_Space_CO2_Concentration ;
+    bf:hasPoint rice:rmi514_Space_CO2_Concentration .
 
 rice:Room530 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:RMI530_Space_Temperature ;
-    brickframe:hasPoint rice:RMI530_Space_Temperature .
+    bf:isLocationOf rice:RMI530_Space_Temperature ;
+    bf:hasPoint rice:RMI530_Space_Temperature .
 
 rice:Room534 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:RMI534_Space_Temperature_Perimeter ;
-    brickframe:hasPoint rice:RMI534_Space_Temperature_Perimeter .
+    bf:isLocationOf rice:RMI534_Space_Temperature_Perimeter ;
+    bf:hasPoint rice:RMI534_Space_Temperature_Perimeter .
 
 rice:VAV1 a brick:VAV,
         owl:NamedIndividual ;
-    brickframe:feeds rice:HVAC_Zone1 ;
-    brickframe:hasPoint rice:Humidity_Zone_1_RMI207,
+    bf:feeds rice:HVAC_Zone1 ;
+    bf:hasPoint rice:Humidity_Zone_1_RMI207,
         rice:Humidity_Zone_1_RMI212,
         rice:TEMP1_Perm_Temp_Rm_230,
         rice:TEMP1_Space_TemperatureRMI050,
@@ -1180,8 +1180,8 @@ rice:VAV1 a brick:VAV,
 
 rice:VAV2 a brick:VAV,
         owl:NamedIndividual ;
-    brickframe:feeds rice:HVAC_Zone2 ;
-    brickframe:hasPoint rice:RMI504_Zone_Temp_2,
+    bf:feeds rice:HVAC_Zone2 ;
+    bf:hasPoint rice:RMI504_Zone_Temp_2,
         rice:RMI511B_Zone_Temp_2,
         rice:RMI513_Zone_Temp_2,
         rice:RMI516_Space_CO2_Concentration_Zone_2,
@@ -1220,8 +1220,8 @@ rice:VAV2 a brick:VAV,
 
 rice:VAV3 a brick:VAV,
         owl:NamedIndividual ;
-    brickframe:feeds rice:HVAC_Zone3 ;
-    brickframe:hasPoint rice:RM511A_Zone_Temp_3,
+    bf:feeds rice:HVAC_Zone3 ;
+    bf:hasPoint rice:RM511A_Zone_Temp_3,
         rice:RMI503_Zone_Temp_3,
         rice:RMI522_Zone_Temp_3,
         rice:RMI552_Zone_Temp_3,
@@ -1252,8 +1252,8 @@ rice:VAV3 a brick:VAV,
 
 rice:VAV4 a brick:VAV,
         owl:NamedIndividual ;
-    brickframe:feeds rice:HVAC_Zone4 ;
-    brickframe:hasPoint rice:RMI502_Zone_Temp_4,
+    bf:feeds rice:HVAC_Zone4 ;
+    bf:hasPoint rice:RMI502_Zone_Temp_4,
         rice:RMI509_Zone_Temp_4,
         rice:RMI_524_Zone_Temp_4,
         rice:TEMP4_Space_Temperature_RMI019,
@@ -1276,8 +1276,8 @@ rice:VAV4 a brick:VAV,
 
 rice:VAV5 a brick:VAV,
         owl:NamedIndividual ;
-    brickframe:feeds rice:HVAC_Zone5 ;
-    brickframe:hasPoint rice:RMI501_Zone_Temp_5,
+    bf:feeds rice:HVAC_Zone5 ;
+    bf:hasPoint rice:RMI501_Zone_Temp_5,
         rice:RMI508_Zone_Temp_5,
         rice:RMI526_Zone_Temp_5,
         rice:Zone_Temp_5_Local_RMI208,
@@ -1296,8 +1296,8 @@ rice:VAV5 a brick:VAV,
 
 rice:VAV6 a brick:VAV,
         owl:NamedIndividual ;
-    brickframe:feeds rice:HVAC_Zone6 ;
-    brickframe:hasPoint rice:RMI507_Zone_Temp_6,
+    bf:feeds rice:HVAC_Zone6 ;
+    bf:hasPoint rice:RMI507_Zone_Temp_6,
         rice:RMI528_Zone_Temp_6,
         rice:RMIC557_Zone_Temp_6,
         rice:Zone_Temp_6_RMI054,
@@ -1307,14 +1307,14 @@ rice:VAV6 a brick:VAV,
 
 rice:VAV7 a brick:VAV,
         owl:NamedIndividual ;
-    brickframe:feeds rice:HVAC_Zone7 ;
-    brickframe:hasPoint rice:RMI506_Zone_Temp_7,
+    bf:feeds rice:HVAC_Zone7 ;
+    bf:hasPoint rice:RMI506_Zone_Temp_7,
         rice:RMIC552_Zone_Temp_7 .
 
 rice:VAV8 a brick:VAV,
         owl:NamedIndividual ;
-    brickframe:feeds rice:HVAC_Zone8 ;
-    brickframe:hasPoint rice:RMI527_Zone_Temp_8,
+    bf:feeds rice:HVAC_Zone8 ;
+    bf:hasPoint rice:RMI527_Zone_Temp_8,
         rice:RMI527_Zone_Temp_8_Stpt,
         rice:RMIC557_Zone_Temp_8 .
 
@@ -1394,168 +1394,168 @@ rice:RmI532_Space_Temperature a brick:Room_Temperature_Sensor .
 
 rice:Room104 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:TEMP3_Space_Temperature_RMI104,
+    bf:isLocationOf rice:TEMP3_Space_Temperature_RMI104,
         rice:Zone_Temp_RMI104 ;
-    brickframe:hasPoint rice:TEMP3_Space_Temperature_RMI104,
+    bf:hasPoint rice:TEMP3_Space_Temperature_RMI104,
         rice:Zone_Temp_RMI104 .
 
 rice:Room105 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:TEMP2_Space_Temperature_RMI105 ;
-    brickframe:hasPoint rice:TEMP2_Space_Temperature_RMI105 .
+    bf:isLocationOf rice:TEMP2_Space_Temperature_RMI105 ;
+    bf:hasPoint rice:TEMP2_Space_Temperature_RMI105 .
 
 rice:Room107 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:Zone_Temp_3_RMI107 ;
-    brickframe:hasPoint rice:Zone_Temp_3_RMI107 .
+    bf:isLocationOf rice:Zone_Temp_3_RMI107 ;
+    bf:hasPoint rice:Zone_Temp_3_RMI107 .
 
 rice:Room108 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:RMI108_Space_Temperature_Local,
+    bf:isLocationOf rice:RMI108_Space_Temperature_Local,
         rice:Zone_Temp_2_RMI108 ;
-    brickframe:hasPoint rice:RMI108_Space_Temperature_Local,
+    bf:hasPoint rice:RMI108_Space_Temperature_Local,
         rice:Zone_Temp_2_RMI108 .
 
 rice:Room122 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:Zone_Temp_2_RMI122 ;
-    brickframe:hasPoint rice:Zone_Temp_2_RMI122 .
+    bf:isLocationOf rice:Zone_Temp_2_RMI122 ;
+    bf:hasPoint rice:Zone_Temp_2_RMI122 .
 
 rice:Room128 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:Zone_Temp_3_RMI128 ;
-    brickframe:hasPoint rice:Zone_Temp_3_RMI128 .
+    bf:isLocationOf rice:Zone_Temp_3_RMI128 ;
+    bf:hasPoint rice:Zone_Temp_3_RMI128 .
 
 rice:Room13 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:TEMP1_Space_Temperature_RMI013 ;
-    brickframe:hasPoint rice:TEMP1_Space_Temperature_RMI013 .
+    bf:isLocationOf rice:TEMP1_Space_Temperature_RMI013 ;
+    bf:hasPoint rice:TEMP1_Space_Temperature_RMI013 .
 
 rice:Room15 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:TEMP2_Space_Temperature_RMI015,
+    bf:isLocationOf rice:TEMP2_Space_Temperature_RMI015,
         rice:Zone_Temp_2_RMI015 ;
-    brickframe:hasPoint rice:TEMP2_Space_Temperature_RMI015,
+    bf:hasPoint rice:TEMP2_Space_Temperature_RMI015,
         rice:Zone_Temp_2_RMI015 .
 
 rice:Room150 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:TEMP1_Space_Temperature_RMIC150A ;
-    brickframe:hasPoint rice:TEMP1_Space_Temperature_RMIC150A .
+    bf:isLocationOf rice:TEMP1_Space_Temperature_RMIC150A ;
+    bf:hasPoint rice:TEMP1_Space_Temperature_RMIC150A .
 
 rice:Room17 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:TEMP3_Space_Temperature_RMI017,
+    bf:isLocationOf rice:TEMP3_Space_Temperature_RMI017,
         rice:Zone_Temp_3_RMI017 ;
-    brickframe:hasPoint rice:TEMP3_Space_Temperature_RMI017,
+    bf:hasPoint rice:TEMP3_Space_Temperature_RMI017,
         rice:Zone_Temp_3_RMI017 .
 
 rice:Room19 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:TEMP4_Space_Temperature_RMI019,
+    bf:isLocationOf rice:TEMP4_Space_Temperature_RMI019,
         rice:Zone_Temp_4_RMI019 ;
-    brickframe:hasPoint rice:TEMP4_Space_Temperature_RMI019,
+    bf:hasPoint rice:TEMP4_Space_Temperature_RMI019,
         rice:Zone_Temp_4_RMI019 .
 
 rice:Room20 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:TEMP1_Space_Temperature_RMI020 ;
-    brickframe:hasPoint rice:TEMP1_Space_Temperature_RMI020 .
+    bf:isLocationOf rice:TEMP1_Space_Temperature_RMI020 ;
+    bf:hasPoint rice:TEMP1_Space_Temperature_RMI020 .
 
 rice:Room206 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:Space_CO2_RMI206,
+    bf:isLocationOf rice:Space_CO2_RMI206,
         rice:Space_Humidity_RMI206,
         rice:TEMP3_Space_Temperature_RMI206 ;
-    brickframe:hasPoint rice:Space_CO2_RMI206,
+    bf:hasPoint rice:Space_CO2_RMI206,
         rice:Space_Humidity_RMI206,
         rice:TEMP3_Space_Temperature_RMI206 .
 
 rice:Room210 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:TEMP3_Space_Temperature_RM_210,
+    bf:isLocationOf rice:TEMP3_Space_Temperature_RM_210,
         rice:Zone_Temp_3_RM210 ;
-    brickframe:hasPoint rice:TEMP3_Space_Temperature_RM_210,
+    bf:hasPoint rice:TEMP3_Space_Temperature_RM_210,
         rice:Zone_Temp_3_RM210 .
 
 rice:Room220 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:TEMP1_Space_Temperature_RME220 ;
-    brickframe:hasPoint rice:TEMP1_Space_Temperature_RME220 .
+    bf:isLocationOf rice:TEMP1_Space_Temperature_RME220 ;
+    bf:hasPoint rice:TEMP1_Space_Temperature_RME220 .
 
 rice:Room222 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:TEMP2_Space_Temperature_RME222,
+    bf:isLocationOf rice:TEMP2_Space_Temperature_RME222,
         rice:Zone_Temp_2_RME222 ;
-    brickframe:hasPoint rice:TEMP2_Space_Temperature_RME222,
+    bf:hasPoint rice:TEMP2_Space_Temperature_RME222,
         rice:Zone_Temp_2_RME222 .
 
 rice:Room224 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:TEMP3_Space_Temperature_Perm_RM_I224,
+    bf:isLocationOf rice:TEMP3_Space_Temperature_Perm_RM_I224,
         rice:Zone_Temp_3_Rm_I224 ;
-    brickframe:hasPoint rice:TEMP3_Space_Temperature_Perm_RM_I224,
+    bf:hasPoint rice:TEMP3_Space_Temperature_Perm_RM_I224,
         rice:Zone_Temp_3_Rm_I224 .
 
 rice:Room226 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:Space_Relative_Humidity_RMI226,
+    bf:isLocationOf rice:Space_Relative_Humidity_RMI226,
         rice:TEMP2_Space_Temperature_Perm_RM_I226 ;
-    brickframe:hasPoint rice:Space_Relative_Humidity_RMI226,
+    bf:hasPoint rice:Space_Relative_Humidity_RMI226,
         rice:TEMP2_Space_Temperature_Perm_RM_I226 .
 
 rice:Room228 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:CB228_CHW_Return_Temp,
+    bf:isLocationOf rice:CB228_CHW_Return_Temp,
         rice:CB228_CHW_Supply_Temp,
         rice:Lab_Humidity_RM_I228,
         rice:TEMP1_Space_Temperature_Perm_Rm_I228 ;
-    brickframe:hasPoint rice:CB228_CHW_Return_Temp,
+    bf:hasPoint rice:CB228_CHW_Return_Temp,
         rice:CB228_CHW_Supply_Temp,
         rice:Lab_Humidity_RM_I228,
         rice:TEMP1_Space_Temperature_Perm_Rm_I228 .
 
 rice:Room232 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:TEMP2_Perm_Temperature_Rm_232,
+    bf:isLocationOf rice:TEMP2_Perm_Temperature_Rm_232,
         rice:Zone_Temp_2_RM_I232 ;
-    brickframe:hasPoint rice:TEMP2_Perm_Temperature_Rm_232,
+    bf:hasPoint rice:TEMP2_Perm_Temperature_Rm_232,
         rice:Zone_Temp_2_RM_I232 .
 
 rice:Room24 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:TEMP2_Space_Temperature_RMI024,
+    bf:isLocationOf rice:TEMP2_Space_Temperature_RMI024,
         rice:Zone_Temp_2_RMI024 ;
-    brickframe:hasPoint rice:TEMP2_Space_Temperature_RMI024,
+    bf:hasPoint rice:TEMP2_Space_Temperature_RMI024,
         rice:Zone_Temp_2_RMI024 .
 
 rice:Room242 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:Space_CO2_level_RM242,
+    bf:isLocationOf rice:Space_CO2_level_RM242,
         rice:Zone_Temp_2_RM_242 ;
-    brickframe:hasPoint rice:Space_CO2_level_RM242,
+    bf:hasPoint rice:Space_CO2_level_RM242,
         rice:Zone_Temp_2_RM_242 .
 
 rice:Room259 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:Space_Humidity_RMIC259,
+    bf:isLocationOf rice:Space_Humidity_RMIC259,
         rice:TEMP1_Space_Temperature_RMIC259 ;
-    brickframe:hasPoint rice:Space_Humidity_RMIC259,
+    bf:hasPoint rice:Space_Humidity_RMIC259,
         rice:TEMP1_Space_Temperature_RMIC259 .
 
 rice:Room276 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:TEMP1_Space_Temperature_RMIC276 ;
-    brickframe:hasPoint rice:TEMP1_Space_Temperature_RMIC276 .
+    bf:isLocationOf rice:TEMP1_Space_Temperature_RMIC276 ;
+    bf:hasPoint rice:TEMP1_Space_Temperature_RMIC276 .
 
 rice:Room305 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:Space_Relative_Humidity_RMI305,
+    bf:isLocationOf rice:Space_Relative_Humidity_RMI305,
         rice:averageSpaceTemperatureARoom_305_Area2,
         rice:heatCoolModeStatusARoom_305_Area2,
         rice:occupancyStatusARoom_305_Area2,
         rice:operatingModeARoom_305_Area2 ;
-    brickframe:hasPoint rice:Space_Relative_Humidity_RMI305,
+    bf:hasPoint rice:Space_Relative_Humidity_RMI305,
         rice:averageSpaceTemperatureARoom_305_Area2,
         rice:heatCoolModeStatusARoom_305_Area2,
         rice:occupancyStatusARoom_305_Area2,
@@ -1563,13 +1563,13 @@ rice:Room305 a brick:Room,
 
 rice:Room306 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:Space_Relative_Humidity_RMI306,
+    bf:isLocationOf rice:Space_Relative_Humidity_RMI306,
         rice:averageSpaceTemperatureARoom_306_Area3,
         rice:heatCoolModeStatusARoom_306_Area3,
         rice:occupancyStatusARoom_306_Area3,
         rice:operatingModeARoom_306_Area3,
         rice:spaceSensorARoom_306_Area3 ;
-    brickframe:hasPoint rice:Space_Relative_Humidity_RMI306,
+    bf:hasPoint rice:Space_Relative_Humidity_RMI306,
         rice:averageSpaceTemperatureARoom_306_Area3,
         rice:heatCoolModeStatusARoom_306_Area3,
         rice:occupancyStatusARoom_306_Area3,
@@ -1578,12 +1578,12 @@ rice:Room306 a brick:Room,
 
 rice:Room308 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:CB_Flow_Meter_RMI308,
+    bf:isLocationOf rice:CB_Flow_Meter_RMI308,
         rice:CB_Return_Temp_RMI308,
         rice:CB_Supply_Temp_RMI308,
         rice:Space_Relative_Humidity_RMI308,
         rice:TEMP1_Space_Temperature_RMI308 ;
-    brickframe:hasPoint rice:CB_Flow_Meter_RMI308,
+    bf:hasPoint rice:CB_Flow_Meter_RMI308,
         rice:CB_Return_Temp_RMI308,
         rice:CB_Supply_Temp_RMI308,
         rice:Space_Relative_Humidity_RMI308,
@@ -1591,13 +1591,13 @@ rice:Room308 a brick:Room,
 
 rice:Room324 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:HW_Return_Temp_RM_I324,
+    bf:isLocationOf rice:HW_Return_Temp_RM_I324,
         rice:averageSpaceTemperatureARoom_324_Area5,
         rice:heatCoolModeStatusARoom_324_Area5,
         rice:occupancyStatusARoom_324_Area5,
         rice:operatingModeARoom_324_Area5,
         rice:spaceSensorARoom_324_Area5 ;
-    brickframe:hasPoint rice:HW_Return_Temp_RM_I324,
+    bf:hasPoint rice:HW_Return_Temp_RM_I324,
         rice:averageSpaceTemperatureARoom_324_Area5,
         rice:heatCoolModeStatusARoom_324_Area5,
         rice:occupancyStatusARoom_324_Area5,
@@ -1606,164 +1606,164 @@ rice:Room324 a brick:Room,
 
 rice:Room50 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:Space_CO2_Concentration_RMI050,
+    bf:isLocationOf rice:Space_CO2_Concentration_RMI050,
         rice:TEMP1_Space_TemperatureRMI050 ;
-    brickframe:hasPoint rice:Space_CO2_Concentration_RMI050,
+    bf:hasPoint rice:Space_CO2_Concentration_RMI050,
         rice:TEMP1_Space_TemperatureRMI050 .
 
 rice:Room501 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:RMI501_Space_Temperature_Perimeter,
+    bf:isLocationOf rice:RMI501_Space_Temperature_Perimeter,
         rice:RMI501_Zone_Temp_5 ;
-    brickframe:hasPoint rice:RMI501_Space_Temperature_Perimeter,
+    bf:hasPoint rice:RMI501_Space_Temperature_Perimeter,
         rice:RMI501_Zone_Temp_5 .
 
 rice:Room502 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:RMI502_Space_Temperature_Perimeter,
+    bf:isLocationOf rice:RMI502_Space_Temperature_Perimeter,
         rice:RMI502_Zone_Temp_4 ;
-    brickframe:hasPoint rice:RMI502_Space_Temperature_Perimeter,
+    bf:hasPoint rice:RMI502_Space_Temperature_Perimeter,
         rice:RMI502_Zone_Temp_4 .
 
 rice:Room503 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:RMI503_Space_Temperature_Perimeter,
+    bf:isLocationOf rice:RMI503_Space_Temperature_Perimeter,
         rice:RMI503_Zone_Temp_3 ;
-    brickframe:hasPoint rice:RMI503_Space_Temperature_Perimeter,
+    bf:hasPoint rice:RMI503_Space_Temperature_Perimeter,
         rice:RMI503_Zone_Temp_3 .
 
 rice:Room504 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:RMI504_Zone_Temp_2,
+    bf:isLocationOf rice:RMI504_Zone_Temp_2,
         rice:RmI504_Space_Temperature_Perimeter ;
-    brickframe:hasPoint rice:RMI504_Zone_Temp_2,
+    bf:hasPoint rice:RMI504_Zone_Temp_2,
         rice:RmI504_Space_Temperature_Perimeter .
 
 rice:Room506 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:RMI506_Space_Temperature_Perimeter,
+    bf:isLocationOf rice:RMI506_Space_Temperature_Perimeter,
         rice:RMI506_Zone_Temp_7 ;
-    brickframe:hasPoint rice:RMI506_Space_Temperature_Perimeter,
+    bf:hasPoint rice:RMI506_Space_Temperature_Perimeter,
         rice:RMI506_Zone_Temp_7 .
 
 rice:Room507 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:RMI507_Space_Temperature_Perimeter,
+    bf:isLocationOf rice:RMI507_Space_Temperature_Perimeter,
         rice:RMI507_Zone_Temp_6 ;
-    brickframe:hasPoint rice:RMI507_Space_Temperature_Perimeter,
+    bf:hasPoint rice:RMI507_Space_Temperature_Perimeter,
         rice:RMI507_Zone_Temp_6 .
 
 rice:Room508 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:RMI508_Space_Temperature_Perimeter,
+    bf:isLocationOf rice:RMI508_Space_Temperature_Perimeter,
         rice:RMI508_Zone_Temp_5 ;
-    brickframe:hasPoint rice:RMI508_Space_Temperature_Perimeter,
+    bf:hasPoint rice:RMI508_Space_Temperature_Perimeter,
         rice:RMI508_Zone_Temp_5 .
 
 rice:Room509 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:RMI509_Space_Temperature_Perimeter,
+    bf:isLocationOf rice:RMI509_Space_Temperature_Perimeter,
         rice:RMI509_Zone_Temp_4 ;
-    brickframe:hasPoint rice:RMI509_Space_Temperature_Perimeter,
+    bf:hasPoint rice:RMI509_Space_Temperature_Perimeter,
         rice:RMI509_Zone_Temp_4 .
 
 rice:Room513 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:RMI513_Zone_Temp_2,
+    bf:isLocationOf rice:RMI513_Zone_Temp_2,
         rice:Space_CO2_Room_513 ;
-    brickframe:hasPoint rice:RMI513_Zone_Temp_2,
+    bf:hasPoint rice:RMI513_Zone_Temp_2,
         rice:Space_CO2_Room_513 .
 
 rice:Room516 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:RMI516_Space_CO2_Concentration_Zone_2 ;
-    brickframe:hasPoint rice:RMI516_Space_CO2_Concentration_Zone_2 .
+    bf:isLocationOf rice:RMI516_Space_CO2_Concentration_Zone_2 ;
+    bf:hasPoint rice:RMI516_Space_CO2_Concentration_Zone_2 .
 
 rice:Room52 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:Zone_Temp_3_RMI052 ;
-    brickframe:hasPoint rice:Zone_Temp_3_RMI052 .
+    bf:isLocationOf rice:Zone_Temp_3_RMI052 ;
+    bf:hasPoint rice:Zone_Temp_3_RMI052 .
 
 rice:Room521 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:RMI521_Zone_Temp_2,
+    bf:isLocationOf rice:RMI521_Zone_Temp_2,
         rice:RmI521_Space_Temperature ;
-    brickframe:hasPoint rice:RMI521_Zone_Temp_2,
+    bf:hasPoint rice:RMI521_Zone_Temp_2,
         rice:RmI521_Space_Temperature .
 
 rice:Room522 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:RMI522_Zone_Temp_3,
+    bf:isLocationOf rice:RMI522_Zone_Temp_3,
         rice:RmI522_Space_Temperature ;
-    brickframe:hasPoint rice:RMI522_Zone_Temp_3,
+    bf:hasPoint rice:RMI522_Zone_Temp_3,
         rice:RmI522_Space_Temperature .
 
 rice:Room524 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:RMI_524_Zone_Temp_4,
+    bf:isLocationOf rice:RMI_524_Zone_Temp_4,
         rice:RmI524_Space_Temperature ;
-    brickframe:hasPoint rice:RMI_524_Zone_Temp_4,
+    bf:hasPoint rice:RMI_524_Zone_Temp_4,
         rice:RmI524_Space_Temperature .
 
 rice:Room526 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:RMI526_Zone_Temp_5,
+    bf:isLocationOf rice:RMI526_Zone_Temp_5,
         rice:RmI526_Space_Temperature ;
-    brickframe:hasPoint rice:RMI526_Zone_Temp_5,
+    bf:hasPoint rice:RMI526_Zone_Temp_5,
         rice:RmI526_Space_Temperature .
 
 rice:Room527 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:RMI527_Zone_Temp_8,
+    bf:isLocationOf rice:RMI527_Zone_Temp_8,
         rice:RMI527_Zone_Temp_8_Stpt ;
-    brickframe:hasPoint rice:RMI527_Zone_Temp_8,
+    bf:hasPoint rice:RMI527_Zone_Temp_8,
         rice:RMI527_Zone_Temp_8_Stpt .
 
 rice:Room528 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:RMI528_Zone_Temp_6,
+    bf:isLocationOf rice:RMI528_Zone_Temp_6,
         rice:RmI528_Space_Temperature ;
-    brickframe:hasPoint rice:RMI528_Zone_Temp_6,
+    bf:hasPoint rice:RMI528_Zone_Temp_6,
         rice:RmI528_Space_Temperature .
 
 rice:Room532 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:RmI532_Space_Temperature,
+    bf:isLocationOf rice:RmI532_Space_Temperature,
         rice:RmI532_Zone_Temp_2 ;
-    brickframe:hasPoint rice:RmI532_Space_Temperature,
+    bf:hasPoint rice:RmI532_Space_Temperature,
         rice:RmI532_Zone_Temp_2 .
 
 rice:Room536 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:RMI536_Space_Temperature_Perimeter,
+    bf:isLocationOf rice:RMI536_Space_Temperature_Perimeter,
         rice:RMI536_Zone_Temp_2 ;
-    brickframe:hasPoint rice:RMI536_Space_Temperature_Perimeter,
+    bf:hasPoint rice:RMI536_Space_Temperature_Perimeter,
         rice:RMI536_Zone_Temp_2 .
 
 rice:Room542 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:RMI542_Zone_Temp_2 ;
-    brickframe:hasPoint rice:RMI542_Zone_Temp_2 .
+    bf:isLocationOf rice:RMI542_Zone_Temp_2 ;
+    bf:hasPoint rice:RMI542_Zone_Temp_2 .
 
 rice:Room561 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:RMI561_Zone_Temp_3 ;
-    brickframe:hasPoint rice:RMI561_Zone_Temp_3 .
+    bf:isLocationOf rice:RMI561_Zone_Temp_3 ;
+    bf:hasPoint rice:RMI561_Zone_Temp_3 .
 
 rice:Room57 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:Zone_Temp_5_RMIC057 ;
-    brickframe:hasPoint rice:Zone_Temp_5_RMIC057 .
+    bf:isLocationOf rice:Zone_Temp_5_RMIC057 ;
+    bf:hasPoint rice:Zone_Temp_5_RMIC057 .
 
 rice:Room58 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:TEMP1_Space_Temperature_RMIC058 ;
-    brickframe:hasPoint rice:TEMP1_Space_Temperature_RMIC058 .
+    bf:isLocationOf rice:TEMP1_Space_Temperature_RMIC058 ;
+    bf:hasPoint rice:TEMP1_Space_Temperature_RMIC058 .
 
 rice:Room59 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:Zone_Temp_5_RMIC059 ;
-    brickframe:hasPoint rice:Zone_Temp_5_RMIC059 .
+    bf:isLocationOf rice:Zone_Temp_5_RMIC059 ;
+    bf:hasPoint rice:Zone_Temp_5_RMIC059 .
 
 rice:Space_CO2_Concentration_RMI050 a brick:CO2_Sensor .
 
@@ -1862,148 +1862,148 @@ rice:RmI532_Zone_Temp_2 a brick:Room_Temperature_Sensor .
 
 rice:Room101 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:TEMP2_Space_Temperature_RMI101,
+    bf:isLocationOf rice:TEMP2_Space_Temperature_RMI101,
         rice:Zone_Temp_5_RMI101 ;
-    brickframe:hasPoint rice:TEMP2_Space_Temperature_RMI101,
+    bf:hasPoint rice:TEMP2_Space_Temperature_RMI101,
         rice:Zone_Temp_5_RMI101 .
 
 rice:Room102 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:TEMP1_Space_Temperature_RMI102,
+    bf:isLocationOf rice:TEMP1_Space_Temperature_RMI102,
         rice:Zone_Temp_4_RMI102 ;
-    brickframe:hasPoint rice:TEMP1_Space_Temperature_RMI102,
+    bf:hasPoint rice:TEMP1_Space_Temperature_RMI102,
         rice:Zone_Temp_4_RMI102 .
 
 rice:Room103 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:TEMP1_Space_Temperature_RMI103,
+    bf:isLocationOf rice:TEMP1_Space_Temperature_RMI103,
         rice:Zone_Temp_3_RMI103 ;
-    brickframe:hasPoint rice:TEMP1_Space_Temperature_RMI103,
+    bf:hasPoint rice:TEMP1_Space_Temperature_RMI103,
         rice:Zone_Temp_3_RMI103 .
 
 rice:Room106 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:TEMP1_Space_Temperature_RMI106,
+    bf:isLocationOf rice:TEMP1_Space_Temperature_RMI106,
         rice:Zone_Temp_4_RMI106 ;
-    brickframe:hasPoint rice:TEMP1_Space_Temperature_RMI106,
+    bf:hasPoint rice:TEMP1_Space_Temperature_RMI106,
         rice:Zone_Temp_4_RMI106 .
 
 rice:Room11 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:TEMP1_Space_Temperature_RmI011,
+    bf:isLocationOf rice:TEMP1_Space_Temperature_RmI011,
         rice:Zone_Temp_4_RMI011 ;
-    brickframe:hasPoint rice:TEMP1_Space_Temperature_RmI011,
+    bf:hasPoint rice:TEMP1_Space_Temperature_RmI011,
         rice:Zone_Temp_4_RMI011 .
 
 rice:Room154 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:Zone_Temp_4_RMIC154_Corr,
+    bf:isLocationOf rice:Zone_Temp_4_RMIC154_Corr,
         rice:Zone_Temp_5_RMIC154A ;
-    brickframe:hasPoint rice:Zone_Temp_4_RMIC154_Corr,
+    bf:hasPoint rice:Zone_Temp_4_RMIC154_Corr,
         rice:Zone_Temp_5_RMIC154A .
 
 rice:Room156 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:Zone_Temp_5_RMIC156E,
+    bf:isLocationOf rice:Zone_Temp_5_RMIC156E,
         rice:Zone_Temp_6_RMIC156 ;
-    brickframe:hasPoint rice:Zone_Temp_5_RMIC156E,
+    bf:hasPoint rice:Zone_Temp_5_RMIC156E,
         rice:Zone_Temp_6_RMIC156 .
 
 rice:Room201 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:TEMP3_Space_Temperature_RMI201,
+    bf:isLocationOf rice:TEMP3_Space_Temperature_RMI201,
         rice:Zone_Temp_6_RM_I201 ;
-    brickframe:hasPoint rice:TEMP3_Space_Temperature_RMI201,
+    bf:hasPoint rice:TEMP3_Space_Temperature_RMI201,
         rice:Zone_Temp_6_RM_I201 .
 
 rice:Room202 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:TEMP2_Space_Temperature_RMI202,
+    bf:isLocationOf rice:TEMP2_Space_Temperature_RMI202,
         rice:Zone_Temp_5_RM_I202 ;
-    brickframe:hasPoint rice:TEMP2_Space_Temperature_RMI202,
+    bf:hasPoint rice:TEMP2_Space_Temperature_RMI202,
         rice:Zone_Temp_5_RM_I202 .
 
 rice:Room203 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:TEMP1_Space_Temperature_RMI203,
+    bf:isLocationOf rice:TEMP1_Space_Temperature_RMI203,
         rice:Zone_Temp_4_RM_I203 ;
-    brickframe:hasPoint rice:TEMP1_Space_Temperature_RMI203,
+    bf:hasPoint rice:TEMP1_Space_Temperature_RMI203,
         rice:Zone_Temp_4_RM_I203 .
 
 rice:Room204 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:TEMP1_Space_Temperature_RMI204,
+    bf:isLocationOf rice:TEMP1_Space_Temperature_RMI204,
         rice:Zone_Temp_2_RmI204 ;
-    brickframe:hasPoint rice:TEMP1_Space_Temperature_RMI204,
+    bf:hasPoint rice:TEMP1_Space_Temperature_RMI204,
         rice:Zone_Temp_2_RmI204 .
 
 rice:Room205 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:TEMP4_Space_Temperature_RMI205,
+    bf:isLocationOf rice:TEMP4_Space_Temperature_RMI205,
         rice:Zone_Temp_3_RM_I205 ;
-    brickframe:hasPoint rice:TEMP4_Space_Temperature_RMI205,
+    bf:hasPoint rice:TEMP4_Space_Temperature_RMI205,
         rice:Zone_Temp_3_RM_I205 .
 
 rice:Room207 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:Humidity_Zone_1_RMI207,
+    bf:isLocationOf rice:Humidity_Zone_1_RMI207,
         rice:TEMP2_Space_Temperature_RMI207 ;
-    brickframe:hasPoint rice:Humidity_Zone_1_RMI207,
+    bf:hasPoint rice:Humidity_Zone_1_RMI207,
         rice:TEMP2_Space_Temperature_RMI207 .
 
 rice:Room208 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:TEMP1_Space_Temperature_RMI208,
+    bf:isLocationOf rice:TEMP1_Space_Temperature_RMI208,
         rice:Zone_Temp_5_Local_RMI208 ;
-    brickframe:hasPoint rice:TEMP1_Space_Temperature_RMI208,
+    bf:hasPoint rice:TEMP1_Space_Temperature_RMI208,
         rice:Zone_Temp_5_Local_RMI208 .
 
 rice:Room209 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:TEMP4_Space_Temperature_RM_209,
+    bf:isLocationOf rice:TEMP4_Space_Temperature_RM_209,
         rice:Zone_Temp_2_RMI209 ;
-    brickframe:hasPoint rice:TEMP4_Space_Temperature_RM_209,
+    bf:hasPoint rice:TEMP4_Space_Temperature_RM_209,
         rice:Zone_Temp_2_RMI209 .
 
 rice:Room211 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:TEMP2_Space_Temperature_RM_211,
+    bf:isLocationOf rice:TEMP2_Space_Temperature_RM_211,
         rice:Zone_Temp_4_RM211 ;
-    brickframe:hasPoint rice:TEMP2_Space_Temperature_RM_211,
+    bf:hasPoint rice:TEMP2_Space_Temperature_RM_211,
         rice:Zone_Temp_4_RM211 .
 
 rice:Room212 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:Humidity_Zone_1_RMI212,
+    bf:isLocationOf rice:Humidity_Zone_1_RMI212,
         rice:TEMP1_Space_Temperature_RM_212,
         rice:Zone_Temp_6_RMI212 ;
-    brickframe:hasPoint rice:Humidity_Zone_1_RMI212,
+    bf:hasPoint rice:Humidity_Zone_1_RMI212,
         rice:TEMP1_Space_Temperature_RM_212,
         rice:Zone_Temp_6_RMI212 .
 
 rice:Room230 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:Space_CO2_Concentration_Zone_2_RMI230,
+    bf:isLocationOf rice:Space_CO2_Concentration_Zone_2_RMI230,
         rice:TEMP1_Perm_Temp_Rm_230 ;
-    brickframe:hasPoint rice:Space_CO2_Concentration_Zone_2_RMI230,
+    bf:hasPoint rice:Space_CO2_Concentration_Zone_2_RMI230,
         rice:TEMP1_Perm_Temp_Rm_230 .
 
 rice:Room252 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:Zone_2_Temp_Corr_252,
+    bf:isLocationOf rice:Zone_2_Temp_Corr_252,
         rice:Zone_Temp_4_RM_C252 ;
-    brickframe:hasPoint rice:Zone_2_Temp_Corr_252,
+    bf:hasPoint rice:Zone_2_Temp_Corr_252,
         rice:Zone_Temp_4_RM_C252 .
 
 rice:Room322 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:TEMP1_Space_Temperature_RM_I322,
+    bf:isLocationOf rice:TEMP1_Space_Temperature_RM_I322,
         rice:averageSpaceTemperatureARoom_322_Area4,
         rice:heatCoolModeStatusARoom_322_Area4,
         rice:occupancyStatusARoom_322_Area4,
         rice:operatingModeARoom_322_Area4,
         rice:spaceSensorARoom_322_Area4 ;
-    brickframe:hasPoint rice:TEMP1_Space_Temperature_RM_I322,
+    bf:hasPoint rice:TEMP1_Space_Temperature_RM_I322,
         rice:averageSpaceTemperatureARoom_322_Area4,
         rice:heatCoolModeStatusARoom_322_Area4,
         rice:occupancyStatusARoom_322_Area4,
@@ -2012,45 +2012,45 @@ rice:Room322 a brick:Room,
 
 rice:Room511 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:RM511A_Zone_Temp_3,
+    bf:isLocationOf rice:RM511A_Zone_Temp_3,
         rice:RMI511A_Space_Temperature_Perimeter,
         rice:RMI511B_Space_Temperature_Perimeter,
         rice:RMI511B_Zone_Temp_2 ;
-    brickframe:hasPoint rice:RM511A_Zone_Temp_3,
+    bf:hasPoint rice:RM511A_Zone_Temp_3,
         rice:RMI511A_Space_Temperature_Perimeter,
         rice:RMI511B_Space_Temperature_Perimeter,
         rice:RMI511B_Zone_Temp_2 .
 
 rice:Room54 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:Zone_Temp_5_RMIC054,
+    bf:isLocationOf rice:Zone_Temp_5_RMIC054,
         rice:Zone_Temp_6_RMI054 ;
-    brickframe:hasPoint rice:Zone_Temp_5_RMIC054,
+    bf:hasPoint rice:Zone_Temp_5_RMIC054,
         rice:Zone_Temp_6_RMI054 .
 
 rice:Room552 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:RMI552_Zone_Temp_3,
+    bf:isLocationOf rice:RMI552_Zone_Temp_3,
         rice:RMIC552_Zone_Temp_3,
         rice:RMIC552_Zone_Temp_7 ;
-    brickframe:hasPoint rice:RMI552_Zone_Temp_3,
+    bf:hasPoint rice:RMI552_Zone_Temp_3,
         rice:RMIC552_Zone_Temp_3,
         rice:RMIC552_Zone_Temp_7 .
 
 rice:Room557 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:RMIC557_Zone_Temp_6,
+    bf:isLocationOf rice:RMIC557_Zone_Temp_6,
         rice:RMIC557_Zone_Temp_8 ;
-    brickframe:hasPoint rice:RMIC557_Zone_Temp_6,
+    bf:hasPoint rice:RMIC557_Zone_Temp_6,
         rice:RMIC557_Zone_Temp_8 .
 
 rice:Room7 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:TEMP2_Space_Temperature_RmI007,
+    bf:isLocationOf rice:TEMP2_Space_Temperature_RmI007,
         rice:TEMP3_Space_Temperature_RmI007A,
         rice:Zone_Temp_2_RMI007,
         rice:Zone_Temp_3_RMI007A ;
-    brickframe:hasPoint rice:TEMP2_Space_Temperature_RmI007,
+    bf:hasPoint rice:TEMP2_Space_Temperature_RmI007,
         rice:TEMP3_Space_Temperature_RmI007A,
         rice:Zone_Temp_2_RMI007,
         rice:Zone_Temp_3_RMI007A .
@@ -2280,10 +2280,10 @@ brick:Return_Air_Temperature_Sensor a brick:Point,
 
 rice:Room32 a brick:Room,
         owl:NamedIndividual ;
-    brickframe:contains rice:Zone_Temp_2_RMI032,
+    bf:isLocationOf rice:Zone_Temp_2_RMI032,
         rice:Zone_Temp_3_RMI032A,
         rice:Zone_Temp_4_RMI032B ;
-    brickframe:hasPoint rice:Zone_Temp_2_RMI032,
+    bf:hasPoint rice:Zone_Temp_2_RMI032,
         rice:Zone_Temp_3_RMI032A,
         rice:Zone_Temp_4_RMI032B .
 

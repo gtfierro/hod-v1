@@ -13,11 +13,10 @@ Buildings:
 # the location of the database files
 #DBPath: _hoddb
 
-# the path to the TTL file containing Brick relationships
-#BrickFrameTTL: "$GOPATH/src/github.com/gtfierro/hod/BrickFrame.ttl"
-
-# the path to the TTL file containing Brick classes
-#BrickClassTTL: "$GOPATH/src/github.com/gtfierro/hod/Brick.ttl"
+# list of links to ontology files to load before each building
+#Ontologies:
+#    -  "$GOPATH/src/github.com/gtfierro/hod/BrickFrame.ttl"
+#    -  "$GOPATH/src/github.com/gtfierro/hod/Brick.ttl"
 
 # whether or not to reload the Brick database files
 #ReloadBrick: true

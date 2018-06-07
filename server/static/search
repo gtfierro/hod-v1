@@ -1,0 +1,91 @@
+<html>
+  <head>
+    <meta charset="utf-8">
+    <script src="js/moment.js"></script>
+    <!--Import Google Icon Font-->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <!--Import materialize.css-->
+    <link type="text/css" rel="stylesheet" href="css/materialize.min.css"  media="screen,projection"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link type="text/css" rel="stylesheet" href="css/site.css" />
+  	<title>HodDB Query</title>
+    <ul id="slide-out" class="side-nav fixed blue lighten-5">
+        <li><h3 class="center-align" !important>HodDB</h3></li>
+        <li><a class="tooltipped" data-position="right" data-delay="100" data-tooltip="Execute BRICK queries" href="/query">Query<i class="material-icons">keyboard_arrow_right</i></a></li>
+        <li><a class="tooltipped" data-position="right" data-delay="100" data-tooltip="Visualize the construction of BRICK queries" href="/plan">Planner<i class="material-icons">keyboard_arrow_right</i></a></li>
+        <!--<li><a class="tooltipped" data-position="right" data-delay="100" data-tooltip="Explore BRICK graphs" href="/explore">Explore<i class="material-icons">keyboard_arrow_right</i></a></li>-->
+        <li class="active"><a class="tooltipped" data-position="right" data-delay="100" data-tooltip="Visualize the construction of BRICK queries" href="/search">Search<i class="material-icons">keyboard_arrow_right</i></a></li>
+        <li><a class="tooltipped" data-position="right" data-delay="100" data-tooltip="Documentation and other resources" href="/help">Help<i class="material-icons">keyboard_arrow_right</i></a></li>
+        <li><div class="divider"></div></li>
+        <li style="position: absolute; bottom: 100px; left: 30px;" class="collection-item bottom-align">vHOD_VERSION</li>
+    </ul>
+    <a href="#" data-activates="slide-out" class="button-collapse"><i class="material-icons">menu</i></a>
+  </head>
+  <body>
+    <!--Import jQuery before materialize.js-->
+    <script type="text/javascript" src="js/jquery-2.1.1.min.js"></script>
+    <script type="text/javascript" src="js/materialize.min.js"></script>
+    <main>
+    <div class="container">
+        <div class="row">
+            <div class="col s12">
+                <ul class="tabs">
+                    <li class="tab col s3"><a href="#tab_classsearch">Class Search</a></li>
+                    <li class="tab col s3"><a href="#tab_instances">Instances</a></li>
+                    <li class="tab col s3"><a href="#tab_traversal">Traversal</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <div id="tab_classsearch">
+            <div class="row">
+                <h5 class="col s12 center-align">Class Search</h5>
+            </div>
+
+            <form id="queryform" form="queryform" class="col s12">
+                <div class="row">
+                    <div class="col s12">
+                        <input type="text" id="searchtext" placeholder="temperature sensor"></input>
+                    </div>
+                </div>
+            </form>
+            <div class="row">
+                <div id="errortext" class="col s12 card-panel red lighten-2" hidden>
+                    <p></p>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col s12">
+                    <table class="highlight bordered" id="resultstable"></table>
+                </div>
+                <div class="col s12" id="resultsjson">
+                </div>
+            </div>
+        </div>
+    
+        <div id="tab_instances">
+            <div class="row">
+                <h5 class="col s12 center-align">Instance List</h5>
+            </div>
+            <div class="row">
+                <div class="col s12">
+                    <table class="highlight bordered" id="instancetable"></table>
+                </div>
+            </div>
+        </div>
+        <div id="tab_traversal">
+            <div class="row">
+                <h5 class="col s12 center-align">Graph Traversal</h5>
+            </div>
+            <div class="row">
+                <div class="col s12">
+                    <div id="noderender"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    </main>
+
+    <script type="text/javascript" src="js/search.js"></script>
+  </body>
+</html>
