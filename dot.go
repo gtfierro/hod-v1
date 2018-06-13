@@ -75,7 +75,13 @@ func resolveKey(client *bw2.BW2Client, key string) (string, error) {
 		if b != bw2.StateValid {
 			return "", errors.New(fmt.Sprintf("Key was not valid: %s", key))
 		}
-		ent, ok := a.(*objects.Entity)
+
+		_ro, err := objects.NewEntity(a.GetRONum(), a.GetContent())
+		if err != nil {
+			return "", errors.Wrap(err, "Could not form entity object")
+		}
+
+		ent, ok := _ro.(*objects.Entity)
 		if !ok {
 			return "", errors.New(fmt.Sprintf("Key was not an entity: %s", key))
 		}
@@ -159,7 +165,7 @@ func doGrant(c *cli.Context) error {
 		scanURI := uris[0]
 		params := &bw2.CreateDOTParams{
 			To:                key_vk,
-			TTL:               0,
+			TTL:               uint8(c.Int("ttl")),
 			Comment:           fmt.Sprintf("Access to Hod on URI %s", uri),
 			URI:               scanURI,
 			ExpiryDelta:       expiry,
@@ -182,7 +188,7 @@ func doGrant(c *cli.Context) error {
 		queryURI := uris[1]
 		params := &bw2.CreateDOTParams{
 			To:                key_vk,
-			TTL:               0,
+			TTL:               uint8(c.Int("ttl")),
 			Comment:           fmt.Sprintf("Access to archiver on URI %s", uri),
 			URI:               queryURI,
 			ExpiryDelta:       expiry,
@@ -205,7 +211,7 @@ func doGrant(c *cli.Context) error {
 		responseURI := uris[2]
 		params := &bw2.CreateDOTParams{
 			To:                key_vk,
-			TTL:               0,
+			TTL:               uint8(c.Int("ttl")),
 			Comment:           fmt.Sprintf("Access to archiver on URI %s", uri),
 			URI:               responseURI,
 			ExpiryDelta:       expiry,

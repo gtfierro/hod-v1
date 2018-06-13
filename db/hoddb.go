@@ -13,15 +13,16 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/gtfierro/btree"
 	"github.com/gtfierro/hod/config"
 	query "github.com/gtfierro/hod/lang"
 	sparql "github.com/gtfierro/hod/lang/ast"
 	"github.com/gtfierro/hod/turtle"
-	logrus "github.com/sirupsen/logrus"
 
-	"github.com/gtfierro/btree"
 	"github.com/op/go-logging"
 	"github.com/pkg/errors"
+	"github.com/pkg/profile"
+	logrus "github.com/sirupsen/logrus"
 )
 
 // logger
@@ -38,6 +39,11 @@ func init() {
 	logrus.SetFormatter(&logrus.TextFormatter{FullTimestamp: true, ForceColors: true})
 	logrus.SetOutput(os.Stdout)
 	logrus.SetLevel(logrus.InfoLevel)
+}
+
+type building struct {
+	name    string
+	ttlfile string
 }
 
 type HodDB struct {
@@ -60,6 +66,13 @@ func NewHodDB(cfg *config.Config) (*HodDB, error) {
 		loadedfilehashes: make(map[string][]byte),
 	}
 	logging.SetLevel(cfg.LogLevel, "hod")
+	if cfg.EnableCPUProfile {
+		defer profile.Start(profile.CPUProfile, profile.ProfilePath(".")).Stop()
+	} else if cfg.EnableMEMProfile {
+		defer profile.Start(profile.MemProfile, profile.ProfilePath(".")).Stop()
+	} else if cfg.EnableBlockProfile {
+		defer profile.Start(profile.BlockProfile, profile.ProfilePath(".")).Stop()
+	}
 
 	// create path for dbs
 	hod.dbdir = strings.TrimSuffix(cfg.DBPath, "/")
@@ -83,55 +96,59 @@ func NewHodDB(cfg *config.Config) (*HodDB, error) {
 	// For each file, we compute the sha256 hash. If we have already loaded the file and
 	// it hasn't changed, the hash should be in hod.loadedfilehashes
 
-	var loadwg sync.WaitGroup
 	var errchan = make(chan error, len(cfg.Buildings))
-	loadwg.Add(len(cfg.Buildings))
-	for buildingname, buildingttlfile := range cfg.Buildings {
-		buildingname := buildingname
-		buildingttlfile := buildingttlfile
-		cfg := cfg.Copy()
+	var loadqueue = make(chan building)
+	for i := 0; i < 20; i++ {
 		go func() {
-			defer loadwg.Done()
-			f, err := os.Open(buildingttlfile)
-			if err != nil {
-				errchan <- errors.Wrapf(err, "Could not read input file %s", buildingttlfile)
-				return
-			}
-			defer f.Close()
-			filehasher := sha256.New()
-			if _, err := io.Copy(filehasher, f); err != nil {
-				errchan <- errors.Wrapf(err, "Could not hash file %s", buildingttlfile)
-				return
-			}
-			filehash := filehasher.Sum(nil)
-			hod.Lock()
-			existinghash, found := hod.loadedfilehashes[buildingttlfile]
-			hod.Unlock()
-			if found && bytes.Equal(filehash, existinghash) {
-				log.Infof("TTL file %s has not changed since we last loaded it! Skipping...", buildingttlfile)
-				cfg.ReloadOntologies = false
-				cfg.DBPath = filepath.Join(hod.dbdir, buildingname)
-				db, err := newDB(buildingname, cfg)
+			for bldg := range loadqueue {
+				buildingname := bldg.name
+				buildingttlfile := bldg.ttlfile
+				cfg := cfg.Copy()
+				f, err := os.Open(buildingttlfile)
+				defer f.Close()
 				if err != nil {
-					errchan <- errors.Wrap(err, "Could not load existing database")
+					errchan <- errors.Wrapf(err, "Could not read input file %s", buildingttlfile)
 					return
 				}
-				hod.dbs.Store(buildingname, db)
+				filehasher := sha256.New()
+				if _, err := io.Copy(filehasher, f); err != nil {
+					errchan <- errors.Wrapf(err, "Could not hash file %s", buildingttlfile)
+					return
+				}
+				filehash := filehasher.Sum(nil)
+				hod.Lock()
+				existinghash, found := hod.loadedfilehashes[buildingttlfile]
+				hod.Unlock()
+				if found && bytes.Equal(filehash, existinghash) {
+					log.Infof("TTL file %s has not changed since we last loaded it! Skipping...", buildingttlfile)
+					cfg.ReloadOntologies = false
+					cfg.DBPath = filepath.Join(hod.dbdir, buildingname)
+					db, err := newDB(buildingname, cfg)
+					if err != nil {
+						errchan <- errors.Wrap(err, "Could not load existing database")
+						return
+					}
+					hod.dbs.Store(buildingname, db)
+					hod.buildings = append(hod.buildings, buildingname)
+					return
+				}
 				hod.buildings = append(hod.buildings, buildingname)
-				return
-			}
-			hod.buildings = append(hod.buildings, buildingname)
-			hod.Lock()
-			hod.loadedfilehashes[buildingttlfile] = filehash
-			hod.Unlock()
+				hod.Lock()
+				hod.loadedfilehashes[buildingttlfile] = filehash
+				hod.Unlock()
 
-			if err := hod.loadDataset(buildingname, buildingttlfile); err != nil {
-				errchan <- err
-				return
+				if err := hod.loadDataset(buildingname, buildingttlfile); err != nil {
+					errchan <- err
+					return
+				}
 			}
 		}()
 	}
-	loadwg.Wait()
+
+	for buildingname, buildingttlfile := range cfg.Buildings {
+		loadqueue <- building{buildingname, buildingttlfile}
+	}
+	close(loadqueue)
 	close(errchan)
 	for err := range errchan {
 		return nil, err
