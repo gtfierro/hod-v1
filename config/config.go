@@ -77,7 +77,7 @@ func init() {
 	// set defaults for config
 	viper.SetDefault("DBPath", "_hoddb")
 	viper.SetDefault("ReloadOntologies", true)
-	viper.SetDefault("DisableQueryCache", false)
+	viper.SetDefault("DisableQueryCache", true)
 	viper.SetDefault("Buildings", make(map[string]string))
 	viper.SetDefault("Ontologies", []string{
 		prefix + "/src/github.com/gtfierro/hod/BrickFrame.ttl",
