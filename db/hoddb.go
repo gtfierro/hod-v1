@@ -13,15 +13,16 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/gtfierro/btree"
 	"github.com/gtfierro/hod/config"
 	query "github.com/gtfierro/hod/lang"
 	sparql "github.com/gtfierro/hod/lang/ast"
 	"github.com/gtfierro/hod/turtle"
-	logrus "github.com/sirupsen/logrus"
 
-	"github.com/gtfierro/btree"
 	"github.com/op/go-logging"
 	"github.com/pkg/errors"
+	"github.com/pkg/profile"
+	logrus "github.com/sirupsen/logrus"
 )
 
 // logger
@@ -65,6 +66,13 @@ func NewHodDB(cfg *config.Config) (*HodDB, error) {
 		loadedfilehashes: make(map[string][]byte),
 	}
 	logging.SetLevel(cfg.LogLevel, "hod")
+	if cfg.EnableCPUProfile {
+		defer profile.Start(profile.CPUProfile, profile.ProfilePath(".")).Stop()
+	} else if cfg.EnableMEMProfile {
+		defer profile.Start(profile.MemProfile, profile.ProfilePath(".")).Stop()
+	} else if cfg.EnableBlockProfile {
+		defer profile.Start(profile.BlockProfile, profile.ProfilePath(".")).Stop()
+	}
 
 	// create path for dbs
 	hod.dbdir = strings.TrimSuffix(cfg.DBPath, "/")
