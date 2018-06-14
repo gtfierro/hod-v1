@@ -130,6 +130,7 @@ func (p *Parser) ParseReader(r io.Reader) (DataSet, time.Duration, error) {
 	start := time.Now()
 	p.dataset = newDataSet()
 	f, err := ioutil.TempFile(".", "_raptor")
+	defer f.Close()
 	if err != nil {
 		return *p.dataset, time.Since(start), err
 	}
