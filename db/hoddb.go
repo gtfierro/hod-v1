@@ -98,6 +98,8 @@ func NewHodDB(cfg *config.Config) (*HodDB, error) {
 
 	var errchan = make(chan error, len(cfg.Buildings))
 	var loadqueue = make(chan building)
+	var loadwg sync.WaitGroup
+	loadwg.Add(len(cfg.Buildings))
 	for i := 0; i < 20; i++ {
 		go func() {
 			for bldg := range loadqueue {
@@ -108,12 +110,14 @@ func NewHodDB(cfg *config.Config) (*HodDB, error) {
 				defer f.Close()
 				if err != nil {
 					errchan <- errors.Wrapf(err, "Could not read input file %s", buildingttlfile)
-					return
+					loadwg.Done()
+					continue
 				}
 				filehasher := sha256.New()
 				if _, err := io.Copy(filehasher, f); err != nil {
 					errchan <- errors.Wrapf(err, "Could not hash file %s", buildingttlfile)
-					return
+					loadwg.Done()
+					continue
 				}
 				filehash := filehasher.Sum(nil)
 				hod.Lock()
@@ -126,11 +130,13 @@ func NewHodDB(cfg *config.Config) (*HodDB, error) {
 					db, err := newDB(buildingname, cfg)
 					if err != nil {
 						errchan <- errors.Wrap(err, "Could not load existing database")
-						return
+						loadwg.Done()
+						continue
 					}
 					hod.dbs.Store(buildingname, db)
 					hod.buildings = append(hod.buildings, buildingname)
-					return
+					loadwg.Done()
+					continue
 				}
 				hod.buildings = append(hod.buildings, buildingname)
 				hod.Lock()
@@ -139,20 +145,31 @@ func NewHodDB(cfg *config.Config) (*HodDB, error) {
 
 				if err := hod.loadDataset(buildingname, buildingttlfile); err != nil {
 					errchan <- err
-					return
+					loadwg.Done()
+					continue
 				}
+				loadwg.Done()
 			}
 		}()
 	}
 
-	for buildingname, buildingttlfile := range cfg.Buildings {
-		loadqueue <- building{buildingname, buildingttlfile}
-	}
-	close(loadqueue)
-	close(errchan)
-	for err := range errchan {
+	loaddone := make(chan bool)
+	go func() {
+		for buildingname, buildingttlfile := range cfg.Buildings {
+			loadqueue <- building{buildingname, buildingttlfile}
+		}
+		close(loadqueue)
+		loadwg.Wait()
+		loaddone <- true
+	}()
+
+	select {
+	case err := <-errchan:
 		return nil, err
+	case <-loaddone:
+		break
 	}
+	close(errchan)
 
 	if err := hod.saveIndexes(); err != nil {
 		return nil, errors.Wrap(err, "Could not save file indexes")

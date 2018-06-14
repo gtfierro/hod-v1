@@ -177,6 +177,7 @@ func chunkFile(filename string) []string {
 	eol := []byte{'\n'}
 	for idx := int64(0); idx < numFiles+int64(1); idx++ {
 		chunkfile, err := ioutil.TempFile(".", "chunk")
+		defer chunkfile.Close()
 		if err != nil {
 			log.Fatal(err)
 		}

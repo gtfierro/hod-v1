@@ -50,6 +50,17 @@ func main() {
 			},
 		},
 		{
+			Name:   "rebuild",
+			Usage:  "Delete old database and rebuild a-new, starting server afterwards",
+			Action: rebuildServer,
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:  "config, c",
+					Usage: "Path to hoddb config file",
+				},
+			},
+		},
+		{
 			Name:   "query",
 			Usage:  "Query from command line (non-interactive)",
 			Action: doQuery,
