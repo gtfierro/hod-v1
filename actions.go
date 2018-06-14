@@ -52,6 +52,20 @@ func benchLoad(c *cli.Context) error {
 	return nil
 }
 
+func rebuildServer(c *cli.Context) error {
+	cfg, err := config.ReadConfig(c.String("config"))
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+	dbdir := strings.TrimSuffix(cfg.DBPath, "/")
+	log.Warningf("Removing %s", dbdir)
+	if err := os.RemoveAll(dbdir); err != nil {
+		log.Error(errors.Wrapf(err, "Could not remove old dir %s", dbdir))
+	}
+	return startServer(c)
+}
+
 func startCLI(c *cli.Context) error {
 	cfg, err := config.ReadConfig(c.String("config"))
 	if err != nil {
