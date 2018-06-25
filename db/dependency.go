@@ -10,28 +10,12 @@ import (
 // struct to hold the graph of the query plan
 type dependencyGraph struct {
 	selectVars []string
-	roots      []*queryTerm
-	// map of variable name -> resolved?
-	variables map[string]bool
-	terms     []*queryTerm
-	plan      []queryTerm
+	variables  map[string]bool
+	terms      []*queryTerm
+	plan       []queryTerm
 }
 
-// initializes the query plan struct
 func makeDependencyGraph(q *sparql.Query) *dependencyGraph {
-	dg := &dependencyGraph{
-		selectVars: []string{},
-		roots:      []*queryTerm{},
-		variables:  make(map[string]bool),
-	}
-	for _, v := range q.Select.Vars {
-		dg.selectVars = append(dg.selectVars, v)
-	}
-	return dg
-}
-
-func makeDependencyGraph2(q *sparql.Query) *dependencyGraph {
-	//root:      *queryTerm,
 	dg := &dependencyGraph{
 		selectVars: []string{},
 		variables:  make(map[string]bool),
@@ -76,9 +60,6 @@ func (dg *dependencyGraph) dump() {
 		r.dump(0)
 		//fmt.Println(r)
 	}
-}
-
-func (dg *dependencyGraph) resolve() {
 }
 
 // stores the state/variables for a particular triple

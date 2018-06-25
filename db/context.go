@@ -131,12 +131,12 @@ func (ctx *queryContext) restrictToResolved(varname string, values *keymap) {
 
 func (ctx *queryContext) dumpRows() {
 	for _, row := range ctx.rel.rows {
-		ctx.dumpRow(row)
+		ctx.dumpRow("", row)
 	}
 }
 
-func (ctx *queryContext) dumpRow(row *Row) {
-	s := "["
+func (ctx *queryContext) dumpRow(prefix string, row *Row) {
+	s := prefix + " ["
 	for varName, pos := range ctx.variablePosition {
 		val := row.valueAt(pos)
 		if val != emptyKey {

@@ -138,8 +138,6 @@ func (db *DB) formQueryPlan(dg *dependencyGraph, q *sparql.Query) (*queryPlan, e
 		}
 		qp.operations = append(qp.operations, newop)
 	}
-	// sort operations
-	// sort.Sort(qp)
 	return qp, nil
 }
 

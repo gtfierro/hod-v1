@@ -2,7 +2,6 @@ package db
 
 import (
 	"fmt"
-	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -340,7 +339,7 @@ func (db *DB) getQueryResults(q *sparql.Query) ([]*ResultRow, queryStats, error)
 
 	// form dependency graph and build query plan out of it
 	//dg := db.sortQueryTerms(q)
-	dg := makeDependencyGraph2(q)
+	dg := makeDependencyGraph(q)
 	qp, err := db.formQueryPlan(dg, q)
 	if err != nil {
 		return nil, stats, err
@@ -397,38 +396,3 @@ func (db *DB) executeQueryPlan(plan *queryPlan) (*queryContext, error) {
 	}
 	return ctx, nil
 }
-
-func (db *DB) sortQueryTerms(q *sparql.Query) *dependencyGraph {
-	dg := makeDependencyGraph(q)
-	terms := make([]*queryTerm, len(q.Where.Terms))
-	for i, f := range q.Where.Terms {
-		terms[i] = dg.makeQueryTerm(f)
-	}
-
-	// now we order the list such that each term tries to be adjacent
-	// to those that it shares a variable with
-
-	// do it twice. First time to put all of the definition terms up front
-	// the second time to order by overlap
-	sort.Sort(queryTermList(terms))
-	sort.Sort(queryTermList(terms))
-
-	dg.terms = terms
-	return dg
-}
-
-//func (db *DB) DumpEntity(ent *Entity) {
-//	fmt.Println("DUMPING", db.MustGetURI(ent.PK))
-//	for edge, list := range ent.OutEdges {
-//		fmt.Printf(" OUT: %s \n", db.MustGetURIStringHash(edge).Value)
-//		for _, l := range list {
-//			fmt.Printf("     -> %s\n", db.MustGetURI(l).Value)
-//		}
-//	}
-//	for edge, list := range ent.InEdges {
-//		fmt.Printf(" In: %s \n", db.MustGetURIStringHash(edge).Value)
-//		for _, l := range list {
-//			fmt.Printf("     <- %s\n", db.MustGetURI(l).Value)
-//		}
-//	}
-//}
