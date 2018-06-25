@@ -14,6 +14,7 @@ type dependencyGraph struct {
 	// map of variable name -> resolved?
 	variables map[string]bool
 	terms     []*queryTerm
+	plan      []queryTerm
 }
 
 // initializes the query plan struct
@@ -29,18 +30,63 @@ func makeDependencyGraph(q *sparql.Query) *dependencyGraph {
 	return dg
 }
 
+func makeDependencyGraph2(q *sparql.Query) *dependencyGraph {
+	//root:      *queryTerm,
+	dg := &dependencyGraph{
+		selectVars: []string{},
+		variables:  make(map[string]bool),
+		terms:      make([]*queryTerm, len(q.Where.Terms)),
+	}
+	for _, v := range q.Select.Vars {
+		dg.selectVars = append(dg.selectVars, v)
+	}
+	for i, term := range q.Where.Terms {
+		dg.terms[i] = dg.makeQueryTerm(term)
+	}
+
+	// find term with fewest variables
+	var next *queryTerm
+rootLoop:
+	for numvars := 1; numvars <= 3; numvars++ {
+		for idx, term := range dg.terms {
+			if len(term.variables) == numvars {
+				next = term
+				dg.terms = append(dg.terms[:idx], dg.terms[idx+1:]...)
+				break rootLoop
+			}
+		}
+	}
+	dg.plan = append(dg.plan, *next)
+
+	for len(dg.terms) > 0 {
+		for idx, term := range dg.terms {
+			if term.overlap(next) > 0 {
+				next = term
+				dg.plan = append(dg.plan, *next)
+				dg.terms = append(dg.terms[:idx], dg.terms[idx+1:]...)
+				break
+			}
+		}
+	}
+	return dg
+}
+
 func (dg *dependencyGraph) dump() {
 	for _, r := range dg.terms {
-		fmt.Println(r)
+		r.dump(0)
+		//fmt.Println(r)
 	}
+}
+
+func (dg *dependencyGraph) resolve() {
 }
 
 // stores the state/variables for a particular triple
 // from a SPARQL query
 type queryTerm struct {
 	sparql.Triple
-	children  []*queryTerm
-	variables []string
+	dependencies []*queryTerm
+	variables    []string
 }
 
 // initializes a queryTerm from a given Filter
@@ -78,7 +124,7 @@ func (qt *queryTerm) String() string {
 
 func (qt *queryTerm) dump(indent int) {
 	fmt.Println(strings.Repeat("  ", indent), qt.String())
-	for _, c := range qt.children {
+	for _, c := range qt.dependencies {
 		c.dump(indent + 1)
 	}
 }

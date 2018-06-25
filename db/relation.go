@@ -204,11 +204,12 @@ innerRows:
 	rel.rows = joinedRows
 }
 
-//func (rel *Relation) dumpRows(ctx *queryContext) {
-//	for _, row := range rel.rows {
-//		rel.dumpRow(row, ctx)
-//	}
-//}
+func (rel *Relation) dumpRows(prefix string, ctx *queryContext) {
+	for _, row := range rel.rows {
+		//rel.dumpRow(row, ctx)
+		ctx.dumpRow(prefix, row)
+	}
+}
 
 //func (rel *Relation) dumpRow(row *Row, ctx *queryContext) {
 //	s := "["

@@ -13,13 +13,13 @@ type operation interface {
 	run(ctx *queryContext) error
 	String() string
 	SortKey() string
-	GetTerm() *queryTerm
+	GetTerm() queryTerm
 }
 
 // ?subject predicate object
 // Find all subjects part of triples with the given predicate and object
 type resolveSubject struct {
-	term *queryTerm
+	term queryTerm
 }
 
 func (rs *resolveSubject) String() string {
@@ -30,7 +30,7 @@ func (rs *resolveSubject) SortKey() string {
 	return rs.term.Subject.String()
 }
 
-func (rs *resolveSubject) GetTerm() *queryTerm {
+func (rs *resolveSubject) GetTerm() queryTerm {
 	return rs.term
 }
 
@@ -69,7 +69,7 @@ func (rs *resolveSubject) run(ctx *queryContext) error {
 // object predicate ?object
 // Find all objects part of triples with the given predicate and subject
 type resolveObject struct {
-	term *queryTerm
+	term queryTerm
 }
 
 func (ro *resolveObject) String() string {
@@ -80,7 +80,7 @@ func (ro *resolveObject) SortKey() string {
 	return ro.term.Object.String()
 }
 
-func (ro *resolveObject) GetTerm() *queryTerm {
+func (ro *resolveObject) GetTerm() queryTerm {
 	return ro.term
 }
 
@@ -116,7 +116,7 @@ func (ro *resolveObject) run(ctx *queryContext) error {
 // object ?predicate object
 // Find all predicates part of triples with the given subject and subject
 type resolvePredicate struct {
-	term *queryTerm
+	term queryTerm
 }
 
 func (op *resolvePredicate) String() string {
@@ -127,7 +127,7 @@ func (op *resolvePredicate) SortKey() string {
 	return op.term.Predicates[0].Predicate.String()
 }
 
-func (op *resolvePredicate) GetTerm() *queryTerm {
+func (op *resolvePredicate) GetTerm() queryTerm {
 	return op.term
 }
 
@@ -171,7 +171,7 @@ func (op *resolvePredicate) run(ctx *queryContext) error {
 // ?sub pred ?obj
 // Find all subjects and objects that have the given relationship
 type restrictSubjectObjectByPredicate struct {
-	term                *queryTerm
+	term                queryTerm
 	parentVar, childVar string
 }
 
@@ -183,7 +183,7 @@ func (rso *restrictSubjectObjectByPredicate) SortKey() string {
 	return rso.parentVar
 }
 
-func (rso *restrictSubjectObjectByPredicate) GetTerm() *queryTerm {
+func (rso *restrictSubjectObjectByPredicate) GetTerm() queryTerm {
 	return rso.term
 }
 
@@ -291,7 +291,7 @@ func (rso *restrictSubjectObjectByPredicate) run(ctx *queryContext) error {
 // ?sub pred ?obj, but we have already resolved the object
 // For each of the current
 type resolveSubjectFromVarObject struct {
-	term *queryTerm
+	term queryTerm
 }
 
 func (rsv *resolveSubjectFromVarObject) String() string {
@@ -302,7 +302,7 @@ func (rsv *resolveSubjectFromVarObject) SortKey() string {
 	return rsv.term.Object.String()
 }
 
-func (rsv *resolveSubjectFromVarObject) GetTerm() *queryTerm {
+func (rsv *resolveSubjectFromVarObject) GetTerm() queryTerm {
 	return rsv.term
 }
 
@@ -347,7 +347,7 @@ func (rsv *resolveSubjectFromVarObject) run(ctx *queryContext) error {
 }
 
 type resolveObjectFromVarSubject struct {
-	term *queryTerm
+	term queryTerm
 }
 
 func (rov *resolveObjectFromVarSubject) String() string {
@@ -358,7 +358,7 @@ func (rov *resolveObjectFromVarSubject) SortKey() string {
 	return rov.term.Subject.String()
 }
 
-func (rov *resolveObjectFromVarSubject) GetTerm() *queryTerm {
+func (rov *resolveObjectFromVarSubject) GetTerm() queryTerm {
 	return rov.term
 }
 
@@ -394,7 +394,7 @@ func (rov *resolveObjectFromVarSubject) run(ctx *queryContext) error {
 }
 
 type resolveObjectFromVarSubjectPred struct {
-	term *queryTerm
+	term queryTerm
 }
 
 func (op *resolveObjectFromVarSubjectPred) String() string {
@@ -405,7 +405,7 @@ func (op *resolveObjectFromVarSubjectPred) SortKey() string {
 	return op.term.Subject.String()
 }
 
-func (op *resolveObjectFromVarSubjectPred) GetTerm() *queryTerm {
+func (op *resolveObjectFromVarSubjectPred) GetTerm() queryTerm {
 	return op.term
 }
 
@@ -415,7 +415,7 @@ func (rov *resolveObjectFromVarSubjectPred) run(ctx *queryContext) error {
 }
 
 type resolveSubjectObjectFromPred struct {
-	term *queryTerm
+	term queryTerm
 }
 
 func (op *resolveSubjectObjectFromPred) String() string {
@@ -426,7 +426,7 @@ func (op *resolveSubjectObjectFromPred) SortKey() string {
 	return op.term.Subject.String()
 }
 
-func (op *resolveSubjectObjectFromPred) GetTerm() *queryTerm {
+func (op *resolveSubjectObjectFromPred) GetTerm() queryTerm {
 	return op.term
 }
 
@@ -456,7 +456,7 @@ func (rso *resolveSubjectObjectFromPred) run(ctx *queryContext) error {
 }
 
 type resolveSubjectPredFromObject struct {
-	term *queryTerm
+	term queryTerm
 }
 
 func (op *resolveSubjectPredFromObject) String() string {
@@ -467,7 +467,7 @@ func (op *resolveSubjectPredFromObject) SortKey() string {
 	return op.term.Predicates[0].Predicate.String()
 }
 
-func (op *resolveSubjectPredFromObject) GetTerm() *queryTerm {
+func (op *resolveSubjectPredFromObject) GetTerm() queryTerm {
 	return op.term
 }
 
@@ -540,7 +540,7 @@ func (op *resolveSubjectPredFromObject) run(ctx *queryContext) error {
 }
 
 type resolvePredObjectFromSubject struct {
-	term *queryTerm
+	term queryTerm
 }
 
 func (op *resolvePredObjectFromSubject) String() string {
@@ -551,7 +551,7 @@ func (op *resolvePredObjectFromSubject) SortKey() string {
 	return op.term.Predicates[0].Predicate.String()
 }
 
-func (op *resolvePredObjectFromSubject) GetTerm() *queryTerm {
+func (op *resolvePredObjectFromSubject) GetTerm() queryTerm {
 	return op.term
 }
 
@@ -623,7 +623,7 @@ func (op *resolvePredObjectFromSubject) run(ctx *queryContext) error {
 }
 
 type resolveVarTripleFromSubject struct {
-	term *queryTerm
+	term queryTerm
 }
 
 func (op *resolveVarTripleFromSubject) String() string {
@@ -634,7 +634,7 @@ func (op *resolveVarTripleFromSubject) SortKey() string {
 	return op.term.Subject.String()
 }
 
-func (op *resolveVarTripleFromSubject) GetTerm() *queryTerm {
+func (op *resolveVarTripleFromSubject) GetTerm() queryTerm {
 	return op.term
 }
 
@@ -676,7 +676,7 @@ func (op *resolveVarTripleFromSubject) run(ctx *queryContext) error {
 }
 
 type resolveVarTripleFromObject struct {
-	term *queryTerm
+	term queryTerm
 }
 
 func (op *resolveVarTripleFromObject) String() string {
@@ -687,7 +687,7 @@ func (op *resolveVarTripleFromObject) SortKey() string {
 	return op.term.Object.String()
 }
 
-func (op *resolveVarTripleFromObject) GetTerm() *queryTerm {
+func (op *resolveVarTripleFromObject) GetTerm() queryTerm {
 	return op.term
 }
 
@@ -727,7 +727,7 @@ func (op *resolveVarTripleFromObject) run(ctx *queryContext) error {
 }
 
 type resolveVarTripleFromPredicate struct {
-	term *queryTerm
+	term queryTerm
 }
 
 func (op *resolveVarTripleFromPredicate) String() string {
@@ -738,7 +738,7 @@ func (op *resolveVarTripleFromPredicate) SortKey() string {
 	return op.term.Predicates[0].Predicate.String()
 }
 
-func (op *resolveVarTripleFromPredicate) GetTerm() *queryTerm {
+func (op *resolveVarTripleFromPredicate) GetTerm() queryTerm {
 	return op.term
 }
 
@@ -788,7 +788,7 @@ func (op *resolveVarTripleFromPredicate) run(ctx *queryContext) error {
 }
 
 type resolveVarTripleAll struct {
-	term *queryTerm
+	term queryTerm
 }
 
 func (op *resolveVarTripleAll) String() string {
@@ -799,7 +799,7 @@ func (op *resolveVarTripleAll) SortKey() string {
 	return op.term.Subject.String()
 }
 
-func (op *resolveVarTripleAll) GetTerm() *queryTerm {
+func (op *resolveVarTripleAll) GetTerm() queryTerm {
 	return op.term
 }
 

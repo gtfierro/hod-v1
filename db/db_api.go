@@ -339,7 +339,8 @@ func (db *DB) getQueryResults(q *sparql.Query) ([]*ResultRow, queryStats, error)
 	planStart := time.Now()
 
 	// form dependency graph and build query plan out of it
-	dg := db.sortQueryTerms(q)
+	//dg := db.sortQueryTerms(q)
+	dg := makeDependencyGraph2(q)
 	qp, err := db.formQueryPlan(dg, q)
 	if err != nil {
 		return nil, stats, err

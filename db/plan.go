@@ -24,7 +24,7 @@ const (
 func (db *DB) formQueryPlan(dg *dependencyGraph, q *sparql.Query) (*queryPlan, error) {
 	qp := newQueryPlan(dg, q)
 
-	for _, term := range dg.terms {
+	for _, term := range dg.plan {
 		var (
 			subjectIsVariable = term.Subject.IsVariable()
 			objectIsVariable  = term.Object.IsVariable()
