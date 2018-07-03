@@ -4,10 +4,10 @@ import (
 	"container/list"
 	"fmt"
 	sparql "github.com/gtfierro/hod/lang/ast"
+	"github.com/gtfierro/hod/storage"
 	"github.com/gtfierro/hod/turtle"
 	"github.com/pkg/errors"
 	logrus "github.com/sirupsen/logrus"
-	"github.com/syndtr/goleveldb/leveldb"
 	"time"
 )
 
@@ -25,11 +25,7 @@ var (
 
 // wrapper around the internal k/v store transaction
 type transaction struct {
-	entity               *leveldb.Transaction
-	pk                   *leveldb.Transaction
-	graph                *leveldb.Transaction
-	ext                  *leveldb.Transaction
-	pred                 *leveldb.Transaction
+	tx                   storage.Transaction
 	predbatch            map[Key]*PredicateEntity
 	triplesAdded         int
 	hashes               map[turtle.URI]Key
@@ -45,74 +41,21 @@ func (db *DB) openTransaction() (tx *transaction, err error) {
 		predbatch:            make(map[Key]*PredicateEntity),
 		cache:                db.cache,
 	}
+	tx.tx, err = db.backing.OpenTransaction()
+	if err != nil {
+		return nil, err
+	}
 	t := &traversal{under: tx}
 	tx.t = t
-	getTransaction := func(db *leveldb.DB) (*leveldb.Transaction, error) {
-		if ltx, err := db.OpenTransaction(); err != nil {
-			if tx.entity != nil {
-				tx.entity.Discard()
-			}
-			if tx.pk != nil {
-				tx.pk.Discard()
-			}
-			if tx.graph != nil {
-				tx.graph.Discard()
-			}
-			if tx.ext != nil {
-				tx.ext.Discard()
-			}
-			if tx.pred != nil {
-				tx.pred.Discard()
-			}
-			return nil, err
-		} else {
-			return ltx, err
-		}
-	}
-	if tx.entity, err = getTransaction(db.entityDB); err != nil {
-		return
-	}
-	if tx.pk, err = getTransaction(db.pkDB); err != nil {
-		return
-	}
-	if tx.graph, err = getTransaction(db.graphDB); err != nil {
-		return
-	}
-	if tx.ext, err = getTransaction(db.extendedDB); err != nil {
-		return
-	}
-	if tx.pred, err = getTransaction(db.predDB); err != nil {
-		return
-	}
 	return
 }
 
 func (tx *transaction) discard() {
-	tx.entity.Discard()
-	tx.pk.Discard()
-	tx.graph.Discard()
-	tx.ext.Discard()
-	tx.pred.Discard()
+	tx.tx.Release()
 }
 
 func (tx *transaction) commit() error {
-	if err := tx.entity.Commit(); err != nil {
-		tx.discard()
-		return err
-	}
-	if err := tx.pk.Commit(); err != nil {
-		tx.discard()
-		return err
-	}
-	if err := tx.graph.Commit(); err != nil {
-		tx.discard()
-		return err
-	}
-	if err := tx.ext.Commit(); err != nil {
-		tx.discard()
-		return err
-	}
-	if err := tx.pred.Commit(); err != nil {
+	if err := tx.tx.Commit(); err != nil {
 		tx.discard()
 		return err
 	}
@@ -120,23 +63,21 @@ func (tx *transaction) commit() error {
 }
 
 func (tx *transaction) done() error {
-	var b = new(leveldb.Batch)
 	for key, predent := range tx.predbatch {
 		bytes, err := predent.MarshalMsg(nil)
 		if err != nil {
 			return err
 		}
-		b.Put(key[:], bytes)
-	}
-	if err := tx.pred.Write(b, nil); err != nil {
-		return err
+		if err := tx.tx.Put(storage.PredBucket, key[:], bytes); err != nil {
+			return err
+		}
 	}
 	return tx.commit()
 }
 
 func (tx *transaction) getHash(uri turtle.URI) (Key, error) {
 	var ret Key
-	val, err := tx.entity.Get(uri.Bytes(), nil)
+	val, err := tx.tx.Get(storage.EntityBucket, uri.Bytes())
 	if err != nil {
 		return ret, fmt.Errorf("Got non-existent hash but it should exist for %s", uri)
 	}
@@ -148,7 +89,7 @@ func (tx *transaction) getURI(hash Key) (turtle.URI, error) {
 	if hash == emptyKey {
 		return turtle.URI{}, nil
 	}
-	val, err := tx.pk.Get(hash[:], nil)
+	val, err := tx.tx.Get(storage.PKBucket, hash[:])
 	if err != nil {
 		return turtle.URI{}, errors.Wrapf(err, "Could not get URI for %v", hash)
 	}
@@ -164,7 +105,7 @@ func (tx *transaction) putEntity(ent *Entity) error {
 	if err != nil {
 		return err
 	}
-	return tx.graph.Put(ent.PK[:], bytes, nil)
+	return tx.tx.Put(storage.GraphBucket, ent.PK[:], bytes)
 }
 
 func (tx *transaction) getEntityByURI(uri turtle.URI) (*Entity, error) {
@@ -177,8 +118,8 @@ func (tx *transaction) getEntityByURI(uri turtle.URI) (*Entity, error) {
 
 func (tx *transaction) getEntityByHash(hash Key) (*Entity, error) {
 	var entity = NewEntity()
-	bytes, err := tx.graph.Get(hash[:], nil)
-	if err != nil && err != leveldb.ErrNotFound {
+	bytes, err := tx.tx.Get(storage.GraphBucket, hash[:])
+	if err != nil && err != storage.ErrNotFound {
 		return nil, errors.Wrap(err, "Error getting entity from transaction")
 	}
 	_, err = entity.UnmarshalMsg(bytes)
@@ -189,7 +130,7 @@ func (tx *transaction) getEntityByHash(hash Key) (*Entity, error) {
 }
 
 func (tx *transaction) getExtendedIndexByHash(hash Key) (*EntityExtendedIndex, error) {
-	bytes, err := tx.ext.Get(hash[:], nil)
+	bytes, err := tx.tx.Get(storage.ExtendedBucket, hash[:])
 	if err != nil {
 		return nil, err
 	}
@@ -209,7 +150,7 @@ func (tx *transaction) getExtendedIndexByURI(uri turtle.URI) (*EntityExtendedInd
 func (tx *transaction) saveExtendedIndex(index *EntityExtendedIndex) error {
 	if bytes, err := index.MarshalMsg(nil); err != nil {
 		return errors.Wrap(err, "Error serializing extended index from transaction")
-	} else if err := tx.ext.Put(index.PK[:], bytes, nil); err != nil {
+	} else if err := tx.tx.Put(storage.ExtendedBucket, index.PK[:], bytes); err != nil {
 		return errors.Wrap(err, "Error inserting extended index in transaction")
 	}
 	return nil
@@ -228,10 +169,10 @@ func (tx *transaction) getPredicateByHash(hash Key) (*PredicateEntity, error) {
 		return pred, nil
 	}
 	var pred = NewPredicateEntity()
-	bytes, err := tx.pred.Get(hash[:], nil)
-	if err != nil && err != leveldb.ErrNotFound {
+	bytes, err := tx.tx.Get(storage.PredBucket, hash[:])
+	if err != nil && err != storage.ErrNotFound {
 		return nil, errors.Wrap(err, "Error getting predicate from transaction")
-	} else if err == leveldb.ErrNotFound {
+	} else if err == storage.ErrNotFound {
 		// add predicate entity to predhash db
 		pred.PK = hash
 		tx.predbatch[pred.PK] = pred
@@ -273,7 +214,7 @@ func (tx *transaction) addTriples(dataset turtle.DataSet) error {
 	reverseEdgeFindStart := time.Now()
 	var predicatesAdded int
 	pred, err := tx.getPredicateByURI(INVERSEOF)
-	if err != nil && err != leveldb.ErrNotFound {
+	if err != nil && err != storage.ErrNotFound {
 		logrus.WithError(err).Error("Could not load INVERSEOF pred")
 	} else if err == nil {
 		for subject, objectMap := range pred.Subjects {
@@ -399,7 +340,7 @@ func (tx *transaction) addTriple(triple turtle.Triple) error {
 
 	pred, err := tx.getPredicateByURI(triple.Predicate)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "could not get pred")
 	}
 	if pred.AddSubjectObject(subjectHash, objectHash) {
 		tx.predbatch[pred.PK] = pred
@@ -407,20 +348,20 @@ func (tx *transaction) addTriple(triple turtle.Triple) error {
 
 	subject, err := tx.getEntityByURI(triple.Subject)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "could not get subject")
 	}
 	object, err := tx.getEntityByURI(triple.Object)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "could not get object")
 	}
 	if subject.AddOutEdge(predicateHash, object.PK) {
 		if err = tx.putEntity(subject); err != nil {
-			return err
+			return errors.Wrap(err, "could not set out edge")
 		}
 	}
 	if object.AddInEdge(predicateHash, subject.PK) {
 		if err = tx.putEntity(object); err != nil {
-			return err
+			return errors.Wrap(err, "could not set in edge")
 		}
 	}
 
@@ -440,16 +381,16 @@ func (tx *transaction) addURI(uri turtle.URI) error {
 	var found bool
 
 	if hashdest, found = tx.hashes[uri]; !found {
-		if _hashdest, err := tx.entity.Get(uri.Bytes(), nil); err != nil && err != leveldb.ErrNotFound {
+		if _hashdest, err := tx.tx.Get(storage.EntityBucket, uri.Bytes()); err != nil && err != storage.ErrNotFound {
 			return errors.Wrap(err, "Could not check key existence")
 		} else if err == nil {
 			copy(hashdest[:], _hashdest)
-		} else if err == leveldb.ErrNotFound {
+		} else if err == storage.ErrNotFound {
 			// else if not found, then generate it
 			var salt = uint64(0)
 			hashURI(uri, hashdest[:], salt)
 			for {
-				if exists, err := tx.pk.Has(hashdest[:], nil); err == nil && exists {
+				if exists, err := tx.tx.Has(storage.PKBucket, hashdest[:]); err == nil && exists {
 					log.Warning("hash exists", uri)
 					salt += 1
 					hashURI(uri, hashdest[:], salt)
@@ -460,10 +401,10 @@ func (tx *transaction) addURI(uri turtle.URI) error {
 				}
 			}
 			// insert the hash into the entity and prefix dbs
-			if err := tx.entity.Put(uri.Bytes(), hashdest[:], nil); err != nil {
+			if err := tx.tx.Put(storage.EntityBucket, uri.Bytes(), hashdest[:]); err != nil {
 				return errors.Wrapf(err, "Error inserting uri %s", uri.String())
 			}
-			if err := tx.pk.Put(hashdest[:], uri.Bytes(), nil); err != nil {
+			if err := tx.tx.Put(storage.PKBucket, hashdest[:], uri.Bytes()); err != nil {
 				return errors.Wrapf(err, "Error inserting pk %s", hashdest)
 			}
 		}
@@ -471,12 +412,12 @@ func (tx *transaction) addURI(uri turtle.URI) error {
 	}
 
 	// insert the hash into the graph index if it doesn't exist already
-	if exists, err := tx.graph.Has(hashdest[:], nil); err == nil && !exists {
+	if exists, err := tx.tx.Has(storage.GraphBucket, hashdest[:]); err == nil && !exists {
 		ent := NewEntity()
 		ent.PK = hashdest
 		if bytes, err := ent.MarshalMsg(nil); err != nil {
 			return err
-		} else if err := tx.graph.Put(hashdest[:], bytes, nil); err != nil {
+		} else if err := tx.tx.Put(storage.GraphBucket, hashdest[:], bytes); err != nil {
 			return err
 		}
 	} else if err != nil {
@@ -501,14 +442,14 @@ func (tx *transaction) rollupPredicate(predicateHash Key) error {
 	for subjectStringHash := range predicate.Subjects {
 		var subjectHash Key
 		subjectHash.FromSlice([]byte(subjectStringHash))
-		if exists, err := tx.ext.Has(subjectHash[:], nil); err == nil && !exists {
+		if exists, err := tx.tx.Has(storage.ExtendedBucket, subjectHash[:]); err == nil && !exists {
 			subjectIndex := NewEntityExtendedIndex()
 			subjectIndex.PK = subjectHash
 			bytes, err := subjectIndex.MarshalMsg(nil)
 			if err != nil {
 				return err
 			}
-			if err := tx.ext.Put(subjectHash[:], bytes, nil); err != nil {
+			if err := tx.tx.Put(storage.ExtendedBucket, subjectHash[:], bytes); err != nil {
 				return err
 			}
 		} else if err != nil {
@@ -544,7 +485,7 @@ func (tx *transaction) rollupPredicate(predicateHash Key) error {
 	for objectStringHash := range predicate.Objects {
 		var objectHash Key
 		objectHash.FromSlice([]byte(objectStringHash))
-		if exists, err := tx.ext.Has(objectHash[:], nil); err == nil && !exists {
+		if exists, err := tx.tx.Has(storage.ExtendedBucket, objectHash[:]); err == nil && !exists {
 			objectIndex := NewEntityExtendedIndex()
 			objectIndex.PK = objectHash
 			if err := tx.saveExtendedIndex(objectIndex); err != nil {
@@ -610,7 +551,7 @@ func (tx *transaction) getReverseRelationship(forward turtle.URI) (reverse turtl
 }
 
 func (tx *transaction) iterAllEntities(F func(Key, *Entity) bool) error {
-	iter := tx.graph.NewIterator(nil, nil)
+	iter := tx.tx.Iterate(storage.GraphBucket)
 	for iter.Next() {
 		var subjectHash Key
 		entityHash := iter.Key()

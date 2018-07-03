@@ -5,85 +5,37 @@ import (
 
 	//"github.com/coocood/freecache"
 	sparql "github.com/gtfierro/hod/lang/ast"
+	"github.com/gtfierro/hod/storage"
 	"github.com/gtfierro/hod/turtle"
 	"github.com/pkg/errors"
-	"github.com/syndtr/goleveldb/leveldb"
 )
 
 type snapshot struct {
-	db               *DB
-	entitySnapshot   *leveldb.Snapshot
-	pkSnapshot       *leveldb.Snapshot
-	predSnapshot     *leveldb.Snapshot
-	graphSnapshot    *leveldb.Snapshot
-	extendedSnapshot *leveldb.Snapshot
+	db       *DB
+	snapshot storage.Traversable
 }
 
 func (db *DB) snapshot() (snap *snapshot, err error) {
-	snap = &snapshot{
-		db: db,
-	}
-	getSnapshot := func(db *leveldb.DB) (*leveldb.Snapshot, error) {
-		if dbsnap, err := db.GetSnapshot(); err != nil {
-			if snap.entitySnapshot != nil {
-				snap.entitySnapshot.Release()
-			}
-			if snap.pkSnapshot != nil {
-				snap.pkSnapshot.Release()
-			}
-			if snap.predSnapshot != nil {
-				snap.predSnapshot.Release()
-			}
-			if snap.pkSnapshot != nil {
-				snap.pkSnapshot.Release()
-			}
-			if snap.extendedSnapshot != nil {
-				snap.extendedSnapshot.Release()
-			}
-			return nil, err
-		} else {
-			return dbsnap, nil
-		}
-	}
-	if snap.entitySnapshot, err = getSnapshot(db.entityDB); err != nil {
-		return nil, err
-	}
-	if snap.pkSnapshot, err = getSnapshot(db.pkDB); err != nil {
-		return nil, err
-	}
-	if snap.predSnapshot, err = getSnapshot(db.predDB); err != nil {
-		return nil, err
-	}
-	if snap.graphSnapshot, err = getSnapshot(db.graphDB); err != nil {
-		return nil, err
-	}
-	if snap.extendedSnapshot, err = getSnapshot(db.extendedDB); err != nil {
+	snap = &snapshot{db: db}
+	if snap.snapshot, err = db.backing.OpenSnapshot(); err != nil {
 		return nil, err
 	}
 	return
 }
 
 func (snap *snapshot) Close() {
-	snap.entitySnapshot.Release()
-	snap.pkSnapshot.Release()
-	snap.predSnapshot.Release()
-	snap.graphSnapshot.Release()
-	snap.extendedSnapshot.Release()
+	snap.snapshot.Release()
 }
 
 func (snap *snapshot) done() error {
-	snap.entitySnapshot.Release()
-	snap.pkSnapshot.Release()
-	snap.predSnapshot.Release()
-	snap.graphSnapshot.Release()
-	snap.extendedSnapshot.Release()
+	snap.snapshot.Release()
 	return nil
 }
 
 /*** Get URI methods ***/
 
 func (snap *snapshot) getURI(hash Key) (turtle.URI, error) {
-	val, err := snap.pkSnapshot.Get(hash[:], nil)
+	val, err := snap.snapshot.Get(storage.PKBucket, hash[:])
 	if err != nil {
 		return turtle.URI{}, err
 	}
@@ -113,10 +65,10 @@ func (snap *snapshot) getPredicateByURI(uri turtle.URI) (*PredicateEntity, error
 
 func (snap *snapshot) getPredicateByHash(hash Key) (*PredicateEntity, error) {
 	var pred = NewPredicateEntity()
-	bytes, err := snap.predSnapshot.Get(hash[:], nil)
-	if err != nil && err != leveldb.ErrNotFound {
+	bytes, err := snap.snapshot.Get(storage.PredBucket, hash[:])
+	if err != nil && err != storage.ErrNotFound {
 		return nil, errors.Wrap(err, "Error getting predicate from transaction")
-	} else if err == leveldb.ErrNotFound {
+	} else if err == storage.ErrNotFound {
 		pred.PK = hash
 		return pred, nil
 	} else {
@@ -130,7 +82,7 @@ func (snap *snapshot) getPredicateByHash(hash Key) (*PredicateEntity, error) {
 
 func (snap *snapshot) getHash(entity turtle.URI) (Key, error) {
 	var rethash Key
-	val, err := snap.entitySnapshot.Get(entity.Bytes(), nil)
+	val, err := snap.snapshot.Get(storage.EntityBucket, entity.Bytes())
 	if err != nil {
 		return emptyKey, errors.Wrapf(err, "Could not get Entity for %s", entity)
 	}
@@ -170,7 +122,7 @@ func (snap *snapshot) MustGetEntityFromHash(hash Key) *Entity {
 }
 
 func (snap *snapshot) getEntityByHash(hash Key) (*Entity, error) {
-	bytes, err := snap.graphSnapshot.Get(hash[:], nil)
+	bytes, err := snap.snapshot.Get(storage.GraphBucket, hash[:])
 	if err != nil {
 		return nil, errors.Wrapf(err, "Could not get Entity from graph for %s", snap.MustGetURI(hash))
 	}
@@ -189,10 +141,10 @@ func (snap *snapshot) getExtendedIndexByURI(uri turtle.URI) (*EntityExtendedInde
 
 /*** Entity Index methods ***/
 func (snap *snapshot) getExtendedIndexByHash(hash Key) (*EntityExtendedIndex, error) {
-	bytes, err := snap.extendedSnapshot.Get(hash[:], nil)
-	if err != nil && err != leveldb.ErrNotFound {
+	bytes, err := snap.snapshot.Get(storage.ExtendedBucket, hash[:])
+	if err != nil && err != storage.ErrNotFound {
 		return nil, errors.Wrapf(err, "Could not get EntityIndex from graph for %s", snap.MustGetURI(hash))
-	} else if err == leveldb.ErrNotFound {
+	} else if err == storage.ErrNotFound {
 		return nil, nil
 	}
 	ent := NewEntityExtendedIndex()
@@ -234,7 +186,7 @@ func (snap *snapshot) followPathFromObject(object *Entity, results *keymap, sear
 	stack.PushFront(object)
 
 	predHash, err := snap.getHash(pattern.Predicate)
-	if err != nil && err == leveldb.ErrNotFound {
+	if err != nil && err == storage.ErrNotFound {
 		log.Infof("Adding unseen predicate %s", pattern.Predicate)
 		panic("GOT TO HERE")
 		//var hashdest Key
@@ -610,7 +562,7 @@ func (snap *snapshot) getPredicatesFromSubject(subject *Entity) *keymap {
 }
 
 func (snap *snapshot) iterAllEntities(F func(Key, *Entity) bool) error {
-	iter := snap.graphSnapshot.NewIterator(nil, nil)
+	iter := snap.snapshot.Iterate(storage.GraphBucket)
 	for iter.Next() {
 		var subjectHash Key
 		entityHash := iter.Key()

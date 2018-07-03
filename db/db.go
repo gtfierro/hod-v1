@@ -7,33 +7,32 @@ import (
 	"sync"
 
 	"github.com/gtfierro/hod/config"
+	"github.com/gtfierro/hod/storage"
 	"github.com/gtfierro/hod/turtle"
 
 	"github.com/blevesearch/bleve"
 	"github.com/coocood/freecache"
 	"github.com/pkg/errors"
-	"github.com/syndtr/goleveldb/leveldb"
-	"github.com/syndtr/goleveldb/leveldb/filter"
-	"github.com/syndtr/goleveldb/leveldb/opt"
 	"github.com/tinylib/msgp/msgp"
 )
 
 var emptyKey = Key{}
 
 type DB struct {
-	path string
-	name string
+	path    string
+	name    string
+	backing storage.StorageProvider
 	// store []byte(entity URI) => primary key
-	entityDB *leveldb.DB
+	//entityDB *leveldb.DB
 	// store primary key => [](entity URI)
-	pkDB *leveldb.DB
+	//pkDB *leveldb.DB
 	// predicate index: stores "children" of predicates
-	predDB    *leveldb.DB
+	//predDB    *leveldb.DB
 	predIndex map[turtle.URI]*PredicateEntity
 	// graph structure
-	graphDB *leveldb.DB
+	//graphDB *leveldb.DB
 	// extended index DB
-	extendedDB *leveldb.DB
+	//extendedDB *leveldb.DB
 	// store relationships and their inverses
 	relationships map[turtle.URI]turtle.URI
 	relLock       sync.RWMutex
@@ -60,46 +59,14 @@ type DB struct {
 }
 
 func newDB(name string, cfg *config.Config) (*DB, error) {
-	path := strings.TrimSuffix(cfg.DBPath, "/")
-
-	options := &opt.Options{
-		Filter: filter.NewBloomFilter(32),
+	store := &storage.LevelDBStorageProvider{}
+	//store := &storage.RedisStorageProvider{}
+	if err := store.Initialize(name, cfg); err != nil {
+		return nil, err
 	}
-
-	// set up entity, pk databases
-	entityDBPath := path + "/db-entities"
-	entityDB, err := leveldb.OpenFile(entityDBPath, options)
-	if err != nil {
-		return nil, errors.Wrapf(err, "Could not open entityDB file %s", entityDBPath)
-	}
-
-	pkDBPath := path + "/db-pk"
-	pkDB, err := leveldb.OpenFile(pkDBPath, options)
-	if err != nil {
-		return nil, errors.Wrapf(err, "Could not open pkDB file %s", pkDBPath)
-	}
-
-	// set up entity, pk databases
-	extendedDBPath := path + "/db-extended"
-	extendedDB, err := leveldb.OpenFile(extendedDBPath, options)
-	if err != nil {
-		return nil, errors.Wrapf(err, "Could not open extendedDB file %s", extendedDBPath)
-	}
-
-	graphDBPath := path + "/db-graph"
-	graphDB, err := leveldb.OpenFile(graphDBPath, options)
-	if err != nil {
-		return nil, errors.Wrapf(err, "Could not open graphDB file %s", graphDBPath)
-	}
-	predDBPath := path + "/db-pred"
-	predDB, err := leveldb.OpenFile(predDBPath, options)
-	if err != nil {
-		return nil, errors.Wrapf(err, "Could not open predDB file %s", predDBPath)
-	}
-
 	mapping := bleve.NewIndexMapping()
-	var index bleve.Index
-	index, err = bleve.New(path+"/myExampleIndex.bleve", mapping)
+	path := strings.TrimSuffix(cfg.DBPath, "/")
+	index, err := bleve.New(path+"/myExampleIndex.bleve", mapping)
 	if err != nil && err == bleve.ErrorIndexPathExists {
 		index, err = bleve.Open(path + "/myExampleIndex.bleve")
 	}
@@ -110,11 +77,7 @@ func newDB(name string, cfg *config.Config) (*DB, error) {
 	db := &DB{
 		path:                   path,
 		name:                   name,
-		entityDB:               entityDB,
-		extendedDB:             extendedDB,
-		pkDB:                   pkDB,
-		graphDB:                graphDB,
-		predDB:                 predDB,
+		backing:                store,
 		predIndex:              make(map[turtle.URI]*PredicateEntity),
 		relationships:          make(map[turtle.URI]turtle.URI),
 		transitiveEdges:        make(map[turtle.URI]struct{}),
@@ -261,17 +224,12 @@ func newDB(name string, cfg *config.Config) (*DB, error) {
 }
 
 func (db *DB) Close() {
-	checkError := func(err error) {
-		if err != nil {
-			log.Fatal(err)
-		}
+	if err := db.backing.Close(); err != nil {
+		log.Fatal(err)
 	}
-	checkError(db.entityDB.Close())
-	checkError(db.pkDB.Close())
-	checkError(db.predDB.Close())
-	checkError(db.graphDB.Close())
-	checkError(db.extendedDB.Close())
-	checkError(db.textidx.Close())
+	if err := db.textidx.Close(); err != nil {
+		log.Fatal(err)
+	}
 }
 
 func (db *DB) buildTextIndex(dataset turtle.DataSet) error {
@@ -287,41 +245,6 @@ func (db *DB) buildTextIndex(dataset turtle.DataSet) error {
 	}
 	if err := db.textidx.Batch(b); err != nil {
 		return errors.Wrap(err, "Could not save batch text index")
-	}
-	return nil
-}
-
-func (db *DB) insertEntity(entity turtle.URI, hashdest []byte) error {
-	// check if we've inserted Subject already
-	if exists, err := db.entityDB.Has(entity.Bytes(), nil); err == nil && exists {
-		// populate hash anyway
-		hash, err := db.entityDB.Get(entity.Bytes(), nil)
-		copy(hashdest, hash[:])
-		return err
-	} else if err != nil {
-		return errors.Wrapf(err, "Error checking db membership for %s", entity.String())
-	}
-	// generate the hash
-	var salt = uint64(0)
-	hashURI(entity, hashdest, salt)
-	for {
-		if exists, err := db.pkDB.Has(hashdest, nil); err == nil && exists {
-			log.Warning("hash exists")
-			salt += 1
-			hashURI(entity, hashdest, salt)
-		} else if err != nil {
-			return errors.Wrapf(err, "Error checking db membership for %v", hashdest)
-		} else {
-			break
-		}
-	}
-
-	// insert the hash into the entity and prefix dbs
-	if err := db.entityDB.Put(entity.Bytes(), hashdest, nil); err != nil {
-		return errors.Wrapf(err, "Error inserting entity %s", entity.String())
-	}
-	if err := db.pkDB.Put(hashdest, entity.Bytes(), nil); err != nil {
-		return errors.Wrapf(err, "Error inserting pk %s", hashdest)
 	}
 	return nil
 }

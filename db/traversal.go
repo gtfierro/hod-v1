@@ -3,9 +3,9 @@ package db
 import (
 	"container/list"
 	sparql "github.com/gtfierro/hod/lang/ast"
+	"github.com/gtfierro/hod/storage"
 	"github.com/gtfierro/hod/turtle"
 	"github.com/pkg/errors"
-	"github.com/syndtr/goleveldb/leveldb"
 )
 
 type traversable interface {
@@ -156,7 +156,7 @@ func (t *traversal) followPathFromObject(object *Entity, results *keymap, search
 	stack.PushFront(object)
 
 	predHash, err := t.getHash(pattern.Predicate)
-	if err != nil && err == leveldb.ErrNotFound {
+	if err != nil && err == storage.ErrNotFound {
 		log.Infof("Adding unseen predicate %s", pattern.Predicate)
 		panic("GOT TO HERE")
 		//var hashdest Key

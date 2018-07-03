@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	sparql "github.com/gtfierro/hod/lang/ast"
+	"github.com/gtfierro/hod/storage"
 	"github.com/pkg/errors"
-	"github.com/syndtr/goleveldb/leveldb"
 )
 
 type operation interface {
@@ -37,9 +37,9 @@ func (rs *resolveSubject) GetTerm() queryTerm {
 func (rs *resolveSubject) run(ctx *queryContext) error {
 	// fetch the object from the graph
 	object, err := ctx.t.getHash(rs.term.Object)
-	if err != nil && err != leveldb.ErrNotFound {
+	if err != nil && err != storage.ErrNotFound {
 		return errors.Wrap(err, fmt.Sprintf("%+v", rs.term))
-	} else if err == leveldb.ErrNotFound {
+	} else if err == storage.ErrNotFound {
 		return nil
 	}
 	subjectVar := rs.term.Subject.String()
@@ -87,9 +87,9 @@ func (ro *resolveObject) GetTerm() queryTerm {
 func (ro *resolveObject) run(ctx *queryContext) error {
 	// fetch the subject from the graph
 	subject, err := ctx.t.getHash(ro.term.Subject)
-	if err != nil && err != leveldb.ErrNotFound {
+	if err != nil && err != storage.ErrNotFound {
 		return errors.Wrap(err, fmt.Sprintf("%+v", ro.term))
-	} else if err == leveldb.ErrNotFound {
+	} else if err == storage.ErrNotFound {
 		return nil
 	}
 	objectVar := ro.term.Object.String()
@@ -134,16 +134,16 @@ func (op *resolvePredicate) GetTerm() queryTerm {
 func (op *resolvePredicate) run(ctx *queryContext) error {
 	// fetch the subject from the graph
 	subject, err := ctx.t.getEntityByURI(op.term.Subject)
-	if err != nil && err != leveldb.ErrNotFound {
+	if err != nil && err != storage.ErrNotFound {
 		return errors.Wrap(err, fmt.Sprintf("%+v", op.term))
-	} else if err == leveldb.ErrNotFound {
+	} else if err == storage.ErrNotFound {
 		return nil
 	}
 	// now get object
 	object, err := ctx.t.getEntityByURI(op.term.Object)
-	if err != nil && err != leveldb.ErrNotFound {
+	if err != nil && err != storage.ErrNotFound {
 		return errors.Wrap(err, fmt.Sprintf("%+v", op.term))
-	} else if err == leveldb.ErrNotFound {
+	} else if err == storage.ErrNotFound {
 		return nil
 	}
 
@@ -482,9 +482,9 @@ func (op *resolveSubjectPredFromObject) run(ctx *queryContext) error {
 
 	// fetch the object from the graph
 	object, err := ctx.t.getEntityByURI(op.term.Object)
-	if err != nil && err != leveldb.ErrNotFound {
+	if err != nil && err != storage.ErrNotFound {
 		return errors.Wrap(err, fmt.Sprintf("%+v", op.term))
-	} else if err == leveldb.ErrNotFound {
+	} else if err == storage.ErrNotFound {
 		return nil
 	}
 
@@ -561,9 +561,9 @@ func (op *resolvePredObjectFromSubject) run(ctx *queryContext) error {
 
 	// fetch the subject from the graph
 	subject, err := ctx.t.getEntityByURI(op.term.Subject)
-	if err != nil && err != leveldb.ErrNotFound {
+	if err != nil && err != storage.ErrNotFound {
 		return errors.Wrap(err, fmt.Sprintf("%+v", op.term))
-	} else if err == leveldb.ErrNotFound {
+	} else if err == storage.ErrNotFound {
 		return nil
 	}
 
