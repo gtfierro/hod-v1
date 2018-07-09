@@ -17,7 +17,7 @@ type snapshot struct {
 
 func (db *DB) snapshot() (snap *snapshot, err error) {
 	snap = &snapshot{db: db}
-	if snap.snapshot, err = db.backing.OpenSnapshot(); err != nil {
+	if snap.snapshot, err = db.backing.OpenVersion(0); err != nil {
 		return nil, err
 	}
 	return

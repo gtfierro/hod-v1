@@ -278,13 +278,11 @@ func (hod *HodDB) RunQuery(q *sparql.Query) (QueryResult, error) {
 			i := unionedRows.DeleteMax()
 			for i != nil {
 				row := i.(*ResultRow)
-				if !q.IsInsert() {
-					m := make(ResultMap)
-					for idx, vname := range q.Select.Vars {
-						m[vname] = row.row[idx]
-					}
-					result.Rows = append(result.Rows, m)
+				m := make(ResultMap)
+				for idx, vname := range q.Select.Vars {
+					m[vname] = row.row[idx]
 				}
+				result.Rows = append(result.Rows, m)
 				result.Count += 1
 				finishResultRow(row)
 				i = unionedRows.DeleteMax()

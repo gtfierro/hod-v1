@@ -19,20 +19,10 @@ import (
 var emptyKey = Key{}
 
 type DB struct {
-	path    string
-	name    string
-	backing storage.StorageProvider
-	// store []byte(entity URI) => primary key
-	//entityDB *leveldb.DB
-	// store primary key => [](entity URI)
-	//pkDB *leveldb.DB
-	// predicate index: stores "children" of predicates
-	//predDB    *leveldb.DB
+	path      string
+	name      string
+	backing   storage.StorageProvider
 	predIndex map[turtle.URI]*PredicateEntity
-	// graph structure
-	//graphDB *leveldb.DB
-	// extended index DB
-	//extendedDB *leveldb.DB
 	// store relationships and their inverses
 	relationships map[turtle.URI]turtle.URI
 	relLock       sync.RWMutex
@@ -40,7 +30,6 @@ type DB struct {
 	transitiveEdges map[turtle.URI]struct{}
 	// store the namespace prefixes as strings
 	namespaces map[string]string
-	// cache for entity hashes
 	// config options for output
 	showDependencyGraph    bool
 	showQueryPlan          bool
@@ -149,6 +138,7 @@ func newDB(name string, cfg *config.Config) (*DB, error) {
 
 			tx, err := db.openTransaction()
 			if err != nil {
+				log.Error(err)
 				tx.discard()
 				panic(err)
 			}
