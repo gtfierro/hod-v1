@@ -11,7 +11,6 @@ import (
 	"github.com/gtfierro/hod/turtle"
 
 	"github.com/blevesearch/bleve"
-	"github.com/coocood/freecache"
 	"github.com/pkg/errors"
 	"github.com/tinylib/msgp/msgp"
 )
@@ -36,10 +35,7 @@ type DB struct {
 	showQueryPlanLatencies bool
 	showOperationLatencies bool
 	showQueryLatencies     bool
-	// cache for query results
-	queryCache        *freecache.Cache
-	queryCacheEnabled bool
-	loading           bool
+	loading                bool
 
 	cache *dbcache
 
@@ -76,14 +72,9 @@ func newDB(name string, cfg *config.Config) (*DB, error) {
 		showQueryPlanLatencies: cfg.ShowQueryPlanLatencies,
 		showOperationLatencies: cfg.ShowOperationLatencies,
 		showQueryLatencies:     cfg.ShowQueryLatencies,
-		queryCacheEnabled:      !cfg.DisableQueryCache,
 		loading:                false,
 		textidx:                index,
 		cache:                  newCache(16),
-	}
-
-	if db.queryCacheEnabled {
-		db.queryCache = freecache.NewCache(64 * 1024 * 1024) // 64 MB
 	}
 
 	// load predIndex and relationships from database
