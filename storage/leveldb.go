@@ -2,7 +2,11 @@ package storage
 
 import (
 	"os"
+	"path/filepath"
+	"strconv"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/gtfierro/hod/config"
 
@@ -20,7 +24,16 @@ func init() {
 }
 
 type LevelDBStorageProvider struct {
-	path       string
+	path            string
+	name            string
+	cfg             *config.Config
+	loaded_versions sync.Map
+	sync.Mutex
+}
+
+type levelDBInstance struct {
+	name       string
+	version    uint64
 	entityDB   *leveldb.DB
 	pkDB       *leveldb.DB
 	predDB     *leveldb.DB
@@ -28,48 +41,7 @@ type LevelDBStorageProvider struct {
 	extendedDB *leveldb.DB
 }
 
-func (ldb *LevelDBStorageProvider) Initialize(name string, cfg *config.Config) (err error) {
-	ldb.path = strings.TrimSuffix(cfg.DBPath, "/")
-	options := &opt.Options{
-		Filter: filter.NewBloomFilter(32),
-	}
-
-	// set up entity, pk databases
-	entityDBPath := ldb.path + "/db-entities"
-	ldb.entityDB, err = leveldb.OpenFile(entityDBPath, options)
-	if err != nil {
-		return errors.Wrapf(err, "Could not open entityDB file %s", entityDBPath)
-	}
-
-	pkDBPath := ldb.path + "/db-pk"
-	ldb.pkDB, err = leveldb.OpenFile(pkDBPath, options)
-	if err != nil {
-		return errors.Wrapf(err, "Could not open pkDB file %s", pkDBPath)
-	}
-
-	// set up entity, pk databases
-	extendedDBPath := ldb.path + "/db-extended"
-	ldb.extendedDB, err = leveldb.OpenFile(extendedDBPath, options)
-	if err != nil {
-		return errors.Wrapf(err, "Could not open extendedDB file %s", extendedDBPath)
-	}
-
-	graphDBPath := ldb.path + "/db-graph"
-	ldb.graphDB, err = leveldb.OpenFile(graphDBPath, options)
-	if err != nil {
-		return errors.Wrapf(err, "Could not open graphDB file %s", graphDBPath)
-	}
-
-	predDBPath := ldb.path + "/db-pred"
-	ldb.predDB, err = leveldb.OpenFile(predDBPath, options)
-	if err != nil {
-		return errors.Wrapf(err, "Could not open predDB file %s", predDBPath)
-	}
-
-	return nil
-}
-
-func (ldb *LevelDBStorageProvider) Close() error {
+func (ldb *levelDBInstance) Close() error {
 	checkError := func(err error) {
 		if err != nil {
 			logrus.Fatal(err)
@@ -83,91 +55,243 @@ func (ldb *LevelDBStorageProvider) Close() error {
 	return nil
 }
 
-func (ldb *LevelDBStorageProvider) OpenTransaction() (Transaction, error) {
-	tx := &LevelDBTransaction{}
-	getTransaction := func(db *leveldb.DB) (*leveldb.Transaction, error) {
-		if ltx, err := db.OpenTransaction(); err != nil {
-			if tx.entity != nil {
-				tx.entity.Discard()
-			}
-			if tx.pk != nil {
-				tx.pk.Discard()
-			}
-			if tx.graph != nil {
-				tx.graph.Discard()
-			}
-			if tx.ext != nil {
-				tx.ext.Discard()
-			}
-			if tx.pred != nil {
-				tx.pred.Discard()
-			}
-			return nil, err
-		} else {
-			return ltx, err
-		}
+func (ldb *LevelDBStorageProvider) Initialize(name string, cfg *config.Config) (err error) {
+	ldb.path = strings.TrimSuffix(cfg.DBPath, "/")
+	//ldb.name = name
+	path_base := filepath.Join(ldb.path, strconv.FormatUint(ldb.latest_version(), 10))
+	logrus.Warning("Creating ", path_base)
+	err = os.MkdirAll(path_base, 0755)
+	if err != nil {
+		logrus.Warning(err)
+		return err
 	}
-	var err error
-	if tx.entity, err = getTransaction(ldb.entityDB); err != nil {
-		return tx, err
-	}
-	if tx.pk, err = getTransaction(ldb.pkDB); err != nil {
-		return tx, err
-	}
-	if tx.graph, err = getTransaction(ldb.graphDB); err != nil {
-		return tx, err
-	}
-	if tx.ext, err = getTransaction(ldb.extendedDB); err != nil {
-		return tx, err
-	}
-	if tx.pred, err = getTransaction(ldb.predDB); err != nil {
-		return tx, err
-	}
-	return tx, nil
+	ldb.cfg = cfg
+	return nil
 }
 
-func (ldb *LevelDBStorageProvider) OpenSnapshot() (Traversable, error) {
-	snap := &LevelDBSnapshot{}
-	getSnapshot := func(db *leveldb.DB) (*leveldb.Snapshot, error) {
-		if dbsnap, err := db.GetSnapshot(); err != nil {
-			if snap.entitySnapshot != nil {
-				snap.entitySnapshot.Release()
-			}
-			if snap.pkSnapshot != nil {
-				snap.pkSnapshot.Release()
-			}
-			if snap.predSnapshot != nil {
-				snap.predSnapshot.Release()
-			}
-			if snap.pkSnapshot != nil {
-				snap.pkSnapshot.Release()
-			}
-			if snap.extendedSnapshot != nil {
-				snap.extendedSnapshot.Release()
-			}
-			return nil, err
-		} else {
-			return dbsnap, nil
+func (ldb *LevelDBStorageProvider) Close() (err error) {
+	ldb.loaded_versions.Range(func(_version, _instance interface{}) bool {
+		instance := _instance.(*levelDBInstance)
+		if _err := instance.Close(); _err != nil {
+			err = _err
+		}
+		return true
+	})
+	return
+}
+
+func (ldb *LevelDBStorageProvider) OpenVersion(version uint64) (trav Traversable, err error) {
+	if version == 0 {
+		version = ldb.latest_version()
+	}
+	logrus.Warning("OPENING version ", version)
+	if _instance, ok := ldb.loaded_versions.Load(version); !ok {
+		return ldb.newWithVersion(version)
+	} else {
+		return _instance.(*levelDBInstance), nil
+	}
+}
+
+func (ldb *LevelDBStorageProvider) newWithVersion(version uint64) (instance *levelDBInstance, err error) {
+	ldb.Lock()
+	defer ldb.Unlock()
+	logrus.Warning("new with version")
+
+	instance = &levelDBInstance{name: ldb.name, version: version}
+
+	options := &opt.Options{
+		Filter: filter.NewBloomFilter(32),
+	}
+
+	path_base := filepath.Join(ldb.path, ldb.name, strconv.FormatUint(version, 10))
+	logrus.Warning("here", path_base)
+	_, err = os.Stat(path_base)
+	if err != nil && !os.IsNotExist(err) {
+		return
+	} else if os.IsNotExist(err) {
+		logrus.Warning(err)
+		err = os.MkdirAll(path_base, os.ModeDir)
+		if err != nil {
+			return
 		}
 	}
-	var err error
-	if snap.entitySnapshot, err = getSnapshot(ldb.entityDB); err != nil {
-		return nil, err
+
+	// set up entity, pk databases
+	entityDBPath := filepath.Join(path_base, "db-entities")
+	instance.entityDB, err = leveldb.OpenFile(entityDBPath, options)
+	if err != nil {
+		err = errors.Wrapf(err, "Could not open entityDB file %s", entityDBPath)
+		return
 	}
-	if snap.pkSnapshot, err = getSnapshot(ldb.pkDB); err != nil {
-		return nil, err
+
+	pkDBPath := filepath.Join(path_base, "db-pk")
+	instance.pkDB, err = leveldb.OpenFile(pkDBPath, options)
+	if err != nil {
+		err = errors.Wrapf(err, "Could not open pkDB file %s", pkDBPath)
+		return
 	}
-	if snap.predSnapshot, err = getSnapshot(ldb.predDB); err != nil {
-		return nil, err
+
+	// set up entity, pk databases
+	extendedDBPath := filepath.Join(path_base, "db-extended")
+	instance.extendedDB, err = leveldb.OpenFile(extendedDBPath, options)
+	if err != nil {
+		err = errors.Wrapf(err, "Could not open extendedDB file %s", extendedDBPath)
+		return
 	}
-	if snap.graphSnapshot, err = getSnapshot(ldb.graphDB); err != nil {
-		return nil, err
+
+	graphDBPath := filepath.Join(path_base, "db-graph")
+	instance.graphDB, err = leveldb.OpenFile(graphDBPath, options)
+	if err != nil {
+		err = errors.Wrapf(err, "Could not open graphDB file %s", graphDBPath)
+		return
 	}
-	if snap.extendedSnapshot, err = getSnapshot(ldb.extendedDB); err != nil {
-		return nil, err
+
+	predDBPath := filepath.Join(path_base, "db-pred")
+	instance.predDB, err = leveldb.OpenFile(predDBPath, options)
+	if err != nil {
+		err = errors.Wrapf(err, "Could not open predDB file %s", predDBPath)
+		return
 	}
-	return snap, nil
+
+	ldb.loaded_versions.Store(version, instance)
+	logrus.Warningf("%v", instance)
+	return instance, nil
 }
+
+func (ldb *LevelDBStorageProvider) latest_version() uint64 {
+	latest_version := uint64(0)
+	ldb.loaded_versions.Range(func(_version, _instance interface{}) bool {
+		version := _version.(uint64)
+		if version > latest_version {
+			latest_version = version
+		}
+		return true
+	})
+
+	path_base := filepath.Join(ldb.path, ldb.name, "*")
+	matches, err := filepath.Glob(path_base)
+	if err != nil {
+		panic(err)
+	}
+	for _, match := range matches {
+		version, err := strconv.ParseUint(filepath.Base(match), 10, 64)
+		if err != nil {
+			continue
+		}
+		if version > latest_version {
+			latest_version = version
+		}
+	}
+
+	if latest_version == 0 {
+		latest_version = uint64(time.Now().UnixNano())
+	}
+	return latest_version
+}
+
+func (ldb *LevelDBStorageProvider) OpenTransaction() (Transaction, error) {
+	ldb.Lock()
+	latest_version := ldb.latest_version()
+	newest_version := uint64(time.Now().UnixNano())
+
+	old_path_base := filepath.Join(ldb.path, ldb.name, strconv.FormatUint(latest_version, 10))
+	new_path_base := filepath.Join(ldb.path, ldb.name, strconv.FormatUint(newest_version, 10))
+	logrus.Warning("copy>", old_path_base, " > ", new_path_base)
+	if err := CopyDir(old_path_base, new_path_base); err != nil {
+		ldb.Unlock()
+		return nil, err
+	}
+
+	logrus.Warning("done copying")
+	ldb.Unlock()
+	return ldb.newWithVersion(newest_version)
+}
+
+//func (ldb *LevelDBStorageProvider) OpenTransaction() (Transaction, error) {
+//	tx := &LevelDBTransaction{}
+//	getTransaction := func(db *leveldb.DB) (*leveldb.Transaction, error) {
+//		if ltx, err := db.OpenTransaction(); err != nil {
+//			if tx.entity != nil {
+//				tx.entity.Discard()
+//			}
+//			if tx.pk != nil {
+//				tx.pk.Discard()
+//			}
+//			if tx.graph != nil {
+//				tx.graph.Discard()
+//			}
+//			if tx.ext != nil {
+//				tx.ext.Discard()
+//			}
+//			if tx.pred != nil {
+//				tx.pred.Discard()
+//			}
+//			return nil, err
+//		} else {
+//			return ltx, err
+//		}
+//	}
+//	var err error
+//	if tx.entity, err = getTransaction(ldb.entityDB); err != nil {
+//		return tx, err
+//	}
+//	if tx.pk, err = getTransaction(ldb.pkDB); err != nil {
+//		return tx, err
+//	}
+//	if tx.graph, err = getTransaction(ldb.graphDB); err != nil {
+//		return tx, err
+//	}
+//	if tx.ext, err = getTransaction(ldb.extendedDB); err != nil {
+//		return tx, err
+//	}
+//	if tx.pred, err = getTransaction(ldb.predDB); err != nil {
+//		return tx, err
+//	}
+//	return tx, nil
+//}
+
+//func (ldb *LevelDBStorageProvider) OpenVersion(version uint64) (Traversable, error) {
+//	snap := &LevelDBSnapshot{}
+//	getSnapshot := func(db *leveldb.DB) (*leveldb.Snapshot, error) {
+//		if dbsnap, err := db.GetSnapshot(); err != nil {
+//			if snap.entitySnapshot != nil {
+//				snap.entitySnapshot.Release()
+//			}
+//			if snap.pkSnapshot != nil {
+//				snap.pkSnapshot.Release()
+//			}
+//			if snap.predSnapshot != nil {
+//				snap.predSnapshot.Release()
+//			}
+//			if snap.pkSnapshot != nil {
+//				snap.pkSnapshot.Release()
+//			}
+//			if snap.extendedSnapshot != nil {
+//				snap.extendedSnapshot.Release()
+//			}
+//			return nil, err
+//		} else {
+//			return dbsnap, nil
+//		}
+//	}
+//	var err error
+//	if snap.entitySnapshot, err = getSnapshot(ldb.entityDB); err != nil {
+//		return nil, err
+//	}
+//	if snap.pkSnapshot, err = getSnapshot(ldb.pkDB); err != nil {
+//		return nil, err
+//	}
+//	if snap.predSnapshot, err = getSnapshot(ldb.predDB); err != nil {
+//		return nil, err
+//	}
+//	if snap.graphSnapshot, err = getSnapshot(ldb.graphDB); err != nil {
+//		return nil, err
+//	}
+//	if snap.extendedSnapshot, err = getSnapshot(ldb.extendedDB); err != nil {
+//		return nil, err
+//	}
+//	return snap, nil
+//}
 
 type LevelDBSnapshot struct {
 	entitySnapshot   *leveldb.Snapshot
@@ -345,4 +469,78 @@ func (tx *LevelDBTransaction) Release() {
 	tx.graph.Discard()
 	tx.ext.Discard()
 	tx.pred.Discard()
+}
+
+func (inst *levelDBInstance) Has(bucket HodBucket, key []byte) (exists bool, err error) {
+	switch bucket {
+	case EntityBucket:
+		return inst.entityDB.Has(key, nil)
+	case PKBucket:
+		return inst.pkDB.Has(key, nil)
+	case PredBucket:
+		return inst.predDB.Has(key, nil)
+	case GraphBucket:
+		return inst.graphDB.Has(key, nil)
+	case ExtendedBucket:
+		return inst.extendedDB.Has(key, nil)
+	}
+	return false, errors.New("Invalid bucket")
+}
+
+func (inst *levelDBInstance) Get(bucket HodBucket, key []byte) (value []byte, err error) {
+	switch bucket {
+	case EntityBucket:
+		value, err = inst.entityDB.Get(key, nil)
+	case PKBucket:
+		value, err = inst.pkDB.Get(key, nil)
+	case PredBucket:
+		value, err = inst.predDB.Get(key, nil)
+	case GraphBucket:
+		value, err = inst.graphDB.Get(key, nil)
+	case ExtendedBucket:
+		value, err = inst.extendedDB.Get(key, nil)
+	}
+	if err == leveldb.ErrNotFound {
+		err = ErrNotFound
+	}
+	return value, err
+}
+
+func (inst *levelDBInstance) Put(bucket HodBucket, key []byte, value []byte) (err error) {
+	switch bucket {
+	case EntityBucket:
+		return inst.entityDB.Put(key, value, nil)
+	case PKBucket:
+		return inst.pkDB.Put(key, value, nil)
+	case PredBucket:
+		return inst.predDB.Put(key, value, nil)
+	case GraphBucket:
+		return inst.graphDB.Put(key, value, nil)
+	case ExtendedBucket:
+		return inst.extendedDB.Put(key, value, nil)
+	}
+	return errors.New("Invalid bucket")
+}
+
+func (inst *levelDBInstance) Iterate(bucket HodBucket) Iterator {
+	switch bucket {
+	case EntityBucket:
+		return inst.entityDB.NewIterator(nil, nil)
+	case PKBucket:
+		return inst.pkDB.NewIterator(nil, nil)
+	case PredBucket:
+		return inst.predDB.NewIterator(nil, nil)
+	case GraphBucket:
+		return inst.graphDB.NewIterator(nil, nil)
+	case ExtendedBucket:
+		return inst.extendedDB.NewIterator(nil, nil)
+	}
+	return nil
+}
+
+func (inst *levelDBInstance) Commit() error {
+	return nil
+}
+
+func (inst *levelDBInstance) Release() {
 }

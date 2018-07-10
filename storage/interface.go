@@ -5,10 +5,10 @@ import (
 )
 
 type StorageProvider interface {
-	Initialize(string, *config.Config) error
+	Initialize(name string, cfg *config.Config) error
 	Close() error
 	OpenTransaction() (Transaction, error)
-	OpenSnapshot() (Traversable, error)
+	OpenVersion(version uint64) (Traversable, error)
 }
 
 type Traversable interface {
