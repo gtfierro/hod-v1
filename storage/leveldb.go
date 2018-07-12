@@ -57,9 +57,7 @@ func (ldb *levelDBInstance) Close() error {
 
 func (ldb *LevelDBStorageProvider) Initialize(name string, cfg *config.Config) (err error) {
 	ldb.path = strings.TrimSuffix(cfg.DBPath, "/")
-	//ldb.name = name
 	path_base := filepath.Join(ldb.path, strconv.FormatUint(ldb.latest_version(), 10))
-	logrus.Warning("Creating ", path_base)
 	err = os.MkdirAll(path_base, 0755)
 	if err != nil {
 		logrus.Warning(err)
@@ -207,92 +205,6 @@ func (ldb *LevelDBStorageProvider) OpenTransaction() (Transaction, error) {
 	return ldb.newWithVersion(newest_version)
 }
 
-//func (ldb *LevelDBStorageProvider) OpenTransaction() (Transaction, error) {
-//	tx := &LevelDBTransaction{}
-//	getTransaction := func(db *leveldb.DB) (*leveldb.Transaction, error) {
-//		if ltx, err := db.OpenTransaction(); err != nil {
-//			if tx.entity != nil {
-//				tx.entity.Discard()
-//			}
-//			if tx.pk != nil {
-//				tx.pk.Discard()
-//			}
-//			if tx.graph != nil {
-//				tx.graph.Discard()
-//			}
-//			if tx.ext != nil {
-//				tx.ext.Discard()
-//			}
-//			if tx.pred != nil {
-//				tx.pred.Discard()
-//			}
-//			return nil, err
-//		} else {
-//			return ltx, err
-//		}
-//	}
-//	var err error
-//	if tx.entity, err = getTransaction(ldb.entityDB); err != nil {
-//		return tx, err
-//	}
-//	if tx.pk, err = getTransaction(ldb.pkDB); err != nil {
-//		return tx, err
-//	}
-//	if tx.graph, err = getTransaction(ldb.graphDB); err != nil {
-//		return tx, err
-//	}
-//	if tx.ext, err = getTransaction(ldb.extendedDB); err != nil {
-//		return tx, err
-//	}
-//	if tx.pred, err = getTransaction(ldb.predDB); err != nil {
-//		return tx, err
-//	}
-//	return tx, nil
-//}
-
-//func (ldb *LevelDBStorageProvider) OpenVersion(version uint64) (Traversable, error) {
-//	snap := &LevelDBSnapshot{}
-//	getSnapshot := func(db *leveldb.DB) (*leveldb.Snapshot, error) {
-//		if dbsnap, err := db.GetSnapshot(); err != nil {
-//			if snap.entitySnapshot != nil {
-//				snap.entitySnapshot.Release()
-//			}
-//			if snap.pkSnapshot != nil {
-//				snap.pkSnapshot.Release()
-//			}
-//			if snap.predSnapshot != nil {
-//				snap.predSnapshot.Release()
-//			}
-//			if snap.pkSnapshot != nil {
-//				snap.pkSnapshot.Release()
-//			}
-//			if snap.extendedSnapshot != nil {
-//				snap.extendedSnapshot.Release()
-//			}
-//			return nil, err
-//		} else {
-//			return dbsnap, nil
-//		}
-//	}
-//	var err error
-//	if snap.entitySnapshot, err = getSnapshot(ldb.entityDB); err != nil {
-//		return nil, err
-//	}
-//	if snap.pkSnapshot, err = getSnapshot(ldb.pkDB); err != nil {
-//		return nil, err
-//	}
-//	if snap.predSnapshot, err = getSnapshot(ldb.predDB); err != nil {
-//		return nil, err
-//	}
-//	if snap.graphSnapshot, err = getSnapshot(ldb.graphDB); err != nil {
-//		return nil, err
-//	}
-//	if snap.extendedSnapshot, err = getSnapshot(ldb.extendedDB); err != nil {
-//		return nil, err
-//	}
-//	return snap, nil
-//}
-
 type LevelDBSnapshot struct {
 	entitySnapshot   *leveldb.Snapshot
 	pkSnapshot       *leveldb.Snapshot
@@ -301,7 +213,7 @@ type LevelDBSnapshot struct {
 	extendedSnapshot *leveldb.Snapshot
 }
 
-func (snap *LevelDBSnapshot) Has(bucket HodBucket, key []byte) (exists bool, err error) {
+func (snap *LevelDBSnapshot) Has(bucket HodNamespace, key []byte) (exists bool, err error) {
 	switch bucket {
 	case EntityBucket:
 		return snap.entitySnapshot.Has(key, nil)
@@ -317,7 +229,7 @@ func (snap *LevelDBSnapshot) Has(bucket HodBucket, key []byte) (exists bool, err
 	return false, errors.New("Invalid bucket")
 }
 
-func (snap *LevelDBSnapshot) Get(bucket HodBucket, key []byte) (value []byte, err error) {
+func (snap *LevelDBSnapshot) Get(bucket HodNamespace, key []byte) (value []byte, err error) {
 	switch bucket {
 	case EntityBucket:
 		value, err = snap.entitySnapshot.Get(key, nil)
@@ -336,11 +248,11 @@ func (snap *LevelDBSnapshot) Get(bucket HodBucket, key []byte) (value []byte, er
 	return value, err
 }
 
-func (snap *LevelDBSnapshot) Put(bucket HodBucket, key []byte, value []byte) (err error) {
+func (snap *LevelDBSnapshot) Put(bucket HodNamespace, key []byte, value []byte) (err error) {
 	return errors.New("Cannot PUT on snapshot")
 }
 
-func (snap *LevelDBSnapshot) Iterate(bucket HodBucket) Iterator {
+func (snap *LevelDBSnapshot) Iterate(bucket HodNamespace) Iterator {
 	switch bucket {
 	case EntityBucket:
 		return snap.entitySnapshot.NewIterator(nil, nil)
@@ -396,7 +308,7 @@ func (tx *LevelDBTransaction) Commit() error {
 	return nil
 }
 
-func (tx *LevelDBTransaction) Has(bucket HodBucket, key []byte) (exists bool, err error) {
+func (tx *LevelDBTransaction) Has(bucket HodNamespace, key []byte) (exists bool, err error) {
 	switch bucket {
 	case EntityBucket:
 		return tx.entity.Has(key, nil)
@@ -412,7 +324,7 @@ func (tx *LevelDBTransaction) Has(bucket HodBucket, key []byte) (exists bool, er
 	return false, errors.New("Invalid bucket")
 }
 
-func (tx *LevelDBTransaction) Get(bucket HodBucket, key []byte) (value []byte, err error) {
+func (tx *LevelDBTransaction) Get(bucket HodNamespace, key []byte) (value []byte, err error) {
 	switch bucket {
 	case EntityBucket:
 		value, err = tx.entity.Get(key, nil)
@@ -431,7 +343,7 @@ func (tx *LevelDBTransaction) Get(bucket HodBucket, key []byte) (value []byte, e
 	return value, err
 }
 
-func (tx *LevelDBTransaction) Put(bucket HodBucket, key []byte, value []byte) (err error) {
+func (tx *LevelDBTransaction) Put(bucket HodNamespace, key []byte, value []byte) (err error) {
 	switch bucket {
 	case EntityBucket:
 		return tx.entity.Put(key, value, nil)
@@ -447,7 +359,7 @@ func (tx *LevelDBTransaction) Put(bucket HodBucket, key []byte, value []byte) (e
 	return errors.New("Invalid bucket")
 }
 
-func (tx *LevelDBTransaction) Iterate(bucket HodBucket) Iterator {
+func (tx *LevelDBTransaction) Iterate(bucket HodNamespace) Iterator {
 	switch bucket {
 	case EntityBucket:
 		return tx.entity.NewIterator(nil, nil)
@@ -471,7 +383,7 @@ func (tx *LevelDBTransaction) Release() {
 	tx.pred.Discard()
 }
 
-func (inst *levelDBInstance) Has(bucket HodBucket, key []byte) (exists bool, err error) {
+func (inst *levelDBInstance) Has(bucket HodNamespace, key []byte) (exists bool, err error) {
 	switch bucket {
 	case EntityBucket:
 		return inst.entityDB.Has(key, nil)
@@ -487,7 +399,7 @@ func (inst *levelDBInstance) Has(bucket HodBucket, key []byte) (exists bool, err
 	return false, errors.New("Invalid bucket")
 }
 
-func (inst *levelDBInstance) Get(bucket HodBucket, key []byte) (value []byte, err error) {
+func (inst *levelDBInstance) Get(bucket HodNamespace, key []byte) (value []byte, err error) {
 	switch bucket {
 	case EntityBucket:
 		value, err = inst.entityDB.Get(key, nil)
@@ -506,7 +418,7 @@ func (inst *levelDBInstance) Get(bucket HodBucket, key []byte) (value []byte, er
 	return value, err
 }
 
-func (inst *levelDBInstance) Put(bucket HodBucket, key []byte, value []byte) (err error) {
+func (inst *levelDBInstance) Put(bucket HodNamespace, key []byte, value []byte) (err error) {
 	switch bucket {
 	case EntityBucket:
 		return inst.entityDB.Put(key, value, nil)
@@ -522,7 +434,7 @@ func (inst *levelDBInstance) Put(bucket HodBucket, key []byte, value []byte) (er
 	return errors.New("Invalid bucket")
 }
 
-func (inst *levelDBInstance) Iterate(bucket HodBucket) Iterator {
+func (inst *levelDBInstance) Iterate(bucket HodNamespace) Iterator {
 	switch bucket {
 	case EntityBucket:
 		return inst.entityDB.NewIterator(nil, nil)

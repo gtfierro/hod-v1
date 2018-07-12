@@ -4,14 +4,14 @@ import (
 	"errors"
 )
 
-type HodBucket string
+type HodNamespace string
 
 var (
-	EntityBucket   HodBucket = "entity"
-	PKBucket       HodBucket = "pk"
-	PredBucket     HodBucket = "pred"
-	GraphBucket    HodBucket = "graph"
-	ExtendedBucket HodBucket = "extended"
+	EntityBucket   HodNamespace = "entity"
+	PKBucket       HodNamespace = "pk"
+	PredBucket     HodNamespace = "pred"
+	GraphBucket    HodNamespace = "graph"
+	ExtendedBucket HodNamespace = "extended"
 )
 
 var (

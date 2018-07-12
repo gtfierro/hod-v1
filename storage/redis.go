@@ -31,7 +31,7 @@ func (rds *RedisStorageProvider) OpenTransaction() (Transaction, error) {
 	return rds, nil
 }
 
-func (rtx *RedisStorageProvider) Has(bucket HodBucket, key []byte) (exists bool, err error) {
+func (rtx *RedisStorageProvider) Has(bucket HodNamespace, key []byte) (exists bool, err error) {
 	cmd := rtx.Exists(string(rtx.name) + string(bucket) + string(key))
 	if cmd == nil {
 		return false, errors.New("Cannot run command")
@@ -42,7 +42,7 @@ func (rtx *RedisStorageProvider) Has(bucket HodBucket, key []byte) (exists bool,
 	return cmd.Val() == 1, nil
 }
 
-func (rtx *RedisStorageProvider) Get(bucket HodBucket, key []byte) (value []byte, err error) {
+func (rtx *RedisStorageProvider) Get(bucket HodNamespace, key []byte) (value []byte, err error) {
 	//logrus.Infof("GET %s %+v %s", bucket, key, string(key))
 	cmd := rtx.Client.Get(string(rtx.name) + string(bucket) + string(key))
 	if cmd.Err() == redis.Nil {
@@ -58,13 +58,13 @@ func (rtx *RedisStorageProvider) Get(bucket HodBucket, key []byte) (value []byte
 	return bytes, nil
 }
 
-func (rtx *RedisStorageProvider) Put(bucket HodBucket, key, value []byte) (err error) {
+func (rtx *RedisStorageProvider) Put(bucket HodNamespace, key, value []byte) (err error) {
 	val := rtx.Set(string(rtx.name)+string(bucket)+string(key), string(value), 0)
 	//logrus.Warning("set", val.String())
 	return val.Err()
 }
 
-func (rtx *RedisStorageProvider) Iterate(bucket HodBucket) Iterator {
+func (rtx *RedisStorageProvider) Iterate(bucket HodNamespace) Iterator {
 	return nil
 }
 

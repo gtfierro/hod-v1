@@ -5,17 +5,21 @@ import (
 )
 
 type StorageProvider interface {
+	// sets up the structure needed for the database
 	Initialize(name string, cfg *config.Config) error
+	// closes the storage provider when HodDB is done
 	Close() error
+	// create a transaction for a new version of the database; always operates on the most recent version
 	OpenTransaction() (Transaction, error)
+	// open the specified version of the database
 	OpenVersion(version uint64) (Traversable, error)
 }
 
 type Traversable interface {
-	Has(bucket HodBucket, key []byte) (exists bool, err error)
-	Get(bucket HodBucket, key []byte) (value []byte, err error)
-	Put(bucket HodBucket, key, value []byte) (err error)
-	Iterate(bucket HodBucket) Iterator
+	Has(bucket HodNamespace, key []byte) (exists bool, err error)
+	Get(bucket HodNamespace, key []byte) (value []byte, err error)
+	Put(bucket HodNamespace, key, value []byte) (err error)
+	Iterate(bucket HodNamespace) Iterator
 	Release()
 }
 
@@ -29,14 +33,3 @@ type Iterator interface {
 	Key() []byte
 	Value() []byte
 }
-
-/*
-Storage API
-- open database (name)
-- close database
-- buckets
-- for each bucket
-    - get/put key value
-    - iterate
-- transactions
-*/
