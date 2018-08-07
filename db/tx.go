@@ -35,7 +35,7 @@ func (hod *HodDB) openTransaction(name string) (tx *transaction, err error) {
 	tx = &transaction{
 		hashes:               make(map[turtle.URI]storage.HashKey),
 		inverseRelationships: make(map[storage.HashKey]storage.HashKey),
-		//cache:                newCache(1),
+		cache:                newCache(1),
 	}
 	tx.snapshot, err = hod.storage.CreateVersion(name)
 	return
@@ -45,7 +45,7 @@ func (hod *HodDB) openVersion(ver storage.Version) (tx *transaction, err error) 
 	tx = &transaction{
 		hashes:               make(map[turtle.URI]storage.HashKey),
 		inverseRelationships: make(map[storage.HashKey]storage.HashKey),
-		//cache:                newCache(1),
+		cache:                newCache(1),
 	}
 	tx.snapshot, err = hod.storage.OpenVersion(ver)
 	return

@@ -6,14 +6,14 @@ import (
 	"github.com/gtfierro/btree"
 )
 
-const BTREE_DEGREE = 8
+const btreeDegree = 8
 
 var (
 	traversedBTreePool *btreePool
 )
 
 func init() {
-	traversedBTreePool = newBtreePool(BTREE_DEGREE)
+	traversedBTreePool = newBtreePool(btreeDegree)
 }
 
 type btreePool struct {

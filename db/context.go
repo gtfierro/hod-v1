@@ -7,7 +7,6 @@ import (
 	//logrus "github.com/sirupsen/logrus"
 )
 
-var trees = newBtreePool(BTREE_DEGREE)
 var emptyHashTree = newKeymap()
 
 type queryContext struct {
@@ -48,9 +47,8 @@ func newQueryContext(plan *queryPlan, tx *transaction) (*queryContext, error) {
 func (ctx *queryContext) cardinalityUnique(varname string) int {
 	if tree, found := ctx.definitions[varname]; found {
 		return tree.Len()
-	} else {
-		return 0
 	}
+	return 0
 }
 
 func (ctx *queryContext) hasJoined(varname string) bool {

@@ -28,19 +28,19 @@ type graphLoadParams struct {
 	done     chan error
 }
 
+// HodDB provides versioned access to all building models specified in the provided configuration
 type HodDB struct {
 	storage storage.StorageProvider
 	// store the config so we can make more databases
-	cfg           *config.Config
-	load_requests chan graphLoadParams
-	namespaces    map[string]string
+	cfg        *config.Config
+	namespaces map[string]string
 	sync.RWMutex
 }
 
+// NewHodDB creates a new instance of HodDB
 func NewHodDB(cfg *config.Config) (*HodDB, error) {
 	var hod = &HodDB{
-		cfg: cfg,
-		//load_requests: make(chan graphLoadParams),
+		cfg:        cfg,
 		namespaces: make(map[string]string),
 	}
 	hod.storage = &storage.BadgerStorageProvider{}
@@ -48,19 +48,14 @@ func NewHodDB(cfg *config.Config) (*HodDB, error) {
 		return nil, err
 	}
 
-	var load_requests []graphLoadParams
-
-	//go func() {
-	//}()
+	var loadRequests []graphLoadParams
 
 	// load in the ontology files and source file for each building in the config
 	for buildingname, buildingttlfile := range cfg.Buildings {
-		var base_load graphLoadParams
-		for _, ontologyFile := range cfg.Ontologies {
-			base_load.ttlfiles = append(base_load.ttlfiles, ontologyFile)
-		}
-		base_load.ttlfiles = append(base_load.ttlfiles, "")
-		base_load.done = make(chan error)
+		var baseLoad graphLoadParams
+		baseLoad.ttlfiles = append(baseLoad.ttlfiles, cfg.Ontologies...)
+		baseLoad.ttlfiles = append(baseLoad.ttlfiles, "")
+		baseLoad.done = make(chan error)
 		latest, existed, err := hod.storage.AddGraph(buildingname)
 		if err != nil {
 			return nil, err
@@ -71,11 +66,11 @@ func NewHodDB(cfg *config.Config) (*HodDB, error) {
 			"filename": buildingttlfile,
 			"building": buildingname,
 		}).Info("Add graph")
-		base_load.ttlfiles[len(base_load.ttlfiles)-1] = buildingttlfile
-		base_load.name = buildingname
-		load_requests = append(load_requests, base_load)
+		baseLoad.ttlfiles[len(baseLoad.ttlfiles)-1] = buildingttlfile
+		baseLoad.name = buildingname
+		loadRequests = append(loadRequests, baseLoad)
 	}
-	for _, loadreq := range load_requests {
+	for _, loadreq := range loadRequests {
 		if err := hod.loadFiles(loadreq); err != nil {
 			logrus.WithFields(logrus.Fields{
 				"building": loadreq.name,
@@ -118,11 +113,13 @@ func (hod *HodDB) loadFiles(loadreq graphLoadParams) error {
 	return tx.commit()
 }
 
+// Close safely closes all of the underlying storage used by HodDB
 func (hod *HodDB) Close() error {
 	return hod.storage.Close()
 }
 
-// execute parsed query against HodDB
+// RunQuery executes a parsed query against HodDB. This is helpful if you want to avoid
+// the parsing overhead for whatever reason
 func (hod *HodDB) RunQuery(q *sparql.Query) (result *QueryResult, rerr error) {
 
 	// assemble versions for each of the databases
@@ -207,6 +204,7 @@ func (hod *HodDB) RunQuery(q *sparql.Query) (result *QueryResult, rerr error) {
 	return
 }
 
+// RunQueryString executes a query against HodDB
 func (hod *HodDB) RunQueryString(querystring string) (result *QueryResult, err error) {
 	var (
 		q *sparql.Query

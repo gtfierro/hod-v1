@@ -17,7 +17,6 @@ import (
 )
 
 var emptyResultMapList = []ResultMap{}
-var emptyLinkResultmapList = []LinkResultMap{}
 
 type QueryResult struct {
 	selectVars []string
@@ -25,12 +24,6 @@ type QueryResult struct {
 	Count      int
 	Elapsed    time.Duration
 	Errors     []string
-}
-
-func newQueryResult() QueryResult {
-	return QueryResult{
-		Rows: emptyResultMapList,
-	}
 }
 
 func (qr *QueryResult) fromRows(rows []*ResultRow, vars []string, toMap bool) {
@@ -150,7 +143,6 @@ func (rr ResultRow) Less(than btree.Item, ctx interface{}) bool {
 	return before
 }
 
-var _emptyResultRow = make([]turtle.URI, 16)
 var _RESULTROWPOOL = sync.Pool{
 	New: func() interface{} {
 		return &ResultRow{
@@ -171,11 +163,11 @@ func finishResultRow(r *ResultRow) {
 	_RESULTROWPOOL.Put(r)
 }
 
-func cleanResultRows(b *btree.BTree) {
-	i := b.DeleteMax()
-	for i != nil {
-		row := i.(*ResultRow)
-		finishResultRow(row)
-		i = b.DeleteMax()
-	}
-}
+//func cleanResultRows(b *btree.BTree) {
+//	i := b.DeleteMax()
+//	for i != nil {
+//		row := i.(*ResultRow)
+//		finishResultRow(row)
+//		i = b.DeleteMax()
+//	}
+//}

@@ -3,14 +3,13 @@ package db
 import (
 	"fmt"
 	sparql "github.com/gtfierro/hod/lang/ast"
-	"github.com/pkg/errors"
-	"reflect"
+	//"reflect"
 	"strings"
 )
 
 const (
-	RESOLVED   = "RESOLVED"
-	UNRESOLVED = ""
+	varRESOLVED   = "RESOLVED"
+	varUNRESOLVED = ""
 )
 
 // struct to hold the graph of the query plan
@@ -27,9 +26,7 @@ func makeDependencyGraph(q *sparql.Query) *dependencyGraph {
 		variables:  make(map[string]bool),
 		terms:      make([]*queryTerm, len(q.Where.Terms)),
 	}
-	for _, v := range q.Select.Vars {
-		dg.selectVars = append(dg.selectVars, v)
-	}
+	dg.selectVars = append(dg.selectVars, q.Select.Vars...)
 	for i, term := range q.Where.Terms {
 		dg.terms[i] = dg.makeQueryTerm(term)
 	}
@@ -99,11 +96,11 @@ func (dg *dependencyGraph) makeQueryTerm(t sparql.Triple) *queryTerm {
 }
 
 // returns true if two query terms are equal
-func (qt *queryTerm) equals(qt2 *queryTerm) bool {
-	return qt.Subject == qt2.Subject &&
-		qt.Object == qt2.Object &&
-		reflect.DeepEqual(qt.Predicates, qt2.Predicates)
-}
+//func (qt *queryTerm) equals(qt2 *queryTerm) bool {
+//	return qt.Subject == qt2.Subject &&
+//		qt.Object == qt2.Object &&
+//		reflect.DeepEqual(qt.Predicates, qt2.Predicates)
+//}
 
 func (qt *queryTerm) String() string {
 	return fmt.Sprintf("<%s %s %s>", qt.Subject, qt.Predicates, qt.Object)
@@ -128,38 +125,6 @@ func (qt *queryTerm) overlap(other *queryTerm) int {
 	return count
 }
 
-type queryTermList []*queryTerm
-
-func (list queryTermList) Len() int {
-	return len(list)
-}
-func (list queryTermList) Swap(i, j int) {
-	list[i], list[j] = list[j], list[i]
-}
-func (list queryTermList) Less(i, j int) bool {
-	if len(list[i].variables) == 1 {
-		return true
-	} else if len(list[j].variables) == 1 {
-		return false
-	}
-	i_overlap := 0
-	for idx := 0; idx < i; idx++ {
-		if idx == j {
-			continue
-		}
-		i_overlap += list[i].overlap(list[idx])
-	}
-	j_overlap := 0
-	for idx := 0; idx < j; idx++ {
-		if idx == i {
-			continue
-		}
-		j_overlap += list[j].overlap(list[idx])
-	}
-	return i_overlap > j_overlap
-
-}
-
 // need operator types that go into the query plan
 // Types:
 //  SELECT: given a 2/3 triple, it resolves the 3rd item
@@ -170,7 +135,7 @@ func (list queryTermList) Less(i, j int) bool {
 // it into a query plan
 
 func formQueryPlan(dg *dependencyGraph, q *sparql.Query) (*queryPlan, error) {
-	qp := newQueryPlan(dg, q)
+	plan := newQueryPlan(dg, q)
 
 	for _, term := range dg.plan {
 		var (
@@ -187,28 +152,28 @@ func formQueryPlan(dg *dependencyGraph, q *sparql.Query) (*queryPlan, error) {
 			newop                operation
 			numvars              = len(term.variables)
 		)
-		hasResolvedSubject = qp.hasVar(subjectVar)
-		hasResolvedObject = qp.hasVar(objectVar)
-		hasResolvedPredicate = qp.hasVar(predicateVar)
+		hasResolvedSubject = plan.hasVar(subjectVar)
+		hasResolvedObject = plan.hasVar(objectVar)
+		hasResolvedPredicate = plan.hasVar(predicateVar)
 
 		switch {
 		// definitions: do these first
 		case numvars == 1 && subjectIsVariable:
 			newop = &resolveSubject{term: term}
-			if !qp.varIsChild(subjectVar) {
-				qp.addTopLevel(subjectVar)
+			if !plan.varIsChild(subjectVar) {
+				plan.addTopLevel(subjectVar)
 			}
 		case numvars == 1 && objectIsVariable:
 			// s p ?o
 			newop = &resolveObject{term: term}
-			if !qp.varIsChild(objectVar) {
-				qp.addTopLevel(objectVar)
+			if !plan.varIsChild(objectVar) {
+				plan.addTopLevel(objectVar)
 			}
 		case numvars == 1 && predicateIsVariable:
 			// s ?p o
 			newop = &resolvePredicate{term: term}
-			if !qp.varIsChild(predicateVar) {
-				qp.addTopLevel(predicateVar)
+			if !plan.varIsChild(predicateVar) {
+				plan.addTopLevel(predicateVar)
 			}
 		// terms with 3 variables
 		case subjectIsVariable && objectIsVariable && predicateIsVariable:
@@ -228,65 +193,65 @@ func formQueryPlan(dg *dependencyGraph, q *sparql.Query) (*queryPlan, error) {
 			case hasResolvedSubject && hasResolvedObject:
 				// if we have both subject and object, we filter
 				rso := &restrictSubjectObjectByPredicate{term: term}
-				if qp.varIsChild(subjectVar) {
-					qp.addLink(subjectVar, objectVar)
+				if plan.varIsChild(subjectVar) {
+					plan.addLink(subjectVar, objectVar)
 					rso.parentVar = subjectVar
 					rso.childVar = objectVar
-				} else if qp.varIsChild(objectVar) {
-					qp.addLink(objectVar, subjectVar)
+				} else if plan.varIsChild(objectVar) {
+					plan.addLink(objectVar, subjectVar)
 					rso.parentVar = objectVar
 					rso.childVar = subjectVar
-				} else if qp.varIsTop(subjectVar) {
-					qp.addLink(subjectVar, objectVar)
+				} else if plan.varIsTop(subjectVar) {
+					plan.addLink(subjectVar, objectVar)
 					rso.parentVar = subjectVar
 					rso.childVar = objectVar
-				} else if qp.varIsTop(objectVar) {
-					qp.addLink(objectVar, subjectVar)
+				} else if plan.varIsTop(objectVar) {
+					plan.addLink(objectVar, subjectVar)
 					rso.parentVar = objectVar
 					rso.childVar = subjectVar
 				}
 				newop = rso
 			case hasResolvedObject:
 				newop = &resolveSubjectFromVarObject{term: term}
-				qp.addLink(objectVar, subjectVar)
+				plan.addLink(objectVar, subjectVar)
 			case hasResolvedSubject:
 				newop = &resolveObjectFromVarSubject{term: term}
-				qp.addLink(subjectVar, objectVar)
+				plan.addLink(subjectVar, objectVar)
 			default:
 				newop = &resolveSubjectObjectFromPred{term: term}
-				qp.addLink(subjectVar, objectVar)
+				plan.addLink(subjectVar, objectVar)
 			}
 		case !subjectIsVariable && !objectIsVariable && predicateIsVariable:
 			newop = &resolvePredicate{term: term}
-			if !qp.varIsChild(predicateVar) {
-				qp.addTopLevel(predicateVar)
+			if !plan.varIsChild(predicateVar) {
+				plan.addTopLevel(predicateVar)
 			}
 		case subjectIsVariable && !objectIsVariable && predicateIsVariable:
 			// ?s ?p o
 			newop = &resolveSubjectPredFromObject{term: term}
-			qp.addLink(subjectVar, predicateVar)
+			plan.addLink(subjectVar, predicateVar)
 		case !subjectIsVariable && objectIsVariable && predicateIsVariable:
 			// s ?p ?o
 			newop = &resolvePredObjectFromSubject{term: term}
-			qp.addLink(objectVar, predicateVar)
+			plan.addLink(objectVar, predicateVar)
 		case subjectIsVariable:
 			// ?s p o
 			newop = &resolveSubject{term: term}
-			if !qp.varIsChild(subjectVar) {
-				qp.addTopLevel(subjectVar)
+			if !plan.varIsChild(subjectVar) {
+				plan.addTopLevel(subjectVar)
 			}
 		case objectIsVariable:
 			// s p ?o
 			newop = &resolveObject{term: term}
-			if !qp.varIsChild(objectVar) {
-				qp.addTopLevel(objectVar)
+			if !plan.varIsChild(objectVar) {
+				plan.addTopLevel(objectVar)
 			}
 		default:
-			return qp, errors.New(fmt.Sprintf("Nothing chosen for %s. This shouldn't happen", term))
+			return plan, fmt.Errorf("Nothing chosen for %s. This shouldn't happen", term)
 		}
-		qp.operations = append(qp.operations, newop)
+		plan.operations = append(plan.operations, newop)
 	}
-	return qp, nil
+	return plan, nil
 }
 
 // contains all useful state information for executing a query
@@ -308,26 +273,26 @@ func newQueryPlan(dg *dependencyGraph, q *sparql.Query) *queryPlan {
 	return plan
 }
 
-func (qp *queryPlan) dumpVarchain() {
-	for k, v := range qp.vars {
-		fmt.Println(k, "=>", v)
-	}
-}
+//func (plan *queryPlan) dumpVarchain() {
+//	for k, v := range plan.vars {
+//		fmt.Println(k, "=>", v)
+//	}
+//}
 
 func (plan *queryPlan) hasVar(variable string) bool {
-	return plan.vars[variable] != UNRESOLVED
+	return plan.vars[variable] != varUNRESOLVED
 }
 
 func (plan *queryPlan) varIsChild(variable string) bool {
-	return plan.hasVar(variable) && plan.vars[variable] != RESOLVED
+	return plan.hasVar(variable) && plan.vars[variable] != varRESOLVED
 }
 
 func (plan *queryPlan) varIsTop(variable string) bool {
-	return plan.hasVar(variable) && plan.vars[variable] == RESOLVED
+	return plan.hasVar(variable) && plan.vars[variable] == varRESOLVED
 }
 
 func (plan *queryPlan) addTopLevel(variable string) {
-	plan.vars[variable] = RESOLVED
+	plan.vars[variable] = varRESOLVED
 }
 
 func (plan *queryPlan) addLink(parent, child string) {
