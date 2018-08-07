@@ -1,34 +1,34 @@
 package main
 
 import (
-	"context"
+	//"context"
 	"crypto/md5"
 	"encoding/binary"
 	"encoding/csv"
 	"fmt"
 	"io/ioutil"
 	"math/big"
-	"net/http"
+	//"net/http"
 	"os"
 	"os/exec"
-	"os/signal"
+	//"os/signal"
 	"os/user"
 	"strings"
-	"syscall"
+	//"syscall"
 	"time"
 
 	"github.com/gtfierro/hod/config"
 	hod "github.com/gtfierro/hod/db"
 	query "github.com/gtfierro/hod/lang"
 	sparql "github.com/gtfierro/hod/lang/ast"
-	"github.com/gtfierro/hod/server"
+	//"github.com/gtfierro/hod/server"
 	"github.com/gtfierro/hod/turtle"
 	"github.com/gtfierro/hod/version"
 
 	"github.com/chzyer/readline"
 	"github.com/fatih/color"
-	"github.com/immesys/bw2/crypto"
-	"github.com/immesys/bw2bind"
+	//"github.com/immesys/bw2/crypto"
+	//"github.com/immesys/bw2bind"
 	"github.com/montanaflynn/stats"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli"
@@ -38,7 +38,7 @@ func init() {
 	fmt.Println(version.LOGO)
 }
 
-type ResultMap hod.ResultMap
+//type ResultMap hod.ResultMap
 
 func benchLoad(c *cli.Context) error {
 	if c.NArg() == 0 {
@@ -81,169 +81,173 @@ func startCLI(c *cli.Context) error {
 }
 
 func startServer(c *cli.Context) error {
-	cfg, err := config.ReadConfig(c.String("config"))
-	if err != nil {
-		log.Error(err)
-		return err
-	}
-	cfg.ReloadOntologies = false
-	db, err := hod.NewHodDB(cfg)
-	if err != nil {
-		log.Error(err)
-		return err
-	}
-	defer db.Close()
-	var srv *http.Server
-	if cfg.EnableHTTP {
-		srv = server.StartHodServer(db, cfg)
-	}
-	if cfg.EnableBOSSWAVE {
-		client := bw2bind.ConnectOrExit(cfg.BW2_AGENT)
-		client.SetEntityFileOrExit(cfg.BW2_DEFAULT_ENTITY)
-		client.OverrideAutoChainTo(true)
-
-		svc := client.RegisterService(cfg.HodURI, "s.hod")
-		iface := svc.RegisterInterface("_", "i.hod")
-		queryChan, err := client.Subscribe(&bw2bind.SubscribeParams{
-			URI: iface.SlotURI("query"),
-		})
-		if err != nil {
-			err = errors.Wrapf(err, "Could not subscribe to HodDB query slot URI %s", iface.SlotURI("query"))
-			log.Error(err)
-			return err
-		}
-
-		log.Notice("Serving query URI", iface.SlotURI("query"))
-
-		const QueryPIDString = "2.0.10.1"
-		//var QueryPID = bw2bind.FromDotForm(QueryPIDString)
-		const ResponsePIDString = "2.0.10.2"
-		var ResponsePID = bw2bind.FromDotForm(ResponsePIDString)
-		type hodQuery struct {
-			Query string
-			Nonce string
-		}
-		type hodResponse struct {
-			Count   int
-			Nonce   string
-			Elapsed int64
-			Rows    []ResultMap
-			Error   string
-			Errors  []string
-		}
-
-		handleBOSSWAVEQuery := func(msg *bw2bind.SimpleMessage) {
-			var inq hodQuery
-			po := msg.GetOnePODF(QueryPIDString)
-			if po == nil {
-				return
-			}
-			if obj, ok := po.(bw2bind.MsgPackPayloadObject); !ok {
-				log.Error("Payload 2.0.10.1 was not MsgPack")
-				return
-			} else if err := obj.ValueInto(&inq); err != nil {
-				log.Error(errors.Wrap(err, "Could not unmarshal into a hod query"))
-				return
-			}
-			log.Info("Serving query", inq.Query)
-
-			var response hodResponse
-			returnErr := func(err error) {
-				log.Error(errors.Wrap(err, "Could not parse hod query"))
-				response = hodResponse{
-					Nonce: inq.Nonce,
-					Error: err.Error(),
-				}
-				responsePO, err := bw2bind.CreateMsgPackPayloadObject(ResponsePID, response)
-				if err != nil {
-					log.Error(errors.Wrap(err, "Could not serialize hod response"))
-					return
-				}
-				if err = iface.PublishSignal("result", responsePO); err != nil {
-					log.Error(errors.Wrap(err, "Could not send hod response"))
-					return
-				}
-			}
-
-			q, err := query.Parse(inq.Query)
-			if err != nil {
-				returnErr(err)
-				return
-			}
-
-			newq := q.Copy()
-			toKey, _ := crypto.UnFmtKey(msg.From)
-			var dbs []string
-			if newq.From.AllDBs || newq.From.Empty() {
-				dbs = db.Databases()
-			} else {
-				dbs = newq.From.Databases
-			}
-			newq.From.Databases = []string{}
-			newq.From.AllDBs = false
-			for _, dbname := range dbs {
-				key, zero, err := client.ResolveLongAlias(dbname)
-				if err != nil {
-					log.Error(errors.Wrap(err, "Could not resolve alias"))
-					continue
-				}
-				if zero {
-					log.Error(errors.New("No alias by that name"))
-					continue
-				}
-				if allowVK("06DZ14k6dhRognGUoSHofD8oS8CUaWwq4tH-FPW13UU=/hod", key, toKey, client) {
-					newq.From.Databases = append(newq.From.Databases, dbname)
-				}
-			}
-
-			result, err := db.RunQuery(newq)
-			if err != nil {
-				log.Error(errors.Wrap(err, "Could not run query"))
-				returnErr(err)
-				return
-			}
-
-			response = hodResponse{
-				Count:   result.Count,
-				Errors:  result.Errors,
-				Elapsed: result.Elapsed.Nanoseconds(),
-				Nonce:   inq.Nonce,
-			}
-			for _, row := range result.Rows {
-				response.Rows = append(response.Rows, ResultMap(row))
-			}
-
-			responsePO, err := bw2bind.CreateMsgPackPayloadObject(ResponsePID, response)
-			if err != nil {
-				log.Error(errors.Wrap(err, "Could not serialize hod response"))
-				return
-			}
-			if err = iface.PublishSignal("result", responsePO); err != nil {
-				log.Error(errors.Wrap(err, "Could not send hod response"))
-				return
-			}
-		}
-
-		go func() {
-			for msg := range queryChan {
-				go handleBOSSWAVEQuery(msg)
-			}
-		}()
-	}
-	interruptSignal := make(chan os.Signal, 1)
-	signal.Notify(interruptSignal, os.Interrupt, syscall.SIGTERM)
-	killSignal := <-interruptSignal
-	switch killSignal {
-	case os.Interrupt:
-		log.Warning("SIGINT")
-	case syscall.SIGTERM:
-		log.Warning("SIGTERM")
-	}
-	if srv != nil {
-		srv.Shutdown(context.Background())
-	}
 	return nil
 }
+
+// func startServer(c *cli.Context) error {
+// 	cfg, err := config.ReadConfig(c.String("config"))
+// 	if err != nil {
+// 		log.Error(err)
+// 		return err
+// 	}
+// 	cfg.ReloadOntologies = false
+// 	db, err := hod.NewHodDB(cfg)
+// 	if err != nil {
+// 		log.Error(err)
+// 		return err
+// 	}
+// 	defer db.Close()
+// 	var srv *http.Server
+// 	if cfg.EnableHTTP {
+// 		srv = server.StartHodServer(db, cfg)
+// 	}
+// 	if cfg.EnableBOSSWAVE {
+// 		client := bw2bind.ConnectOrExit(cfg.BW2_AGENT)
+// 		client.SetEntityFileOrExit(cfg.BW2_DEFAULT_ENTITY)
+// 		client.OverrideAutoChainTo(true)
+//
+// 		svc := client.RegisterService(cfg.HodURI, "s.hod")
+// 		iface := svc.RegisterInterface("_", "i.hod")
+// 		queryChan, err := client.Subscribe(&bw2bind.SubscribeParams{
+// 			URI: iface.SlotURI("query"),
+// 		})
+// 		if err != nil {
+// 			err = errors.Wrapf(err, "Could not subscribe to HodDB query slot URI %s", iface.SlotURI("query"))
+// 			log.Error(err)
+// 			return err
+// 		}
+//
+// 		log.Notice("Serving query URI", iface.SlotURI("query"))
+//
+// 		const QueryPIDString = "2.0.10.1"
+// 		//var QueryPID = bw2bind.FromDotForm(QueryPIDString)
+// 		const ResponsePIDString = "2.0.10.2"
+// 		var ResponsePID = bw2bind.FromDotForm(ResponsePIDString)
+// 		type hodQuery struct {
+// 			Query string
+// 			Nonce string
+// 		}
+// 		type hodResponse struct {
+// 			Count   int
+// 			Nonce   string
+// 			Elapsed int64
+// 			Rows    []ResultMap
+// 			Error   string
+// 			Errors  []string
+// 		}
+//
+// 		handleBOSSWAVEQuery := func(msg *bw2bind.SimpleMessage) {
+// 			var inq hodQuery
+// 			po := msg.GetOnePODF(QueryPIDString)
+// 			if po == nil {
+// 				return
+// 			}
+// 			if obj, ok := po.(bw2bind.MsgPackPayloadObject); !ok {
+// 				log.Error("Payload 2.0.10.1 was not MsgPack")
+// 				return
+// 			} else if err := obj.ValueInto(&inq); err != nil {
+// 				log.Error(errors.Wrap(err, "Could not unmarshal into a hod query"))
+// 				return
+// 			}
+// 			log.Info("Serving query", inq.Query)
+//
+// 			var response hodResponse
+// 			returnErr := func(err error) {
+// 				log.Error(errors.Wrap(err, "Could not parse hod query"))
+// 				response = hodResponse{
+// 					Nonce: inq.Nonce,
+// 					Error: err.Error(),
+// 				}
+// 				responsePO, err := bw2bind.CreateMsgPackPayloadObject(ResponsePID, response)
+// 				if err != nil {
+// 					log.Error(errors.Wrap(err, "Could not serialize hod response"))
+// 					return
+// 				}
+// 				if err = iface.PublishSignal("result", responsePO); err != nil {
+// 					log.Error(errors.Wrap(err, "Could not send hod response"))
+// 					return
+// 				}
+// 			}
+//
+// 			q, err := query.Parse(inq.Query)
+// 			if err != nil {
+// 				returnErr(err)
+// 				return
+// 			}
+//
+// 			newq := q.Copy()
+// 			//toKey, _ := crypto.UnFmtKey(msg.From)
+// 			var dbs []string
+// 			if newq.From.AllDBs || newq.From.Empty() {
+// 				dbs = db.Databases()
+// 			} else {
+// 				dbs = newq.From.Databases
+// 			}
+// 			newq.From.Databases = []string{}
+// 			newq.From.AllDBs = false
+// 			for _, dbname := range dbs {
+// 				//key, zero, err := client.ResolveLongAlias(dbname)
+// 				//if err != nil {
+// 				//	log.Error(errors.Wrap(err, "Could not resolve alias"))
+// 				//	continue
+// 				//}
+// 				//if zero {
+// 				//	log.Error(errors.New("No alias by that name"))
+// 				//	continue
+// 				//}
+// 				//if allowVK("06DZ14k6dhRognGUoSHofD8oS8CUaWwq4tH-FPW13UU=/hod", key, toKey, client) {
+// 				newq.From.Databases = append(newq.From.Databases, dbname)
+// 				//}
+// 			}
+//
+// 			result, err := db.RunQuery(newq)
+// 			if err != nil {
+// 				log.Error(errors.Wrap(err, "Could not run query"))
+// 				returnErr(err)
+// 				return
+// 			}
+//
+// 			response = hodResponse{
+// 				Count:   result.Count,
+// 				Errors:  result.Errors,
+// 				Elapsed: result.Elapsed.Nanoseconds(),
+// 				Nonce:   inq.Nonce,
+// 			}
+// 			for _, row := range result.Rows {
+// 				response.Rows = append(response.Rows, ResultMap(row))
+// 			}
+//
+// 			responsePO, err := bw2bind.CreateMsgPackPayloadObject(ResponsePID, response)
+// 			if err != nil {
+// 				log.Error(errors.Wrap(err, "Could not serialize hod response"))
+// 				return
+// 			}
+// 			if err = iface.PublishSignal("result", responsePO); err != nil {
+// 				log.Error(errors.Wrap(err, "Could not send hod response"))
+// 				return
+// 			}
+// 		}
+//
+// 		go func() {
+// 			for msg := range queryChan {
+// 				go handleBOSSWAVEQuery(msg)
+// 			}
+// 		}()
+// 	}
+// 	interruptSignal := make(chan os.Signal, 1)
+// 	signal.Notify(interruptSignal, os.Interrupt, syscall.SIGTERM)
+// 	killSignal := <-interruptSignal
+// 	switch killSignal {
+// 	case os.Interrupt:
+// 		log.Warning("SIGINT")
+// 	case syscall.SIGTERM:
+// 		log.Warning("SIGTERM")
+// 	}
+// 	if srv != nil {
+// 		srv.Shutdown(context.Background())
+// 	}
+// 	return nil
+// }
 
 func doQuery(c *cli.Context) error {
 	cfg, err := config.ReadConfig(c.String("config"))
@@ -260,7 +264,7 @@ func doQuery(c *cli.Context) error {
 	defer db.Close()
 	var (
 		q   *sparql.Query
-		res hod.QueryResult
+		res *hod.QueryResult
 	)
 	if c.String("query") != "" {
 		q, err = query.Parse(c.String("query"))
