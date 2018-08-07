@@ -35,6 +35,7 @@ func newQueryResult() QueryResult {
 
 func (qr *QueryResult) fromRows(rows []*ResultRow, vars []string, toMap bool) {
 	qr.Count = len(rows)
+	qr.selectVars = vars
 	if toMap {
 		for _, row := range rows {
 			m := make(ResultMap)
@@ -102,11 +103,11 @@ func (qr QueryResult) DumpToCSV(usePrefixes bool, db *HodDB, w io.Writer) error 
 		for _, row := range qr.Rows {
 			var line = make([]string, len(qr.selectVars))
 			for idx, varname := range qr.selectVars {
-				if usePrefixes {
-					line[idx] = db.abbreviate(row[varname])
-				} else {
-					line[idx] = row[varname].String()
-				}
+				//if usePrefixes {
+				//	line[idx] = db.abbreviate(row[varname])
+				//} else {
+				line[idx] = row[varname].String()
+				//}
 			}
 			if err := csvwriter.Write(line); err != nil {
 				return err

@@ -2,12 +2,13 @@ package db
 
 import (
 	"github.com/RoaringBitmap/roaring"
+	"github.com/gtfierro/hod/storage"
 )
 
 type Relation struct {
 	rows []*Row
 
-	multiindex map[string]map[Key]*roaring.Bitmap
+	multiindex map[string]map[storage.HashKey]*roaring.Bitmap
 
 	// map variable name to position in row
 	vars map[string]int
@@ -18,11 +19,11 @@ func NewRelation(vars []string) *Relation {
 	rel := &Relation{
 		keys:       vars,
 		vars:       make(map[string]int),
-		multiindex: make(map[string]map[Key]*roaring.Bitmap),
+		multiindex: make(map[string]map[storage.HashKey]*roaring.Bitmap),
 	}
 	for idx, varname := range vars {
 		rel.vars[varname] = idx
-		rel.multiindex[varname] = make(map[Key]*roaring.Bitmap)
+		rel.multiindex[varname] = make(map[storage.HashKey]*roaring.Bitmap)
 	}
 	return rel
 }
@@ -32,7 +33,7 @@ func (rel *Relation) add1Value(key1 string, values *keymap) {
 	if !found {
 		rel.vars[key1] = len(rel.vars) + 1
 		key1pos = rel.vars[key1]
-		rel.multiindex[key1] = make(map[Key]*roaring.Bitmap)
+		rel.multiindex[key1] = make(map[storage.HashKey]*roaring.Bitmap)
 	}
 
 	// For each value (for this variable), we want to check
@@ -41,7 +42,7 @@ func (rel *Relation) add1Value(key1 string, values *keymap) {
 	if len(rel.rows) == 0 {
 		rel.rows = make([]*Row, 0, values.Len())
 	}
-	values.Iter(func(value Key) {
+	values.Iter(func(value storage.HashKey) {
 		bitmap := rel.multiindex[key1][value]
 
 		// if this is non-nil, then the value exists already
@@ -58,18 +59,18 @@ func (rel *Relation) add1Value(key1 string, values *keymap) {
 	})
 }
 
-func (rel *Relation) add2Values(key1, key2 string, values [][]Key) {
+func (rel *Relation) add2Values(key1, key2 string, values [][]storage.HashKey) {
 	key1pos, found := rel.vars[key1]
 	if !found {
 		rel.vars[key1] = len(rel.vars) + 1
 		key1pos = rel.vars[key1]
-		rel.multiindex[key1] = make(map[Key]*roaring.Bitmap)
+		rel.multiindex[key1] = make(map[storage.HashKey]*roaring.Bitmap)
 	}
 	key2pos, found := rel.vars[key2]
 	if !found {
 		rel.vars[key2] = len(rel.vars) + 1
 		key2pos = rel.vars[key2]
-		rel.multiindex[key2] = make(map[Key]*roaring.Bitmap)
+		rel.multiindex[key2] = make(map[storage.HashKey]*roaring.Bitmap)
 	}
 
 	if len(rel.rows) == 0 {
@@ -102,24 +103,24 @@ func (rel *Relation) add2Values(key1, key2 string, values [][]Key) {
 	}
 }
 
-func (rel *Relation) add3Values(key1, key2, key3 string, values [][]Key) {
+func (rel *Relation) add3Values(key1, key2, key3 string, values [][]storage.HashKey) {
 	key1pos, found := rel.vars[key1]
 	if !found {
 		rel.vars[key1] = len(rel.vars) + 1
 		key1pos = rel.vars[key1]
-		rel.multiindex[key1] = make(map[Key]*roaring.Bitmap)
+		rel.multiindex[key1] = make(map[storage.HashKey]*roaring.Bitmap)
 	}
 	key2pos, found := rel.vars[key2]
 	if !found {
 		rel.vars[key2] = len(rel.vars) + 1
 		key2pos = rel.vars[key2]
-		rel.multiindex[key2] = make(map[Key]*roaring.Bitmap)
+		rel.multiindex[key2] = make(map[storage.HashKey]*roaring.Bitmap)
 	}
 	key3pos, found := rel.vars[key3]
 	if !found {
 		rel.vars[key3] = len(rel.vars) + 1
 		key3pos = rel.vars[key3]
-		rel.multiindex[key3] = make(map[Key]*roaring.Bitmap)
+		rel.multiindex[key3] = make(map[storage.HashKey]*roaring.Bitmap)
 	}
 
 	if len(rel.rows) == 0 {

@@ -3,6 +3,8 @@ package db
 import (
 	"bytes"
 	"sync"
+
+	"github.com/gtfierro/hod/storage"
 )
 
 type Row struct {
@@ -41,7 +43,7 @@ func (row *Row) copy() *Row {
 	return gr
 }
 
-func (row *Row) addValue(pos int, value Key) {
+func (row *Row) addValue(pos int, value storage.HashKey) {
 	if len(row.content) < pos*8+8 {
 		nrow := make([]byte, pos*8+8)
 		copy(nrow, row.content)
@@ -50,8 +52,8 @@ func (row *Row) addValue(pos int, value Key) {
 	copy(row.content[pos*8:], value[:])
 }
 
-func (row Row) valueAt(pos int) Key {
-	var k Key
+func (row Row) valueAt(pos int) storage.HashKey {
+	var k storage.HashKey
 	if pos*8+8 > len(row.content) {
 		return k
 	}

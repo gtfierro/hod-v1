@@ -3,33 +3,33 @@ package db
 import (
 	"sync"
 	"sync/atomic"
-	//"time"
 
+	"github.com/gtfierro/hod/storage"
 	"github.com/gtfierro/hod/turtle"
 )
 
 // cache overlay for databases
 type dbcache struct {
-	entityHashCache   map[turtle.URI]Key
-	uriCache          map[Key]turtle.URI
-	entityObjectCache map[Key]*Entity
-	entityIndexCache  map[Key]*EntityExtendedIndex
-	predCache         map[Key]*PredicateEntity
+	entityHashCache   map[turtle.URI]storage.HashKey
+	uriCache          map[storage.HashKey]turtle.URI
+	entityObjectCache map[storage.HashKey]storage.Entity
+	entityIndexCache  map[storage.HashKey]storage.EntityExtendedIndex
+	predCache         map[storage.HashKey]storage.PredicateEntity
 	hit               uint64
 	total             uint64
-	pendingEvict      chan Key
+	pendingEvict      chan storage.HashKey
 	sync.RWMutex
 }
 
 // size in mb of each cache
 func newCache(maxsize int) *dbcache {
 	c := &dbcache{
-		entityHashCache:   make(map[turtle.URI]Key),
-		entityObjectCache: make(map[Key]*Entity),
-		entityIndexCache:  make(map[Key]*EntityExtendedIndex),
-		uriCache:          make(map[Key]turtle.URI),
-		predCache:         make(map[Key]*PredicateEntity),
-		pendingEvict:      make(chan Key, 1e6),
+		entityHashCache:   make(map[turtle.URI]storage.HashKey),
+		entityObjectCache: make(map[storage.HashKey]storage.Entity),
+		entityIndexCache:  make(map[storage.HashKey]storage.EntityExtendedIndex),
+		uriCache:          make(map[storage.HashKey]turtle.URI),
+		predCache:         make(map[storage.HashKey]storage.PredicateEntity),
+		pendingEvict:      make(chan storage.HashKey, 1e6),
 	}
 
 	//var timer = time.NewTimer(5 * time.Second)
@@ -64,7 +64,7 @@ func (cache *dbcache) markHitOrMiss(b bool) {
 	atomic.AddUint64(&cache.total, 1)
 }
 
-func (cache *dbcache) getHash(uri turtle.URI) (Key, bool) {
+func (cache *dbcache) getHash(uri turtle.URI) (storage.HashKey, bool) {
 	cache.RLock()
 	defer cache.RUnlock()
 	hash, found := cache.entityHashCache[uri]
@@ -72,17 +72,17 @@ func (cache *dbcache) getHash(uri turtle.URI) (Key, bool) {
 	return hash, found
 }
 
-func (cache *dbcache) evict(hash Key) {
+func (cache *dbcache) evict(hash storage.HashKey) {
 	cache.pendingEvict <- hash
 }
 
-func (cache *dbcache) setHash(uri turtle.URI, hash Key) {
+func (cache *dbcache) setHash(uri turtle.URI, hash storage.HashKey) {
 	cache.Lock()
 	cache.entityHashCache[uri] = hash
 	cache.Unlock()
 }
 
-func (cache *dbcache) getURI(hash Key) (turtle.URI, bool) {
+func (cache *dbcache) getURI(hash storage.HashKey) (turtle.URI, bool) {
 	cache.RLock()
 	defer cache.RUnlock()
 	uri, found := cache.uriCache[hash]
@@ -90,13 +90,13 @@ func (cache *dbcache) getURI(hash Key) (turtle.URI, bool) {
 	return uri, found
 }
 
-func (cache *dbcache) setURI(hash Key, uri turtle.URI) {
+func (cache *dbcache) setURI(hash storage.HashKey, uri turtle.URI) {
 	cache.Lock()
 	cache.uriCache[hash] = uri
 	cache.Unlock()
 }
 
-func (cache *dbcache) getEntityByHash(hash Key) (*Entity, bool) {
+func (cache *dbcache) getEntityByHash(hash storage.HashKey) (storage.Entity, bool) {
 	cache.RLock()
 	defer cache.RUnlock()
 	ent, found := cache.entityObjectCache[hash]
@@ -104,13 +104,13 @@ func (cache *dbcache) getEntityByHash(hash Key) (*Entity, bool) {
 	return ent, found
 }
 
-func (cache *dbcache) setEntityByHash(hash Key, ent *Entity) {
+func (cache *dbcache) setEntityByHash(hash storage.HashKey, ent storage.Entity) {
 	cache.Lock()
 	cache.entityObjectCache[hash] = ent
 	cache.Unlock()
 }
 
-func (cache *dbcache) getExtendedIndexByHash(hash Key) (*EntityExtendedIndex, bool) {
+func (cache *dbcache) getExtendedIndexByHash(hash storage.HashKey) (storage.EntityExtendedIndex, bool) {
 	cache.RLock()
 	defer cache.RUnlock()
 	ext, found := cache.entityIndexCache[hash]
@@ -118,13 +118,13 @@ func (cache *dbcache) getExtendedIndexByHash(hash Key) (*EntityExtendedIndex, bo
 	return ext, found
 }
 
-func (cache *dbcache) setExtendedIndexByHash(hash Key, ext *EntityExtendedIndex) {
+func (cache *dbcache) setExtendedIndexByHash(hash storage.HashKey, ext storage.EntityExtendedIndex) {
 	cache.Lock()
 	cache.entityIndexCache[hash] = ext
 	cache.Unlock()
 }
 
-func (cache *dbcache) getPredicateByHash(hash Key) (*PredicateEntity, bool) {
+func (cache *dbcache) getPredicateByHash(hash storage.HashKey) (storage.PredicateEntity, bool) {
 	cache.RLock()
 	defer cache.RUnlock()
 	pred, found := cache.predCache[hash]
@@ -132,7 +132,7 @@ func (cache *dbcache) getPredicateByHash(hash Key) (*PredicateEntity, bool) {
 	return pred, found
 }
 
-func (cache *dbcache) setPredicateByHash(hash Key, pred *PredicateEntity) {
+func (cache *dbcache) setPredicateByHash(hash storage.HashKey, pred storage.PredicateEntity) {
 	cache.Lock()
 	cache.predCache[hash] = pred
 	cache.Unlock()

@@ -3,7 +3,8 @@ package db
 import (
 	"fmt"
 
-	"github.com/pkg/errors"
+	"github.com/gtfierro/hod/storage"
+	//logrus "github.com/sirupsen/logrus"
 )
 
 var trees = newBtreePool(BTREE_DEGREE)
@@ -22,22 +23,16 @@ type queryContext struct {
 	// names of joined variables
 	joined []string
 
-	t  *traversal
-	db *DB
+	tx *transaction
 	// embedded query plan
 	*queryPlan
 }
 
-func newQueryContext(plan *queryPlan, db *DB) (*queryContext, error) {
+func newQueryContext(plan *queryPlan, tx *transaction) (*queryContext, error) {
 	variablePosition := make(map[string]int)
 	definitions := make(map[string]*keymap)
 	for idx, variable := range plan.query.Variables {
 		variablePosition[variable] = idx
-	}
-
-	snap, err := db.snapshot()
-	if err != nil {
-		return nil, errors.Wrap(err, "Could not get snapshot")
 	}
 
 	return &queryContext{
@@ -45,9 +40,8 @@ func newQueryContext(plan *queryPlan, db *DB) (*queryContext, error) {
 		definitions:      definitions,
 		selectVars:       plan.selectVars,
 		rel:              NewRelation(plan.query.Variables),
-		db:               db,
+		tx:               tx,
 		queryPlan:        plan,
-		t:                &traversal{snap, db.cache},
 	}, nil
 }
 
@@ -68,7 +62,7 @@ func (ctx *queryContext) hasJoined(varname string) bool {
 	return false
 }
 
-func (ctx *queryContext) validValue(varname string, value Key) bool {
+func (ctx *queryContext) validValue(varname string, value storage.HashKey) bool {
 	if tree, found := ctx.definitions[varname]; found {
 		return tree.Has(value)
 	}
@@ -117,9 +111,9 @@ func (ctx *queryContext) restrictToResolved(varname string, values *keymap) {
 	}
 	// remove bad values
 
-	var toDelete []Key
+	var toDelete []storage.HashKey
 
-	values.Iter(func(k Key) {
+	values.Iter(func(k storage.HashKey) {
 		if !tree.Has(k) {
 			toDelete = append(toDelete, k)
 		}
@@ -139,8 +133,8 @@ func (ctx *queryContext) dumpRow(prefix string, row *Row) {
 	s := prefix + " ["
 	for varName, pos := range ctx.variablePosition {
 		val := row.valueAt(pos)
-		if val != emptyKey {
-			uri, err := ctx.t.getURI(val)
+		if val != storage.EmptyKey {
+			uri, err := ctx.tx.getURI(val)
 			if err != nil {
 				panic(err)
 			}
@@ -161,6 +155,7 @@ func (ctx *queryContext) getResults() (results []*ResultRow) {
 	}
 rowIter:
 	for _, row := range ctx.rel.rows {
+		//logrus.Info(row)
 		hash := hashRowWithPos(row, positions)
 		if _, found := jtest[hash]; found {
 			continue
@@ -170,11 +165,11 @@ rowIter:
 		resultrow := getResultRow(len(ctx.selectVars))
 		for idx, varname := range ctx.selectVars {
 			val := row.valueAt(ctx.variablePosition[varname])
-			if val == emptyKey {
+			if val == storage.EmptyKey {
 				continue rowIter
 			}
 			var err error
-			resultrow.row[idx], err = ctx.t.getURI(row.valueAt(ctx.variablePosition[varname]))
+			resultrow.row[idx], err = ctx.tx.getURI(row.valueAt(ctx.variablePosition[varname]))
 			if err != nil {
 				panic(err)
 			}
