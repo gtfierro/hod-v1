@@ -47,6 +47,10 @@ func (u URI) IsVariable() bool {
 	return strings.HasPrefix(u.Value, "?")
 }
 
+func (u URI) IsEmpty() bool {
+	return len(u.Namespace) == 0 && len(u.Value) == 0
+}
+
 func ParseURI(uri string) URI {
 	uri = strings.TrimLeft(uri, "<")
 	uri = strings.TrimRight(uri, ">")
