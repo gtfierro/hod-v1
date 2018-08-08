@@ -77,8 +77,12 @@ func (tx *transaction) addTriples(dataset turtle.DataSet) error {
 			objectHash := tx.hashes[triple.Object]
 			tx.inverseRelationships[subjectHash] = objectHash
 			tx.inverseRelationships[objectHash] = subjectHash
-			tx.getPredicateByURI(triple.Subject)
-			tx.getPredicateByURI(triple.Object)
+			if _, err := tx.getPredicateByURI(triple.Subject); err != nil {
+				return err
+			}
+			if _, err := tx.getPredicateByURI(triple.Object); err != nil {
+				return err
+			}
 		}
 		tx.triplesAdded++
 	}
@@ -417,9 +421,9 @@ func (tx *transaction) getPredicateByURI(uri turtle.URI) (storage.PredicateEntit
 	return tx.getPredicateByHash(hash)
 }
 
-func (tx *transaction) getPredicateByHash(hash storage.HashKey) (storage.PredicateEntity, error) {
+func (tx *transaction) getPredicateByHash(hash storage.HashKey) (pred storage.PredicateEntity, err error) {
 	if tx.cache == nil {
-		pred, err := tx.snapshot.GetPredicate(hash)
+		pred, err = tx.snapshot.GetPredicate(hash)
 		if err == storage.ErrNotFound {
 			pred = storage.NewPredicateEntity(hash)
 			err = tx.snapshot.PutPredicate(pred)
@@ -427,8 +431,10 @@ func (tx *transaction) getPredicateByHash(hash storage.HashKey) (storage.Predica
 		return pred, err
 	}
 
-	if pred, found := tx.cache.getPredicateByHash(hash); !found {
-		pred, err := tx.snapshot.GetPredicate(hash)
+	var found bool
+	pred, found = tx.cache.getPredicateByHash(hash)
+	if !found {
+		pred, err = tx.snapshot.GetPredicate(hash)
 		if err == nil {
 			tx.cache.setPredicateByHash(hash, pred)
 		} else if err == storage.ErrNotFound {
@@ -436,9 +442,8 @@ func (tx *transaction) getPredicateByHash(hash storage.HashKey) (storage.Predica
 			err = tx.snapshot.PutPredicate(pred)
 		}
 		return pred, err
-	} else {
-		return pred, nil
 	}
+	return pred, nil
 }
 
 // takes the inverse of every relationship. If no inverse exists, returns nil
@@ -497,38 +502,15 @@ func (tx *transaction) followPathFromObject(object storage.Entity, results *keym
 			}
 		case sparql.PATTERN_ZERO_PLUS:
 			results.Add(entity.Key())
-			//fallthrough
-			// faster index
-
-			if index, err := tx.snapshot.GetExtendedIndex(entity.Key()); err != nil {
-				return err
-			} else {
-				for _, entityHash := range index.ListInPlusEndpoints(predHash) {
-					results.Add(entityHash)
-				}
-				//return nil
-			}
-
-			for _, entityHash := range entity.ListInEndpoints(predHash) {
-				nextEntity, err := tx.snapshot.GetEntity(entityHash)
-				if err != nil {
-					return err
-				}
-				if !results.Has(nextEntity.Key()) {
-					searchstack.PushBack(nextEntity)
-				}
-				results.Add(entityHash)
-				stack.PushBack(nextEntity)
-			}
+			fallthrough
 
 		case sparql.PATTERN_ONE_PLUS:
-
-			if index, err := tx.snapshot.GetExtendedIndex(entity.Key()); err != nil {
+			index, err := tx.snapshot.GetExtendedIndex(entity.Key())
+			if err != nil {
 				return err
-			} else {
-				for _, entityHash := range index.ListInPlusEndpoints(predHash) {
-					results.Add(entityHash)
-				}
+			}
+			for _, entityHash := range index.ListInPlusEndpoints(predHash) {
+				results.Add(entityHash)
 			}
 
 			// here, these entities are all connected by the required predicate
@@ -584,35 +566,15 @@ func (tx *transaction) followPathFromSubject(subject storage.Entity, results *ke
 			// because this is one hop, we don't add any new entities to the stack
 		case sparql.PATTERN_ZERO_PLUS:
 			results.Add(entity.Key())
-			//fallthrough
+			fallthrough
 
-			if index, err := tx.snapshot.GetExtendedIndex(entity.Key()); err != nil {
-				return err
-			} else {
-				for _, entityHash := range index.ListOutPlusEndpoints(predHash) {
-					results.Add(entityHash)
-				}
-			}
-
-			// here, these entities are all connected by the required predicate
-			for _, entityHash := range entity.ListOutEndpoints(predHash) {
-				nextEntity, err := tx.snapshot.GetEntity(entityHash)
-				if err != nil {
-					return err
-				}
-				if !results.Has(nextEntity.Key()) {
-					searchstack.PushBack(nextEntity)
-				}
-				results.Add(entityHash)
-				stack.PushBack(nextEntity)
-			}
 		case sparql.PATTERN_ONE_PLUS:
-			if index, err := tx.snapshot.GetExtendedIndex(entity.Key()); err != nil {
+			index, err := tx.snapshot.GetExtendedIndex(entity.Key())
+			if err != nil {
 				return err
-			} else {
-				for _, entityHash := range index.ListOutPlusEndpoints(predHash) {
-					results.Add(entityHash)
-				}
+			}
+			for _, entityHash := range index.ListOutPlusEndpoints(predHash) {
+				results.Add(entityHash)
 			}
 
 			// here, these entities are all connected by the required predicate
