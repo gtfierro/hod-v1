@@ -1,10 +1,8 @@
 //go:generate msgp
-//msgp:ignore LinkResultMap
 package db
 
 import (
 	"encoding/csv"
-	"encoding/json"
 	"fmt"
 	"io"
 	"strings"
@@ -18,15 +16,20 @@ import (
 
 var emptyResultMapList = []ResultMap{}
 
+// QueryResult represents the result of a query execution
 type QueryResult struct {
 	selectVars []string
-	Rows       []ResultMap
-	Count      int
-	Elapsed    time.Duration
-	Errors     []string
+	// rows returned from the query
+	Rows []ResultMap
+	// number of results returned from the query
+	Count int
+	// amount of time elapsed for execution of the query
+	Elapsed time.Duration
+	// errors incurred during the execution of the query
+	Errors []string
 }
 
-func (qr *QueryResult) fromRows(rows []*ResultRow, vars []string, toMap bool) {
+func (qr *QueryResult) fromRows(rows []*resultRow, vars []string, toMap bool) {
 	qr.Count = len(rows)
 	qr.selectVars = vars
 	if toMap {
@@ -39,9 +42,9 @@ func (qr *QueryResult) fromRows(rows []*ResultRow, vars []string, toMap bool) {
 			finishResultRow(row)
 		}
 	}
-	return
 }
 
+// Dump writes a tabular representation of the query results to stdout
 func (qr QueryResult) Dump() {
 	if qr.Count == 0 {
 		fmt.Println("No results")
@@ -90,6 +93,7 @@ func (qr QueryResult) Dump() {
 	fmt.Println("Count:", qr.Count)
 }
 
+// DumpToCSV writes the query results to the provided io.Writer
 func (qr QueryResult) DumpToCSV(usePrefixes bool, db *HodDB, w io.Writer) error {
 	csvwriter := csv.NewWriter(w)
 	if len(qr.Rows) > 0 {
@@ -115,24 +119,16 @@ func (qr QueryResult) DumpToCSV(usePrefixes bool, db *HodDB, w io.Writer) error 
 	return nil
 }
 
+// ResultMap maps variable names to their values
 type ResultMap map[string]turtle.URI
-type LinkResultMap map[turtle.URI]map[string]string
 
-func (m LinkResultMap) MarshalJSON() ([]byte, error) {
-	var n = make(map[string]map[string]string)
-	for k, v := range m {
-		n[k.String()] = v
-	}
-	return json.Marshal(n)
-}
-
-type ResultRow struct {
+type resultRow struct {
 	row   []turtle.URI
 	count int
 }
 
-func (rr ResultRow) Less(than btree.Item, ctx interface{}) bool {
-	row := than.(*ResultRow)
+func (rr resultRow) Less(than btree.Item, ctx interface{}) bool {
+	row := than.(*resultRow)
 	before := false
 	for idx, item := range rr.row[:rr.count] {
 		if before {
@@ -143,24 +139,24 @@ func (rr ResultRow) Less(than btree.Item, ctx interface{}) bool {
 	return before
 }
 
-var _RESULTROWPOOL = sync.Pool{
+var resultRowPool = sync.Pool{
 	New: func() interface{} {
-		return &ResultRow{
+		return &resultRow{
 			row:   make([]turtle.URI, 16),
 			count: 0,
 		}
 	},
 }
 
-func getResultRow(num int) *ResultRow {
-	r := _RESULTROWPOOL.Get().(*ResultRow)
+func getResultRow(num int) *resultRow {
+	r := resultRowPool.Get().(*resultRow)
 	r.count = num
 	return r
 }
 
-func finishResultRow(r *ResultRow) {
+func finishResultRow(r *resultRow) {
 	r.count = 0
-	_RESULTROWPOOL.Put(r)
+	resultRowPool.Put(r)
 }
 
 //func cleanResultRows(b *btree.BTree) {

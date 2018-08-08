@@ -17,7 +17,7 @@ func reversePath(path []sparql.PathPattern) []sparql.PathPattern {
 	return newpath
 }
 
-func hashRowWithPos(row *Row, positions []int) uint32 {
+func hashRowWithPos(row *relationRow, positions []int) uint32 {
 	var b []byte
 	for _, pos := range positions {
 		b = append(b, row.content[pos*8:pos*8+8]...)

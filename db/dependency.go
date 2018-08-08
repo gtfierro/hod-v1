@@ -3,6 +3,7 @@ package db
 import (
 	"fmt"
 	sparql "github.com/gtfierro/hod/lang/ast"
+	logrus "github.com/sirupsen/logrus"
 	//"reflect"
 	"strings"
 )

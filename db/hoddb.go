@@ -161,46 +161,64 @@ func (hod *HodDB) RunQuery(q *sparql.Query) (result *QueryResult, rerr error) {
 		}
 	}
 
-	// form dependency graph and query plan
-	dg := makeDependencyGraph(q)
-	qp, err := formQueryPlan(dg, q)
-	if err != nil {
-		rerr = err
-		return
+	var queries []*sparql.Query
+
+	for _, group := range ors {
+		tmpQ := q.CopyWithNewTerms(group)
+		tmpQ.PopulateVars()
+		if tmpQ.Select.AllVars {
+			tmpQ.Select.Vars = tmpQ.Variables
+		}
+		queries = append(queries, &tmpQ)
 	}
-	for _, op := range qp.operations {
-		logrus.Info("op | ", op)
+	if len(queries) == 0 {
+		queries = append(queries, q)
 	}
 
-	q.PopulateVars()
 	result = new(QueryResult)
 	result.selectVars = q.Select.Vars
-	for _, g := range targetGraphs {
-		logrus.Info("Run query against> ", g)
-		tx, err := hod.openVersion(g)
-		defer tx.discard()
+	var results []*resultRow
+
+	for _, parsedQuery := range queries {
+		// form dependency graph and query plan
+		dg := makeDependencyGraph(parsedQuery)
+		qp, err := formQueryPlan(dg, parsedQuery)
 		if err != nil {
 			rerr = err
 			return
 		}
-		// TODO: turn the graph into a transaction
-		ctx, err := newQueryContext(qp, tx)
-		if err != nil {
-			rerr = errors.Wrap(err, "Could not get snapshot")
+		for _, op := range qp.operations {
+			logrus.Info("op | ", op)
 		}
 
-		for _, op := range ctx.operations {
-			//now := time.Now()
-			err := op.run(ctx)
+		//parsedQuery.PopulateVars()
+		for _, g := range targetGraphs {
+			logrus.Info("Run query against> ", g)
+			tx, err := hod.openVersion(g)
+			defer tx.discard()
 			if err != nil {
 				rerr = err
 				return
 			}
-		}
-		results := ctx.getResults()
-		result.fromRows(results, q.Select.Vars, true)
+			// TODO: turn the graph into a transaction
+			ctx, err := newQueryContext(qp, tx)
+			if err != nil {
+				rerr = errors.Wrap(err, "Could not get snapshot")
+			}
 
+			for _, op := range ctx.operations {
+				//now := time.Now()
+				err := op.run(ctx)
+				if err != nil {
+					rerr = err
+					return
+				}
+			}
+			_results := ctx.getResults()
+			results = append(results, _results...)
+		}
 	}
+	result.fromRows(results, q.Select.Vars, true)
 	return
 }
 

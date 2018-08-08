@@ -12,13 +12,13 @@ import (
 )
 
 const (
-	RDF_NAMESPACE = "http://www.w3.org/1999/02/22-rdf-syntax-ns"
-	OWL_NAMESPACE = "http://www.w3.org/2002/07/owl"
+	//RDF_NAMESPACE = "http://www.w3.org/1999/02/22-rdf-syntax-ns"
+	owlNamespace = "http://www.w3.org/2002/07/owl"
 )
 
 var (
-	INVERSEOF = turtle.URI{
-		Namespace: OWL_NAMESPACE,
+	inverseOf = turtle.URI{
+		Namespace: owlNamespace,
 		Value:     "inverseOf",
 	}
 )
@@ -72,7 +72,7 @@ func (tx *transaction) addTriples(dataset turtle.DataSet) error {
 
 		// if triple defines an inverseOf relationship, then track the subject/object of that
 		// triple so we can populate the graph later
-		if triple.Predicate.Namespace == OWL_NAMESPACE && triple.Predicate.Value == "inverseOf" {
+		if triple.Predicate.Namespace == owlNamespace && triple.Predicate.Value == "inverseOf" {
 			subjectHash := tx.hashes[triple.Subject]
 			objectHash := tx.hashes[triple.Object]
 			tx.inverseRelationships[subjectHash] = objectHash
@@ -80,22 +80,22 @@ func (tx *transaction) addTriples(dataset turtle.DataSet) error {
 			tx.getPredicateByURI(triple.Subject)
 			tx.getPredicateByURI(triple.Object)
 		}
-		tx.triplesAdded += 1
+		tx.triplesAdded++
 	}
 	addEnd := time.Now()
 
 	// pull out all of the inverse edges from the database and add to inverseRelationships
 	reverseEdgeFindStart := time.Now()
 	var predicatesAdded int
-	pred, err := tx.getPredicateByURI(INVERSEOF)
+	pred, err := tx.getPredicateByURI(inverseOf)
 	if err != nil && err != storage.ErrNotFound {
-		logrus.WithError(err).Error("Could not load INVERSEOF pred")
+		logrus.WithError(err).Error("Could not load inverseOf pred")
 	} else if err == nil {
 		for _, subject := range pred.GetAllSubjects() {
 			for _, object := range pred.GetObjects(subject) {
 				tx.inverseRelationships[subject] = object
 				tx.inverseRelationships[object] = subject
-				predicatesAdded += 1
+				predicatesAdded++
 			}
 		}
 	}
@@ -176,11 +176,11 @@ func (tx *transaction) addTriples(dataset turtle.DataSet) error {
 }
 
 func (tx *transaction) addURI(uri turtle.URI) error {
-	if hash, err := tx.snapshot.PutURI(uri); err != nil {
+	hash, err := tx.snapshot.PutURI(uri)
+	if err != nil {
 		return err
-	} else {
-		tx.hashes[uri] = hash
 	}
+	tx.hashes[uri] = hash
 	return nil
 }
 
@@ -337,30 +337,30 @@ func (tx *transaction) getHash(uri turtle.URI) (storage.HashKey, error) {
 	if tx.cache == nil {
 		return tx.snapshot.GetHash(uri)
 	}
-	if hash, found := tx.cache.getHash(uri); !found {
+	hash, found := tx.cache.getHash(uri)
+	if !found {
 		hash, err := tx.snapshot.GetHash(uri)
 		if err == nil {
 			tx.cache.setHash(uri, hash)
 		}
 		return hash, err
-	} else {
-		return hash, nil
 	}
+	return hash, nil
 }
 
 func (tx *transaction) getURI(hash storage.HashKey) (turtle.URI, error) {
 	if tx.cache == nil {
 		return tx.snapshot.GetURI(hash)
 	}
-	if uri, found := tx.cache.getURI(hash); !found {
+	uri, found := tx.cache.getURI(hash)
+	if !found {
 		uri, err := tx.snapshot.GetURI(hash)
 		if err == nil {
 			tx.cache.setURI(hash, uri)
 		}
 		return uri, err
-	} else {
-		return uri, nil
 	}
+	return uri, nil
 }
 
 func (tx *transaction) getEntityByURI(uri turtle.URI) (storage.Entity, error) {
@@ -375,15 +375,15 @@ func (tx *transaction) getEntityByHash(hash storage.HashKey) (storage.Entity, er
 	if tx.cache == nil {
 		return tx.snapshot.GetEntity(hash)
 	}
-	if ent, found := tx.cache.getEntityByHash(hash); !found {
+	ent, found := tx.cache.getEntityByHash(hash)
+	if !found {
 		ent, err := tx.snapshot.GetEntity(hash)
 		if err == nil {
 			tx.cache.setEntityByHash(hash, ent)
 		}
 		return ent, err
-	} else {
-		return ent, nil
 	}
+	return ent, nil
 }
 
 func (tx *transaction) getExtendedIndexByURI(uri turtle.URI) (storage.EntityExtendedIndex, error) {
@@ -398,15 +398,15 @@ func (tx *transaction) getExtendedIndexByHash(hash storage.HashKey) (storage.Ent
 	if tx.cache == nil {
 		return tx.snapshot.GetExtendedIndex(hash)
 	}
-	if ext, found := tx.cache.getExtendedIndexByHash(hash); !found {
+	ext, found := tx.cache.getExtendedIndexByHash(hash)
+	if !found {
 		ext, err := tx.snapshot.GetExtendedIndex(hash)
 		if err == nil {
 			tx.cache.setExtendedIndexByHash(hash, ext)
 		}
 		return ext, err
-	} else {
-		return ext, nil
 	}
+	return ext, nil
 }
 
 func (tx *transaction) getPredicateByURI(uri turtle.URI) (storage.PredicateEntity, error) {
@@ -506,7 +506,7 @@ func (tx *transaction) followPathFromObject(object storage.Entity, results *keym
 				for _, entityHash := range index.ListInPlusEndpoints(predHash) {
 					results.Add(entityHash)
 				}
-				return nil
+				//return nil
 			}
 
 			for _, entityHash := range entity.ListInEndpoints(predHash) {

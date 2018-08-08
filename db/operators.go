@@ -57,7 +57,7 @@ func (rs *resolveSubject) run(ctx *queryContext) error {
 		// if it *is* already defined, then we intersect the values by joining
 		ctx.unionDefinitions(subjectVar, subjects)
 
-		newrel := NewRelation([]string{subjectVar})
+		newrel := newRelation([]string{subjectVar})
 		newrel.add1Value(subjectVar, subjects)
 
 		ctx.rel.join(newrel, []string{subjectVar}, ctx)
@@ -104,7 +104,7 @@ func (ro *resolveObject) run(ctx *queryContext) error {
 	} else {
 		ctx.unionDefinitions(objectVar, objects)
 
-		newrel := NewRelation([]string{objectVar})
+		newrel := newRelation([]string{objectVar})
 		newrel.add1Value(objectVar, objects)
 
 		ctx.rel.join(newrel, []string{objectVar}, ctx)
@@ -159,7 +159,7 @@ func (op *resolvePredicate) run(ctx *queryContext) error {
 	} else {
 		ctx.unionDefinitions(predicateVar, predicates)
 
-		newrel := NewRelation([]string{predicateVar})
+		newrel := newRelation([]string{predicateVar})
 		newrel.add1Value(predicateVar, predicates)
 
 		ctx.rel.join(newrel, []string{predicateVar}, ctx)
@@ -196,7 +196,7 @@ func (rso *restrictSubjectObjectByPredicate) run(ctx *queryContext) error {
 	// this operator takes existing values for subjects and objects and finds the pairs of them that
 	// are connected by the path defined by rso.term.Predicates.
 
-	var rsopRelation *Relation
+	var rsopRelation *relation
 	var relationContents [][]storage.HashKey
 	var joinOn []string
 	var itererr error
@@ -207,7 +207,7 @@ func (rso *restrictSubjectObjectByPredicate) run(ctx *queryContext) error {
 		joinOn = []string{subjectVar}
 		subjects := ctx.getValuesForVariable(subjectVar)
 
-		rsopRelation = NewRelation([]string{subjectVar, objectVar})
+		rsopRelation = newRelation([]string{subjectVar, objectVar})
 
 		subjects.Iter(func(subject storage.HashKey) {
 			reachableObjects := ctx.tx.getObjectFromSubjectPred(subject, rso.term.Predicates)
@@ -223,7 +223,7 @@ func (rso *restrictSubjectObjectByPredicate) run(ctx *queryContext) error {
 		joinOn = []string{objectVar}
 		objects := ctx.getValuesForVariable(objectVar)
 
-		rsopRelation = NewRelation([]string{objectVar, subjectVar})
+		rsopRelation = newRelation([]string{objectVar, subjectVar})
 
 		objects.Iter(func(object storage.HashKey) {
 			reachableSubjects, err := ctx.tx.getSubjectFromPredObject(object, rso.term.Predicates)
@@ -245,7 +245,7 @@ func (rso *restrictSubjectObjectByPredicate) run(ctx *queryContext) error {
 		joinOn = []string{subjectVar}
 		subjects := ctx.getValuesForVariable(subjectVar)
 
-		rsopRelation = NewRelation([]string{subjectVar, objectVar})
+		rsopRelation = newRelation([]string{subjectVar, objectVar})
 
 		subjects.Iter(func(subject storage.HashKey) {
 			reachableObjects := ctx.tx.getObjectFromSubjectPred(subject, rso.term.Predicates)
@@ -260,7 +260,7 @@ func (rso *restrictSubjectObjectByPredicate) run(ctx *queryContext) error {
 		joinOn = []string{objectVar}
 		objects := ctx.getValuesForVariable(objectVar)
 
-		rsopRelation = NewRelation([]string{objectVar, subjectVar})
+		rsopRelation = newRelation([]string{objectVar, subjectVar})
 
 		objects.Iter(func(object storage.HashKey) {
 			reachableSubjects, err := ctx.tx.getSubjectFromPredObject(object, rso.term.Predicates)
@@ -313,7 +313,7 @@ func (rsv *resolveSubjectFromVarObject) run(ctx *queryContext) error {
 		subjectVar = rsv.term.Subject.String()
 	)
 
-	var rsopRelation = NewRelation([]string{objectVar, subjectVar})
+	var rsopRelation = newRelation([]string{objectVar, subjectVar})
 	var relationContents [][]storage.HashKey
 	var itererr error
 
@@ -368,7 +368,7 @@ func (rov *resolveObjectFromVarSubject) run(ctx *queryContext) error {
 		subjectVar = rov.term.Subject.String()
 	)
 
-	var rsopRelation = NewRelation([]string{subjectVar, objectVar})
+	var rsopRelation = newRelation([]string{subjectVar, objectVar})
 	var relationContents [][]storage.HashKey
 
 	newObjects := newKeymap()
@@ -439,11 +439,11 @@ func (op *resolveSubjectObjectFromPred) run(ctx *queryContext) error {
 	objectVar := op.term.Object.String()
 
 	if ctx.defined(subjectVar) || ctx.hasJoined(subjectVar) {
-		rsopRelation := NewRelation([]string{subjectVar, objectVar})
+		rsopRelation := newRelation([]string{subjectVar, objectVar})
 		rsopRelation.add2Values(subjectVar, objectVar, subsobjs)
 		ctx.rel.join(rsopRelation, []string{subjectVar}, ctx)
 	} else if ctx.defined(objectVar) || ctx.hasJoined(objectVar) {
-		rsopRelation := NewRelation([]string{subjectVar, objectVar})
+		rsopRelation := newRelation([]string{subjectVar, objectVar})
 		rsopRelation.add2Values(subjectVar, objectVar, subsobjs)
 		ctx.rel.join(rsopRelation, []string{objectVar}, ctx)
 	} else {
@@ -522,11 +522,11 @@ func (op *resolveSubjectPredFromObject) run(ctx *queryContext) error {
 	}
 
 	if ctx.defined(subjectVar) {
-		rsopRelation := NewRelation([]string{subjectVar, predicateVar})
+		rsopRelation := newRelation([]string{subjectVar, predicateVar})
 		rsopRelation.add2Values(subjectVar, predicateVar, subPredPairs)
 		ctx.rel.join(rsopRelation, []string{subjectVar}, ctx)
 	} else if ctx.defined(predicateVar) {
-		rsopRelation := NewRelation([]string{subjectVar, predicateVar})
+		rsopRelation := newRelation([]string{subjectVar, predicateVar})
 		rsopRelation.add2Values(subjectVar, predicateVar, subPredPairs)
 		ctx.rel.join(rsopRelation, []string{predicateVar}, ctx)
 	} else {
@@ -597,16 +597,16 @@ func (op *resolvePredObjectFromSubject) run(ctx *queryContext) error {
 		return itererr
 	}
 
-	var rsopRelation *Relation
+	var rsopRelation *relation
 	var joinOn []string
 	if ctx.hasJoined(predicateVar) {
 		joinOn = []string{predicateVar}
-		rsopRelation = NewRelation([]string{predicateVar, objectVar})
+		rsopRelation = newRelation([]string{predicateVar, objectVar})
 		rsopRelation.add2Values(predicateVar, objectVar, predObjPairs)
 		ctx.rel.join(rsopRelation, joinOn, ctx)
 	} else if ctx.hasJoined(objectVar) {
 		joinOn = []string{objectVar}
-		rsopRelation = NewRelation([]string{objectVar, predicateVar})
+		rsopRelation = newRelation([]string{objectVar, predicateVar})
 		rsopRelation.add2Values(predicateVar, objectVar, predObjPairs)
 		ctx.rel.join(rsopRelation, joinOn, ctx)
 	} else {
@@ -648,7 +648,7 @@ func (op *resolveVarTripleFromSubject) run(ctx *queryContext) error {
 		predicateVar = op.term.Predicates[0].Predicate.String()
 	)
 
-	var rsopRelation = NewRelation([]string{subjectVar, predicateVar, objectVar})
+	var rsopRelation = newRelation([]string{subjectVar, predicateVar, objectVar})
 	var relationContents [][]storage.HashKey
 
 	subjects := ctx.definitions[subjectVar]
@@ -697,7 +697,7 @@ func (op *resolveVarTripleFromObject) run(ctx *queryContext) error {
 		predicateVar = op.term.Predicates[0].Predicate.String()
 	)
 
-	var rsopRelation = NewRelation([]string{objectVar, predicateVar, subjectVar})
+	var rsopRelation = newRelation([]string{objectVar, predicateVar, subjectVar})
 	var relationContents [][]storage.HashKey
 
 	objects := ctx.definitions[objectVar]
@@ -747,7 +747,7 @@ func (op *resolveVarTripleFromPredicate) run(ctx *queryContext) error {
 		predicateVar = op.term.Predicates[0].Predicate.String()
 	)
 
-	var rsopRelation = NewRelation([]string{predicateVar, subjectVar, objectVar})
+	var rsopRelation = newRelation([]string{predicateVar, subjectVar, objectVar})
 	var relationContents [][]storage.HashKey
 
 	predicates := ctx.definitions[predicateVar]
@@ -811,7 +811,7 @@ func (op *resolveVarTripleAll) run(ctx *queryContext) error {
 		objectVar    = op.term.Object.String()
 		predicateVar = op.term.Predicates[0].Predicate.String()
 	)
-	var relation = NewRelation([]string{subjectVar, predicateVar, objectVar})
+	var relation = newRelation([]string{subjectVar, predicateVar, objectVar})
 	var content [][]storage.HashKey
 
 	iter := func(subjectHash storage.HashKey, entity storage.Entity) bool {

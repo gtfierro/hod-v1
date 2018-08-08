@@ -5,8 +5,8 @@ import (
 	"github.com/gtfierro/hod/storage"
 )
 
-type Relation struct {
-	rows []*Row
+type relation struct {
+	rows []*relationRow
 
 	multiindex map[string]map[storage.HashKey]*roaring.Bitmap
 
@@ -15,8 +15,8 @@ type Relation struct {
 	keys []string
 }
 
-func NewRelation(vars []string) *Relation {
-	rel := &Relation{
+func newRelation(vars []string) *relation {
+	rel := &relation{
 		keys:       vars,
 		vars:       make(map[string]int),
 		multiindex: make(map[string]map[storage.HashKey]*roaring.Bitmap),
@@ -28,7 +28,7 @@ func NewRelation(vars []string) *Relation {
 	return rel
 }
 
-func (rel *Relation) add1Value(key1 string, values *keymap) {
+func (rel *relation) add1Value(key1 string, values *keymap) {
 	key1pos, found := rel.vars[key1]
 	if !found {
 		rel.vars[key1] = len(rel.vars) + 1
@@ -40,7 +40,7 @@ func (rel *Relation) add1Value(key1 string, values *keymap) {
 	// if the bitmap is non-zero. If it is, then this value already
 	// exists inside the relation. Otherwise, we can add it ourselves
 	if len(rel.rows) == 0 {
-		rel.rows = make([]*Row, 0, values.Len())
+		rel.rows = make([]*relationRow, 0, values.Len())
 	}
 	values.Iter(func(value storage.HashKey) {
 		bitmap := rel.multiindex[key1][value]
@@ -50,7 +50,7 @@ func (rel *Relation) add1Value(key1 string, values *keymap) {
 			return
 		}
 
-		row := NewRow()
+		row := newRelationRow()
 		row.addValue(key1pos, value)
 		rel.rows = append(rel.rows, row)
 		// add the row to the multiindex
@@ -59,7 +59,7 @@ func (rel *Relation) add1Value(key1 string, values *keymap) {
 	})
 }
 
-func (rel *Relation) add2Values(key1, key2 string, values [][]storage.HashKey) {
+func (rel *relation) add2Values(key1, key2 string, values [][]storage.HashKey) {
 	key1pos, found := rel.vars[key1]
 	if !found {
 		rel.vars[key1] = len(rel.vars) + 1
@@ -74,7 +74,7 @@ func (rel *Relation) add2Values(key1, key2 string, values [][]storage.HashKey) {
 	}
 
 	if len(rel.rows) == 0 {
-		rel.rows = make([]*Row, 0, len(values))
+		rel.rows = make([]*relationRow, 0, len(values))
 	}
 	for _, valuepair := range values {
 		bitmap1 := rel.multiindex[key1][valuepair[0]]
@@ -85,7 +85,7 @@ func (rel *Relation) add2Values(key1, key2 string, values [][]storage.HashKey) {
 			continue
 		}
 
-		row := NewRow()
+		row := newRelationRow()
 		row.addValue(key1pos, valuepair[0])
 		row.addValue(key2pos, valuepair[1])
 		rel.rows = append(rel.rows, row)
@@ -103,7 +103,7 @@ func (rel *Relation) add2Values(key1, key2 string, values [][]storage.HashKey) {
 	}
 }
 
-func (rel *Relation) add3Values(key1, key2, key3 string, values [][]storage.HashKey) {
+func (rel *relation) add3Values(key1, key2, key3 string, values [][]storage.HashKey) {
 	key1pos, found := rel.vars[key1]
 	if !found {
 		rel.vars[key1] = len(rel.vars) + 1
@@ -124,7 +124,7 @@ func (rel *Relation) add3Values(key1, key2, key3 string, values [][]storage.Hash
 	}
 
 	if len(rel.rows) == 0 {
-		rel.rows = make([]*Row, 0, len(values))
+		rel.rows = make([]*relationRow, 0, len(values))
 	}
 	for _, valuepair := range values {
 		bitmap1 := rel.multiindex[key1][valuepair[0]]
@@ -136,7 +136,7 @@ func (rel *Relation) add3Values(key1, key2, key3 string, values [][]storage.Hash
 			continue
 		}
 
-		row := NewRow()
+		row := newRelationRow()
 		row.addValue(key1pos, valuepair[0])
 		row.addValue(key2pos, valuepair[1])
 		row.addValue(key3pos, valuepair[2])
@@ -160,17 +160,11 @@ func (rel *Relation) add3Values(key1, key2, key3 string, values [][]storage.Hash
 
 }
 
-func (rel *Relation) join(other *Relation, on []string, ctx *queryContext) {
+func (rel *relation) join(other *relation, on []string, ctx *queryContext) {
 	// get the variable positions for the join variables for
 	// each of the relations (these may be different)
-	var relJoinKeyPos []int
-	var otherJoinKeyPos []int
-	for _, varname := range on {
-		relJoinKeyPos = append(relJoinKeyPos, rel.vars[varname])
-		otherJoinKeyPos = append(otherJoinKeyPos, other.vars[varname])
-	}
 
-	var joinedRows = make([]*Row, 0, len(rel.rows))
+	var joinedRows = make([]*relationRow, 0, len(rel.rows))
 innerRows:
 	for _, innerRow := range rel.rows {
 		// find all the rows in [other] that share the values
@@ -205,7 +199,7 @@ innerRows:
 	rel.rows = joinedRows
 }
 
-func (rel *Relation) dumpRows(prefix string, ctx *queryContext) {
+func (rel *relation) dumpRows(prefix string, ctx *queryContext) {
 	for _, row := range rel.rows {
 		//rel.dumpRow(row, ctx)
 		ctx.dumpRow(prefix, row)

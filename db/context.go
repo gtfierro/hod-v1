@@ -17,7 +17,7 @@ type queryContext struct {
 	// variable definitions
 	definitions map[string]*keymap
 
-	rel *Relation
+	rel *relation
 
 	// names of joined variables
 	joined []string
@@ -38,7 +38,7 @@ func newQueryContext(plan *queryPlan, tx *transaction) (*queryContext, error) {
 		variablePosition: variablePosition,
 		definitions:      definitions,
 		selectVars:       plan.selectVars,
-		rel:              NewRelation(plan.query.Variables),
+		rel:              newRelation(plan.query.Variables),
 		tx:               tx,
 		queryPlan:        plan,
 	}, nil
@@ -127,7 +127,7 @@ func (ctx *queryContext) dumpRows() {
 	}
 }
 
-func (ctx *queryContext) dumpRow(prefix string, row *Row) {
+func (ctx *queryContext) dumpRow(prefix string, row *relationRow) {
 	s := prefix + " ["
 	for varName, pos := range ctx.variablePosition {
 		val := row.valueAt(pos)
@@ -143,8 +143,8 @@ func (ctx *queryContext) dumpRow(prefix string, row *Row) {
 	fmt.Println(s)
 }
 
-func (ctx *queryContext) getResults() (results []*ResultRow) {
-	results = make([]*ResultRow, len(ctx.rel.rows))
+func (ctx *queryContext) getResults() (results []*resultRow) {
+	results = make([]*resultRow, len(ctx.rel.rows))
 	var jtest = make(map[uint32]struct{})
 	numRows := 0
 	var positions = make([]int, len(ctx.selectVars))
