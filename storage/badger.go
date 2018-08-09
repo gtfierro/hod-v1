@@ -66,9 +66,7 @@ func (bsp *BadgerStorageProvider) Initialize(cfg *config.Config) error {
 func (bsp *BadgerStorageProvider) Close() error {
 	bsp.Lock()
 	defer bsp.Unlock()
-	for _, db := range bsp.dbs {
-		db.Close()
-	}
+	//TODO: close internal dbs?
 	bsp.vm.db.Close()
 	return os.RemoveAll(bsp.basedir)
 }
