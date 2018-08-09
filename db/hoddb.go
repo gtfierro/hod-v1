@@ -257,3 +257,15 @@ func (hod *HodDB) expand(uri turtle.URI) turtle.URI {
 	}
 	return uri
 }
+
+func (hod *HodDB) Search(q string, n int) (results []string, err error) {
+	return
+}
+
+func (hod *HodDB) QueryToClassDOT(q string) (dot string, err error) {
+	return
+}
+
+func (hod *HodDB) QueryToDOT(q string) (dot string, err error) {
+	return
+}
