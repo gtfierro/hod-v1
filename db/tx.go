@@ -32,22 +32,46 @@ type transaction struct {
 }
 
 func (hod *HodDB) openTransaction(name string) (tx *transaction, err error) {
+	hod.Lock()
+	defer hod.Unlock()
 	tx = &transaction{
 		hashes:               make(map[turtle.URI]storage.HashKey),
 		inverseRelationships: make(map[storage.HashKey]storage.HashKey),
 		cache:                newCache(1),
 	}
 	tx.snapshot, err = hod.storage.CreateVersion(name)
+	hod.loaded_versions[tx.snapshot.Version()] = tx
+	logrus.Info("Using new version ", tx.snapshot.Version())
 	return
 }
 
 func (hod *HodDB) openVersion(ver storage.Version) (tx *transaction, err error) {
+	var found bool
+	hod.RLock()
+	if tx, found = hod.loaded_versions[ver]; found {
+		defer hod.RUnlock()
+		logrus.Info("Using existing version ", ver)
+		err = nil
+		return
+	}
+	hod.RUnlock()
+	hod.Lock()
+	defer hod.Unlock()
+	for loadedVer, tx := range hod.loaded_versions {
+		if loadedVer.Name != ver.Name {
+			logrus.Info("Discarding old version ", loadedVer)
+			tx.discard()
+			delete(hod.loaded_versions, loadedVer)
+		}
+	}
 	tx = &transaction{
 		hashes:               make(map[turtle.URI]storage.HashKey),
 		inverseRelationships: make(map[storage.HashKey]storage.HashKey),
 		cache:                newCache(1),
 	}
 	tx.snapshot, err = hod.storage.OpenVersion(ver)
+	hod.loaded_versions[tx.snapshot.Version()] = tx
+	logrus.Info("Using newer version ", tx.snapshot.Version())
 	return
 }
 
@@ -318,7 +342,9 @@ func (tx *transaction) rollupPredicate(predicateHash storage.HashKey) error {
 		}
 
 		stack := list.New()
-		tx.followPathFromObject(object, results, stack, forwardPath)
+		if tx.followPathFromObject(object, results, stack, forwardPath); err != nil {
+			logrus.Error(err)
+		}
 		for results.Len() > 0 {
 			subjectIndex, err := tx.getExtendedIndexByHash(results.Max())
 			if err != nil {

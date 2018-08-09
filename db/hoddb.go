@@ -34,15 +34,20 @@ type HodDB struct {
 	// store the config so we can make more databases
 	cfg        *config.Config
 	namespaces map[string]string
+
+	// latest version
+	loaded_versions map[storage.Version]*transaction
 	sync.RWMutex
 }
 
 // NewHodDB creates a new instance of HodDB
 func NewHodDB(cfg *config.Config) (*HodDB, error) {
 	var hod = &HodDB{
-		cfg:        cfg,
-		namespaces: make(map[string]string),
+		cfg:             cfg,
+		namespaces:      make(map[string]string),
+		loaded_versions: make(map[storage.Version]*transaction),
 	}
+
 	hod.storage = &storage.BadgerStorageProvider{}
 	if err := hod.storage.Initialize(cfg); err != nil {
 		return nil, err
@@ -85,8 +90,6 @@ func NewHodDB(cfg *config.Config) (*HodDB, error) {
 }
 
 func (hod *HodDB) loadFiles(loadreq graphLoadParams) error {
-	hod.Lock()
-	defer hod.Unlock()
 
 	tx, err := hod.openTransaction(loadreq.name)
 	if err != nil {
@@ -104,17 +107,22 @@ func (hod *HodDB) loadFiles(loadreq graphLoadParams) error {
 		//if err := db.buildTextIndex(ds); err != nil {
 		//	return nil, err
 		//}
+		hod.Lock()
 		for abbr, full := range ds.Namespaces {
 			if abbr != "" {
 				hod.namespaces[abbr] = full
 			}
 		}
+		hod.Unlock()
 	}
 	return tx.commit()
 }
 
 // Close safely closes all of the underlying storage used by HodDB
 func (hod *HodDB) Close() error {
+	for _, tx := range hod.loaded_versions {
+		tx.discard()
+	}
 	return hod.storage.Close()
 }
 
@@ -195,7 +203,7 @@ func (hod *HodDB) RunQuery(q *sparql.Query) (result *QueryResult, rerr error) {
 		for _, g := range targetGraphs {
 			logrus.Info("Run query against> ", g)
 			tx, err := hod.openVersion(g)
-			defer tx.discard()
+			//defer tx.discard()
 			if err != nil {
 				rerr = err
 				return
