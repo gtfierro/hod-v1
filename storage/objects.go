@@ -10,29 +10,40 @@ import (
 	"github.com/gtfierro/btree"
 )
 
+// Version represents the state of a Brick model at a given timestamp
 type Version struct {
 	Timestamp uint64
 	Name      string
 }
 
+// Return the string representation of the version
 func (v Version) String() string {
 	return fmt.Sprintf("<Version %s.%d>", v.Name, v.Timestamp)
 }
 
+// HashKey is the primary key for Brick entities. It maps one-to-one with a URI
 type HashKey [8]byte
 
+// this is the empty key
 var EmptyKey = HashKey{}
 
+// HashKey has a 4-byte prefix
 type KeyType [4]byte
 
 var (
-	PK        KeyType = [4]byte{0, 0, 0, 0}
-	URI       KeyType = [4]byte{0, 0, 0, 1}
-	ENTITY    KeyType = [4]byte{0, 0, 0, 2}
-	EXTENDED  KeyType = [4]byte{0, 0, 0, 3}
+	// belongs in PK bucket
+	PK KeyType = [4]byte{0, 0, 0, 0}
+	// belongs in URI bucket
+	URI KeyType = [4]byte{0, 0, 0, 1}
+	// belongs in Entity bucket
+	ENTITY KeyType = [4]byte{0, 0, 0, 2}
+	// belongs in Extended bucket
+	EXTENDED KeyType = [4]byte{0, 0, 0, 3}
+	// belongs in Predicate bucket
 	PREDICATE KeyType = [4]byte{0, 0, 0, 4}
 )
 
+// returns the type of the HashKey
 func (hk HashKey) Type() KeyType {
 	switch {
 	case bytes.Equal(hk[:], PK[:]):
@@ -49,6 +60,7 @@ func (hk HashKey) Type() KeyType {
 	return PK
 }
 
+// returns a copy of the HashKey as a certain type
 func (hk HashKey) AsType(t KeyType) (newkey HashKey) {
 	copy(newkey[4:], hk[4:])
 	switch t {
@@ -66,11 +78,13 @@ func (hk HashKey) AsType(t KeyType) (newkey HashKey) {
 	return newkey
 }
 
+// Implement Less() for btree
 func (hk HashKey) Less(than btree.Item, ctx interface{}) bool {
 	t := than.(HashKey)
 	return hk.LessThan(t)
 }
 
+// Implement LessThan() for btree
 func (hk HashKey) LessThan(other HashKey) bool {
 	return binary.LittleEndian.Uint32(hk[4:]) < binary.LittleEndian.Uint32(other[4:])
 }

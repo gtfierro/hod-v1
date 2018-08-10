@@ -114,6 +114,9 @@ func (vm *VersionManager) AddVersion(v Version) (err error) {
 func (vm *VersionManager) Graphs() ([]Version, error) {
 	rows, err := vm.get_versions.Query()
 	defer rows.Close()
+	if err != nil {
+		return nil, err
+	}
 	var versions []Version
 	for rows.Next() {
 		var v Version

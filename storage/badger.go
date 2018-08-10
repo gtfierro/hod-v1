@@ -20,14 +20,17 @@ func init() {
 	logrus.SetLevel(logrus.DebugLevel)
 }
 
+// BadgerStorageProvider provides a HodDB storage interface to the github.com/dgraph-io/badger key-value store
 type BadgerStorageProvider struct {
-	cfg     *config.Config
 	basedir string
 	dbs     map[Version]*badger.DB
 	vm      *VersionManager
 	sync.RWMutex
 }
 
+// Initialize Badger-backed storage
+// TODO: use configured storage directory
+// TODO: return ErrGraphNotFound when version is non existant
 func (bsp *BadgerStorageProvider) Initialize(cfg *config.Config) error {
 	dir := "badger" //, err := "badger" //ioutil.TempDir("", "badger")
 	//	if err != nil {
@@ -38,39 +41,51 @@ func (bsp *BadgerStorageProvider) Initialize(cfg *config.Config) error {
 		return err
 	}
 	bsp.dbs = make(map[Version]*badger.DB)
-	if vm, err := CreateVersionManager(bsp.basedir); err != nil {
+	vm, err := CreateVersionManager(bsp.basedir)
+	if err != nil {
 		return err
-	} else {
-		bsp.vm = vm
 	}
+	bsp.vm = vm
 
-	if versions, err := bsp.vm.Graphs(); err != nil {
+	versions, err := bsp.vm.Graphs()
+	if err != nil {
 		return err
-	} else {
-		for _, version := range versions {
-			opts := badger.DefaultOptions
-			dir := filepath.Join(bsp.basedir, version.Name, strconv.Itoa(int(version.Timestamp)))
-			if err = os.MkdirAll(dir, 0700); err != nil {
-				return err
-			}
-			opts.Dir = dir
-			opts.ValueDir = dir
-			if bsp.dbs[version], err = badger.Open(opts); err != nil {
-				return err
-			}
+	}
+	for _, version := range versions {
+		opts := badger.DefaultOptions
+		dir := filepath.Join(bsp.basedir, version.Name, strconv.Itoa(int(version.Timestamp)))
+		if err = os.MkdirAll(dir, 0700); err != nil {
+			return err
+		}
+		opts.Dir = dir
+		opts.ValueDir = dir
+		if bsp.dbs[version], err = badger.Open(opts); err != nil {
+			return err
 		}
 	}
 	return nil
 }
 
+// Close closes all underlying storage media
+// Further calls to the storage provider should return an error
 func (bsp *BadgerStorageProvider) Close() error {
 	bsp.Lock()
 	defer bsp.Unlock()
 	//TODO: close internal dbs?
-	bsp.vm.db.Close()
-	return os.RemoveAll(bsp.basedir)
+	closeErr := bsp.vm.db.Close()
+	rmErr := os.RemoveAll(bsp.basedir)
+	if closeErr != nil {
+		return closeErr
+	}
+	if rmErr != nil {
+		return rmErr
+	}
+	return nil
 }
 
+// AddGraph adds a new graph to the storage provider under the given name,
+// Returns the version of the graph and a boolean 'exists' value
+// that is true if the database already existed.
 func (bsp *BadgerStorageProvider) AddGraph(name string) (version Version, exists bool, err error) {
 	logrus.Info("Add graph", name)
 	exists = false
@@ -105,14 +120,18 @@ func (bsp *BadgerStorageProvider) AddGraph(name string) (version Version, exists
 	return version, exists, bsp.vm.AddVersion(version)
 }
 
+// CurrentVersion returns the latest version of the given graph
 func (bsp *BadgerStorageProvider) CurrentVersion(name string) (version Version, err error) {
 	return bsp.vm.GetLatestVersion(name)
 }
 
+// Graphs returns the given version of the graph with the given name; returns an error if the version doesn't exist
 func (bsp *BadgerStorageProvider) Graphs() ([]Version, error) {
 	return bsp.vm.Graphs()
 }
 
+// CreateVersion creates and returns a new writable version of the graph with the given name.
+// This version will not be available until it is committed
 func (bsp *BadgerStorageProvider) CreateVersion(name string) (tx Transaction, err error) {
 	// get current version for given name
 	var (
@@ -131,16 +150,17 @@ func (bsp *BadgerStorageProvider) CreateVersion(name string) (tx Transaction, er
 	}
 
 	bsp.Unlock()
-	tx = &BadgerGraphTx{
-		&BadgerGraph{
-			db:      db,
-			tx:      db.NewTransaction(true),
-			inverse: make(map[turtle.URI]turtle.URI),
-		},
+	tx = &BadgerGraph{
+		db:      db,
+		tx:      db.NewTransaction(true),
+		inverse: make(map[turtle.URI]turtle.URI),
 	}
 
 	return
 }
+
+// OpenVersion returns the given version of the graph with the given name; returns an error if the version doesn't exist
+// The returned transaction should be read-only
 func (bsp *BadgerStorageProvider) OpenVersion(ver Version) (tx Transaction, err error) {
 	// get current version for given name
 	var (
@@ -154,22 +174,22 @@ func (bsp *BadgerStorageProvider) OpenVersion(ver Version) (tx Transaction, err 
 		return
 	}
 	bsp.Unlock()
-	tx = &BadgerGraphTx{
-		&BadgerGraph{
-			version: ver,
-			db:      db,
-			tx:      db.NewTransaction(false), // read-only
-			inverse: make(map[turtle.URI]turtle.URI),
-		},
+	tx = &BadgerGraph{
+		version: ver,
+		db:      db,
+		tx:      db.NewTransaction(false), // read-only
+		inverse: make(map[turtle.URI]turtle.URI),
 	}
 
 	return
 }
 
+// ListVersions lists all stored versions for the given graph
 func (bsp *BadgerStorageProvider) ListVersions(name string) (versions []Version, err error) {
 	return bsp.vm.ListVersions(name)
 }
 
+// BadgerGraph is a badger transaction representing a Version of a Brick graph
 type BadgerGraph struct {
 	version Version
 	db      *badger.DB
@@ -177,9 +197,10 @@ type BadgerGraph struct {
 	inverse map[turtle.URI]turtle.URI
 }
 
+// GetHash retrives the HashKey for the given URI
 func (bg *BadgerGraph) GetHash(uri turtle.URI) (hash HashKey, rerr error) {
-	var uri_bytes = uri.Bytes()
-	if item, err := bg.tx.Get(uri_bytes); err == badger.ErrKeyNotFound {
+	var uriBytes = uri.Bytes()
+	if item, err := bg.tx.Get(uriBytes); err == badger.ErrKeyNotFound {
 		rerr = ErrNotFound
 		return
 	} else if err != nil {
@@ -191,6 +212,7 @@ func (bg *BadgerGraph) GetHash(uri turtle.URI) (hash HashKey, rerr error) {
 	}
 }
 
+// GetURI retrives the URI for the given HashKey
 func (bg *BadgerGraph) GetURI(hash HashKey) (turtle.URI, error) {
 	hash = hash.AsType(PK)
 
@@ -203,24 +225,13 @@ func (bg *BadgerGraph) GetURI(hash HashKey) (turtle.URI, error) {
 	}
 }
 
-func (bg *BadgerGraph) Release() {
-	bg.tx.Discard()
-	return
-}
-
-func (bg *BadgerGraph) Commit() error {
-	return nil
-}
-
-func (bg *BadgerGraph) Version() Version {
-	return bg.version
-}
-
+// GetReversePredicate gets the inverse edge for the given URI, if it exists
 func (bg *BadgerGraph) GetReversePredicate(rel turtle.URI) (inverse turtle.URI, found bool) {
 	inverse, found = bg.inverse[rel]
 	return
 }
 
+// GetEntity retrives the Entity object for the given HashKey
 func (bg *BadgerGraph) GetEntity(hash HashKey) (ent Entity, rerr error) {
 	hash = hash.AsType(ENTITY)
 	item, err := bg.tx.Get(hash[:])
@@ -241,6 +252,7 @@ func (bg *BadgerGraph) GetEntity(hash HashKey) (ent Entity, rerr error) {
 	return
 }
 
+// GetExtendedIndex retrives the ExtendedIndex object for the given HashKey
 func (bg *BadgerGraph) GetExtendedIndex(hash HashKey) (ent EntityExtendedIndex, rerr error) {
 	hash = hash.AsType(EXTENDED)
 	item, err := bg.tx.Get(hash[:])
@@ -261,6 +273,7 @@ func (bg *BadgerGraph) GetExtendedIndex(hash HashKey) (ent EntityExtendedIndex, 
 	return
 }
 
+// GetPredicate retrives the PredicateEntity object for the given HashKey
 func (bg *BadgerGraph) GetPredicate(hash HashKey) (ent PredicateEntity, rerr error) {
 	hash = hash.AsType(PREDICATE)
 	item, err := bg.tx.Get(hash[:])
@@ -281,6 +294,7 @@ func (bg *BadgerGraph) GetPredicate(hash HashKey) (ent PredicateEntity, rerr err
 	return
 }
 
+// IterateAllEntities calls the provided function for each Entity object in the graph
 func (bg *BadgerGraph) IterateAllEntities(f func(HashKey, Entity) bool) error {
 	iter := bg.tx.NewIterator(badger.DefaultIteratorOptions)
 	var start = []byte{0, 0, 0, 2, 0, 0, 0, 0}
@@ -306,30 +320,30 @@ func (bg *BadgerGraph) IterateAllEntities(f func(HashKey, Entity) bool) error {
 	return nil
 }
 
-type BadgerGraphTx struct {
-	*BadgerGraph
+// Commit the transaction
+func (bg *BadgerGraph) Commit() error {
+	return bg.tx.Commit(nil)
 }
 
-func (bgtx *BadgerGraphTx) Commit() error {
-	return bgtx.tx.Commit(nil)
+// Release the transaction (read-only) or discard the transaction (rw)
+func (bg *BadgerGraph) Release() {
+	bg.tx.Discard()
 }
 
-func (bgtx *BadgerGraphTx) Release() {
-	bgtx.tx.Discard()
+// Version returns the current Version of the Transaction
+func (bg *BadgerGraph) Version() Version {
+	return bg.version
 }
 
-func (bgtx *BadgerGraphTx) Version() Version {
-	return bgtx.version
-}
+// PutURI stores the URI and return the HashKey
+func (bg *BadgerGraph) PutURI(uri turtle.URI) (hash HashKey, rerr error) {
 
-func (bgtx *BadgerGraphTx) PutURI(uri turtle.URI) (hash HashKey, rerr error) {
-
-	var uri_bytes = uri.Bytes()
-	if len(uri_bytes) == 0 {
+	var uriBytes = uri.Bytes()
+	if len(uriBytes) == 0 {
 		return
 	}
 
-	if item, err := bgtx.tx.Get(uri_bytes); err != nil && err != badger.ErrKeyNotFound {
+	if item, err := bg.tx.Get(uriBytes); err != nil && err != badger.ErrKeyNotFound {
 		rerr = errors.Wrap(err, "Could not check key existance")
 		return
 	} else if err == nil {
@@ -339,8 +353,8 @@ func (bgtx *BadgerGraphTx) PutURI(uri turtle.URI) (hash HashKey, rerr error) {
 		var salt = uint64(0)
 		hashURI(uri, &hash, salt)
 		for {
-			if _, err := bgtx.tx.Get(hash[:]); err == nil {
-				salt += 1
+			if _, err := bg.tx.Get(hash[:]); err == nil {
+				salt++
 				hashURI(uri, &hash, salt)
 			} else if err != nil && err != badger.ErrKeyNotFound {
 				rerr = errors.Wrapf(err, "Error checking db membership for %v", hash)
@@ -350,51 +364,61 @@ func (bgtx *BadgerGraphTx) PutURI(uri turtle.URI) (hash HashKey, rerr error) {
 			}
 		}
 		pkhash := hash.AsType(PK)
-		bgtx.set(pkhash[:], uri_bytes)
-		bgtx.set(uri_bytes, hash[:])
+		if err := bg.set(pkhash[:], uriBytes); err != nil {
+			rerr = err
+			return
+		}
+		if err := bg.set(uriBytes, hash[:]); err != nil {
+			rerr = err
+			return
+		}
 	}
 
 	enthash := hash.AsType(ENTITY)
-	_, rerr = bgtx.tx.Get(enthash[:])
+	_, rerr = bg.tx.Get(enthash[:])
 	if rerr == badger.ErrKeyNotFound {
 		ent := NewEntity(enthash)
-		rerr = bgtx.PutEntity(ent)
+		rerr = bg.PutEntity(ent)
 		return
 	}
 
 	return
 }
 
-func (bgtx *BadgerGraphTx) PutEntity(ent Entity) error {
+// PutEntity stores the Entity object, mapped by HashKey (Entity.Key())
+func (bg *BadgerGraph) PutEntity(ent Entity) error {
 	hash := ent.Key().AsType(ENTITY)
-	return bgtx.set(hash[:], ent.Bytes())
+	return bg.set(hash[:], ent.Bytes())
 }
 
-func (bgtx *BadgerGraphTx) PutExtendedIndex(ent EntityExtendedIndex) error {
+// PutExtendedIndex stores the ExtendedIndex object, mapped by HashKey (ExtendedIndex.Key())
+func (bg *BadgerGraph) PutExtendedIndex(ent EntityExtendedIndex) error {
 	hash := ent.Key().AsType(EXTENDED)
-	return bgtx.set(hash[:], ent.Bytes())
+	return bg.set(hash[:], ent.Bytes())
 }
 
-func (bgtx *BadgerGraphTx) PutPredicate(ent PredicateEntity) error {
+// PutPredicate stores the PredicateEntity object, mapped by HashKey (PredicateEntity.Key())
+func (bg *BadgerGraph) PutPredicate(ent PredicateEntity) error {
 	hash := ent.Key().AsType(PREDICATE)
-	return bgtx.set(hash[:], ent.Bytes())
+	return bg.set(hash[:], ent.Bytes())
 }
 
-func (bgtx *BadgerGraphTx) PutReversePredicate(uri, inverse turtle.URI) error {
-	bgtx.inverse[uri] = inverse
+// PutReversePredicate stores the two URIs as inverses of each other
+func (bg *BadgerGraph) PutReversePredicate(uri, inverse turtle.URI) error {
+	bg.inverse[uri] = inverse
 	return nil
 }
 
 // set key->value. If the transaction is too big, commit it, open a new transaction,
 // and retry setting the key/value pair
-func (bgtx *BadgerGraphTx) set(key, val []byte) error {
-	if err := bgtx.tx.Set(key, val); err == badger.ErrTxnTooBig {
-		if err = bgtx.tx.Commit(nil); err != nil {
+func (bg *BadgerGraph) set(key, val []byte) error {
+	err := bg.tx.Set(key, val)
+	if err == badger.ErrTxnTooBig {
+		if err = bg.tx.Commit(nil); err != nil {
 			return err
 		}
-		bgtx.tx = bgtx.db.NewTransaction(true)
-		return bgtx.set(key, val)
-	} else {
-		return err
+		bg.tx = bg.db.NewTransaction(true)
+		return bg.set(key, val)
 	}
+	return err
 }
