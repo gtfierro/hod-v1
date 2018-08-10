@@ -2,6 +2,7 @@ package storage
 
 import (
 	"database/sql"
+	// import sqlite driver
 	_ "github.com/mattn/go-sqlite3"
 	logrus "github.com/sirupsen/logrus"
 	"path/filepath"

@@ -7,7 +7,7 @@ import (
 	"github.com/gtfierro/hod/turtle"
 )
 
-// ErrNotFound: entity not found error
+// ErrNotFound entity not found error
 var ErrNotFound = errors.New("Not found")
 
 // ErrGraphNotFound graph/version not found error
@@ -47,6 +47,7 @@ type StorageProvider interface {
 	Graphs() ([]Version, error)
 }
 
+// Transaction defines the generic interface for read-only and read-write transactions for a StorageProvider
 type Transaction interface {
 	// Commit the transaction
 	Commit() error
@@ -88,6 +89,7 @@ type Transaction interface {
 	PutReversePredicate(turtle.URI, turtle.URI) error
 }
 
+// Entity defines the read/write methods for the virtual Entity object in a Brick graph
 type Entity interface {
 	// returns the primary key for this Entity
 	Key() HashKey
@@ -107,6 +109,7 @@ type Entity interface {
 	GetAllPredicates() []HashKey
 }
 
+// PredicateEntity defines the read/write methods for the virtual PredicateEntity object in a Brick graph
 type PredicateEntity interface {
 	// returns the primary key for this PredicateEntity
 	Key() HashKey
@@ -126,6 +129,7 @@ type PredicateEntity interface {
 	GetAllSubjects() []HashKey
 }
 
+// EntityExtendedIndex defines the read/write methods for the virtual EntityExtendedIndex object in a Brick graph
 type EntityExtendedIndex interface {
 	// returns the primary key for this ExtendedIndex
 	Key() HashKey
