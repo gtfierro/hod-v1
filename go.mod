@@ -1,6 +1,7 @@
 module github.com/gtfierro/hod
 
 require (
+	github.com/AndreasBriese/bbloom v0.0.0-20170702084017-28f7e881ca57
 	github.com/RoaringBitmap/roaring v0.4.9
 	github.com/Smerity/govarint v0.0.0-20150407073650-7265e41f48f1
 	github.com/blevesearch/bleve v0.7.0
@@ -9,6 +10,8 @@ require (
 	github.com/cihub/seelog v0.0.0-20170130134532-f561c5e57575
 	github.com/coocood/freecache v1.0.1
 	github.com/couchbase/vellum v0.0.0-20180427141700-eb6ae3743b3f
+	github.com/dgraph-io/badger v1.5.3
+	github.com/dgryski/go-farm v0.0.0-20180109070241-2de33835d102
 	github.com/edsrzf/mmap-go v0.0.0-20170320065105-0bce6a688712
 	github.com/fatih/color v1.7.0
 	github.com/fsnotify/fsnotify v1.4.7
