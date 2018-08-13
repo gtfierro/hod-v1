@@ -21,6 +21,10 @@ func (v Version) String() string {
 	return fmt.Sprintf("<Version %s.%d>", v.Name, v.Timestamp)
 }
 
+func (v Version) Empty() bool {
+	return v.Timestamp == 0
+}
+
 // HashKey is the primary key for Brick entities. It maps one-to-one with a URI
 type HashKey [8]byte
 

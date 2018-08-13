@@ -25,10 +25,27 @@ func init() {
 }
 
 // BadgerStorageProvider provides a HodDB storage interface to the github.com/dgraph-io/badger key-value store
+//
+// HodDB needs to store many different versions of a graph. Currently, the BadgerStorageProvider implements this
+// by copying the full database to a new directory every time a new version is created. The storage provider also
+// needs to be able to have multiple versions open at once. The protocol for this is as follows:
+//
+// BadgerStorageProvider has two directories under HOD_DIR (from configuration): HOD_DIR/versions contains the serialized backups
+// of all versions of all databases (organized according to <graph name>/<version timestamp>. HOD_DIR/open contains actively opened databases; ONE of which
+// will be loaded read-write, and the rest of which will be loaded read-only (historical versions)
+//
+// CreateVersion(name string): save the current version of the database using badger.Backup("HOD_DIR/versions/<graph name>/<version timestamp>", 0).
+// then, open a new database under HOD_DIR/open/<graph name>/<version timestamp>.
+//
+// OpenVersion(version Version): first looks to see if this version is aready loaded using a storage provider cache. If the
+// version is not already loaded, uses badger.Restore("HOD_DIR/versions/<graph name>/<version timestamp>") to load a version
+// from the serialized backup into a badger instance opened at HOD_DIR/open/<graph name>/<version timestamp>
+
 type BadgerStorageProvider struct {
-	basedir string
-	dbs     map[Version]*badger.DB
-	vm      *VersionManager
+	basedir              string
+	versionsDir, openDir string
+	dbs                  map[Version]*badger.DB
+	vm                   *VersionManager
 	sync.RWMutex
 }
 
@@ -36,12 +53,16 @@ type BadgerStorageProvider struct {
 // TODO: use configured storage directory
 // TODO: return ErrGraphNotFound when version is non existant
 func (bsp *BadgerStorageProvider) Initialize(cfg *config.Config) error {
-	dir := "badger" //, err := "badger" //ioutil.TempDir("", "badger")
-	//	if err != nil {
-	//		return err
-	//	}
-	bsp.basedir = dir
+	bsp.basedir = cfg.DBPath
 	if err := os.MkdirAll(bsp.basedir, 0700); err != nil {
+		return err
+	}
+	bsp.versionsDir = filepath.Join(bsp.basedir, "versions")
+	if err := os.MkdirAll(bsp.versionsDir, 0700); err != nil {
+		return err
+	}
+	bsp.openDir = filepath.Join(bsp.basedir, "open")
+	if err := os.MkdirAll(bsp.openDir, 0700); err != nil {
 		return err
 	}
 	bsp.dbs = make(map[Version]*badger.DB)
@@ -57,13 +78,24 @@ func (bsp *BadgerStorageProvider) Initialize(cfg *config.Config) error {
 	}
 	for _, version := range versions {
 		opts := badger.DefaultOptions
-		dir := filepath.Join(bsp.basedir, version.Name, strconv.Itoa(int(version.Timestamp)))
-		if err = os.MkdirAll(dir, 0700); err != nil {
+		openDir := filepath.Join(bsp.openDir, version.Name, strconv.Itoa(int(version.Timestamp)))
+		logrus.Info("Opening existing version ", version, " at ", openDir)
+		if err = os.MkdirAll(openDir, 0700); err != nil {
 			return err
 		}
-		opts.Dir = dir
-		opts.ValueDir = dir
+		opts.Dir = openDir
+		opts.ValueDir = openDir
 		if bsp.dbs[version], err = badger.Open(opts); err != nil {
+			return err
+		}
+		backupFileLocation := filepath.Join(bsp.versionsDir, version.Name, strconv.Itoa(int(version.Timestamp)))
+		backupFile, err := os.Open(backupFileLocation)
+		defer backupFile.Close()
+		if err != nil {
+			return errors.Wrap(err, "Could not open backup file")
+		}
+		err = bsp.dbs[version].Load(backupFile)
+		if err != nil {
 			return err
 		}
 	}
@@ -76,6 +108,12 @@ func (bsp *BadgerStorageProvider) Close() error {
 	bsp.Lock()
 	defer bsp.Unlock()
 	//TODO: close internal dbs?
+	for _, db := range bsp.dbs {
+		closeErr := db.Close()
+		if closeErr != nil {
+			return closeErr
+		}
+	}
 	closeErr := bsp.vm.db.Close()
 	rmErr := os.RemoveAll(bsp.basedir)
 	if closeErr != nil {
@@ -92,36 +130,56 @@ func (bsp *BadgerStorageProvider) Close() error {
 // that is true if the database already existed.
 func (bsp *BadgerStorageProvider) AddGraph(name string) (version Version, exists bool, err error) {
 	logrus.Info("Add graph", name)
-	exists = false
-	bsp.RLock()
-	for ver := range bsp.dbs {
-		if ver.Name == name {
-			exists = true
-			version = ver
+
+	//exists = false
+	//bsp.RLock()
+	//for ver := range bsp.dbs {
+	//	if ver.Name == name {
+	//		exists = true
+	//		version = ver
+	//	}
+	//}
+	//bsp.RUnlock()
+
+	//if exists {
+	//	logrus.Info(version)
+	//	return
+	//}
+
+	// make directories for the graph
+	versionDir := filepath.Join(bsp.versionsDir, name)
+	if err = os.MkdirAll(versionDir, 0700); err != nil {
+		return
+	}
+	openDir := filepath.Join(bsp.openDir, name)
+	if err = os.MkdirAll(openDir, 0700); err != nil {
+		return
+	}
+
+	// create the new version if it doesn't already exist
+	current, err := bsp.CurrentVersion(name)
+	if err != nil {
+		logrus.Error("// ", err)
+		return
+	}
+	logrus.Warning("Current version in add graph -> ", current)
+	_, found := bsp.dbs[current]
+	if current.Empty() || !found {
+		// create new version because it doesn't exist
+		newversion, verr := bsp.vm.NewVersion(name)
+		if verr != nil {
+			err = verr
+			return
 		}
+		opts := badger.DefaultOptions
+		openCurrentVersionDir := filepath.Join(bsp.openDir, newversion.Name) //, strconv.Itoa(int(newversion.Timestamp)))
+		logrus.Info("Creating new version: ", newversion, " at ", openCurrentVersionDir)
+		opts.Dir = openCurrentVersionDir
+		opts.ValueDir = openCurrentVersionDir
+		bsp.dbs[newversion], err = badger.Open(opts)
+		return newversion, false, err
 	}
-	bsp.RUnlock()
-
-	if exists {
-		logrus.Info(version)
-		return
-	}
-
-	opts := badger.DefaultOptions
-	dir := filepath.Join(bsp.basedir, name)
-	if err = os.MkdirAll(dir, 0700); err != nil {
-		return
-	}
-
-	bsp.Lock()
-	defer bsp.Unlock()
-	opts.Dir = dir
-	opts.ValueDir = dir
-	version = Version{uint64(time.Now().UnixNano()), name}
-	if bsp.dbs[version], err = badger.Open(opts); err != nil {
-		return
-	}
-	return version, exists, bsp.vm.AddVersion(version)
+	return current, true, nil
 }
 
 // CurrentVersion returns the latest version of the given graph
@@ -143,21 +201,85 @@ func (bsp *BadgerStorageProvider) CreateVersion(name string) (tx Transaction, er
 		found bool
 	)
 	bsp.Lock()
+	defer bsp.Unlock()
 	current, err := bsp.CurrentVersion(name)
 	if err != nil {
-		bsp.Unlock()
 		return nil, err
 	}
 	if db, found = bsp.dbs[current]; !found {
-		bsp.Unlock()
 		return nil, ErrGraphNotFound
 	}
+	logrus.Warning("Current version ", current)
 
-	bsp.Unlock()
+	// backup current version
+	//backupFileLocation := filepath.Join(bsp.versionsDir, current.Name, strconv.Itoa(int(current.Timestamp)))
+	//backupFile, err := os.Create(backupFileLocation)
+	//defer backupFile.Close()
+	//if err != nil {
+	//	err = errors.Wrap(err, "Could not open backup file1")
+	//	return
+	//}
+	//_, err = db.Backup(backupFile, 0)
+	//if err != nil {
+	//	logrus.Error(errors.Wrap(err, "could not backup to file"))
+	//	return
+	//}
+	//logrus.Info("Backup version ", current, " to ", backupFileLocation)
+
+	// create new version
+	newversion, err := bsp.vm.NewVersion(name)
+	if err != nil {
+		logrus.Error(errors.Wrap(err, "could not create new version"))
+		return
+	}
+	delete(bsp.dbs, current)
+	bsp.dbs[newversion] = db
+
+	//newVersionFileLocation := filepath.Join(bsp.openDir, newversion.Name, strconv.Iota(int(noversion.Timestamp)))
+	//if err = os.MkdirAll(newVersionFileLocation, 0700); err != nil {
+	//	return
+	//}
+	//opts := badger.DefaultOptions
+	//opts.Dir = newVersionFileLocation
+	//opts.ValueDir = newVersionFileLocation
+	//if bsp.dbs[version], err = badger.Open(opts); err != nil {
+	//	return err
+	//}
+	// load backup
+
+	//	newversion, err := bsp.vm.NewVersion(name)
+	//	if err != nil {
+	//		logrus.Error(err)
+	//		return
+	//	}
+	//	// file for the current version
+	//	dir := filepath.Join(bsp.basedir, current.Name, strconv.Itoa(int(current.Timestamp)))
+	//	backupFile, err := os.Create(dir)
+	//	if err != nil {
+	//		return
+	//	}
+	//
+	//	// backup since beginning of time
+	//	_, err = db.Backup(backupFile, 0)
+	//	if err != nil {
+	//		logrus.Error(err)
+	//		return
+	//	}
+	//
+	//	newversion, err := bsp.vm.NewVersion(name)
+	//	if err != nil {
+	//		logrus.Error(err)
+	//		return
+	//	}
+	//	logrus.Warning(newversion)
+
 	tx = &BadgerGraph{
-		db:      db,
-		tx:      db.NewTransaction(true),
-		inverse: make(map[turtle.URI]turtle.URI),
+		version:        newversion,
+		db:             db,
+		tx:             db.NewTransaction(true),
+		readonly:       false,
+		backupLocation: filepath.Join(bsp.versionsDir, newversion.Name, strconv.Itoa(int(newversion.Timestamp))),
+		inverse:        make(map[turtle.URI]turtle.URI),
 	}
 
 	return
@@ -168,21 +290,49 @@ func (bsp *BadgerStorageProvider) CreateVersion(name string) (tx Transaction, er
 func (bsp *BadgerStorageProvider) OpenVersion(ver Version) (tx Transaction, err error) {
 	// get current version for given name
 	var (
-		db    *badger.DB
-		found bool
+		db         *badger.DB
+		found      bool
+		backupFile *os.File
 	)
 	bsp.Lock()
-	if db, found = bsp.dbs[ver]; !found {
-		bsp.Unlock()
-		err = ErrGraphNotFound
-		return
+	defer bsp.Unlock()
+	db, found = bsp.dbs[ver]
+	if !found {
+		logrus.Warning("Did not find open version ", ver)
+		backupFileLocation := filepath.Join(bsp.versionsDir, ver.Name, strconv.Itoa(int(ver.Timestamp)))
+		backupFile, err = os.Open(backupFileLocation)
+		defer backupFile.Close()
+		if err != nil {
+			err = errors.Wrap(err, "Could not open backup file")
+			return
+		}
+		newVersionFileLocation := filepath.Join(bsp.openDir, ver.Name, strconv.Itoa(int(ver.Timestamp)))
+		if err = os.MkdirAll(newVersionFileLocation, 0700); err != nil {
+			return
+		}
+		opts := badger.DefaultOptions
+		opts.Dir = newVersionFileLocation
+		opts.ValueDir = newVersionFileLocation
+		logrus.Warning("Opening ", ver, " at ", newVersionFileLocation)
+		if db, err = badger.Open(opts); err != nil {
+			return
+		}
+		err = db.Load(backupFile)
+		if err != nil {
+			return
+		}
+		bsp.dbs[ver] = db
+
+		//bsp.Unlock()
+	} else {
+		logrus.Warning("Found open version ", ver, ": ", db == nil)
 	}
-	bsp.Unlock()
 	tx = &BadgerGraph{
-		version: ver,
-		db:      db,
-		tx:      db.NewTransaction(false), // read-only
-		inverse: make(map[turtle.URI]turtle.URI),
+		version:  ver,
+		db:       db,
+		tx:       db.NewTransaction(false), // read-only
+		readonly: true,
+		inverse:  make(map[turtle.URI]turtle.URI),
 	}
 
 	return
@@ -195,10 +345,12 @@ func (bsp *BadgerStorageProvider) ListVersions(name string) (versions []Version,
 
 // BadgerGraph is a badger transaction representing a Version of a Brick graph
 type BadgerGraph struct {
-	version Version
-	db      *badger.DB
-	tx      *badger.Txn
-	inverse map[turtle.URI]turtle.URI
+	version        Version
+	db             *badger.DB
+	tx             *badger.Txn
+	readonly       bool
+	backupLocation string
+	inverse        map[turtle.URI]turtle.URI
 }
 
 // GetHash retrives the HashKey for the given URI
@@ -220,7 +372,7 @@ func (bg *BadgerGraph) GetHash(uri turtle.URI) (hash HashKey, rerr error) {
 func (bg *BadgerGraph) GetURI(hash HashKey) (turtle.URI, error) {
 	hash = hash.AsType(PK)
 
-	if item, err := bg.tx.Get(hash[:]); err == badger.ErrKeyNotFound {
+	if item, err := bg.tx.Get(hash[:]); err == badger.ErrKeyNotFound || item == nil {
 		return turtle.URI{}, ErrNotFound
 	} else if value, err := item.Value(); err != nil {
 		return turtle.URI{}, err
@@ -324,9 +476,37 @@ func (bg *BadgerGraph) IterateAllEntities(f func(HashKey, Entity) bool) error {
 	return nil
 }
 
+func (bg *BadgerGraph) backup() error {
+	a, b := os.Stat(bg.backupLocation)
+	logrus.Warning("a ", a, "b ", b)
+	backupFile, err := os.Create(bg.backupLocation)
+	defer backupFile.Close()
+	if err != nil {
+		return errors.Wrap(err, "could not create backup file location")
+	}
+	_, err = bg.db.Backup(backupFile, 0)
+	if err != nil {
+		return errors.Wrap(err, "could not backup to file")
+	}
+	logrus.Info("Backup version ", bg.version, " to ", bg.backupLocation)
+	return nil
+}
+
 // Commit the transaction
 func (bg *BadgerGraph) Commit() error {
-	return bg.tx.Commit(nil)
+	logrus.Warning("committing ", bg.version)
+	commitErr := bg.tx.Commit(nil)
+	if commitErr != nil {
+		return commitErr
+	}
+	if !bg.readonly {
+		logrus.Warning("backing up in commit")
+		err := bg.backup()
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Release the transaction (read-only) or discard the transaction (rw)
