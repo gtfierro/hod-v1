@@ -31,7 +31,7 @@ func CreateVersionManager(dir string) (*VersionManager, error) {
 		return nil, err
 	}
 
-	prepared, err := db.Prepare("select version, name from versions where name = ? order by version limit ?;")
+	prepared, err := db.Prepare("select version, name from versions where name = ? order by version desc limit ?;")
 	if err != nil {
 		return nil, err
 	}
