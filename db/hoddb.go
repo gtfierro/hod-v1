@@ -55,35 +55,47 @@ func NewHodDB(cfg *config.Config) (*HodDB, error) {
 
 	var loadRequests []graphLoadParams
 
-	// load in the ontology files and source file for each building in the config
-	for buildingname, buildingttlfile := range cfg.Buildings {
-		var baseLoad graphLoadParams
-		baseLoad.ttlfiles = append(baseLoad.ttlfiles, cfg.Ontologies...)
-		baseLoad.ttlfiles = append(baseLoad.ttlfiles, "")
-		baseLoad.done = make(chan error)
-		latest, existed, err := hod.storage.AddGraph(buildingname)
-		if err != nil {
-			return nil, err
-		}
-		logrus.WithFields(logrus.Fields{
-			"existed?": existed,
-			"version":  latest,
-			"filename": buildingttlfile,
-			"building": buildingname,
-		}).Info("Add graph")
-		baseLoad.ttlfiles[len(baseLoad.ttlfiles)-1] = buildingttlfile
-		baseLoad.name = buildingname
-		loadRequests = append(loadRequests, baseLoad)
+	loadedVersions, err := hod.storage.Graphs()
+	if err != nil {
+		return nil, err
 	}
-	for _, loadreq := range loadRequests {
-		if err := hod.loadFiles(loadreq); err != nil {
+	logrus.Info("Loaded Versions: ", loadedVersions)
+
+	// load in the ontology files and source file for each building in the config
+	// but only if there is no preexisting version for this graph
+	if len(loadedVersions) == 0 {
+		for buildingname, buildingttlfile := range cfg.Buildings {
+			var baseLoad graphLoadParams
+			baseLoad.ttlfiles = append(baseLoad.ttlfiles, cfg.Ontologies...)
+			baseLoad.ttlfiles = append(baseLoad.ttlfiles, "")
+			baseLoad.done = make(chan error)
+			latest, existed, err := hod.storage.AddGraph(buildingname)
+			if err != nil {
+				return nil, err
+			}
 			logrus.WithFields(logrus.Fields{
-				"building": loadreq.name,
-				"files":    loadreq.ttlfiles,
-				"error":    err,
-			}).Error("Load graph")
-			// TODO: report on channel
+				"existed?": existed,
+				"version":  latest,
+				"filename": buildingttlfile,
+				"building": buildingname,
+			}).Info("Add graph")
+			baseLoad.ttlfiles[len(baseLoad.ttlfiles)-1] = buildingttlfile
+			baseLoad.name = buildingname
+			loadRequests = append(loadRequests, baseLoad)
 		}
+
+		for _, loadreq := range loadRequests {
+			if err := hod.loadFiles(loadreq); err != nil {
+				logrus.WithFields(logrus.Fields{
+					"building": loadreq.name,
+					"files":    loadreq.ttlfiles,
+					"error":    err,
+				}).Error("Load graph")
+				// TODO: report on channel
+			}
+		}
+	} else {
+		logrus.Info("Continuing from existing databases")
 	}
 
 	return hod, nil
