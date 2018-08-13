@@ -40,43 +40,48 @@ func (hod *HodDB) openTransaction(name string) (tx *transaction, err error) {
 		cache:                newCache(1),
 	}
 	tx.snapshot, err = hod.storage.CreateVersion(name)
-	hod.loaded_versions[tx.snapshot.Version()] = tx
+	if err != nil {
+		return
+	}
+	//hod.loaded_versions[tx.snapshot.Version()] = tx
 	logrus.Info("Using new version ", tx.snapshot.Version())
 	return
 }
 
 func (hod *HodDB) openVersion(ver storage.Version) (tx *transaction, err error) {
-	var found bool
-	hod.RLock()
-	if tx, found = hod.loaded_versions[ver]; found {
-		defer hod.RUnlock()
-		logrus.Info("Using existing version ", ver)
-		err = nil
-		return
-	}
-	hod.RUnlock()
+	//var found bool
+	//hod.RLock()
+	//if tx, found = hod.loaded_versions[ver]; found {
+	//	defer hod.RUnlock()
+	//	logrus.Info("Using existing version ", ver)
+	//	err = nil
+	//	return
+	//}
+	//hod.RUnlock()
 	hod.Lock()
 	defer hod.Unlock()
-	for loadedVer, tx := range hod.loaded_versions {
-		if loadedVer.Name != ver.Name {
-			logrus.Info("Discarding old version ", loadedVer)
-			tx.discard()
-			delete(hod.loaded_versions, loadedVer)
-		}
-	}
+	//for loadedVer, tx := range hod.loaded_versions {
+	//	if loadedVer.Name != ver.Name {
+	//		logrus.Info("Discarding old version ", loadedVer)
+	//		tx.discard()
+	//		delete(hod.loaded_versions, loadedVer)
+	//	}
+	//}
 	tx = &transaction{
 		hashes:               make(map[turtle.URI]storage.HashKey),
 		inverseRelationships: make(map[storage.HashKey]storage.HashKey),
 		cache:                newCache(1),
 	}
 	tx.snapshot, err = hod.storage.OpenVersion(ver)
-	hod.loaded_versions[tx.snapshot.Version()] = tx
-	logrus.Info("Using newer version ", tx.snapshot.Version())
+	//hod.loaded_versions[tx.snapshot.Version()] = tx
+	//logrus.Info("Using newer version ", tx.snapshot.Version())
 	return
 }
 
 func (tx *transaction) discard() {
-	tx.snapshot.Release()
+	if tx.snapshot != nil {
+		tx.snapshot.Release()
+	}
 }
 
 func (tx *transaction) commit() error {
