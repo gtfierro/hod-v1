@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"sync"
-	//"time"
+	"time"
 
 	"github.com/dgraph-io/badger"
 	"github.com/gtfierro/hod/config"
@@ -217,6 +217,21 @@ func (bsp *BadgerStorageProvider) AddGraph(name string) (version Version, exists
 // CurrentVersion returns the latest version of the given graph
 func (bsp *BadgerStorageProvider) CurrentVersion(name string) (version Version, err error) {
 	return bsp.vm.GetLatestVersion(name)
+}
+
+// VersionAt returns the version of the given graph at the given timestamp
+func (bsp *BadgerStorageProvider) VersionAt(name string, timestamp time.Time) (version Version, err error) {
+	return bsp.vm.GetVersionAt(name, timestamp)
+}
+
+// VersionBefore returns the version active before the one active at the given timestamp
+func (bsp *BadgerStorageProvider) VersionBefore(name string, timestamp time.Time) (version Version, err error) {
+	return bsp.vm.GetVersionBefore(name, timestamp)
+}
+
+// VersionAfter returns the version active after the one active at the given timestamp
+func (bsp *BadgerStorageProvider) VersionAfter(name string, timestamp time.Time) (version Version, err error) {
+	return bsp.vm.GetVersionAfter(name, timestamp)
 }
 
 // Graphs returns the given version of the graph with the given name; returns an error if the version doesn't exist

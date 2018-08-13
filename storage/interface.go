@@ -2,6 +2,7 @@ package storage
 
 import (
 	"errors"
+	"time"
 
 	"github.com/gtfierro/hod/config"
 	"github.com/gtfierro/hod/turtle"
@@ -42,6 +43,15 @@ type StorageProvider interface {
 
 	// returns the latest version of the given graph
 	CurrentVersion(name string) (Version, error)
+
+	// returns the version of the given graph at the given timestamp
+	VersionAt(name string, timestamp time.Time) (Version, error)
+
+	// returns the version active before the one active at the given timestamp
+	VersionBefore(name string, timestamp time.Time) (Version, error)
+
+	// returns the version active after the one active at the given timestamp
+	VersionAfter(name string, timestamp time.Time) (Version, error)
 
 	// list all stored versions
 	Graphs() ([]Version, error)
