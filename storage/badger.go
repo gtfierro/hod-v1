@@ -5,11 +5,12 @@ import (
 	"path/filepath"
 	"strconv"
 	"sync"
-	"time"
+	//"time"
 
 	"github.com/dgraph-io/badger"
 	"github.com/gtfierro/hod/config"
 	"github.com/gtfierro/hod/turtle"
+	"github.com/onrik/logrus/filename"
 	"github.com/pkg/errors"
 	logrus "github.com/sirupsen/logrus"
 )
@@ -18,6 +19,9 @@ func init() {
 	logrus.SetFormatter(&logrus.TextFormatter{FullTimestamp: true, ForceColors: true})
 	logrus.SetOutput(os.Stdout)
 	logrus.SetLevel(logrus.DebugLevel)
+	fh := filename.NewHook()
+	fh.Field = "src"
+	logrus.AddHook(fh)
 }
 
 // BadgerStorageProvider provides a HodDB storage interface to the github.com/dgraph-io/badger key-value store
