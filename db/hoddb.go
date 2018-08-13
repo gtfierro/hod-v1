@@ -97,6 +97,10 @@ func NewHodDB(cfg *config.Config) (*HodDB, error) {
 	} else {
 		logrus.Info("Continuing from existing databases")
 	}
+	hod.namespaces, err = hod.storage.GetNamespaces()
+	if err != nil {
+		return nil, err
+	}
 
 	return hod, nil
 }
@@ -122,7 +126,7 @@ func (hod *HodDB) loadFiles(loadreq graphLoadParams) error {
 		hod.Lock()
 		for abbr, full := range ds.Namespaces {
 			if abbr != "" {
-				hod.namespaces[abbr] = full
+				hod.storage.SaveNamespace(abbr, full)
 			}
 		}
 		hod.Unlock()
