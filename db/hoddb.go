@@ -147,6 +147,8 @@ func (hod *HodDB) Close() error {
 func (hod *HodDB) RunQuery(q *sparql.Query) (result *QueryResult, rerr error) {
 
 	// assemble versions for each of the databases
+
+	// TODO: factor this out
 	var targetGraphs []storage.Version
 	if q.From.AllDBs {
 		targetGraphs, rerr = hod.storage.Graphs()
@@ -155,12 +157,30 @@ func (hod *HodDB) RunQuery(q *sparql.Query) (result *QueryResult, rerr error) {
 		}
 	} else {
 		for _, dbname := range q.From.Databases {
-			versions, err := hod.storage.ListVersions(dbname)
-			if err != nil {
-				rerr = err
-				return
+			if q.IsInsert() {
+				versions, err := hod.storage.ListVersions(dbname)
+				if err != nil {
+					rerr = err
+					return
+				}
+				targetGraphs = append(targetGraphs, versions[len(versions)-1])
+			} else {
+				var version storage.Version
+				var err error
+				switch q.Time.Filter {
+				case sparql.AT:
+					version, err = hod.storage.VersionAt(dbname, q.Time.Timestamp)
+				case sparql.BEFORE:
+					version, err = hod.storage.VersionBefore(dbname, q.Time.Timestamp)
+				case sparql.AFTER:
+					version, err = hod.storage.VersionAfter(dbname, q.Time.Timestamp)
+				}
+				if err != nil {
+					rerr = err
+					return
+				}
+				targetGraphs = append(targetGraphs, version)
 			}
-			targetGraphs = append(targetGraphs, versions[len(versions)-1])
 
 		}
 	}
