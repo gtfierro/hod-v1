@@ -45,6 +45,12 @@ type StorageProvider interface {
 
 	// list all stored versions
 	Graphs() ([]Version, error)
+
+	// return the set of saved abbreviation -> namespace URI mappings
+	GetNamespaces() (mapping map[string]string, err error)
+
+	// save a new abbreviation -> namespace URI mapping (e.g. brick -> https://brickschema.org/schema/1.0.3/Brick#)
+	SaveNamespace(abbreviation string, uri string) error
 }
 
 // Transaction defines the generic interface for read-only and read-write transactions for a StorageProvider

@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -42,6 +43,7 @@ func init() {
 // from the serialized backup into a badger instance opened at HOD_DIR/open/<graph name>/<version timestamp>
 
 type BadgerStorageProvider struct {
+	namespaceIndexPath   string
 	basedir              string
 	versionsDir, openDir string
 	dbs                  map[Version]*badger.DB
@@ -57,6 +59,8 @@ func (bsp *BadgerStorageProvider) Initialize(cfg *config.Config) error {
 	if err := os.MkdirAll(bsp.basedir, 0700); err != nil {
 		return err
 	}
+	bsp.namespaceIndexPath = filepath.Join(bsp.basedir, "namespaces.json")
+
 	bsp.versionsDir = filepath.Join(bsp.basedir, "versions")
 	if err := os.MkdirAll(bsp.versionsDir, 0700); err != nil {
 		return err
@@ -100,6 +104,34 @@ func (bsp *BadgerStorageProvider) Initialize(cfg *config.Config) error {
 		}
 	}
 	return nil
+}
+
+func (bsp *BadgerStorageProvider) GetNamespaces() (map[string]string, error) {
+	var m = make(map[string]string)
+	f, err := os.Open(bsp.namespaceIndexPath)
+	if os.IsNotExist(err) {
+		return m, nil
+	} else if err != nil {
+		return m, errors.Wrap(err, "Could not open namespace index")
+	}
+	dec := json.NewDecoder(f)
+	err = dec.Decode(&m)
+	return m, errors.Wrap(err, "Could not decode namespace index")
+}
+
+func (bsp *BadgerStorageProvider) SaveNamespace(abbreviation string, uri string) error {
+	namespaces, err := bsp.GetNamespaces()
+	if err != nil {
+		return err
+	}
+	namespaces[abbreviation] = uri
+	f, err := os.Create(bsp.namespaceIndexPath)
+	if err != nil {
+		return errors.Wrap(err, "Could not open namespace index")
+	}
+
+	enc := json.NewEncoder(f)
+	return errors.Wrap(enc.Encode(namespaces), "Could not save namespace index")
 }
 
 // Close closes all underlying storage media
