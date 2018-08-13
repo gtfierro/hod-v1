@@ -61,50 +61,90 @@ var productionsTable = ProdTab{
 		},
 	},
 	ProdTabEntry{
-		String: `SelectQuery : SelectClause DatasetClause WhereClause	<< ast.NewQueryMulti(X[0], X[1], X[2], false) >>`,
+		String: `SelectQuery : SelectClause DatasetClause WhereClause TimeClause	<< ast.NewQueryMulti(X[0], X[1], X[2], X[3], false) >>`,
 		Id:         "SelectQuery",
 		NTType:     2,
 		Index:      4,
-		NumSymbols: 3,
+		NumSymbols: 4,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
-			return ast.NewQueryMulti(X[0], X[1], X[2], false)
+			return ast.NewQueryMulti(X[0], X[1], X[2], X[3], false)
 		},
 	},
 	ProdTabEntry{
-		String: `SelectQuery : SelectClause WhereClause	<< ast.NewQuery(X[0], X[1], false) >>`,
+		String: `SelectQuery : SelectClause WhereClause TimeClause	<< ast.NewQuery(X[0], X[1], X[2], false) >>`,
 		Id:         "SelectQuery",
 		NTType:     2,
 		Index:      5,
-		NumSymbols: 2,
+		NumSymbols: 3,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
-			return ast.NewQuery(X[0], X[1], false)
+			return ast.NewQuery(X[0], X[1], X[2], false)
 		},
 	},
 	ProdTabEntry{
-		String: `CountQuery : CountClause DatasetClause WhereClause	<< ast.NewQueryMulti(X[0], X[1], X[2], true) >>`,
-		Id:         "CountQuery",
-		NTType:     3,
+		String: `SelectQuery : SelectClause DatasetClause WhereClause	<< ast.NewQueryMulti(X[0], X[1], X[2], nil, false) >>`,
+		Id:         "SelectQuery",
+		NTType:     2,
 		Index:      6,
 		NumSymbols: 3,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
-			return ast.NewQueryMulti(X[0], X[1], X[2], true)
+			return ast.NewQueryMulti(X[0], X[1], X[2], nil, false)
 		},
 	},
 	ProdTabEntry{
-		String: `CountQuery : CountClause WhereClause	<< ast.NewQuery(X[0], X[1], true) >>`,
-		Id:         "CountQuery",
-		NTType:     3,
+		String: `SelectQuery : SelectClause WhereClause	<< ast.NewQuery(X[0], X[1], nil, false) >>`,
+		Id:         "SelectQuery",
+		NTType:     2,
 		Index:      7,
 		NumSymbols: 2,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
-			return ast.NewQuery(X[0], X[1], true)
+			return ast.NewQuery(X[0], X[1], nil, false)
+		},
+	},
+	ProdTabEntry{
+		String: `CountQuery : CountClause DatasetClause WhereClause TimeClause	<< ast.NewQueryMulti(X[0], X[1], X[2], X[3], true) >>`,
+		Id:         "CountQuery",
+		NTType:     3,
+		Index:      8,
+		NumSymbols: 4,
+		ReduceFunc: func(X []Attrib) (Attrib, error) {
+			return ast.NewQueryMulti(X[0], X[1], X[2], X[3], true)
+		},
+	},
+	ProdTabEntry{
+		String: `CountQuery : CountClause WhereClause TimeClause	<< ast.NewQuery(X[0], X[1], X[2], true) >>`,
+		Id:         "CountQuery",
+		NTType:     3,
+		Index:      9,
+		NumSymbols: 3,
+		ReduceFunc: func(X []Attrib) (Attrib, error) {
+			return ast.NewQuery(X[0], X[1], X[2], true)
+		},
+	},
+	ProdTabEntry{
+		String: `CountQuery : CountClause DatasetClause WhereClause	<< ast.NewQueryMulti(X[0], X[1], X[2], nil, true) >>`,
+		Id:         "CountQuery",
+		NTType:     3,
+		Index:      10,
+		NumSymbols: 3,
+		ReduceFunc: func(X []Attrib) (Attrib, error) {
+			return ast.NewQueryMulti(X[0], X[1], X[2], nil, true)
+		},
+	},
+	ProdTabEntry{
+		String: `CountQuery : CountClause WhereClause	<< ast.NewQuery(X[0], X[1], nil, true) >>`,
+		Id:         "CountQuery",
+		NTType:     3,
+		Index:      11,
+		NumSymbols: 2,
+		ReduceFunc: func(X []Attrib) (Attrib, error) {
+			return ast.NewQuery(X[0], X[1], nil, true)
 		},
 	},
 	ProdTabEntry{
 		String: `UpdateQuery : InsertClause DatasetClause WhereClause	<< ast.NewInsertQueryMulti(X[0], X[1], X[2], false) >>`,
 		Id:         "UpdateQuery",
 		NTType:     4,
-		Index:      8,
+		Index:      12,
 		NumSymbols: 3,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return ast.NewInsertQueryMulti(X[0], X[1], X[2], false)
@@ -114,7 +154,7 @@ var productionsTable = ProdTab{
 		String: `UpdateQuery : InsertClause WhereClause	<< ast.NewInsertQuery(X[0], X[1], false) >>`,
 		Id:         "UpdateQuery",
 		NTType:     4,
-		Index:      9,
+		Index:      13,
 		NumSymbols: 2,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return ast.NewInsertQuery(X[0], X[1], false)
@@ -124,7 +164,7 @@ var productionsTable = ProdTab{
 		String: `SelectClause : "SELECT" "*"	<< ast.NewAllSelectClause() >>`,
 		Id:         "SelectClause",
 		NTType:     5,
-		Index:      10,
+		Index:      14,
 		NumSymbols: 2,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return ast.NewAllSelectClause()
@@ -134,7 +174,7 @@ var productionsTable = ProdTab{
 		String: `SelectClause : "SELECT" Varlist	<< ast.NewSelectClause(X[1]) >>`,
 		Id:         "SelectClause",
 		NTType:     5,
-		Index:      11,
+		Index:      15,
 		NumSymbols: 2,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return ast.NewSelectClause(X[1])
@@ -144,7 +184,7 @@ var productionsTable = ProdTab{
 		String: `InsertClause : "INSERT" "{" TriplesBlock "}"	<< ast.NewInsertClause(X[2]) >>`,
 		Id:         "InsertClause",
 		NTType:     6,
-		Index:      12,
+		Index:      16,
 		NumSymbols: 4,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return ast.NewInsertClause(X[2])
@@ -154,7 +194,7 @@ var productionsTable = ProdTab{
 		String: `InsertClause : "INSERT" "{" TriplesBlock "." "}"	<< ast.NewInsertClause(X[2]) >>`,
 		Id:         "InsertClause",
 		NTType:     6,
-		Index:      13,
+		Index:      17,
 		NumSymbols: 5,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return ast.NewInsertClause(X[2])
@@ -164,7 +204,7 @@ var productionsTable = ProdTab{
 		String: `CountClause : "COUNT" "*"	<< ast.NewAllSelectClause() >>`,
 		Id:         "CountClause",
 		NTType:     7,
-		Index:      14,
+		Index:      18,
 		NumSymbols: 2,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return ast.NewAllSelectClause()
@@ -174,7 +214,7 @@ var productionsTable = ProdTab{
 		String: `CountClause : "COUNT" Varlist	<< ast.NewSelectClause(X[1]) >>`,
 		Id:         "CountClause",
 		NTType:     7,
-		Index:      15,
+		Index:      19,
 		NumSymbols: 2,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return ast.NewSelectClause(X[1])
@@ -184,7 +224,7 @@ var productionsTable = ProdTab{
 		String: `Varlist : Var	<< ast.NewVarList(X[0]) >>`,
 		Id:         "Varlist",
 		NTType:     8,
-		Index:      16,
+		Index:      20,
 		NumSymbols: 1,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return ast.NewVarList(X[0])
@@ -194,7 +234,7 @@ var productionsTable = ProdTab{
 		String: `Varlist : Varlist Var	<< ast.AppendVar(X[0], X[1]) >>`,
 		Id:         "Varlist",
 		NTType:     8,
-		Index:      17,
+		Index:      21,
 		NumSymbols: 2,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return ast.AppendVar(X[0], X[1])
@@ -204,7 +244,7 @@ var productionsTable = ProdTab{
 		String: `DBlist : String	<< ast.NewStringList(X[0]) >>`,
 		Id:         "DBlist",
 		NTType:     9,
-		Index:      18,
+		Index:      22,
 		NumSymbols: 1,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return ast.NewStringList(X[0])
@@ -214,7 +254,7 @@ var productionsTable = ProdTab{
 		String: `DBlist : DBlist String	<< ast.AppendString(X[0], X[1]) >>`,
 		Id:         "DBlist",
 		NTType:     9,
-		Index:      19,
+		Index:      23,
 		NumSymbols: 2,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return ast.AppendString(X[0], X[1])
@@ -224,7 +264,7 @@ var productionsTable = ProdTab{
 		String: `String : string	<< ast.ParseString(X[0]) >>`,
 		Id:         "String",
 		NTType:     10,
-		Index:      20,
+		Index:      24,
 		NumSymbols: 1,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return ast.ParseString(X[0])
@@ -234,7 +274,7 @@ var productionsTable = ProdTab{
 		String: `Var : var	<< ast.ParseString(X[0]) >>`,
 		Id:         "Var",
 		NTType:     11,
-		Index:      21,
+		Index:      25,
 		NumSymbols: 1,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return ast.ParseString(X[0])
@@ -244,7 +284,7 @@ var productionsTable = ProdTab{
 		String: `DatasetClause : "FROM" DBlist	<< ast.NewFromClause(X[1]) >>`,
 		Id:         "DatasetClause",
 		NTType:     12,
-		Index:      22,
+		Index:      26,
 		NumSymbols: 2,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return ast.NewFromClause(X[1])
@@ -254,17 +294,47 @@ var productionsTable = ProdTab{
 		String: `DatasetClause : "FROM" "*"	<< ast.NewAllFromClause() >>`,
 		Id:         "DatasetClause",
 		NTType:     12,
-		Index:      23,
+		Index:      27,
 		NumSymbols: 2,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return ast.NewAllFromClause()
 		},
 	},
 	ProdTabEntry{
+		String: `TimeClause : "AT" String	<< ast.NewTimeClause(ast.AT, X[1]) >>`,
+		Id:         "TimeClause",
+		NTType:     13,
+		Index:      28,
+		NumSymbols: 2,
+		ReduceFunc: func(X []Attrib) (Attrib, error) {
+			return ast.NewTimeClause(ast.AT, X[1])
+		},
+	},
+	ProdTabEntry{
+		String: `TimeClause : "BEFORE" String	<< ast.NewTimeClause(ast.BEFORE, X[1]) >>`,
+		Id:         "TimeClause",
+		NTType:     13,
+		Index:      29,
+		NumSymbols: 2,
+		ReduceFunc: func(X []Attrib) (Attrib, error) {
+			return ast.NewTimeClause(ast.BEFORE, X[1])
+		},
+	},
+	ProdTabEntry{
+		String: `TimeClause : "AFTER" String	<< ast.NewTimeClause(ast.AFTER, X[1]) >>`,
+		Id:         "TimeClause",
+		NTType:     13,
+		Index:      30,
+		NumSymbols: 2,
+		ReduceFunc: func(X []Attrib) (Attrib, error) {
+			return ast.NewTimeClause(ast.AFTER, X[1])
+		},
+	},
+	ProdTabEntry{
 		String: `WhereClause : "WHERE" "{" "}"	<< ast.NewWhereClause([]ast.Triple{}) >>`,
 		Id:         "WhereClause",
-		NTType:     13,
-		Index:      24,
+		NTType:     14,
+		Index:      31,
 		NumSymbols: 3,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return ast.NewWhereClause([]ast.Triple{})
@@ -273,8 +343,8 @@ var productionsTable = ProdTab{
 	ProdTabEntry{
 		String: `WhereClause : "WHERE" "{" TriplesBlock "}"	<< ast.NewWhereClause(X[2]) >>`,
 		Id:         "WhereClause",
-		NTType:     13,
-		Index:      25,
+		NTType:     14,
+		Index:      32,
 		NumSymbols: 4,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return ast.NewWhereClause(X[2])
@@ -283,8 +353,8 @@ var productionsTable = ProdTab{
 	ProdTabEntry{
 		String: `WhereClause : "WHERE" "{" TriplesBlock "." "}"	<< ast.NewWhereClause(X[2]) >>`,
 		Id:         "WhereClause",
-		NTType:     13,
-		Index:      26,
+		NTType:     14,
+		Index:      33,
 		NumSymbols: 5,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return ast.NewWhereClause(X[2])
@@ -293,8 +363,8 @@ var productionsTable = ProdTab{
 	ProdTabEntry{
 		String: `WhereClause : "WHERE" "{" TriplesBlock RestOfWhereList "}"	<< ast.NewWhereClauseWithGraphGroup(X[2], X[3]) >>`,
 		Id:         "WhereClause",
-		NTType:     13,
-		Index:      27,
+		NTType:     14,
+		Index:      34,
 		NumSymbols: 5,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return ast.NewWhereClauseWithGraphGroup(X[2], X[3])
@@ -303,8 +373,8 @@ var productionsTable = ProdTab{
 	ProdTabEntry{
 		String: `WhereClause : "WHERE" "{" TriplesBlock "." RestOfWhereList "}"	<< ast.NewWhereClauseWithGraphGroup(X[2], X[4]) >>`,
 		Id:         "WhereClause",
-		NTType:     13,
-		Index:      28,
+		NTType:     14,
+		Index:      35,
 		NumSymbols: 6,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return ast.NewWhereClauseWithGraphGroup(X[2], X[4])
@@ -313,8 +383,8 @@ var productionsTable = ProdTab{
 	ProdTabEntry{
 		String: `WhereClause : "WHERE" "{" RestOfWhereList "}"	<< ast.NewWhereClauseGraphGroup(X[2]) >>`,
 		Id:         "WhereClause",
-		NTType:     13,
-		Index:      29,
+		NTType:     14,
+		Index:      36,
 		NumSymbols: 4,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return ast.NewWhereClauseGraphGroup(X[2])
@@ -323,8 +393,8 @@ var productionsTable = ProdTab{
 	ProdTabEntry{
 		String: `TriplesBlock : Triple	<< ast.NewTripleBlock(X[0]) >>`,
 		Id:         "TriplesBlock",
-		NTType:     14,
-		Index:      30,
+		NTType:     15,
+		Index:      37,
 		NumSymbols: 1,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return ast.NewTripleBlock(X[0])
@@ -333,8 +403,8 @@ var productionsTable = ProdTab{
 	ProdTabEntry{
 		String: `TriplesBlock : TriplesBlock "." Triple	<< ast.AppendTripleBlock(X[0], X[2]) >>`,
 		Id:         "TriplesBlock",
-		NTType:     14,
-		Index:      31,
+		NTType:     15,
+		Index:      38,
 		NumSymbols: 3,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return ast.AppendTripleBlock(X[0], X[2])
@@ -343,8 +413,8 @@ var productionsTable = ProdTab{
 	ProdTabEntry{
 		String: `Triple : VarOrTerm Path VarOrTerm	<< ast.NewTriple(X[0], X[1], X[2]) >>`,
 		Id:         "Triple",
-		NTType:     15,
-		Index:      32,
+		NTType:     16,
+		Index:      39,
 		NumSymbols: 3,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return ast.NewTriple(X[0], X[1], X[2])
@@ -353,8 +423,8 @@ var productionsTable = ProdTab{
 	ProdTabEntry{
 		String: `VarOrTerm : Var	<< ast.NewURI(X[0]) >>`,
 		Id:         "VarOrTerm",
-		NTType:     16,
-		Index:      33,
+		NTType:     17,
+		Index:      40,
 		NumSymbols: 1,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return ast.NewURI(X[0])
@@ -363,8 +433,8 @@ var productionsTable = ProdTab{
 	ProdTabEntry{
 		String: `VarOrTerm : GraphTerm	<< ast.NewURI(X[0]) >>`,
 		Id:         "VarOrTerm",
-		NTType:     16,
-		Index:      34,
+		NTType:     17,
+		Index:      41,
 		NumSymbols: 1,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return ast.NewURI(X[0])
@@ -373,8 +443,8 @@ var productionsTable = ProdTab{
 	ProdTabEntry{
 		String: `GraphTerm : uri	<< ast.ParseString(X[0]) >>`,
 		Id:         "GraphTerm",
-		NTType:     17,
-		Index:      35,
+		NTType:     18,
+		Index:      42,
 		NumSymbols: 1,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return ast.ParseString(X[0])
@@ -383,8 +453,8 @@ var productionsTable = ProdTab{
 	ProdTabEntry{
 		String: `GraphTerm : quotedstring	<< ast.ParseQuotedString(X[0]) >>`,
 		Id:         "GraphTerm",
-		NTType:     17,
-		Index:      36,
+		NTType:     18,
+		Index:      43,
 		NumSymbols: 1,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return ast.ParseQuotedString(X[0])
@@ -393,8 +463,8 @@ var productionsTable = ProdTab{
 	ProdTabEntry{
 		String: `GraphTerm : url	<< ast.ParseString(X[0]) >>`,
 		Id:         "GraphTerm",
-		NTType:     17,
-		Index:      37,
+		NTType:     18,
+		Index:      44,
 		NumSymbols: 1,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return ast.ParseString(X[0])
@@ -403,8 +473,8 @@ var productionsTable = ProdTab{
 	ProdTabEntry{
 		String: `Path : PathSequence	<< X[0], nil >>`,
 		Id:         "Path",
-		NTType:     18,
-		Index:      38,
+		NTType:     19,
+		Index:      45,
 		NumSymbols: 1,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return X[0], nil
@@ -413,8 +483,8 @@ var productionsTable = ProdTab{
 	ProdTabEntry{
 		String: `Path : Path "|" PathSequence	<<  >>`,
 		Id:         "Path",
-		NTType:     18,
-		Index:      39,
+		NTType:     19,
+		Index:      46,
 		NumSymbols: 3,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return X[0], nil
@@ -423,8 +493,8 @@ var productionsTable = ProdTab{
 	ProdTabEntry{
 		String: `Path : Var	<< ast.PathFromVar(X[0]) >>`,
 		Id:         "Path",
-		NTType:     18,
-		Index:      40,
+		NTType:     19,
+		Index:      47,
 		NumSymbols: 1,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return ast.PathFromVar(X[0])
@@ -433,8 +503,8 @@ var productionsTable = ProdTab{
 	ProdTabEntry{
 		String: `PathSequence : PathElt	<< ast.NewPathSequence(X[0]) >>`,
 		Id:         "PathSequence",
-		NTType:     19,
-		Index:      41,
+		NTType:     20,
+		Index:      48,
 		NumSymbols: 1,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return ast.NewPathSequence(X[0])
@@ -443,8 +513,8 @@ var productionsTable = ProdTab{
 	ProdTabEntry{
 		String: `PathSequence : PathSequence "/" PathElt	<< ast.AppendPathSequence(X[0], X[2]) >>`,
 		Id:         "PathSequence",
-		NTType:     19,
-		Index:      42,
+		NTType:     20,
+		Index:      49,
 		NumSymbols: 3,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return ast.AppendPathSequence(X[0], X[2])
@@ -453,8 +523,8 @@ var productionsTable = ProdTab{
 	ProdTabEntry{
 		String: `PathElt : PathPrimary PathMod	<< ast.AddPathMod(X[0], X[1]) >>`,
 		Id:         "PathElt",
-		NTType:     20,
-		Index:      43,
+		NTType:     21,
+		Index:      50,
 		NumSymbols: 2,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return ast.AddPathMod(X[0], X[1])
@@ -463,8 +533,8 @@ var productionsTable = ProdTab{
 	ProdTabEntry{
 		String: `PathElt : PathPrimary	<< X[0], nil >>`,
 		Id:         "PathElt",
-		NTType:     20,
-		Index:      44,
+		NTType:     21,
+		Index:      51,
 		NumSymbols: 1,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return X[0], nil
@@ -473,8 +543,8 @@ var productionsTable = ProdTab{
 	ProdTabEntry{
 		String: `PathPrimary : uri	<< ast.NewPathPattern(X[0]) >>`,
 		Id:         "PathPrimary",
-		NTType:     21,
-		Index:      45,
+		NTType:     22,
+		Index:      52,
 		NumSymbols: 1,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return ast.NewPathPattern(X[0])
@@ -483,8 +553,8 @@ var productionsTable = ProdTab{
 	ProdTabEntry{
 		String: `PathPrimary : "a"	<< ast.NewPathPattern(X[0]) >>`,
 		Id:         "PathPrimary",
-		NTType:     21,
-		Index:      46,
+		NTType:     22,
+		Index:      53,
 		NumSymbols: 1,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return ast.NewPathPattern(X[0])
@@ -493,8 +563,8 @@ var productionsTable = ProdTab{
 	ProdTabEntry{
 		String: `PathPrimary : url	<< ast.NewPathPattern(X[0]) >>`,
 		Id:         "PathPrimary",
-		NTType:     21,
-		Index:      47,
+		NTType:     22,
+		Index:      54,
 		NumSymbols: 1,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return ast.NewPathPattern(X[0])
@@ -503,8 +573,8 @@ var productionsTable = ProdTab{
 	ProdTabEntry{
 		String: `PathPrimary : "(" Path ")"	<< X[1], nil >>`,
 		Id:         "PathPrimary",
-		NTType:     21,
-		Index:      48,
+		NTType:     22,
+		Index:      55,
 		NumSymbols: 3,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return X[1], nil
@@ -513,8 +583,8 @@ var productionsTable = ProdTab{
 	ProdTabEntry{
 		String: `PathMod : "?"	<< ast.Pattern(ast.PATTERN_ZERO_ONE), nil >>`,
 		Id:         "PathMod",
-		NTType:     22,
-		Index:      49,
+		NTType:     23,
+		Index:      56,
 		NumSymbols: 1,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return ast.Pattern(ast.PATTERN_ZERO_ONE), nil
@@ -523,8 +593,8 @@ var productionsTable = ProdTab{
 	ProdTabEntry{
 		String: `PathMod : "*"	<< ast.Pattern(ast.PATTERN_ZERO_PLUS), nil >>`,
 		Id:         "PathMod",
-		NTType:     22,
-		Index:      50,
+		NTType:     23,
+		Index:      57,
 		NumSymbols: 1,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return ast.Pattern(ast.PATTERN_ZERO_PLUS), nil
@@ -533,8 +603,8 @@ var productionsTable = ProdTab{
 	ProdTabEntry{
 		String: `PathMod : "+"	<< ast.Pattern(ast.PATTERN_ONE_PLUS), nil >>`,
 		Id:         "PathMod",
-		NTType:     22,
-		Index:      51,
+		NTType:     23,
+		Index:      58,
 		NumSymbols: 1,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return ast.Pattern(ast.PATTERN_ONE_PLUS), nil
@@ -543,8 +613,8 @@ var productionsTable = ProdTab{
 	ProdTabEntry{
 		String: `RestOfWhereList : RestOfWhere	<< X[0], nil >>`,
 		Id:         "RestOfWhereList",
-		NTType:     23,
-		Index:      52,
+		NTType:     24,
+		Index:      59,
 		NumSymbols: 1,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return X[0], nil
@@ -553,8 +623,8 @@ var productionsTable = ProdTab{
 	ProdTabEntry{
 		String: `RestOfWhereList : RestOfWhereList RestOfWhere	<< ast.MergeGraphGroups(X[0], X[1]) >>`,
 		Id:         "RestOfWhereList",
-		NTType:     23,
-		Index:      53,
+		NTType:     24,
+		Index:      60,
 		NumSymbols: 2,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return ast.MergeGraphGroups(X[0], X[1])
@@ -563,8 +633,8 @@ var productionsTable = ProdTab{
 	ProdTabEntry{
 		String: `RestOfWhere : GraphPatternNotTriples Joiner TriplesBlock Joiner	<< ast.AddTriplesToGraphGroup(X[0], X[2]) >>`,
 		Id:         "RestOfWhere",
-		NTType:     24,
-		Index:      54,
+		NTType:     25,
+		Index:      61,
 		NumSymbols: 4,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return ast.AddTriplesToGraphGroup(X[0], X[2])
@@ -573,8 +643,8 @@ var productionsTable = ProdTab{
 	ProdTabEntry{
 		String: `RestOfWhere : GraphPatternNotTriples Joiner	<< X[0], nil >>`,
 		Id:         "RestOfWhere",
-		NTType:     24,
-		Index:      55,
+		NTType:     25,
+		Index:      62,
 		NumSymbols: 2,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return X[0], nil
@@ -583,8 +653,8 @@ var productionsTable = ProdTab{
 	ProdTabEntry{
 		String: `Joiner : "."	<<  >>`,
 		Id:         "Joiner",
-		NTType:     25,
-		Index:      56,
+		NTType:     26,
+		Index:      63,
 		NumSymbols: 1,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return X[0], nil
@@ -593,8 +663,8 @@ var productionsTable = ProdTab{
 	ProdTabEntry{
 		String: `Joiner : empty	<<  >>`,
 		Id:         "Joiner",
-		NTType:     25,
-		Index:      57,
+		NTType:     26,
+		Index:      64,
 		NumSymbols: 0,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return nil, nil
@@ -603,8 +673,8 @@ var productionsTable = ProdTab{
 	ProdTabEntry{
 		String: `GraphPatternNotTriples : GroupGraphPattern	<< X[0], nil >>`,
 		Id:         "GraphPatternNotTriples",
-		NTType:     26,
-		Index:      58,
+		NTType:     27,
+		Index:      65,
 		NumSymbols: 1,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return X[0], nil
@@ -613,8 +683,8 @@ var productionsTable = ProdTab{
 	ProdTabEntry{
 		String: `GraphPatternNotTriples : GraphPatternNotTriples "UNION" GroupGraphPattern	<< ast.GraphGroupUnion(X[0], X[2]) >>`,
 		Id:         "GraphPatternNotTriples",
-		NTType:     26,
-		Index:      59,
+		NTType:     27,
+		Index:      66,
 		NumSymbols: 3,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return ast.GraphGroupUnion(X[0], X[2])
@@ -623,8 +693,8 @@ var productionsTable = ProdTab{
 	ProdTabEntry{
 		String: `GroupGraphPattern : "{" GroupGraphPatternSub Joiner "}"	<< X[1], nil >>`,
 		Id:         "GroupGraphPattern",
-		NTType:     27,
-		Index:      60,
+		NTType:     28,
+		Index:      67,
 		NumSymbols: 4,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return X[1], nil
@@ -633,8 +703,8 @@ var productionsTable = ProdTab{
 	ProdTabEntry{
 		String: `GroupGraphPatternSub : TriplesBlock	<< ast.GraphGroupFromTriples(X[0]) >>`,
 		Id:         "GroupGraphPatternSub",
-		NTType:     28,
-		Index:      61,
+		NTType:     29,
+		Index:      68,
 		NumSymbols: 1,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return ast.GraphGroupFromTriples(X[0])
@@ -643,8 +713,8 @@ var productionsTable = ProdTab{
 	ProdTabEntry{
 		String: `GroupGraphPatternSub : GraphPatternNotTriples "." TriplesBlock	<< ast.AddTriplesToGraphGroup(X[0], X[2]) >>`,
 		Id:         "GroupGraphPatternSub",
-		NTType:     28,
-		Index:      62,
+		NTType:     29,
+		Index:      69,
 		NumSymbols: 3,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return ast.AddTriplesToGraphGroup(X[0], X[2])
@@ -653,8 +723,8 @@ var productionsTable = ProdTab{
 	ProdTabEntry{
 		String: `GroupGraphPatternSub : GroupGraphPatternSub GraphPatternNotTriples "." TriplesBlock	<<  >>`,
 		Id:         "GroupGraphPatternSub",
-		NTType:     28,
-		Index:      63,
+		NTType:     29,
+		Index:      70,
 		NumSymbols: 4,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
 			return X[0], nil

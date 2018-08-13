@@ -25,13 +25,17 @@ QueryUnit
     ;
 
 SelectQuery
-    : SelectClause DatasetClause WhereClause << ast.NewQueryMulti($0, $1, $2, false) >>
-    | SelectClause WhereClause  << ast.NewQuery($0, $1, false) >>
+    : SelectClause DatasetClause WhereClause TimeClause << ast.NewQueryMulti($0, $1, $2, $3, false) >>
+    | SelectClause WhereClause  TimeClause  << ast.NewQuery($0, $1, $2, false) >>
+    | SelectClause DatasetClause WhereClause << ast.NewQueryMulti($0, $1, $2, nil, false) >>
+    | SelectClause WhereClause  << ast.NewQuery($0, $1, nil, false) >>
     ;
 
 CountQuery
-    : CountClause DatasetClause WhereClause << ast.NewQueryMulti($0, $1, $2, true) >>
-    | CountClause WhereClause  << ast.NewQuery($0, $1, true) >>
+    : CountClause DatasetClause WhereClause TimeClause << ast.NewQueryMulti($0, $1, $2, $3, true) >>
+    | CountClause WhereClause  TimeClause << ast.NewQuery($0, $1, $2, true) >>
+    | CountClause DatasetClause WhereClause << ast.NewQueryMulti($0, $1, $2, nil, true) >>
+    | CountClause WhereClause  << ast.NewQuery($0, $1, nil, true) >>
     ;
 
 UpdateQuery
@@ -70,6 +74,12 @@ Var : var << ast.ParseString($0) >> ;
 DatasetClause
     : "FROM" DBlist << ast.NewFromClause($1) >>
     | "FROM" "*" << ast.NewAllFromClause() >>
+    ;
+
+TimeClause
+    : "AT" String << ast.NewTimeClause(ast.AT, $1) >>
+    | "BEFORE" String << ast.NewTimeClause(ast.BEFORE, $1) >>
+    | "AFTER" String << ast.NewTimeClause(ast.AFTER, $1) >>
     ;
 
 WhereClause

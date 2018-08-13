@@ -2,7 +2,7 @@
 
 package parser
 
-const numNTSymbols = 29
+const numNTSymbols = 30
 
 type (
 	gotoTable [numStates]gotoRow
@@ -24,6 +24,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -55,6 +56,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -86,6 +88,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -117,6 +120,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -148,6 +152,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -179,6 +184,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		14, // DatasetClause
+		-1, // TimeClause
 		15, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -210,6 +216,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		18, // DatasetClause
+		-1, // TimeClause
 		19, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -241,6 +248,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		20, // DatasetClause
+		-1, // TimeClause
 		21, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -267,11 +275,12 @@ var gotoTab = gotoTable{
 		-1, // SelectClause
 		-1, // InsertClause
 		-1, // CountClause
-		23, // Varlist
+		24, // Varlist
 		-1, // DBlist
 		-1, // String
-		24, // Var
+		25, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -303,6 +312,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -329,11 +339,12 @@ var gotoTab = gotoTable{
 		-1, // SelectClause
 		-1, // InsertClause
 		-1, // CountClause
-		28, // Varlist
+		29, // Varlist
 		-1, // DBlist
 		-1, // String
-		24, // Var
+		25, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -365,6 +376,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -396,6 +408,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -427,6 +440,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -458,7 +472,8 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
-		29, // WhereClause
+		-1, // TimeClause
+		30, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
 		-1, // VarOrTerm
@@ -489,6 +504,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		31, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -516,10 +532,11 @@ var gotoTab = gotoTable{
 		-1, // InsertClause
 		-1, // CountClause
 		-1, // Varlist
-		31, // DBlist
-		32, // String
+		36, // DBlist
+		37, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -551,6 +568,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -582,7 +600,8 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
-		35, // WhereClause
+		-1, // TimeClause
+		40, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
 		-1, // VarOrTerm
@@ -613,6 +632,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		41, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -644,7 +664,8 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
-		36, // WhereClause
+		-1, // TimeClause
+		42, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
 		-1, // VarOrTerm
@@ -675,6 +696,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -706,6 +728,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -735,8 +758,9 @@ var gotoTab = gotoTable{
 		-1, // Varlist
 		-1, // DBlist
 		-1, // String
-		37, // Var
+		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -766,8 +790,9 @@ var gotoTab = gotoTable{
 		-1, // Varlist
 		-1, // DBlist
 		-1, // String
-		-1, // Var
+		44, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -799,6 +824,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -828,13 +854,14 @@ var gotoTab = gotoTable{
 		-1, // Varlist
 		-1, // DBlist
 		-1, // String
-		39, // Var
+		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
-		38, // TriplesBlock
-		41, // Triple
-		42, // VarOrTerm
-		43, // GraphTerm
+		-1, // TriplesBlock
+		-1, // Triple
+		-1, // VarOrTerm
+		-1, // GraphTerm
 		-1, // Path
 		-1, // PathSequence
 		-1, // PathElt
@@ -859,13 +886,14 @@ var gotoTab = gotoTable{
 		-1, // Varlist
 		-1, // DBlist
 		-1, // String
-		-1, // Var
+		46, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
-		-1, // TriplesBlock
-		-1, // Triple
-		-1, // VarOrTerm
-		-1, // GraphTerm
+		45, // TriplesBlock
+		48, // Triple
+		49, // VarOrTerm
+		50, // GraphTerm
 		-1, // Path
 		-1, // PathSequence
 		-1, // PathElt
@@ -890,8 +918,9 @@ var gotoTab = gotoTable{
 		-1, // Varlist
 		-1, // DBlist
 		-1, // String
-		37, // Var
+		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -921,8 +950,9 @@ var gotoTab = gotoTable{
 		-1, // Varlist
 		-1, // DBlist
 		-1, // String
-		-1, // Var
+		44, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -954,6 +984,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		54, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -982,9 +1013,10 @@ var gotoTab = gotoTable{
 		-1, // CountClause
 		-1, // Varlist
 		-1, // DBlist
-		47, // String
+		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -1013,9 +1045,10 @@ var gotoTab = gotoTable{
 		-1, // CountClause
 		-1, // Varlist
 		-1, // DBlist
-		-1, // String
+		55, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -1044,9 +1077,10 @@ var gotoTab = gotoTable{
 		-1, // CountClause
 		-1, // Varlist
 		-1, // DBlist
-		-1, // String
+		57, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -1075,24 +1109,25 @@ var gotoTab = gotoTable{
 		-1, // CountClause
 		-1, // Varlist
 		-1, // DBlist
-		-1, // String
-		39, // Var
+		58, // String
+		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
-		49, // TriplesBlock
-		52, // Triple
-		53, // VarOrTerm
-		43, // GraphTerm
+		-1, // TriplesBlock
+		-1, // Triple
+		-1, // VarOrTerm
+		-1, // GraphTerm
 		-1, // Path
 		-1, // PathSequence
 		-1, // PathElt
 		-1, // PathPrimary
 		-1, // PathMod
-		51, // RestOfWhereList
-		54, // RestOfWhere
+		-1, // RestOfWhereList
+		-1, // RestOfWhere
 		-1, // Joiner
-		55, // GraphPatternNotTriples
-		56, // GroupGraphPattern
+		-1, // GraphPatternNotTriples
+		-1, // GroupGraphPattern
 		-1, // GroupGraphPatternSub
 	},
 	gotoRow{ // S35
@@ -1109,6 +1144,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -1137,9 +1173,10 @@ var gotoTab = gotoTable{
 		-1, // CountClause
 		-1, // Varlist
 		-1, // DBlist
-		-1, // String
+		59, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -1171,6 +1208,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -1202,6 +1240,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -1231,23 +1270,24 @@ var gotoTab = gotoTable{
 		-1, // Varlist
 		-1, // DBlist
 		-1, // String
-		-1, // Var
+		46, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
-		-1, // TriplesBlock
-		-1, // Triple
-		-1, // VarOrTerm
-		-1, // GraphTerm
+		61, // TriplesBlock
+		64, // Triple
+		65, // VarOrTerm
+		50, // GraphTerm
 		-1, // Path
 		-1, // PathSequence
 		-1, // PathElt
 		-1, // PathPrimary
 		-1, // PathMod
-		-1, // RestOfWhereList
-		-1, // RestOfWhere
+		63, // RestOfWhereList
+		66, // RestOfWhere
 		-1, // Joiner
-		-1, // GraphPatternNotTriples
-		-1, // GroupGraphPattern
+		67, // GraphPatternNotTriples
+		68, // GroupGraphPattern
 		-1, // GroupGraphPatternSub
 	},
 	gotoRow{ // S40
@@ -1264,6 +1304,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		69, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -1295,6 +1336,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -1324,17 +1366,18 @@ var gotoTab = gotoTable{
 		-1, // Varlist
 		-1, // DBlist
 		-1, // String
-		59, // Var
+		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
 		-1, // VarOrTerm
 		-1, // GraphTerm
-		61, // Path
-		64, // PathSequence
-		65, // PathElt
-		66, // PathPrimary
+		-1, // Path
+		-1, // PathSequence
+		-1, // PathElt
+		-1, // PathPrimary
 		-1, // PathMod
 		-1, // RestOfWhereList
 		-1, // RestOfWhere
@@ -1355,23 +1398,24 @@ var gotoTab = gotoTable{
 		-1, // Varlist
 		-1, // DBlist
 		-1, // String
-		-1, // Var
+		46, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
-		-1, // TriplesBlock
-		-1, // Triple
-		-1, // VarOrTerm
-		-1, // GraphTerm
+		70, // TriplesBlock
+		64, // Triple
+		65, // VarOrTerm
+		50, // GraphTerm
 		-1, // Path
 		-1, // PathSequence
 		-1, // PathElt
 		-1, // PathPrimary
 		-1, // PathMod
-		-1, // RestOfWhereList
-		-1, // RestOfWhere
+		72, // RestOfWhereList
+		66, // RestOfWhere
 		-1, // Joiner
-		-1, // GraphPatternNotTriples
-		-1, // GroupGraphPattern
+		67, // GraphPatternNotTriples
+		68, // GroupGraphPattern
 		-1, // GroupGraphPatternSub
 	},
 	gotoRow{ // S44
@@ -1388,6 +1432,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -1419,6 +1464,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -1450,6 +1496,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -1481,6 +1528,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -1510,13 +1558,14 @@ var gotoTab = gotoTable{
 		-1, // Varlist
 		-1, // DBlist
 		-1, // String
-		39, // Var
+		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
-		70, // TriplesBlock
-		52, // Triple
-		53, // VarOrTerm
-		43, // GraphTerm
+		-1, // TriplesBlock
+		-1, // Triple
+		-1, // VarOrTerm
+		-1, // GraphTerm
 		-1, // Path
 		-1, // PathSequence
 		-1, // PathElt
@@ -1525,9 +1574,9 @@ var gotoTab = gotoTable{
 		-1, // RestOfWhereList
 		-1, // RestOfWhere
 		-1, // Joiner
-		71, // GraphPatternNotTriples
-		72, // GroupGraphPattern
-		73, // GroupGraphPatternSub
+		-1, // GraphPatternNotTriples
+		-1, // GroupGraphPattern
+		-1, // GroupGraphPatternSub
 	},
 	gotoRow{ // S49
 		-1, // S'
@@ -1541,23 +1590,24 @@ var gotoTab = gotoTable{
 		-1, // Varlist
 		-1, // DBlist
 		-1, // String
-		-1, // Var
+		75, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
 		-1, // VarOrTerm
 		-1, // GraphTerm
-		-1, // Path
-		-1, // PathSequence
-		-1, // PathElt
-		-1, // PathPrimary
+		77, // Path
+		80, // PathSequence
+		81, // PathElt
+		82, // PathPrimary
 		-1, // PathMod
-		76, // RestOfWhereList
-		54, // RestOfWhere
+		-1, // RestOfWhereList
+		-1, // RestOfWhere
 		-1, // Joiner
-		55, // GraphPatternNotTriples
-		56, // GroupGraphPattern
+		-1, // GraphPatternNotTriples
+		-1, // GroupGraphPattern
 		-1, // GroupGraphPatternSub
 	},
 	gotoRow{ // S50
@@ -1574,6 +1624,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -1605,6 +1656,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -1616,10 +1668,10 @@ var gotoTab = gotoTable{
 		-1, // PathPrimary
 		-1, // PathMod
 		-1, // RestOfWhereList
-		78, // RestOfWhere
+		-1, // RestOfWhere
 		-1, // Joiner
-		55, // GraphPatternNotTriples
-		56, // GroupGraphPattern
+		-1, // GraphPatternNotTriples
+		-1, // GroupGraphPattern
 		-1, // GroupGraphPatternSub
 	},
 	gotoRow{ // S52
@@ -1636,6 +1688,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -1665,17 +1718,18 @@ var gotoTab = gotoTable{
 		-1, // Varlist
 		-1, // DBlist
 		-1, // String
-		59, // Var
+		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
 		-1, // VarOrTerm
 		-1, // GraphTerm
-		79, // Path
-		64, // PathSequence
-		65, // PathElt
-		66, // PathPrimary
+		-1, // Path
+		-1, // PathSequence
+		-1, // PathElt
+		-1, // PathPrimary
 		-1, // PathMod
 		-1, // RestOfWhereList
 		-1, // RestOfWhere
@@ -1698,6 +1752,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -1729,6 +1784,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -1741,7 +1797,7 @@ var gotoTab = gotoTable{
 		-1, // PathMod
 		-1, // RestOfWhereList
 		-1, // RestOfWhere
-		81, // Joiner
+		-1, // Joiner
 		-1, // GraphPatternNotTriples
 		-1, // GroupGraphPattern
 		-1, // GroupGraphPatternSub
@@ -1760,6 +1816,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -1791,6 +1848,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -1820,13 +1878,14 @@ var gotoTab = gotoTable{
 		-1, // Varlist
 		-1, // DBlist
 		-1, // String
-		39, // Var
+		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
-		84, // Triple
-		42, // VarOrTerm
-		43, // GraphTerm
+		-1, // Triple
+		-1, // VarOrTerm
+		-1, // GraphTerm
 		-1, // Path
 		-1, // PathSequence
 		-1, // PathElt
@@ -1853,6 +1912,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -1882,13 +1942,14 @@ var gotoTab = gotoTable{
 		-1, // Varlist
 		-1, // DBlist
 		-1, // String
-		-1, // Var
+		46, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
-		-1, // TriplesBlock
-		-1, // Triple
-		-1, // VarOrTerm
-		-1, // GraphTerm
+		86, // TriplesBlock
+		64, // Triple
+		65, // VarOrTerm
+		50, // GraphTerm
 		-1, // Path
 		-1, // PathSequence
 		-1, // PathElt
@@ -1897,9 +1958,9 @@ var gotoTab = gotoTable{
 		-1, // RestOfWhereList
 		-1, // RestOfWhere
 		-1, // Joiner
-		-1, // GraphPatternNotTriples
-		-1, // GroupGraphPattern
-		-1, // GroupGraphPatternSub
+		87, // GraphPatternNotTriples
+		88, // GroupGraphPattern
+		89, // GroupGraphPatternSub
 	},
 	gotoRow{ // S61
 		-1, // S'
@@ -1913,23 +1974,24 @@ var gotoTab = gotoTable{
 		-1, // Varlist
 		-1, // DBlist
 		-1, // String
-		85, // Var
+		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
-		87, // VarOrTerm
-		88, // GraphTerm
+		-1, // VarOrTerm
+		-1, // GraphTerm
 		-1, // Path
 		-1, // PathSequence
 		-1, // PathElt
 		-1, // PathPrimary
 		-1, // PathMod
-		-1, // RestOfWhereList
-		-1, // RestOfWhere
+		92, // RestOfWhereList
+		66, // RestOfWhere
 		-1, // Joiner
-		-1, // GraphPatternNotTriples
-		-1, // GroupGraphPattern
+		67, // GraphPatternNotTriples
+		68, // GroupGraphPattern
 		-1, // GroupGraphPatternSub
 	},
 	gotoRow{ // S62
@@ -1946,6 +2008,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -1977,6 +2040,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -1988,10 +2052,10 @@ var gotoTab = gotoTable{
 		-1, // PathPrimary
 		-1, // PathMod
 		-1, // RestOfWhereList
-		-1, // RestOfWhere
+		94, // RestOfWhere
 		-1, // Joiner
-		-1, // GraphPatternNotTriples
-		-1, // GroupGraphPattern
+		67, // GraphPatternNotTriples
+		68, // GroupGraphPattern
 		-1, // GroupGraphPatternSub
 	},
 	gotoRow{ // S64
@@ -2008,6 +2072,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -2037,17 +2102,18 @@ var gotoTab = gotoTable{
 		-1, // Varlist
 		-1, // DBlist
 		-1, // String
-		-1, // Var
+		75, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
 		-1, // VarOrTerm
 		-1, // GraphTerm
-		-1, // Path
-		-1, // PathSequence
-		-1, // PathElt
-		-1, // PathPrimary
+		95, // Path
+		80, // PathSequence
+		81, // PathElt
+		82, // PathPrimary
 		-1, // PathMod
 		-1, // RestOfWhereList
 		-1, // RestOfWhere
@@ -2070,6 +2136,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -2079,7 +2146,7 @@ var gotoTab = gotoTable{
 		-1, // PathSequence
 		-1, // PathElt
 		-1, // PathPrimary
-		95, // PathMod
+		-1, // PathMod
 		-1, // RestOfWhereList
 		-1, // RestOfWhere
 		-1, // Joiner
@@ -2101,6 +2168,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -2113,74 +2181,12 @@ var gotoTab = gotoTable{
 		-1, // PathMod
 		-1, // RestOfWhereList
 		-1, // RestOfWhere
-		-1, // Joiner
+		97, // Joiner
 		-1, // GraphPatternNotTriples
 		-1, // GroupGraphPattern
 		-1, // GroupGraphPatternSub
 	},
 	gotoRow{ // S68
-		-1,  // S'
-		-1,  // QueryUnit
-		-1,  // SelectQuery
-		-1,  // CountQuery
-		-1,  // UpdateQuery
-		-1,  // SelectClause
-		-1,  // InsertClause
-		-1,  // CountClause
-		-1,  // Varlist
-		-1,  // DBlist
-		-1,  // String
-		98,  // Var
-		-1,  // DatasetClause
-		-1,  // WhereClause
-		-1,  // TriplesBlock
-		-1,  // Triple
-		-1,  // VarOrTerm
-		-1,  // GraphTerm
-		100, // Path
-		103, // PathSequence
-		104, // PathElt
-		105, // PathPrimary
-		-1,  // PathMod
-		-1,  // RestOfWhereList
-		-1,  // RestOfWhere
-		-1,  // Joiner
-		-1,  // GraphPatternNotTriples
-		-1,  // GroupGraphPattern
-		-1,  // GroupGraphPatternSub
-	},
-	gotoRow{ // S69
-		-1,  // S'
-		-1,  // QueryUnit
-		-1,  // SelectQuery
-		-1,  // CountQuery
-		-1,  // UpdateQuery
-		-1,  // SelectClause
-		-1,  // InsertClause
-		-1,  // CountClause
-		-1,  // Varlist
-		-1,  // DBlist
-		-1,  // String
-		39,  // Var
-		-1,  // DatasetClause
-		-1,  // WhereClause
-		70,  // TriplesBlock
-		52,  // Triple
-		53,  // VarOrTerm
-		43,  // GraphTerm
-		-1,  // Path
-		-1,  // PathSequence
-		-1,  // PathElt
-		-1,  // PathPrimary
-		-1,  // PathMod
-		-1,  // RestOfWhereList
-		-1,  // RestOfWhere
-		-1,  // Joiner
-		71,  // GraphPatternNotTriples
-		72,  // GroupGraphPattern
-		108, // GroupGraphPatternSub
-	},
-	gotoRow{ // S70
 		-1, // S'
 		-1, // QueryUnit
 		-1, // SelectQuery
@@ -2194,6 +2200,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -2210,6 +2217,70 @@ var gotoTab = gotoTable{
 		-1, // GraphPatternNotTriples
 		-1, // GroupGraphPattern
 		-1, // GroupGraphPatternSub
+	},
+	gotoRow{ // S69
+		-1, // S'
+		-1, // QueryUnit
+		-1, // SelectQuery
+		-1, // CountQuery
+		-1, // UpdateQuery
+		-1, // SelectClause
+		-1, // InsertClause
+		-1, // CountClause
+		-1, // Varlist
+		-1, // DBlist
+		-1, // String
+		-1, // Var
+		-1, // DatasetClause
+		-1, // TimeClause
+		-1, // WhereClause
+		-1, // TriplesBlock
+		-1, // Triple
+		-1, // VarOrTerm
+		-1, // GraphTerm
+		-1, // Path
+		-1, // PathSequence
+		-1, // PathElt
+		-1, // PathPrimary
+		-1, // PathMod
+		-1, // RestOfWhereList
+		-1, // RestOfWhere
+		-1, // Joiner
+		-1, // GraphPatternNotTriples
+		-1, // GroupGraphPattern
+		-1, // GroupGraphPatternSub
+	},
+	gotoRow{ // S70
+		-1,  // S'
+		-1,  // QueryUnit
+		-1,  // SelectQuery
+		-1,  // CountQuery
+		-1,  // UpdateQuery
+		-1,  // SelectClause
+		-1,  // InsertClause
+		-1,  // CountClause
+		-1,  // Varlist
+		-1,  // DBlist
+		-1,  // String
+		-1,  // Var
+		-1,  // DatasetClause
+		-1,  // TimeClause
+		-1,  // WhereClause
+		-1,  // TriplesBlock
+		-1,  // Triple
+		-1,  // VarOrTerm
+		-1,  // GraphTerm
+		-1,  // Path
+		-1,  // PathSequence
+		-1,  // PathElt
+		-1,  // PathPrimary
+		-1,  // PathMod
+		101, // RestOfWhereList
+		66,  // RestOfWhere
+		-1,  // Joiner
+		67,  // GraphPatternNotTriples
+		68,  // GroupGraphPattern
+		-1,  // GroupGraphPatternSub
 	},
 	gotoRow{ // S71
 		-1, // S'
@@ -2225,6 +2296,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -2256,6 +2328,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -2267,44 +2340,13 @@ var gotoTab = gotoTable{
 		-1, // PathPrimary
 		-1, // PathMod
 		-1, // RestOfWhereList
-		-1, // RestOfWhere
+		94, // RestOfWhere
 		-1, // Joiner
-		-1, // GraphPatternNotTriples
-		-1, // GroupGraphPattern
+		67, // GraphPatternNotTriples
+		68, // GroupGraphPattern
 		-1, // GroupGraphPatternSub
 	},
 	gotoRow{ // S73
-		-1,  // S'
-		-1,  // QueryUnit
-		-1,  // SelectQuery
-		-1,  // CountQuery
-		-1,  // UpdateQuery
-		-1,  // SelectClause
-		-1,  // InsertClause
-		-1,  // CountClause
-		-1,  // Varlist
-		-1,  // DBlist
-		-1,  // String
-		-1,  // Var
-		-1,  // DatasetClause
-		-1,  // WhereClause
-		-1,  // TriplesBlock
-		-1,  // Triple
-		-1,  // VarOrTerm
-		-1,  // GraphTerm
-		-1,  // Path
-		-1,  // PathSequence
-		-1,  // PathElt
-		-1,  // PathPrimary
-		-1,  // PathMod
-		-1,  // RestOfWhereList
-		-1,  // RestOfWhere
-		114, // Joiner
-		113, // GraphPatternNotTriples
-		72,  // GroupGraphPattern
-		-1,  // GroupGraphPatternSub
-	},
-	gotoRow{ // S74
 		-1, // S'
 		-1, // QueryUnit
 		-1, // SelectQuery
@@ -2318,6 +2360,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -2335,7 +2378,7 @@ var gotoTab = gotoTable{
 		-1, // GroupGraphPattern
 		-1, // GroupGraphPatternSub
 	},
-	gotoRow{ // S75
+	gotoRow{ // S74
 		-1,  // S'
 		-1,  // QueryUnit
 		-1,  // SelectQuery
@@ -2347,24 +2390,57 @@ var gotoTab = gotoTable{
 		-1,  // Varlist
 		-1,  // DBlist
 		-1,  // String
-		39,  // Var
+		46,  // Var
 		-1,  // DatasetClause
+		-1,  // TimeClause
 		-1,  // WhereClause
 		-1,  // TriplesBlock
-		117, // Triple
-		53,  // VarOrTerm
-		43,  // GraphTerm
+		104, // Triple
+		49,  // VarOrTerm
+		50,  // GraphTerm
 		-1,  // Path
 		-1,  // PathSequence
 		-1,  // PathElt
 		-1,  // PathPrimary
 		-1,  // PathMod
-		116, // RestOfWhereList
-		54,  // RestOfWhere
+		-1,  // RestOfWhereList
+		-1,  // RestOfWhere
 		-1,  // Joiner
-		55,  // GraphPatternNotTriples
-		56,  // GroupGraphPattern
+		-1,  // GraphPatternNotTriples
+		-1,  // GroupGraphPattern
 		-1,  // GroupGraphPatternSub
+	},
+	gotoRow{ // S75
+		-1, // S'
+		-1, // QueryUnit
+		-1, // SelectQuery
+		-1, // CountQuery
+		-1, // UpdateQuery
+		-1, // SelectClause
+		-1, // InsertClause
+		-1, // CountClause
+		-1, // Varlist
+		-1, // DBlist
+		-1, // String
+		-1, // Var
+		-1, // DatasetClause
+		-1, // TimeClause
+		-1, // WhereClause
+		-1, // TriplesBlock
+		-1, // Triple
+		-1, // VarOrTerm
+		-1, // GraphTerm
+		-1, // Path
+		-1, // PathSequence
+		-1, // PathElt
+		-1, // PathPrimary
+		-1, // PathMod
+		-1, // RestOfWhereList
+		-1, // RestOfWhere
+		-1, // Joiner
+		-1, // GraphPatternNotTriples
+		-1, // GroupGraphPattern
+		-1, // GroupGraphPatternSub
 	},
 	gotoRow{ // S76
 		-1, // S'
@@ -2380,37 +2456,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
-		-1, // WhereClause
-		-1, // TriplesBlock
-		-1, // Triple
-		-1, // VarOrTerm
-		-1, // GraphTerm
-		-1, // Path
-		-1, // PathSequence
-		-1, // PathElt
-		-1, // PathPrimary
-		-1, // PathMod
-		-1, // RestOfWhereList
-		78, // RestOfWhere
-		-1, // Joiner
-		55, // GraphPatternNotTriples
-		56, // GroupGraphPattern
-		-1, // GroupGraphPatternSub
-	},
-	gotoRow{ // S77
-		-1, // S'
-		-1, // QueryUnit
-		-1, // SelectQuery
-		-1, // CountQuery
-		-1, // UpdateQuery
-		-1, // SelectClause
-		-1, // InsertClause
-		-1, // CountClause
-		-1, // Varlist
-		-1, // DBlist
-		-1, // String
-		-1, // Var
-		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -2428,6 +2474,38 @@ var gotoTab = gotoTable{
 		-1, // GroupGraphPattern
 		-1, // GroupGraphPatternSub
 	},
+	gotoRow{ // S77
+		-1,  // S'
+		-1,  // QueryUnit
+		-1,  // SelectQuery
+		-1,  // CountQuery
+		-1,  // UpdateQuery
+		-1,  // SelectClause
+		-1,  // InsertClause
+		-1,  // CountClause
+		-1,  // Varlist
+		-1,  // DBlist
+		-1,  // String
+		105, // Var
+		-1,  // DatasetClause
+		-1,  // TimeClause
+		-1,  // WhereClause
+		-1,  // TriplesBlock
+		-1,  // Triple
+		107, // VarOrTerm
+		108, // GraphTerm
+		-1,  // Path
+		-1,  // PathSequence
+		-1,  // PathElt
+		-1,  // PathPrimary
+		-1,  // PathMod
+		-1,  // RestOfWhereList
+		-1,  // RestOfWhere
+		-1,  // Joiner
+		-1,  // GraphPatternNotTriples
+		-1,  // GroupGraphPattern
+		-1,  // GroupGraphPatternSub
+	},
 	gotoRow{ // S78
 		-1, // S'
 		-1, // QueryUnit
@@ -2442,6 +2520,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -2460,35 +2539,36 @@ var gotoTab = gotoTable{
 		-1, // GroupGraphPatternSub
 	},
 	gotoRow{ // S79
-		-1,  // S'
-		-1,  // QueryUnit
-		-1,  // SelectQuery
-		-1,  // CountQuery
-		-1,  // UpdateQuery
-		-1,  // SelectClause
-		-1,  // InsertClause
-		-1,  // CountClause
-		-1,  // Varlist
-		-1,  // DBlist
-		-1,  // String
-		119, // Var
-		-1,  // DatasetClause
-		-1,  // WhereClause
-		-1,  // TriplesBlock
-		-1,  // Triple
-		121, // VarOrTerm
-		122, // GraphTerm
-		-1,  // Path
-		-1,  // PathSequence
-		-1,  // PathElt
-		-1,  // PathPrimary
-		-1,  // PathMod
-		-1,  // RestOfWhereList
-		-1,  // RestOfWhere
-		-1,  // Joiner
-		-1,  // GraphPatternNotTriples
-		-1,  // GroupGraphPattern
-		-1,  // GroupGraphPatternSub
+		-1, // S'
+		-1, // QueryUnit
+		-1, // SelectQuery
+		-1, // CountQuery
+		-1, // UpdateQuery
+		-1, // SelectClause
+		-1, // InsertClause
+		-1, // CountClause
+		-1, // Varlist
+		-1, // DBlist
+		-1, // String
+		-1, // Var
+		-1, // DatasetClause
+		-1, // TimeClause
+		-1, // WhereClause
+		-1, // TriplesBlock
+		-1, // Triple
+		-1, // VarOrTerm
+		-1, // GraphTerm
+		-1, // Path
+		-1, // PathSequence
+		-1, // PathElt
+		-1, // PathPrimary
+		-1, // PathMod
+		-1, // RestOfWhereList
+		-1, // RestOfWhere
+		-1, // Joiner
+		-1, // GraphPatternNotTriples
+		-1, // GroupGraphPattern
+		-1, // GroupGraphPatternSub
 	},
 	gotoRow{ // S80
 		-1, // S'
@@ -2504,6 +2584,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -2522,35 +2603,36 @@ var gotoTab = gotoTable{
 		-1, // GroupGraphPatternSub
 	},
 	gotoRow{ // S81
-		-1,  // S'
-		-1,  // QueryUnit
-		-1,  // SelectQuery
-		-1,  // CountQuery
-		-1,  // UpdateQuery
-		-1,  // SelectClause
-		-1,  // InsertClause
-		-1,  // CountClause
-		-1,  // Varlist
-		-1,  // DBlist
-		-1,  // String
-		39,  // Var
-		-1,  // DatasetClause
-		-1,  // WhereClause
-		126, // TriplesBlock
-		52,  // Triple
-		53,  // VarOrTerm
-		43,  // GraphTerm
-		-1,  // Path
-		-1,  // PathSequence
-		-1,  // PathElt
-		-1,  // PathPrimary
-		-1,  // PathMod
-		-1,  // RestOfWhereList
-		-1,  // RestOfWhere
-		-1,  // Joiner
-		-1,  // GraphPatternNotTriples
-		-1,  // GroupGraphPattern
-		-1,  // GroupGraphPatternSub
+		-1, // S'
+		-1, // QueryUnit
+		-1, // SelectQuery
+		-1, // CountQuery
+		-1, // UpdateQuery
+		-1, // SelectClause
+		-1, // InsertClause
+		-1, // CountClause
+		-1, // Varlist
+		-1, // DBlist
+		-1, // String
+		-1, // Var
+		-1, // DatasetClause
+		-1, // TimeClause
+		-1, // WhereClause
+		-1, // TriplesBlock
+		-1, // Triple
+		-1, // VarOrTerm
+		-1, // GraphTerm
+		-1, // Path
+		-1, // PathSequence
+		-1, // PathElt
+		-1, // PathPrimary
+		-1, // PathMod
+		-1, // RestOfWhereList
+		-1, // RestOfWhere
+		-1, // Joiner
+		-1, // GraphPatternNotTriples
+		-1, // GroupGraphPattern
+		-1, // GroupGraphPatternSub
 	},
 	gotoRow{ // S82
 		-1,  // S'
@@ -2566,6 +2648,7 @@ var gotoTab = gotoTable{
 		-1,  // String
 		-1,  // Var
 		-1,  // DatasetClause
+		-1,  // TimeClause
 		-1,  // WhereClause
 		-1,  // TriplesBlock
 		-1,  // Triple
@@ -2575,12 +2658,12 @@ var gotoTab = gotoTable{
 		-1,  // PathSequence
 		-1,  // PathElt
 		-1,  // PathPrimary
-		-1,  // PathMod
+		115, // PathMod
 		-1,  // RestOfWhereList
 		-1,  // RestOfWhere
 		-1,  // Joiner
 		-1,  // GraphPatternNotTriples
-		127, // GroupGraphPattern
+		-1,  // GroupGraphPattern
 		-1,  // GroupGraphPatternSub
 	},
 	gotoRow{ // S83
@@ -2597,6 +2680,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -2615,66 +2699,68 @@ var gotoTab = gotoTable{
 		-1, // GroupGraphPatternSub
 	},
 	gotoRow{ // S84
-		-1, // S'
-		-1, // QueryUnit
-		-1, // SelectQuery
-		-1, // CountQuery
-		-1, // UpdateQuery
-		-1, // SelectClause
-		-1, // InsertClause
-		-1, // CountClause
-		-1, // Varlist
-		-1, // DBlist
-		-1, // String
-		-1, // Var
-		-1, // DatasetClause
-		-1, // WhereClause
-		-1, // TriplesBlock
-		-1, // Triple
-		-1, // VarOrTerm
-		-1, // GraphTerm
-		-1, // Path
-		-1, // PathSequence
-		-1, // PathElt
-		-1, // PathPrimary
-		-1, // PathMod
-		-1, // RestOfWhereList
-		-1, // RestOfWhere
-		-1, // Joiner
-		-1, // GraphPatternNotTriples
-		-1, // GroupGraphPattern
-		-1, // GroupGraphPatternSub
+		-1,  // S'
+		-1,  // QueryUnit
+		-1,  // SelectQuery
+		-1,  // CountQuery
+		-1,  // UpdateQuery
+		-1,  // SelectClause
+		-1,  // InsertClause
+		-1,  // CountClause
+		-1,  // Varlist
+		-1,  // DBlist
+		-1,  // String
+		118, // Var
+		-1,  // DatasetClause
+		-1,  // TimeClause
+		-1,  // WhereClause
+		-1,  // TriplesBlock
+		-1,  // Triple
+		-1,  // VarOrTerm
+		-1,  // GraphTerm
+		120, // Path
+		123, // PathSequence
+		124, // PathElt
+		125, // PathPrimary
+		-1,  // PathMod
+		-1,  // RestOfWhereList
+		-1,  // RestOfWhere
+		-1,  // Joiner
+		-1,  // GraphPatternNotTriples
+		-1,  // GroupGraphPattern
+		-1,  // GroupGraphPatternSub
 	},
 	gotoRow{ // S85
-		-1, // S'
-		-1, // QueryUnit
-		-1, // SelectQuery
-		-1, // CountQuery
-		-1, // UpdateQuery
-		-1, // SelectClause
-		-1, // InsertClause
-		-1, // CountClause
-		-1, // Varlist
-		-1, // DBlist
-		-1, // String
-		-1, // Var
-		-1, // DatasetClause
-		-1, // WhereClause
-		-1, // TriplesBlock
-		-1, // Triple
-		-1, // VarOrTerm
-		-1, // GraphTerm
-		-1, // Path
-		-1, // PathSequence
-		-1, // PathElt
-		-1, // PathPrimary
-		-1, // PathMod
-		-1, // RestOfWhereList
-		-1, // RestOfWhere
-		-1, // Joiner
-		-1, // GraphPatternNotTriples
-		-1, // GroupGraphPattern
-		-1, // GroupGraphPatternSub
+		-1,  // S'
+		-1,  // QueryUnit
+		-1,  // SelectQuery
+		-1,  // CountQuery
+		-1,  // UpdateQuery
+		-1,  // SelectClause
+		-1,  // InsertClause
+		-1,  // CountClause
+		-1,  // Varlist
+		-1,  // DBlist
+		-1,  // String
+		46,  // Var
+		-1,  // DatasetClause
+		-1,  // TimeClause
+		-1,  // WhereClause
+		86,  // TriplesBlock
+		64,  // Triple
+		65,  // VarOrTerm
+		50,  // GraphTerm
+		-1,  // Path
+		-1,  // PathSequence
+		-1,  // PathElt
+		-1,  // PathPrimary
+		-1,  // PathMod
+		-1,  // RestOfWhereList
+		-1,  // RestOfWhere
+		-1,  // Joiner
+		87,  // GraphPatternNotTriples
+		88,  // GroupGraphPattern
+		128, // GroupGraphPatternSub
 	},
 	gotoRow{ // S86
 		-1, // S'
@@ -2690,6 +2776,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -2721,6 +2808,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -2752,6 +2840,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -2770,35 +2859,36 @@ var gotoTab = gotoTable{
 		-1, // GroupGraphPatternSub
 	},
 	gotoRow{ // S89
-		-1, // S'
-		-1, // QueryUnit
-		-1, // SelectQuery
-		-1, // CountQuery
-		-1, // UpdateQuery
-		-1, // SelectClause
-		-1, // InsertClause
-		-1, // CountClause
-		-1, // Varlist
-		-1, // DBlist
-		-1, // String
-		-1, // Var
-		-1, // DatasetClause
-		-1, // WhereClause
-		-1, // TriplesBlock
-		-1, // Triple
-		-1, // VarOrTerm
-		-1, // GraphTerm
-		-1, // Path
-		-1, // PathSequence
-		-1, // PathElt
-		-1, // PathPrimary
-		-1, // PathMod
-		-1, // RestOfWhereList
-		-1, // RestOfWhere
-		-1, // Joiner
-		-1, // GraphPatternNotTriples
-		-1, // GroupGraphPattern
-		-1, // GroupGraphPatternSub
+		-1,  // S'
+		-1,  // QueryUnit
+		-1,  // SelectQuery
+		-1,  // CountQuery
+		-1,  // UpdateQuery
+		-1,  // SelectClause
+		-1,  // InsertClause
+		-1,  // CountClause
+		-1,  // Varlist
+		-1,  // DBlist
+		-1,  // String
+		-1,  // Var
+		-1,  // DatasetClause
+		-1,  // TimeClause
+		-1,  // WhereClause
+		-1,  // TriplesBlock
+		-1,  // Triple
+		-1,  // VarOrTerm
+		-1,  // GraphTerm
+		-1,  // Path
+		-1,  // PathSequence
+		-1,  // PathElt
+		-1,  // PathPrimary
+		-1,  // PathMod
+		-1,  // RestOfWhereList
+		-1,  // RestOfWhere
+		134, // Joiner
+		133, // GraphPatternNotTriples
+		88,  // GroupGraphPattern
+		-1,  // GroupGraphPatternSub
 	},
 	gotoRow{ // S90
 		-1, // S'
@@ -2814,6 +2904,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -2832,6 +2923,38 @@ var gotoTab = gotoTable{
 		-1, // GroupGraphPatternSub
 	},
 	gotoRow{ // S91
+		-1,  // S'
+		-1,  // QueryUnit
+		-1,  // SelectQuery
+		-1,  // CountQuery
+		-1,  // UpdateQuery
+		-1,  // SelectClause
+		-1,  // InsertClause
+		-1,  // CountClause
+		-1,  // Varlist
+		-1,  // DBlist
+		-1,  // String
+		46,  // Var
+		-1,  // DatasetClause
+		-1,  // TimeClause
+		-1,  // WhereClause
+		-1,  // TriplesBlock
+		137, // Triple
+		65,  // VarOrTerm
+		50,  // GraphTerm
+		-1,  // Path
+		-1,  // PathSequence
+		-1,  // PathElt
+		-1,  // PathPrimary
+		-1,  // PathMod
+		136, // RestOfWhereList
+		66,  // RestOfWhere
+		-1,  // Joiner
+		67,  // GraphPatternNotTriples
+		68,  // GroupGraphPattern
+		-1,  // GroupGraphPatternSub
+	},
+	gotoRow{ // S92
 		-1, // S'
 		-1, // QueryUnit
 		-1, // SelectQuery
@@ -2845,6 +2968,39 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
+		-1, // WhereClause
+		-1, // TriplesBlock
+		-1, // Triple
+		-1, // VarOrTerm
+		-1, // GraphTerm
+		-1, // Path
+		-1, // PathSequence
+		-1, // PathElt
+		-1, // PathPrimary
+		-1, // PathMod
+		-1, // RestOfWhereList
+		94, // RestOfWhere
+		-1, // Joiner
+		67, // GraphPatternNotTriples
+		68, // GroupGraphPattern
+		-1, // GroupGraphPatternSub
+	},
+	gotoRow{ // S93
+		-1, // S'
+		-1, // QueryUnit
+		-1, // SelectQuery
+		-1, // CountQuery
+		-1, // UpdateQuery
+		-1, // SelectClause
+		-1, // InsertClause
+		-1, // CountClause
+		-1, // Varlist
+		-1, // DBlist
+		-1, // String
+		-1, // Var
+		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -2862,68 +3018,6 @@ var gotoTab = gotoTable{
 		-1, // GroupGraphPattern
 		-1, // GroupGraphPatternSub
 	},
-	gotoRow{ // S92
-		-1,  // S'
-		-1,  // QueryUnit
-		-1,  // SelectQuery
-		-1,  // CountQuery
-		-1,  // UpdateQuery
-		-1,  // SelectClause
-		-1,  // InsertClause
-		-1,  // CountClause
-		-1,  // Varlist
-		-1,  // DBlist
-		-1,  // String
-		-1,  // Var
-		-1,  // DatasetClause
-		-1,  // WhereClause
-		-1,  // TriplesBlock
-		-1,  // Triple
-		-1,  // VarOrTerm
-		-1,  // GraphTerm
-		-1,  // Path
-		128, // PathSequence
-		65,  // PathElt
-		66,  // PathPrimary
-		-1,  // PathMod
-		-1,  // RestOfWhereList
-		-1,  // RestOfWhere
-		-1,  // Joiner
-		-1,  // GraphPatternNotTriples
-		-1,  // GroupGraphPattern
-		-1,  // GroupGraphPatternSub
-	},
-	gotoRow{ // S93
-		-1,  // S'
-		-1,  // QueryUnit
-		-1,  // SelectQuery
-		-1,  // CountQuery
-		-1,  // UpdateQuery
-		-1,  // SelectClause
-		-1,  // InsertClause
-		-1,  // CountClause
-		-1,  // Varlist
-		-1,  // DBlist
-		-1,  // String
-		-1,  // Var
-		-1,  // DatasetClause
-		-1,  // WhereClause
-		-1,  // TriplesBlock
-		-1,  // Triple
-		-1,  // VarOrTerm
-		-1,  // GraphTerm
-		-1,  // Path
-		-1,  // PathSequence
-		129, // PathElt
-		66,  // PathPrimary
-		-1,  // PathMod
-		-1,  // RestOfWhereList
-		-1,  // RestOfWhere
-		-1,  // Joiner
-		-1,  // GraphPatternNotTriples
-		-1,  // GroupGraphPattern
-		-1,  // GroupGraphPatternSub
-	},
 	gotoRow{ // S94
 		-1, // S'
 		-1, // QueryUnit
@@ -2938,6 +3032,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -2956,35 +3051,36 @@ var gotoTab = gotoTable{
 		-1, // GroupGraphPatternSub
 	},
 	gotoRow{ // S95
-		-1, // S'
-		-1, // QueryUnit
-		-1, // SelectQuery
-		-1, // CountQuery
-		-1, // UpdateQuery
-		-1, // SelectClause
-		-1, // InsertClause
-		-1, // CountClause
-		-1, // Varlist
-		-1, // DBlist
-		-1, // String
-		-1, // Var
-		-1, // DatasetClause
-		-1, // WhereClause
-		-1, // TriplesBlock
-		-1, // Triple
-		-1, // VarOrTerm
-		-1, // GraphTerm
-		-1, // Path
-		-1, // PathSequence
-		-1, // PathElt
-		-1, // PathPrimary
-		-1, // PathMod
-		-1, // RestOfWhereList
-		-1, // RestOfWhere
-		-1, // Joiner
-		-1, // GraphPatternNotTriples
-		-1, // GroupGraphPattern
-		-1, // GroupGraphPatternSub
+		-1,  // S'
+		-1,  // QueryUnit
+		-1,  // SelectQuery
+		-1,  // CountQuery
+		-1,  // UpdateQuery
+		-1,  // SelectClause
+		-1,  // InsertClause
+		-1,  // CountClause
+		-1,  // Varlist
+		-1,  // DBlist
+		-1,  // String
+		139, // Var
+		-1,  // DatasetClause
+		-1,  // TimeClause
+		-1,  // WhereClause
+		-1,  // TriplesBlock
+		-1,  // Triple
+		141, // VarOrTerm
+		142, // GraphTerm
+		-1,  // Path
+		-1,  // PathSequence
+		-1,  // PathElt
+		-1,  // PathPrimary
+		-1,  // PathMod
+		-1,  // RestOfWhereList
+		-1,  // RestOfWhere
+		-1,  // Joiner
+		-1,  // GraphPatternNotTriples
+		-1,  // GroupGraphPattern
+		-1,  // GroupGraphPatternSub
 	},
 	gotoRow{ // S96
 		-1, // S'
@@ -3000,6 +3096,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -3018,66 +3115,68 @@ var gotoTab = gotoTable{
 		-1, // GroupGraphPatternSub
 	},
 	gotoRow{ // S97
-		-1, // S'
-		-1, // QueryUnit
-		-1, // SelectQuery
-		-1, // CountQuery
-		-1, // UpdateQuery
-		-1, // SelectClause
-		-1, // InsertClause
-		-1, // CountClause
-		-1, // Varlist
-		-1, // DBlist
-		-1, // String
-		-1, // Var
-		-1, // DatasetClause
-		-1, // WhereClause
-		-1, // TriplesBlock
-		-1, // Triple
-		-1, // VarOrTerm
-		-1, // GraphTerm
-		-1, // Path
-		-1, // PathSequence
-		-1, // PathElt
-		-1, // PathPrimary
-		-1, // PathMod
-		-1, // RestOfWhereList
-		-1, // RestOfWhere
-		-1, // Joiner
-		-1, // GraphPatternNotTriples
-		-1, // GroupGraphPattern
-		-1, // GroupGraphPatternSub
+		-1,  // S'
+		-1,  // QueryUnit
+		-1,  // SelectQuery
+		-1,  // CountQuery
+		-1,  // UpdateQuery
+		-1,  // SelectClause
+		-1,  // InsertClause
+		-1,  // CountClause
+		-1,  // Varlist
+		-1,  // DBlist
+		-1,  // String
+		46,  // Var
+		-1,  // DatasetClause
+		-1,  // TimeClause
+		-1,  // WhereClause
+		146, // TriplesBlock
+		64,  // Triple
+		65,  // VarOrTerm
+		50,  // GraphTerm
+		-1,  // Path
+		-1,  // PathSequence
+		-1,  // PathElt
+		-1,  // PathPrimary
+		-1,  // PathMod
+		-1,  // RestOfWhereList
+		-1,  // RestOfWhere
+		-1,  // Joiner
+		-1,  // GraphPatternNotTriples
+		-1,  // GroupGraphPattern
+		-1,  // GroupGraphPatternSub
 	},
 	gotoRow{ // S98
-		-1, // S'
-		-1, // QueryUnit
-		-1, // SelectQuery
-		-1, // CountQuery
-		-1, // UpdateQuery
-		-1, // SelectClause
-		-1, // InsertClause
-		-1, // CountClause
-		-1, // Varlist
-		-1, // DBlist
-		-1, // String
-		-1, // Var
-		-1, // DatasetClause
-		-1, // WhereClause
-		-1, // TriplesBlock
-		-1, // Triple
-		-1, // VarOrTerm
-		-1, // GraphTerm
-		-1, // Path
-		-1, // PathSequence
-		-1, // PathElt
-		-1, // PathPrimary
-		-1, // PathMod
-		-1, // RestOfWhereList
-		-1, // RestOfWhere
-		-1, // Joiner
-		-1, // GraphPatternNotTriples
-		-1, // GroupGraphPattern
-		-1, // GroupGraphPatternSub
+		-1,  // S'
+		-1,  // QueryUnit
+		-1,  // SelectQuery
+		-1,  // CountQuery
+		-1,  // UpdateQuery
+		-1,  // SelectClause
+		-1,  // InsertClause
+		-1,  // CountClause
+		-1,  // Varlist
+		-1,  // DBlist
+		-1,  // String
+		-1,  // Var
+		-1,  // DatasetClause
+		-1,  // TimeClause
+		-1,  // WhereClause
+		-1,  // TriplesBlock
+		-1,  // Triple
+		-1,  // VarOrTerm
+		-1,  // GraphTerm
+		-1,  // Path
+		-1,  // PathSequence
+		-1,  // PathElt
+		-1,  // PathPrimary
+		-1,  // PathMod
+		-1,  // RestOfWhereList
+		-1,  // RestOfWhere
+		-1,  // Joiner
+		-1,  // GraphPatternNotTriples
+		147, // GroupGraphPattern
+		-1,  // GroupGraphPatternSub
 	},
 	gotoRow{ // S99
 		-1, // S'
@@ -3093,6 +3192,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -3111,35 +3211,36 @@ var gotoTab = gotoTable{
 		-1, // GroupGraphPatternSub
 	},
 	gotoRow{ // S100
-		-1, // S'
-		-1, // QueryUnit
-		-1, // SelectQuery
-		-1, // CountQuery
-		-1, // UpdateQuery
-		-1, // SelectClause
-		-1, // InsertClause
-		-1, // CountClause
-		-1, // Varlist
-		-1, // DBlist
-		-1, // String
-		-1, // Var
-		-1, // DatasetClause
-		-1, // WhereClause
-		-1, // TriplesBlock
-		-1, // Triple
-		-1, // VarOrTerm
-		-1, // GraphTerm
-		-1, // Path
-		-1, // PathSequence
-		-1, // PathElt
-		-1, // PathPrimary
-		-1, // PathMod
-		-1, // RestOfWhereList
-		-1, // RestOfWhere
-		-1, // Joiner
-		-1, // GraphPatternNotTriples
-		-1, // GroupGraphPattern
-		-1, // GroupGraphPatternSub
+		-1,  // S'
+		-1,  // QueryUnit
+		-1,  // SelectQuery
+		-1,  // CountQuery
+		-1,  // UpdateQuery
+		-1,  // SelectClause
+		-1,  // InsertClause
+		-1,  // CountClause
+		-1,  // Varlist
+		-1,  // DBlist
+		-1,  // String
+		46,  // Var
+		-1,  // DatasetClause
+		-1,  // TimeClause
+		-1,  // WhereClause
+		-1,  // TriplesBlock
+		137, // Triple
+		65,  // VarOrTerm
+		50,  // GraphTerm
+		-1,  // Path
+		-1,  // PathSequence
+		-1,  // PathElt
+		-1,  // PathPrimary
+		-1,  // PathMod
+		149, // RestOfWhereList
+		66,  // RestOfWhere
+		-1,  // Joiner
+		67,  // GraphPatternNotTriples
+		68,  // GroupGraphPattern
+		-1,  // GroupGraphPatternSub
 	},
 	gotoRow{ // S101
 		-1, // S'
@@ -3155,6 +3256,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -3166,10 +3268,10 @@ var gotoTab = gotoTable{
 		-1, // PathPrimary
 		-1, // PathMod
 		-1, // RestOfWhereList
-		-1, // RestOfWhere
+		94, // RestOfWhere
 		-1, // Joiner
-		-1, // GraphPatternNotTriples
-		-1, // GroupGraphPattern
+		67, // GraphPatternNotTriples
+		68, // GroupGraphPattern
 		-1, // GroupGraphPatternSub
 	},
 	gotoRow{ // S102
@@ -3186,6 +3288,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -3217,6 +3320,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -3248,6 +3352,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -3266,35 +3371,36 @@ var gotoTab = gotoTable{
 		-1, // GroupGraphPatternSub
 	},
 	gotoRow{ // S105
-		-1,  // S'
-		-1,  // QueryUnit
-		-1,  // SelectQuery
-		-1,  // CountQuery
-		-1,  // UpdateQuery
-		-1,  // SelectClause
-		-1,  // InsertClause
-		-1,  // CountClause
-		-1,  // Varlist
-		-1,  // DBlist
-		-1,  // String
-		-1,  // Var
-		-1,  // DatasetClause
-		-1,  // WhereClause
-		-1,  // TriplesBlock
-		-1,  // Triple
-		-1,  // VarOrTerm
-		-1,  // GraphTerm
-		-1,  // Path
-		-1,  // PathSequence
-		-1,  // PathElt
-		-1,  // PathPrimary
-		134, // PathMod
-		-1,  // RestOfWhereList
-		-1,  // RestOfWhere
-		-1,  // Joiner
-		-1,  // GraphPatternNotTriples
-		-1,  // GroupGraphPattern
-		-1,  // GroupGraphPatternSub
+		-1, // S'
+		-1, // QueryUnit
+		-1, // SelectQuery
+		-1, // CountQuery
+		-1, // UpdateQuery
+		-1, // SelectClause
+		-1, // InsertClause
+		-1, // CountClause
+		-1, // Varlist
+		-1, // DBlist
+		-1, // String
+		-1, // Var
+		-1, // DatasetClause
+		-1, // TimeClause
+		-1, // WhereClause
+		-1, // TriplesBlock
+		-1, // Triple
+		-1, // VarOrTerm
+		-1, // GraphTerm
+		-1, // Path
+		-1, // PathSequence
+		-1, // PathElt
+		-1, // PathPrimary
+		-1, // PathMod
+		-1, // RestOfWhereList
+		-1, // RestOfWhere
+		-1, // Joiner
+		-1, // GraphPatternNotTriples
+		-1, // GroupGraphPattern
+		-1, // GroupGraphPatternSub
 	},
 	gotoRow{ // S106
 		-1, // S'
@@ -3310,6 +3416,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -3328,130 +3435,166 @@ var gotoTab = gotoTable{
 		-1, // GroupGraphPatternSub
 	},
 	gotoRow{ // S107
-		-1,  // S'
-		-1,  // QueryUnit
-		-1,  // SelectQuery
-		-1,  // CountQuery
-		-1,  // UpdateQuery
-		-1,  // SelectClause
-		-1,  // InsertClause
-		-1,  // CountClause
-		-1,  // Varlist
-		-1,  // DBlist
-		-1,  // String
-		98,  // Var
-		-1,  // DatasetClause
-		-1,  // WhereClause
-		-1,  // TriplesBlock
-		-1,  // Triple
-		-1,  // VarOrTerm
-		-1,  // GraphTerm
-		137, // Path
-		103, // PathSequence
-		104, // PathElt
-		105, // PathPrimary
-		-1,  // PathMod
-		-1,  // RestOfWhereList
-		-1,  // RestOfWhere
-		-1,  // Joiner
-		-1,  // GraphPatternNotTriples
-		-1,  // GroupGraphPattern
-		-1,  // GroupGraphPatternSub
+		-1, // S'
+		-1, // QueryUnit
+		-1, // SelectQuery
+		-1, // CountQuery
+		-1, // UpdateQuery
+		-1, // SelectClause
+		-1, // InsertClause
+		-1, // CountClause
+		-1, // Varlist
+		-1, // DBlist
+		-1, // String
+		-1, // Var
+		-1, // DatasetClause
+		-1, // TimeClause
+		-1, // WhereClause
+		-1, // TriplesBlock
+		-1, // Triple
+		-1, // VarOrTerm
+		-1, // GraphTerm
+		-1, // Path
+		-1, // PathSequence
+		-1, // PathElt
+		-1, // PathPrimary
+		-1, // PathMod
+		-1, // RestOfWhereList
+		-1, // RestOfWhere
+		-1, // Joiner
+		-1, // GraphPatternNotTriples
+		-1, // GroupGraphPattern
+		-1, // GroupGraphPatternSub
 	},
 	gotoRow{ // S108
-		-1,  // S'
-		-1,  // QueryUnit
-		-1,  // SelectQuery
-		-1,  // CountQuery
-		-1,  // UpdateQuery
-		-1,  // SelectClause
-		-1,  // InsertClause
-		-1,  // CountClause
-		-1,  // Varlist
-		-1,  // DBlist
-		-1,  // String
-		-1,  // Var
-		-1,  // DatasetClause
-		-1,  // WhereClause
-		-1,  // TriplesBlock
-		-1,  // Triple
-		-1,  // VarOrTerm
-		-1,  // GraphTerm
-		-1,  // Path
-		-1,  // PathSequence
-		-1,  // PathElt
-		-1,  // PathPrimary
-		-1,  // PathMod
-		-1,  // RestOfWhereList
-		-1,  // RestOfWhere
-		138, // Joiner
-		113, // GraphPatternNotTriples
-		72,  // GroupGraphPattern
-		-1,  // GroupGraphPatternSub
+		-1, // S'
+		-1, // QueryUnit
+		-1, // SelectQuery
+		-1, // CountQuery
+		-1, // UpdateQuery
+		-1, // SelectClause
+		-1, // InsertClause
+		-1, // CountClause
+		-1, // Varlist
+		-1, // DBlist
+		-1, // String
+		-1, // Var
+		-1, // DatasetClause
+		-1, // TimeClause
+		-1, // WhereClause
+		-1, // TriplesBlock
+		-1, // Triple
+		-1, // VarOrTerm
+		-1, // GraphTerm
+		-1, // Path
+		-1, // PathSequence
+		-1, // PathElt
+		-1, // PathPrimary
+		-1, // PathMod
+		-1, // RestOfWhereList
+		-1, // RestOfWhere
+		-1, // Joiner
+		-1, // GraphPatternNotTriples
+		-1, // GroupGraphPattern
+		-1, // GroupGraphPatternSub
 	},
 	gotoRow{ // S109
-		-1,  // S'
-		-1,  // QueryUnit
-		-1,  // SelectQuery
-		-1,  // CountQuery
-		-1,  // UpdateQuery
-		-1,  // SelectClause
-		-1,  // InsertClause
-		-1,  // CountClause
-		-1,  // Varlist
-		-1,  // DBlist
-		-1,  // String
-		39,  // Var
-		-1,  // DatasetClause
-		-1,  // WhereClause
-		-1,  // TriplesBlock
-		117, // Triple
-		53,  // VarOrTerm
-		43,  // GraphTerm
-		-1,  // Path
-		-1,  // PathSequence
-		-1,  // PathElt
-		-1,  // PathPrimary
-		-1,  // PathMod
-		-1,  // RestOfWhereList
-		-1,  // RestOfWhere
-		-1,  // Joiner
-		-1,  // GraphPatternNotTriples
-		-1,  // GroupGraphPattern
-		-1,  // GroupGraphPatternSub
+		-1, // S'
+		-1, // QueryUnit
+		-1, // SelectQuery
+		-1, // CountQuery
+		-1, // UpdateQuery
+		-1, // SelectClause
+		-1, // InsertClause
+		-1, // CountClause
+		-1, // Varlist
+		-1, // DBlist
+		-1, // String
+		-1, // Var
+		-1, // DatasetClause
+		-1, // TimeClause
+		-1, // WhereClause
+		-1, // TriplesBlock
+		-1, // Triple
+		-1, // VarOrTerm
+		-1, // GraphTerm
+		-1, // Path
+		-1, // PathSequence
+		-1, // PathElt
+		-1, // PathPrimary
+		-1, // PathMod
+		-1, // RestOfWhereList
+		-1, // RestOfWhere
+		-1, // Joiner
+		-1, // GraphPatternNotTriples
+		-1, // GroupGraphPattern
+		-1, // GroupGraphPatternSub
 	},
 	gotoRow{ // S110
-		-1,  // S'
-		-1,  // QueryUnit
-		-1,  // SelectQuery
-		-1,  // CountQuery
-		-1,  // UpdateQuery
-		-1,  // SelectClause
-		-1,  // InsertClause
-		-1,  // CountClause
-		-1,  // Varlist
-		-1,  // DBlist
-		-1,  // String
-		39,  // Var
-		-1,  // DatasetClause
-		-1,  // WhereClause
-		139, // TriplesBlock
-		52,  // Triple
-		53,  // VarOrTerm
-		43,  // GraphTerm
-		-1,  // Path
-		-1,  // PathSequence
-		-1,  // PathElt
-		-1,  // PathPrimary
-		-1,  // PathMod
-		-1,  // RestOfWhereList
-		-1,  // RestOfWhere
-		-1,  // Joiner
-		-1,  // GraphPatternNotTriples
-		-1,  // GroupGraphPattern
-		-1,  // GroupGraphPatternSub
+		-1, // S'
+		-1, // QueryUnit
+		-1, // SelectQuery
+		-1, // CountQuery
+		-1, // UpdateQuery
+		-1, // SelectClause
+		-1, // InsertClause
+		-1, // CountClause
+		-1, // Varlist
+		-1, // DBlist
+		-1, // String
+		-1, // Var
+		-1, // DatasetClause
+		-1, // TimeClause
+		-1, // WhereClause
+		-1, // TriplesBlock
+		-1, // Triple
+		-1, // VarOrTerm
+		-1, // GraphTerm
+		-1, // Path
+		-1, // PathSequence
+		-1, // PathElt
+		-1, // PathPrimary
+		-1, // PathMod
+		-1, // RestOfWhereList
+		-1, // RestOfWhere
+		-1, // Joiner
+		-1, // GraphPatternNotTriples
+		-1, // GroupGraphPattern
+		-1, // GroupGraphPatternSub
 	},
 	gotoRow{ // S111
+		-1, // S'
+		-1, // QueryUnit
+		-1, // SelectQuery
+		-1, // CountQuery
+		-1, // UpdateQuery
+		-1, // SelectClause
+		-1, // InsertClause
+		-1, // CountClause
+		-1, // Varlist
+		-1, // DBlist
+		-1, // String
+		-1, // Var
+		-1, // DatasetClause
+		-1, // TimeClause
+		-1, // WhereClause
+		-1, // TriplesBlock
+		-1, // Triple
+		-1, // VarOrTerm
+		-1, // GraphTerm
+		-1, // Path
+		-1, // PathSequence
+		-1, // PathElt
+		-1, // PathPrimary
+		-1, // PathMod
+		-1, // RestOfWhereList
+		-1, // RestOfWhere
+		-1, // Joiner
+		-1, // GraphPatternNotTriples
+		-1, // GroupGraphPattern
+		-1, // GroupGraphPatternSub
+	},
+	gotoRow{ // S112
 		-1,  // S'
 		-1,  // QueryUnit
 		-1,  // SelectQuery
@@ -3465,6 +3608,39 @@ var gotoTab = gotoTable{
 		-1,  // String
 		-1,  // Var
 		-1,  // DatasetClause
+		-1,  // TimeClause
+		-1,  // WhereClause
+		-1,  // TriplesBlock
+		-1,  // Triple
+		-1,  // VarOrTerm
+		-1,  // GraphTerm
+		-1,  // Path
+		151, // PathSequence
+		81,  // PathElt
+		82,  // PathPrimary
+		-1,  // PathMod
+		-1,  // RestOfWhereList
+		-1,  // RestOfWhere
+		-1,  // Joiner
+		-1,  // GraphPatternNotTriples
+		-1,  // GroupGraphPattern
+		-1,  // GroupGraphPatternSub
+	},
+	gotoRow{ // S113
+		-1,  // S'
+		-1,  // QueryUnit
+		-1,  // SelectQuery
+		-1,  // CountQuery
+		-1,  // UpdateQuery
+		-1,  // SelectClause
+		-1,  // InsertClause
+		-1,  // CountClause
+		-1,  // Varlist
+		-1,  // DBlist
+		-1,  // String
+		-1,  // Var
+		-1,  // DatasetClause
+		-1,  // TimeClause
 		-1,  // WhereClause
 		-1,  // TriplesBlock
 		-1,  // Triple
@@ -3472,77 +3648,15 @@ var gotoTab = gotoTable{
 		-1,  // GraphTerm
 		-1,  // Path
 		-1,  // PathSequence
-		-1,  // PathElt
-		-1,  // PathPrimary
+		152, // PathElt
+		82,  // PathPrimary
 		-1,  // PathMod
 		-1,  // RestOfWhereList
 		-1,  // RestOfWhere
 		-1,  // Joiner
 		-1,  // GraphPatternNotTriples
-		140, // GroupGraphPattern
+		-1,  // GroupGraphPattern
 		-1,  // GroupGraphPatternSub
-	},
-	gotoRow{ // S112
-		-1, // S'
-		-1, // QueryUnit
-		-1, // SelectQuery
-		-1, // CountQuery
-		-1, // UpdateQuery
-		-1, // SelectClause
-		-1, // InsertClause
-		-1, // CountClause
-		-1, // Varlist
-		-1, // DBlist
-		-1, // String
-		-1, // Var
-		-1, // DatasetClause
-		-1, // WhereClause
-		-1, // TriplesBlock
-		-1, // Triple
-		-1, // VarOrTerm
-		-1, // GraphTerm
-		-1, // Path
-		-1, // PathSequence
-		-1, // PathElt
-		-1, // PathPrimary
-		-1, // PathMod
-		-1, // RestOfWhereList
-		-1, // RestOfWhere
-		-1, // Joiner
-		-1, // GraphPatternNotTriples
-		-1, // GroupGraphPattern
-		-1, // GroupGraphPatternSub
-	},
-	gotoRow{ // S113
-		-1, // S'
-		-1, // QueryUnit
-		-1, // SelectQuery
-		-1, // CountQuery
-		-1, // UpdateQuery
-		-1, // SelectClause
-		-1, // InsertClause
-		-1, // CountClause
-		-1, // Varlist
-		-1, // DBlist
-		-1, // String
-		-1, // Var
-		-1, // DatasetClause
-		-1, // WhereClause
-		-1, // TriplesBlock
-		-1, // Triple
-		-1, // VarOrTerm
-		-1, // GraphTerm
-		-1, // Path
-		-1, // PathSequence
-		-1, // PathElt
-		-1, // PathPrimary
-		-1, // PathMod
-		-1, // RestOfWhereList
-		-1, // RestOfWhere
-		-1, // Joiner
-		-1, // GraphPatternNotTriples
-		-1, // GroupGraphPattern
-		-1, // GroupGraphPatternSub
 	},
 	gotoRow{ // S114
 		-1, // S'
@@ -3558,6 +3672,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -3589,6 +3704,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -3620,6 +3736,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -3631,10 +3748,10 @@ var gotoTab = gotoTable{
 		-1, // PathPrimary
 		-1, // PathMod
 		-1, // RestOfWhereList
-		78, // RestOfWhere
+		-1, // RestOfWhere
 		-1, // Joiner
-		55, // GraphPatternNotTriples
-		56, // GroupGraphPattern
+		-1, // GraphPatternNotTriples
+		-1, // GroupGraphPattern
 		-1, // GroupGraphPatternSub
 	},
 	gotoRow{ // S117
@@ -3651,6 +3768,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -3682,6 +3800,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -3713,6 +3832,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -3744,6 +3864,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -3775,6 +3896,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -3806,6 +3928,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -3837,6 +3960,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -3868,6 +3992,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -3886,37 +4011,6 @@ var gotoTab = gotoTable{
 		-1, // GroupGraphPatternSub
 	},
 	gotoRow{ // S125
-		-1, // S'
-		-1, // QueryUnit
-		-1, // SelectQuery
-		-1, // CountQuery
-		-1, // UpdateQuery
-		-1, // SelectClause
-		-1, // InsertClause
-		-1, // CountClause
-		-1, // Varlist
-		-1, // DBlist
-		-1, // String
-		-1, // Var
-		-1, // DatasetClause
-		-1, // WhereClause
-		-1, // TriplesBlock
-		-1, // Triple
-		-1, // VarOrTerm
-		-1, // GraphTerm
-		-1, // Path
-		-1, // PathSequence
-		-1, // PathElt
-		-1, // PathPrimary
-		-1, // PathMod
-		-1, // RestOfWhereList
-		-1, // RestOfWhere
-		-1, // Joiner
-		-1, // GraphPatternNotTriples
-		-1, // GroupGraphPattern
-		-1, // GroupGraphPatternSub
-	},
-	gotoRow{ // S126
 		-1,  // S'
 		-1,  // QueryUnit
 		-1,  // SelectQuery
@@ -3930,6 +4024,103 @@ var gotoTab = gotoTable{
 		-1,  // String
 		-1,  // Var
 		-1,  // DatasetClause
+		-1,  // TimeClause
+		-1,  // WhereClause
+		-1,  // TriplesBlock
+		-1,  // Triple
+		-1,  // VarOrTerm
+		-1,  // GraphTerm
+		-1,  // Path
+		-1,  // PathSequence
+		-1,  // PathElt
+		-1,  // PathPrimary
+		157, // PathMod
+		-1,  // RestOfWhereList
+		-1,  // RestOfWhere
+		-1,  // Joiner
+		-1,  // GraphPatternNotTriples
+		-1,  // GroupGraphPattern
+		-1,  // GroupGraphPatternSub
+	},
+	gotoRow{ // S126
+		-1, // S'
+		-1, // QueryUnit
+		-1, // SelectQuery
+		-1, // CountQuery
+		-1, // UpdateQuery
+		-1, // SelectClause
+		-1, // InsertClause
+		-1, // CountClause
+		-1, // Varlist
+		-1, // DBlist
+		-1, // String
+		-1, // Var
+		-1, // DatasetClause
+		-1, // TimeClause
+		-1, // WhereClause
+		-1, // TriplesBlock
+		-1, // Triple
+		-1, // VarOrTerm
+		-1, // GraphTerm
+		-1, // Path
+		-1, // PathSequence
+		-1, // PathElt
+		-1, // PathPrimary
+		-1, // PathMod
+		-1, // RestOfWhereList
+		-1, // RestOfWhere
+		-1, // Joiner
+		-1, // GraphPatternNotTriples
+		-1, // GroupGraphPattern
+		-1, // GroupGraphPatternSub
+	},
+	gotoRow{ // S127
+		-1,  // S'
+		-1,  // QueryUnit
+		-1,  // SelectQuery
+		-1,  // CountQuery
+		-1,  // UpdateQuery
+		-1,  // SelectClause
+		-1,  // InsertClause
+		-1,  // CountClause
+		-1,  // Varlist
+		-1,  // DBlist
+		-1,  // String
+		118, // Var
+		-1,  // DatasetClause
+		-1,  // TimeClause
+		-1,  // WhereClause
+		-1,  // TriplesBlock
+		-1,  // Triple
+		-1,  // VarOrTerm
+		-1,  // GraphTerm
+		160, // Path
+		123, // PathSequence
+		124, // PathElt
+		125, // PathPrimary
+		-1,  // PathMod
+		-1,  // RestOfWhereList
+		-1,  // RestOfWhere
+		-1,  // Joiner
+		-1,  // GraphPatternNotTriples
+		-1,  // GroupGraphPattern
+		-1,  // GroupGraphPatternSub
+	},
+	gotoRow{ // S128
+		-1,  // S'
+		-1,  // QueryUnit
+		-1,  // SelectQuery
+		-1,  // CountQuery
+		-1,  // UpdateQuery
+		-1,  // SelectClause
+		-1,  // InsertClause
+		-1,  // CountClause
+		-1,  // Varlist
+		-1,  // DBlist
+		-1,  // String
+		-1,  // Var
+		-1,  // DatasetClause
+		-1,  // TimeClause
 		-1,  // WhereClause
 		-1,  // TriplesBlock
 		-1,  // Triple
@@ -3942,103 +4133,42 @@ var gotoTab = gotoTable{
 		-1,  // PathMod
 		-1,  // RestOfWhereList
 		-1,  // RestOfWhere
-		145, // Joiner
+		161, // Joiner
+		133, // GraphPatternNotTriples
+		88,  // GroupGraphPattern
+		-1,  // GroupGraphPatternSub
+	},
+	gotoRow{ // S129
+		-1,  // S'
+		-1,  // QueryUnit
+		-1,  // SelectQuery
+		-1,  // CountQuery
+		-1,  // UpdateQuery
+		-1,  // SelectClause
+		-1,  // InsertClause
+		-1,  // CountClause
+		-1,  // Varlist
+		-1,  // DBlist
+		-1,  // String
+		46,  // Var
+		-1,  // DatasetClause
+		-1,  // TimeClause
+		-1,  // WhereClause
+		-1,  // TriplesBlock
+		137, // Triple
+		65,  // VarOrTerm
+		50,  // GraphTerm
+		-1,  // Path
+		-1,  // PathSequence
+		-1,  // PathElt
+		-1,  // PathPrimary
+		-1,  // PathMod
+		-1,  // RestOfWhereList
+		-1,  // RestOfWhere
+		-1,  // Joiner
 		-1,  // GraphPatternNotTriples
 		-1,  // GroupGraphPattern
 		-1,  // GroupGraphPatternSub
-	},
-	gotoRow{ // S127
-		-1, // S'
-		-1, // QueryUnit
-		-1, // SelectQuery
-		-1, // CountQuery
-		-1, // UpdateQuery
-		-1, // SelectClause
-		-1, // InsertClause
-		-1, // CountClause
-		-1, // Varlist
-		-1, // DBlist
-		-1, // String
-		-1, // Var
-		-1, // DatasetClause
-		-1, // WhereClause
-		-1, // TriplesBlock
-		-1, // Triple
-		-1, // VarOrTerm
-		-1, // GraphTerm
-		-1, // Path
-		-1, // PathSequence
-		-1, // PathElt
-		-1, // PathPrimary
-		-1, // PathMod
-		-1, // RestOfWhereList
-		-1, // RestOfWhere
-		-1, // Joiner
-		-1, // GraphPatternNotTriples
-		-1, // GroupGraphPattern
-		-1, // GroupGraphPatternSub
-	},
-	gotoRow{ // S128
-		-1, // S'
-		-1, // QueryUnit
-		-1, // SelectQuery
-		-1, // CountQuery
-		-1, // UpdateQuery
-		-1, // SelectClause
-		-1, // InsertClause
-		-1, // CountClause
-		-1, // Varlist
-		-1, // DBlist
-		-1, // String
-		-1, // Var
-		-1, // DatasetClause
-		-1, // WhereClause
-		-1, // TriplesBlock
-		-1, // Triple
-		-1, // VarOrTerm
-		-1, // GraphTerm
-		-1, // Path
-		-1, // PathSequence
-		-1, // PathElt
-		-1, // PathPrimary
-		-1, // PathMod
-		-1, // RestOfWhereList
-		-1, // RestOfWhere
-		-1, // Joiner
-		-1, // GraphPatternNotTriples
-		-1, // GroupGraphPattern
-		-1, // GroupGraphPatternSub
-	},
-	gotoRow{ // S129
-		-1, // S'
-		-1, // QueryUnit
-		-1, // SelectQuery
-		-1, // CountQuery
-		-1, // UpdateQuery
-		-1, // SelectClause
-		-1, // InsertClause
-		-1, // CountClause
-		-1, // Varlist
-		-1, // DBlist
-		-1, // String
-		-1, // Var
-		-1, // DatasetClause
-		-1, // WhereClause
-		-1, // TriplesBlock
-		-1, // Triple
-		-1, // VarOrTerm
-		-1, // GraphTerm
-		-1, // Path
-		-1, // PathSequence
-		-1, // PathElt
-		-1, // PathPrimary
-		-1, // PathMod
-		-1, // RestOfWhereList
-		-1, // RestOfWhere
-		-1, // Joiner
-		-1, // GraphPatternNotTriples
-		-1, // GroupGraphPattern
-		-1, // GroupGraphPatternSub
 	},
 	gotoRow{ // S130
 		-1,  // S'
@@ -4052,17 +4182,18 @@ var gotoTab = gotoTable{
 		-1,  // Varlist
 		-1,  // DBlist
 		-1,  // String
-		-1,  // Var
+		46,  // Var
 		-1,  // DatasetClause
+		-1,  // TimeClause
 		-1,  // WhereClause
-		-1,  // TriplesBlock
-		-1,  // Triple
-		-1,  // VarOrTerm
-		-1,  // GraphTerm
+		162, // TriplesBlock
+		64,  // Triple
+		65,  // VarOrTerm
+		50,  // GraphTerm
 		-1,  // Path
-		146, // PathSequence
-		104, // PathElt
-		105, // PathPrimary
+		-1,  // PathSequence
+		-1,  // PathElt
+		-1,  // PathPrimary
 		-1,  // PathMod
 		-1,  // RestOfWhereList
 		-1,  // RestOfWhere
@@ -4072,6 +4203,38 @@ var gotoTab = gotoTable{
 		-1,  // GroupGraphPatternSub
 	},
 	gotoRow{ // S131
+		-1,  // S'
+		-1,  // QueryUnit
+		-1,  // SelectQuery
+		-1,  // CountQuery
+		-1,  // UpdateQuery
+		-1,  // SelectClause
+		-1,  // InsertClause
+		-1,  // CountClause
+		-1,  // Varlist
+		-1,  // DBlist
+		-1,  // String
+		-1,  // Var
+		-1,  // DatasetClause
+		-1,  // TimeClause
+		-1,  // WhereClause
+		-1,  // TriplesBlock
+		-1,  // Triple
+		-1,  // VarOrTerm
+		-1,  // GraphTerm
+		-1,  // Path
+		-1,  // PathSequence
+		-1,  // PathElt
+		-1,  // PathPrimary
+		-1,  // PathMod
+		-1,  // RestOfWhereList
+		-1,  // RestOfWhere
+		-1,  // Joiner
+		-1,  // GraphPatternNotTriples
+		163, // GroupGraphPattern
+		-1,  // GroupGraphPatternSub
+	},
+	gotoRow{ // S132
 		-1, // S'
 		-1, // QueryUnit
 		-1, // SelectQuery
@@ -4085,6 +4248,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -4101,37 +4265,6 @@ var gotoTab = gotoTable{
 		-1, // GraphPatternNotTriples
 		-1, // GroupGraphPattern
 		-1, // GroupGraphPatternSub
-	},
-	gotoRow{ // S132
-		-1,  // S'
-		-1,  // QueryUnit
-		-1,  // SelectQuery
-		-1,  // CountQuery
-		-1,  // UpdateQuery
-		-1,  // SelectClause
-		-1,  // InsertClause
-		-1,  // CountClause
-		-1,  // Varlist
-		-1,  // DBlist
-		-1,  // String
-		-1,  // Var
-		-1,  // DatasetClause
-		-1,  // WhereClause
-		-1,  // TriplesBlock
-		-1,  // Triple
-		-1,  // VarOrTerm
-		-1,  // GraphTerm
-		-1,  // Path
-		-1,  // PathSequence
-		147, // PathElt
-		105, // PathPrimary
-		-1,  // PathMod
-		-1,  // RestOfWhereList
-		-1,  // RestOfWhere
-		-1,  // Joiner
-		-1,  // GraphPatternNotTriples
-		-1,  // GroupGraphPattern
-		-1,  // GroupGraphPatternSub
 	},
 	gotoRow{ // S133
 		-1, // S'
@@ -4147,6 +4280,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -4178,6 +4312,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -4209,6 +4344,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -4240,6 +4376,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -4251,10 +4388,10 @@ var gotoTab = gotoTable{
 		-1, // PathPrimary
 		-1, // PathMod
 		-1, // RestOfWhereList
-		-1, // RestOfWhere
+		94, // RestOfWhere
 		-1, // Joiner
-		-1, // GraphPatternNotTriples
-		-1, // GroupGraphPattern
+		67, // GraphPatternNotTriples
+		68, // GroupGraphPattern
 		-1, // GroupGraphPatternSub
 	},
 	gotoRow{ // S137
@@ -4271,6 +4408,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -4302,6 +4440,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -4333,6 +4472,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -4364,6 +4504,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -4382,35 +4523,36 @@ var gotoTab = gotoTable{
 		-1, // GroupGraphPatternSub
 	},
 	gotoRow{ // S141
-		-1,  // S'
-		-1,  // QueryUnit
-		-1,  // SelectQuery
-		-1,  // CountQuery
-		-1,  // UpdateQuery
-		-1,  // SelectClause
-		-1,  // InsertClause
-		-1,  // CountClause
-		-1,  // Varlist
-		-1,  // DBlist
-		-1,  // String
-		39,  // Var
-		-1,  // DatasetClause
-		-1,  // WhereClause
-		150, // TriplesBlock
-		52,  // Triple
-		53,  // VarOrTerm
-		43,  // GraphTerm
-		-1,  // Path
-		-1,  // PathSequence
-		-1,  // PathElt
-		-1,  // PathPrimary
-		-1,  // PathMod
-		-1,  // RestOfWhereList
-		-1,  // RestOfWhere
-		-1,  // Joiner
-		-1,  // GraphPatternNotTriples
-		-1,  // GroupGraphPattern
-		-1,  // GroupGraphPatternSub
+		-1, // S'
+		-1, // QueryUnit
+		-1, // SelectQuery
+		-1, // CountQuery
+		-1, // UpdateQuery
+		-1, // SelectClause
+		-1, // InsertClause
+		-1, // CountClause
+		-1, // Varlist
+		-1, // DBlist
+		-1, // String
+		-1, // Var
+		-1, // DatasetClause
+		-1, // TimeClause
+		-1, // WhereClause
+		-1, // TriplesBlock
+		-1, // Triple
+		-1, // VarOrTerm
+		-1, // GraphTerm
+		-1, // Path
+		-1, // PathSequence
+		-1, // PathElt
+		-1, // PathPrimary
+		-1, // PathMod
+		-1, // RestOfWhereList
+		-1, // RestOfWhere
+		-1, // Joiner
+		-1, // GraphPatternNotTriples
+		-1, // GroupGraphPattern
+		-1, // GroupGraphPatternSub
 	},
 	gotoRow{ // S142
 		-1, // S'
@@ -4426,6 +4568,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -4457,6 +4600,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -4475,35 +4619,36 @@ var gotoTab = gotoTable{
 		-1, // GroupGraphPatternSub
 	},
 	gotoRow{ // S144
-		-1,  // S'
-		-1,  // QueryUnit
-		-1,  // SelectQuery
-		-1,  // CountQuery
-		-1,  // UpdateQuery
-		-1,  // SelectClause
-		-1,  // InsertClause
-		-1,  // CountClause
-		-1,  // Varlist
-		-1,  // DBlist
-		-1,  // String
-		39,  // Var
-		-1,  // DatasetClause
-		-1,  // WhereClause
-		-1,  // TriplesBlock
-		117, // Triple
-		53,  // VarOrTerm
-		43,  // GraphTerm
-		-1,  // Path
-		-1,  // PathSequence
-		-1,  // PathElt
-		-1,  // PathPrimary
-		-1,  // PathMod
-		-1,  // RestOfWhereList
-		-1,  // RestOfWhere
-		-1,  // Joiner
-		-1,  // GraphPatternNotTriples
-		-1,  // GroupGraphPattern
-		-1,  // GroupGraphPatternSub
+		-1, // S'
+		-1, // QueryUnit
+		-1, // SelectQuery
+		-1, // CountQuery
+		-1, // UpdateQuery
+		-1, // SelectClause
+		-1, // InsertClause
+		-1, // CountClause
+		-1, // Varlist
+		-1, // DBlist
+		-1, // String
+		-1, // Var
+		-1, // DatasetClause
+		-1, // TimeClause
+		-1, // WhereClause
+		-1, // TriplesBlock
+		-1, // Triple
+		-1, // VarOrTerm
+		-1, // GraphTerm
+		-1, // Path
+		-1, // PathSequence
+		-1, // PathElt
+		-1, // PathPrimary
+		-1, // PathMod
+		-1, // RestOfWhereList
+		-1, // RestOfWhere
+		-1, // Joiner
+		-1, // GraphPatternNotTriples
+		-1, // GroupGraphPattern
+		-1, // GroupGraphPatternSub
 	},
 	gotoRow{ // S145
 		-1, // S'
@@ -4519,6 +4664,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -4537,35 +4683,36 @@ var gotoTab = gotoTable{
 		-1, // GroupGraphPatternSub
 	},
 	gotoRow{ // S146
-		-1, // S'
-		-1, // QueryUnit
-		-1, // SelectQuery
-		-1, // CountQuery
-		-1, // UpdateQuery
-		-1, // SelectClause
-		-1, // InsertClause
-		-1, // CountClause
-		-1, // Varlist
-		-1, // DBlist
-		-1, // String
-		-1, // Var
-		-1, // DatasetClause
-		-1, // WhereClause
-		-1, // TriplesBlock
-		-1, // Triple
-		-1, // VarOrTerm
-		-1, // GraphTerm
-		-1, // Path
-		-1, // PathSequence
-		-1, // PathElt
-		-1, // PathPrimary
-		-1, // PathMod
-		-1, // RestOfWhereList
-		-1, // RestOfWhere
-		-1, // Joiner
-		-1, // GraphPatternNotTriples
-		-1, // GroupGraphPattern
-		-1, // GroupGraphPatternSub
+		-1,  // S'
+		-1,  // QueryUnit
+		-1,  // SelectQuery
+		-1,  // CountQuery
+		-1,  // UpdateQuery
+		-1,  // SelectClause
+		-1,  // InsertClause
+		-1,  // CountClause
+		-1,  // Varlist
+		-1,  // DBlist
+		-1,  // String
+		-1,  // Var
+		-1,  // DatasetClause
+		-1,  // TimeClause
+		-1,  // WhereClause
+		-1,  // TriplesBlock
+		-1,  // Triple
+		-1,  // VarOrTerm
+		-1,  // GraphTerm
+		-1,  // Path
+		-1,  // PathSequence
+		-1,  // PathElt
+		-1,  // PathPrimary
+		-1,  // PathMod
+		-1,  // RestOfWhereList
+		-1,  // RestOfWhere
+		168, // Joiner
+		-1,  // GraphPatternNotTriples
+		-1,  // GroupGraphPattern
+		-1,  // GroupGraphPatternSub
 	},
 	gotoRow{ // S147
 		-1, // S'
@@ -4581,6 +4728,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -4612,6 +4760,7 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -4643,6 +4792,39 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
+		-1, // WhereClause
+		-1, // TriplesBlock
+		-1, // Triple
+		-1, // VarOrTerm
+		-1, // GraphTerm
+		-1, // Path
+		-1, // PathSequence
+		-1, // PathElt
+		-1, // PathPrimary
+		-1, // PathMod
+		-1, // RestOfWhereList
+		94, // RestOfWhere
+		-1, // Joiner
+		67, // GraphPatternNotTriples
+		68, // GroupGraphPattern
+		-1, // GroupGraphPatternSub
+	},
+	gotoRow{ // S150
+		-1, // S'
+		-1, // QueryUnit
+		-1, // SelectQuery
+		-1, // CountQuery
+		-1, // UpdateQuery
+		-1, // SelectClause
+		-1, // InsertClause
+		-1, // CountClause
+		-1, // Varlist
+		-1, // DBlist
+		-1, // String
+		-1, // Var
+		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple
@@ -4660,7 +4842,7 @@ var gotoTab = gotoTable{
 		-1, // GroupGraphPattern
 		-1, // GroupGraphPatternSub
 	},
-	gotoRow{ // S150
+	gotoRow{ // S151
 		-1, // S'
 		-1, // QueryUnit
 		-1, // SelectQuery
@@ -4674,6 +4856,743 @@ var gotoTab = gotoTable{
 		-1, // String
 		-1, // Var
 		-1, // DatasetClause
+		-1, // TimeClause
+		-1, // WhereClause
+		-1, // TriplesBlock
+		-1, // Triple
+		-1, // VarOrTerm
+		-1, // GraphTerm
+		-1, // Path
+		-1, // PathSequence
+		-1, // PathElt
+		-1, // PathPrimary
+		-1, // PathMod
+		-1, // RestOfWhereList
+		-1, // RestOfWhere
+		-1, // Joiner
+		-1, // GraphPatternNotTriples
+		-1, // GroupGraphPattern
+		-1, // GroupGraphPatternSub
+	},
+	gotoRow{ // S152
+		-1, // S'
+		-1, // QueryUnit
+		-1, // SelectQuery
+		-1, // CountQuery
+		-1, // UpdateQuery
+		-1, // SelectClause
+		-1, // InsertClause
+		-1, // CountClause
+		-1, // Varlist
+		-1, // DBlist
+		-1, // String
+		-1, // Var
+		-1, // DatasetClause
+		-1, // TimeClause
+		-1, // WhereClause
+		-1, // TriplesBlock
+		-1, // Triple
+		-1, // VarOrTerm
+		-1, // GraphTerm
+		-1, // Path
+		-1, // PathSequence
+		-1, // PathElt
+		-1, // PathPrimary
+		-1, // PathMod
+		-1, // RestOfWhereList
+		-1, // RestOfWhere
+		-1, // Joiner
+		-1, // GraphPatternNotTriples
+		-1, // GroupGraphPattern
+		-1, // GroupGraphPatternSub
+	},
+	gotoRow{ // S153
+		-1,  // S'
+		-1,  // QueryUnit
+		-1,  // SelectQuery
+		-1,  // CountQuery
+		-1,  // UpdateQuery
+		-1,  // SelectClause
+		-1,  // InsertClause
+		-1,  // CountClause
+		-1,  // Varlist
+		-1,  // DBlist
+		-1,  // String
+		-1,  // Var
+		-1,  // DatasetClause
+		-1,  // TimeClause
+		-1,  // WhereClause
+		-1,  // TriplesBlock
+		-1,  // Triple
+		-1,  // VarOrTerm
+		-1,  // GraphTerm
+		-1,  // Path
+		170, // PathSequence
+		124, // PathElt
+		125, // PathPrimary
+		-1,  // PathMod
+		-1,  // RestOfWhereList
+		-1,  // RestOfWhere
+		-1,  // Joiner
+		-1,  // GraphPatternNotTriples
+		-1,  // GroupGraphPattern
+		-1,  // GroupGraphPatternSub
+	},
+	gotoRow{ // S154
+		-1, // S'
+		-1, // QueryUnit
+		-1, // SelectQuery
+		-1, // CountQuery
+		-1, // UpdateQuery
+		-1, // SelectClause
+		-1, // InsertClause
+		-1, // CountClause
+		-1, // Varlist
+		-1, // DBlist
+		-1, // String
+		-1, // Var
+		-1, // DatasetClause
+		-1, // TimeClause
+		-1, // WhereClause
+		-1, // TriplesBlock
+		-1, // Triple
+		-1, // VarOrTerm
+		-1, // GraphTerm
+		-1, // Path
+		-1, // PathSequence
+		-1, // PathElt
+		-1, // PathPrimary
+		-1, // PathMod
+		-1, // RestOfWhereList
+		-1, // RestOfWhere
+		-1, // Joiner
+		-1, // GraphPatternNotTriples
+		-1, // GroupGraphPattern
+		-1, // GroupGraphPatternSub
+	},
+	gotoRow{ // S155
+		-1,  // S'
+		-1,  // QueryUnit
+		-1,  // SelectQuery
+		-1,  // CountQuery
+		-1,  // UpdateQuery
+		-1,  // SelectClause
+		-1,  // InsertClause
+		-1,  // CountClause
+		-1,  // Varlist
+		-1,  // DBlist
+		-1,  // String
+		-1,  // Var
+		-1,  // DatasetClause
+		-1,  // TimeClause
+		-1,  // WhereClause
+		-1,  // TriplesBlock
+		-1,  // Triple
+		-1,  // VarOrTerm
+		-1,  // GraphTerm
+		-1,  // Path
+		-1,  // PathSequence
+		171, // PathElt
+		125, // PathPrimary
+		-1,  // PathMod
+		-1,  // RestOfWhereList
+		-1,  // RestOfWhere
+		-1,  // Joiner
+		-1,  // GraphPatternNotTriples
+		-1,  // GroupGraphPattern
+		-1,  // GroupGraphPatternSub
+	},
+	gotoRow{ // S156
+		-1, // S'
+		-1, // QueryUnit
+		-1, // SelectQuery
+		-1, // CountQuery
+		-1, // UpdateQuery
+		-1, // SelectClause
+		-1, // InsertClause
+		-1, // CountClause
+		-1, // Varlist
+		-1, // DBlist
+		-1, // String
+		-1, // Var
+		-1, // DatasetClause
+		-1, // TimeClause
+		-1, // WhereClause
+		-1, // TriplesBlock
+		-1, // Triple
+		-1, // VarOrTerm
+		-1, // GraphTerm
+		-1, // Path
+		-1, // PathSequence
+		-1, // PathElt
+		-1, // PathPrimary
+		-1, // PathMod
+		-1, // RestOfWhereList
+		-1, // RestOfWhere
+		-1, // Joiner
+		-1, // GraphPatternNotTriples
+		-1, // GroupGraphPattern
+		-1, // GroupGraphPatternSub
+	},
+	gotoRow{ // S157
+		-1, // S'
+		-1, // QueryUnit
+		-1, // SelectQuery
+		-1, // CountQuery
+		-1, // UpdateQuery
+		-1, // SelectClause
+		-1, // InsertClause
+		-1, // CountClause
+		-1, // Varlist
+		-1, // DBlist
+		-1, // String
+		-1, // Var
+		-1, // DatasetClause
+		-1, // TimeClause
+		-1, // WhereClause
+		-1, // TriplesBlock
+		-1, // Triple
+		-1, // VarOrTerm
+		-1, // GraphTerm
+		-1, // Path
+		-1, // PathSequence
+		-1, // PathElt
+		-1, // PathPrimary
+		-1, // PathMod
+		-1, // RestOfWhereList
+		-1, // RestOfWhere
+		-1, // Joiner
+		-1, // GraphPatternNotTriples
+		-1, // GroupGraphPattern
+		-1, // GroupGraphPatternSub
+	},
+	gotoRow{ // S158
+		-1, // S'
+		-1, // QueryUnit
+		-1, // SelectQuery
+		-1, // CountQuery
+		-1, // UpdateQuery
+		-1, // SelectClause
+		-1, // InsertClause
+		-1, // CountClause
+		-1, // Varlist
+		-1, // DBlist
+		-1, // String
+		-1, // Var
+		-1, // DatasetClause
+		-1, // TimeClause
+		-1, // WhereClause
+		-1, // TriplesBlock
+		-1, // Triple
+		-1, // VarOrTerm
+		-1, // GraphTerm
+		-1, // Path
+		-1, // PathSequence
+		-1, // PathElt
+		-1, // PathPrimary
+		-1, // PathMod
+		-1, // RestOfWhereList
+		-1, // RestOfWhere
+		-1, // Joiner
+		-1, // GraphPatternNotTriples
+		-1, // GroupGraphPattern
+		-1, // GroupGraphPatternSub
+	},
+	gotoRow{ // S159
+		-1, // S'
+		-1, // QueryUnit
+		-1, // SelectQuery
+		-1, // CountQuery
+		-1, // UpdateQuery
+		-1, // SelectClause
+		-1, // InsertClause
+		-1, // CountClause
+		-1, // Varlist
+		-1, // DBlist
+		-1, // String
+		-1, // Var
+		-1, // DatasetClause
+		-1, // TimeClause
+		-1, // WhereClause
+		-1, // TriplesBlock
+		-1, // Triple
+		-1, // VarOrTerm
+		-1, // GraphTerm
+		-1, // Path
+		-1, // PathSequence
+		-1, // PathElt
+		-1, // PathPrimary
+		-1, // PathMod
+		-1, // RestOfWhereList
+		-1, // RestOfWhere
+		-1, // Joiner
+		-1, // GraphPatternNotTriples
+		-1, // GroupGraphPattern
+		-1, // GroupGraphPatternSub
+	},
+	gotoRow{ // S160
+		-1, // S'
+		-1, // QueryUnit
+		-1, // SelectQuery
+		-1, // CountQuery
+		-1, // UpdateQuery
+		-1, // SelectClause
+		-1, // InsertClause
+		-1, // CountClause
+		-1, // Varlist
+		-1, // DBlist
+		-1, // String
+		-1, // Var
+		-1, // DatasetClause
+		-1, // TimeClause
+		-1, // WhereClause
+		-1, // TriplesBlock
+		-1, // Triple
+		-1, // VarOrTerm
+		-1, // GraphTerm
+		-1, // Path
+		-1, // PathSequence
+		-1, // PathElt
+		-1, // PathPrimary
+		-1, // PathMod
+		-1, // RestOfWhereList
+		-1, // RestOfWhere
+		-1, // Joiner
+		-1, // GraphPatternNotTriples
+		-1, // GroupGraphPattern
+		-1, // GroupGraphPatternSub
+	},
+	gotoRow{ // S161
+		-1, // S'
+		-1, // QueryUnit
+		-1, // SelectQuery
+		-1, // CountQuery
+		-1, // UpdateQuery
+		-1, // SelectClause
+		-1, // InsertClause
+		-1, // CountClause
+		-1, // Varlist
+		-1, // DBlist
+		-1, // String
+		-1, // Var
+		-1, // DatasetClause
+		-1, // TimeClause
+		-1, // WhereClause
+		-1, // TriplesBlock
+		-1, // Triple
+		-1, // VarOrTerm
+		-1, // GraphTerm
+		-1, // Path
+		-1, // PathSequence
+		-1, // PathElt
+		-1, // PathPrimary
+		-1, // PathMod
+		-1, // RestOfWhereList
+		-1, // RestOfWhere
+		-1, // Joiner
+		-1, // GraphPatternNotTriples
+		-1, // GroupGraphPattern
+		-1, // GroupGraphPatternSub
+	},
+	gotoRow{ // S162
+		-1, // S'
+		-1, // QueryUnit
+		-1, // SelectQuery
+		-1, // CountQuery
+		-1, // UpdateQuery
+		-1, // SelectClause
+		-1, // InsertClause
+		-1, // CountClause
+		-1, // Varlist
+		-1, // DBlist
+		-1, // String
+		-1, // Var
+		-1, // DatasetClause
+		-1, // TimeClause
+		-1, // WhereClause
+		-1, // TriplesBlock
+		-1, // Triple
+		-1, // VarOrTerm
+		-1, // GraphTerm
+		-1, // Path
+		-1, // PathSequence
+		-1, // PathElt
+		-1, // PathPrimary
+		-1, // PathMod
+		-1, // RestOfWhereList
+		-1, // RestOfWhere
+		-1, // Joiner
+		-1, // GraphPatternNotTriples
+		-1, // GroupGraphPattern
+		-1, // GroupGraphPatternSub
+	},
+	gotoRow{ // S163
+		-1, // S'
+		-1, // QueryUnit
+		-1, // SelectQuery
+		-1, // CountQuery
+		-1, // UpdateQuery
+		-1, // SelectClause
+		-1, // InsertClause
+		-1, // CountClause
+		-1, // Varlist
+		-1, // DBlist
+		-1, // String
+		-1, // Var
+		-1, // DatasetClause
+		-1, // TimeClause
+		-1, // WhereClause
+		-1, // TriplesBlock
+		-1, // Triple
+		-1, // VarOrTerm
+		-1, // GraphTerm
+		-1, // Path
+		-1, // PathSequence
+		-1, // PathElt
+		-1, // PathPrimary
+		-1, // PathMod
+		-1, // RestOfWhereList
+		-1, // RestOfWhere
+		-1, // Joiner
+		-1, // GraphPatternNotTriples
+		-1, // GroupGraphPattern
+		-1, // GroupGraphPatternSub
+	},
+	gotoRow{ // S164
+		-1,  // S'
+		-1,  // QueryUnit
+		-1,  // SelectQuery
+		-1,  // CountQuery
+		-1,  // UpdateQuery
+		-1,  // SelectClause
+		-1,  // InsertClause
+		-1,  // CountClause
+		-1,  // Varlist
+		-1,  // DBlist
+		-1,  // String
+		46,  // Var
+		-1,  // DatasetClause
+		-1,  // TimeClause
+		-1,  // WhereClause
+		174, // TriplesBlock
+		64,  // Triple
+		65,  // VarOrTerm
+		50,  // GraphTerm
+		-1,  // Path
+		-1,  // PathSequence
+		-1,  // PathElt
+		-1,  // PathPrimary
+		-1,  // PathMod
+		-1,  // RestOfWhereList
+		-1,  // RestOfWhere
+		-1,  // Joiner
+		-1,  // GraphPatternNotTriples
+		-1,  // GroupGraphPattern
+		-1,  // GroupGraphPatternSub
+	},
+	gotoRow{ // S165
+		-1, // S'
+		-1, // QueryUnit
+		-1, // SelectQuery
+		-1, // CountQuery
+		-1, // UpdateQuery
+		-1, // SelectClause
+		-1, // InsertClause
+		-1, // CountClause
+		-1, // Varlist
+		-1, // DBlist
+		-1, // String
+		-1, // Var
+		-1, // DatasetClause
+		-1, // TimeClause
+		-1, // WhereClause
+		-1, // TriplesBlock
+		-1, // Triple
+		-1, // VarOrTerm
+		-1, // GraphTerm
+		-1, // Path
+		-1, // PathSequence
+		-1, // PathElt
+		-1, // PathPrimary
+		-1, // PathMod
+		-1, // RestOfWhereList
+		-1, // RestOfWhere
+		-1, // Joiner
+		-1, // GraphPatternNotTriples
+		-1, // GroupGraphPattern
+		-1, // GroupGraphPatternSub
+	},
+	gotoRow{ // S166
+		-1, // S'
+		-1, // QueryUnit
+		-1, // SelectQuery
+		-1, // CountQuery
+		-1, // UpdateQuery
+		-1, // SelectClause
+		-1, // InsertClause
+		-1, // CountClause
+		-1, // Varlist
+		-1, // DBlist
+		-1, // String
+		-1, // Var
+		-1, // DatasetClause
+		-1, // TimeClause
+		-1, // WhereClause
+		-1, // TriplesBlock
+		-1, // Triple
+		-1, // VarOrTerm
+		-1, // GraphTerm
+		-1, // Path
+		-1, // PathSequence
+		-1, // PathElt
+		-1, // PathPrimary
+		-1, // PathMod
+		-1, // RestOfWhereList
+		-1, // RestOfWhere
+		-1, // Joiner
+		-1, // GraphPatternNotTriples
+		-1, // GroupGraphPattern
+		-1, // GroupGraphPatternSub
+	},
+	gotoRow{ // S167
+		-1,  // S'
+		-1,  // QueryUnit
+		-1,  // SelectQuery
+		-1,  // CountQuery
+		-1,  // UpdateQuery
+		-1,  // SelectClause
+		-1,  // InsertClause
+		-1,  // CountClause
+		-1,  // Varlist
+		-1,  // DBlist
+		-1,  // String
+		46,  // Var
+		-1,  // DatasetClause
+		-1,  // TimeClause
+		-1,  // WhereClause
+		-1,  // TriplesBlock
+		137, // Triple
+		65,  // VarOrTerm
+		50,  // GraphTerm
+		-1,  // Path
+		-1,  // PathSequence
+		-1,  // PathElt
+		-1,  // PathPrimary
+		-1,  // PathMod
+		-1,  // RestOfWhereList
+		-1,  // RestOfWhere
+		-1,  // Joiner
+		-1,  // GraphPatternNotTriples
+		-1,  // GroupGraphPattern
+		-1,  // GroupGraphPatternSub
+	},
+	gotoRow{ // S168
+		-1, // S'
+		-1, // QueryUnit
+		-1, // SelectQuery
+		-1, // CountQuery
+		-1, // UpdateQuery
+		-1, // SelectClause
+		-1, // InsertClause
+		-1, // CountClause
+		-1, // Varlist
+		-1, // DBlist
+		-1, // String
+		-1, // Var
+		-1, // DatasetClause
+		-1, // TimeClause
+		-1, // WhereClause
+		-1, // TriplesBlock
+		-1, // Triple
+		-1, // VarOrTerm
+		-1, // GraphTerm
+		-1, // Path
+		-1, // PathSequence
+		-1, // PathElt
+		-1, // PathPrimary
+		-1, // PathMod
+		-1, // RestOfWhereList
+		-1, // RestOfWhere
+		-1, // Joiner
+		-1, // GraphPatternNotTriples
+		-1, // GroupGraphPattern
+		-1, // GroupGraphPatternSub
+	},
+	gotoRow{ // S169
+		-1, // S'
+		-1, // QueryUnit
+		-1, // SelectQuery
+		-1, // CountQuery
+		-1, // UpdateQuery
+		-1, // SelectClause
+		-1, // InsertClause
+		-1, // CountClause
+		-1, // Varlist
+		-1, // DBlist
+		-1, // String
+		-1, // Var
+		-1, // DatasetClause
+		-1, // TimeClause
+		-1, // WhereClause
+		-1, // TriplesBlock
+		-1, // Triple
+		-1, // VarOrTerm
+		-1, // GraphTerm
+		-1, // Path
+		-1, // PathSequence
+		-1, // PathElt
+		-1, // PathPrimary
+		-1, // PathMod
+		-1, // RestOfWhereList
+		-1, // RestOfWhere
+		-1, // Joiner
+		-1, // GraphPatternNotTriples
+		-1, // GroupGraphPattern
+		-1, // GroupGraphPatternSub
+	},
+	gotoRow{ // S170
+		-1, // S'
+		-1, // QueryUnit
+		-1, // SelectQuery
+		-1, // CountQuery
+		-1, // UpdateQuery
+		-1, // SelectClause
+		-1, // InsertClause
+		-1, // CountClause
+		-1, // Varlist
+		-1, // DBlist
+		-1, // String
+		-1, // Var
+		-1, // DatasetClause
+		-1, // TimeClause
+		-1, // WhereClause
+		-1, // TriplesBlock
+		-1, // Triple
+		-1, // VarOrTerm
+		-1, // GraphTerm
+		-1, // Path
+		-1, // PathSequence
+		-1, // PathElt
+		-1, // PathPrimary
+		-1, // PathMod
+		-1, // RestOfWhereList
+		-1, // RestOfWhere
+		-1, // Joiner
+		-1, // GraphPatternNotTriples
+		-1, // GroupGraphPattern
+		-1, // GroupGraphPatternSub
+	},
+	gotoRow{ // S171
+		-1, // S'
+		-1, // QueryUnit
+		-1, // SelectQuery
+		-1, // CountQuery
+		-1, // UpdateQuery
+		-1, // SelectClause
+		-1, // InsertClause
+		-1, // CountClause
+		-1, // Varlist
+		-1, // DBlist
+		-1, // String
+		-1, // Var
+		-1, // DatasetClause
+		-1, // TimeClause
+		-1, // WhereClause
+		-1, // TriplesBlock
+		-1, // Triple
+		-1, // VarOrTerm
+		-1, // GraphTerm
+		-1, // Path
+		-1, // PathSequence
+		-1, // PathElt
+		-1, // PathPrimary
+		-1, // PathMod
+		-1, // RestOfWhereList
+		-1, // RestOfWhere
+		-1, // Joiner
+		-1, // GraphPatternNotTriples
+		-1, // GroupGraphPattern
+		-1, // GroupGraphPatternSub
+	},
+	gotoRow{ // S172
+		-1, // S'
+		-1, // QueryUnit
+		-1, // SelectQuery
+		-1, // CountQuery
+		-1, // UpdateQuery
+		-1, // SelectClause
+		-1, // InsertClause
+		-1, // CountClause
+		-1, // Varlist
+		-1, // DBlist
+		-1, // String
+		-1, // Var
+		-1, // DatasetClause
+		-1, // TimeClause
+		-1, // WhereClause
+		-1, // TriplesBlock
+		-1, // Triple
+		-1, // VarOrTerm
+		-1, // GraphTerm
+		-1, // Path
+		-1, // PathSequence
+		-1, // PathElt
+		-1, // PathPrimary
+		-1, // PathMod
+		-1, // RestOfWhereList
+		-1, // RestOfWhere
+		-1, // Joiner
+		-1, // GraphPatternNotTriples
+		-1, // GroupGraphPattern
+		-1, // GroupGraphPatternSub
+	},
+	gotoRow{ // S173
+		-1, // S'
+		-1, // QueryUnit
+		-1, // SelectQuery
+		-1, // CountQuery
+		-1, // UpdateQuery
+		-1, // SelectClause
+		-1, // InsertClause
+		-1, // CountClause
+		-1, // Varlist
+		-1, // DBlist
+		-1, // String
+		-1, // Var
+		-1, // DatasetClause
+		-1, // TimeClause
+		-1, // WhereClause
+		-1, // TriplesBlock
+		-1, // Triple
+		-1, // VarOrTerm
+		-1, // GraphTerm
+		-1, // Path
+		-1, // PathSequence
+		-1, // PathElt
+		-1, // PathPrimary
+		-1, // PathMod
+		-1, // RestOfWhereList
+		-1, // RestOfWhere
+		-1, // Joiner
+		-1, // GraphPatternNotTriples
+		-1, // GroupGraphPattern
+		-1, // GroupGraphPatternSub
+	},
+	gotoRow{ // S174
+		-1, // S'
+		-1, // QueryUnit
+		-1, // SelectQuery
+		-1, // CountQuery
+		-1, // UpdateQuery
+		-1, // SelectClause
+		-1, // InsertClause
+		-1, // CountClause
+		-1, // Varlist
+		-1, // DBlist
+		-1, // String
+		-1, // Var
+		-1, // DatasetClause
+		-1, // TimeClause
 		-1, // WhereClause
 		-1, // TriplesBlock
 		-1, // Triple

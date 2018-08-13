@@ -2,10 +2,14 @@ package ast
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/gtfierro/hod/lang/token"
 	"github.com/gtfierro/hod/turtle"
+
 	"github.com/kr/pretty"
-	"strings"
 )
 
 type QueryType uint
@@ -28,6 +32,7 @@ func ClearDebug() {
 type Query struct {
 	Select    SelectClause
 	From      FromClause
+	Time      TimeClause
 	Count     bool
 	Insert    InsertClause
 	Where     WhereClause
@@ -54,6 +59,7 @@ func (q Query) CopyWithNewTerms(terms []Triple) Query {
 	newq := Query{
 		Select:    q.Select,
 		From:      q.From,
+		Time:      q.Time,
 		Variables: q.Variables,
 		Type:      q.Type,
 	}
@@ -77,15 +83,24 @@ func (q Query) Copy() *Query {
 	}
 }
 
-func NewQuery(selectclause, whereclause interface{}, count bool) (Query, error) {
+func NewQuery(selectclause, whereclause, timeclause interface{}, count bool) (Query, error) {
 	if debug {
 		fmt.Printf("%# v", pretty.Formatter(whereclause.(WhereClause)))
 	}
+	var err error
 	q := Query{
 		Where:  whereclause.(WhereClause),
 		Select: selectclause.(SelectClause),
 		Count:  count,
 		Type:   SELECT_QUERY,
+	}
+	if timeclause == nil {
+		q.Time, err = NewTimeClause(AT, "now")
+		if err != nil {
+			return q, err
+		}
+	} else {
+		q.Time = timeclause.(TimeClause)
 	}
 	if q.From.Empty() {
 		q.From.AllDBs = true
@@ -119,15 +134,24 @@ func NewInsertQuery(insertclause, whereclause interface{}, count bool) (Query, e
 	return q, nil
 }
 
-func NewQueryMulti(selectclause, fromclause, whereclause interface{}, count bool) (Query, error) {
+func NewQueryMulti(selectclause, fromclause, whereclause, timeclause interface{}, count bool) (Query, error) {
 	if debug {
 		fmt.Printf("%# v", pretty.Formatter(whereclause.(WhereClause)))
 	}
+	var err error
 	q := Query{
 		Where:  whereclause.(WhereClause),
 		From:   fromclause.(FromClause),
 		Select: selectclause.(SelectClause),
 		Count:  count,
+	}
+	if timeclause == nil {
+		q.Time, err = NewTimeClause(AT, "now")
+		if err != nil {
+			return q, err
+		}
+	} else {
+		q.Time = timeclause.(TimeClause)
 	}
 	if q.From.Empty() {
 		q.From.AllDBs = true
@@ -303,6 +327,49 @@ func NewFromClause(dblist interface{}) (FromClause, error) {
 
 func (from FromClause) Empty() bool {
 	return len(from.Databases) == 0 && !from.AllDBs
+}
+
+type TimeClause struct {
+	Filter    TimeFilter
+	Timestamp time.Time
+}
+
+type TimeFilter uint
+
+const (
+	AT TimeFilter = iota
+	BEFORE
+	AFTER
+)
+
+func (filter TimeFilter) String() string {
+	switch filter {
+	case AT:
+		return "at"
+	case BEFORE:
+		return "before"
+	case AFTER:
+		return "after"
+	}
+	return "unknown time filter"
+}
+
+func NewTimeClause(filter TimeFilter, _timestamp interface{}) (TimeClause, error) {
+	timestamp := _timestamp.(string)
+	tc := TimeClause{
+		Filter: filter,
+	}
+	if strings.ToLower(timestamp) == "now" {
+		tc.Timestamp = time.Now()
+	} else if parsed, err := time.Parse(time.RFC3339, timestamp); err == nil {
+		tc.Timestamp = parsed
+	} else if intTimestamp, err := strconv.ParseInt(timestamp, 10, 64); err == nil {
+		// assumes nanoseconds
+		tc.Timestamp = time.Unix(0, intTimestamp)
+	} else {
+		return tc, fmt.Errorf("Invalid timestamp %s (must be RFC3339 or Unix Nanoseconds)", timestamp)
+	}
+	return tc, nil
 }
 
 type WhereClause struct {
