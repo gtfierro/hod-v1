@@ -81,12 +81,12 @@ func (bsp *BadgerStorageProvider) Initialize(cfg *config.Config) error {
 		return err
 	}
 	for _, version := range versions {
-		opts := badger.DefaultOptions
-		openDir := filepath.Join(bsp.openDir, version.Name, strconv.Itoa(int(version.Timestamp)))
+		openDir := filepath.Join(bsp.openDir, version.Name) //, strconv.Itoa(int(version.Timestamp)))
 		logrus.Info("Opening existing version ", version, " at ", openDir)
 		if err = os.MkdirAll(openDir, 0700); err != nil {
 			return err
 		}
+		opts := badger.DefaultOptions
 		opts.Dir = openDir
 		opts.ValueDir = openDir
 		if bsp.dbs[version], err = badger.Open(opts); err != nil {
