@@ -13,6 +13,7 @@ type queryContext struct {
 	// maps variable name to a position in a row
 	variablePosition map[string]int
 	selectVars       []string
+	rows             []*resultRow
 
 	// variable definitions
 	definitions map[string]*keymap
@@ -161,6 +162,7 @@ rowIter:
 		jtest[hash] = struct{}{}
 
 		resultrow := getResultRow(len(ctx.selectVars))
+		ctx.rows = append(ctx.rows, resultrow)
 		for idx, varname := range ctx.selectVars {
 			val := row.valueAt(ctx.variablePosition[varname])
 			if val == storage.EmptyKey {
@@ -174,7 +176,15 @@ rowIter:
 		}
 		results[numRows] = resultrow
 		numRows++
-		row.release()
 	}
 	return results[:numRows]
+}
+
+func (ctx *queryContext) release() {
+	for _, row := range ctx.rel.rows {
+		row.release()
+	}
+	for _, row := range ctx.rows {
+		finishResultRow(row)
+	}
 }

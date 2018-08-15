@@ -39,7 +39,6 @@ func (qr *QueryResult) fromRows(rows []*resultRow, vars []string, toMap bool) {
 				m[vname] = row.row[idx]
 			}
 			qr.Rows = append(qr.Rows, m)
-			finishResultRow(row)
 		}
 	}
 }

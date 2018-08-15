@@ -35,19 +35,16 @@ type HodDB struct {
 	cfg        *config.Config
 	namespaces map[string]string
 
-	// latest version
-	loaded_versions map[storage.Version]*transaction
-	versionCaches   map[storage.Version]*dbcache
+	versionCaches map[storage.Version]*dbcache
 	sync.RWMutex
 }
 
 // NewHodDB creates a new instance of HodDB
 func NewHodDB(cfg *config.Config) (*HodDB, error) {
 	var hod = &HodDB{
-		cfg:             cfg,
-		namespaces:      make(map[string]string),
-		loaded_versions: make(map[storage.Version]*transaction),
-		versionCaches:   make(map[storage.Version]*dbcache),
+		cfg:           cfg,
+		namespaces:    make(map[string]string),
+		versionCaches: make(map[storage.Version]*dbcache),
 	}
 
 	hod.storage = &storage.BadgerStorageProvider{}
@@ -138,9 +135,6 @@ func (hod *HodDB) loadFiles(loadreq graphLoadParams) error {
 
 // Close safely closes all of the underlying storage used by HodDB
 func (hod *HodDB) Close() error {
-	for _, tx := range hod.loaded_versions {
-		tx.discard()
-	}
 	return hod.storage.Close()
 }
 
@@ -259,6 +253,7 @@ func (hod *HodDB) RunQuery(q *sparql.Query) (result *QueryResult, rerr error) {
 			}
 			// TODO: turn the graph into a transaction
 			ctx, err := newQueryContext(qp, tx)
+			defer ctx.release()
 			if err != nil {
 				rerr = errors.Wrap(err, "Could not get snapshot")
 			}
@@ -274,9 +269,9 @@ func (hod *HodDB) RunQuery(q *sparql.Query) (result *QueryResult, rerr error) {
 			_results := ctx.getResults()
 			results = append(results, _results...)
 
-			var intermediateResult = new(QueryResult)
-			intermediateResult.fromRows(_results, q.Select.Vars, true)
 			if parsedQuery.IsInsert() {
+				var intermediateResult = new(QueryResult)
+				intermediateResult.fromRows(_results, q.Select.Vars, true)
 				err := hod.insert(g.Name, parsedQuery.Insert, intermediateResult)
 				if err != nil {
 					return result, err
