@@ -473,23 +473,30 @@ func (bg *BadgerGraph) GetPredicate(hash HashKey) (ent PredicateEntity, rerr err
 func (bg *BadgerGraph) IterateAllEntities(f func(HashKey, Entity) bool) error {
 	iter := bg.tx.NewIterator(badger.DefaultIteratorOptions)
 	var start = []byte{0, 0, 0, 2, 0, 0, 0, 0}
-	iter.Seek(start)
+	//iter.Seek(start)
 	defer iter.Close()
-	for iter.Rewind(); iter.Valid(); iter.Next() {
-		if !iter.ValidForPrefix([]byte{0, 0, 0, 2}) {
-			iter.Close()
-		}
+	for iter.Seek(start); iter.ValidForPrefix([]byte{0, 0, 0, 2}); iter.Next() {
+		//for iter.Rewind(); iter.Valid(); iter.Next() {
+		//if !iter.ValidForPrefix([]byte{0, 0, 0, 2}) {
+		//	iter.Close()
+		//}
 
 		bytes, err := iter.Item().Value()
 		if err != nil {
 			return err
 		}
-		var ent Entity
+		var hash HashKey
+		iter.Item().KeyCopy(hash[:])
+		if hash.Type() != ENTITY {
+			continue
+		}
+		var ent = NewEntity(hash)
 		if err = ent.FromBytes(bytes); err != nil {
 			return err
 		}
 		if f(ent.Key(), ent) {
-			iter.Close()
+			//iter.Close()
+			break
 		}
 	}
 	return nil
