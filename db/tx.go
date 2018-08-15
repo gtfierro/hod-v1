@@ -284,7 +284,7 @@ func (tx *transaction) rollupPredicate(predicateHash storage.HashKey) error {
 		return err
 	}
 	for _, subjectHash := range predicate.GetAllSubjects() {
-		subjectIndex, err := tx.snapshot.GetExtendedIndex(subjectHash)
+		subjectIndex, err := tx.getExtendedIndexByHash(subjectHash)
 		if err == storage.ErrNotFound {
 			subjectIndex = storage.NewEntityExtendedIndex(subjectHash)
 			//if err := tx.snapshot.PutExtendedIndex(subjectIndex); err != nil {
@@ -294,7 +294,7 @@ func (tx *transaction) rollupPredicate(predicateHash storage.HashKey) error {
 			return err
 		}
 
-		subject, err := tx.snapshot.GetEntity(subjectHash)
+		subject, err := tx.getEntityByHash(subjectHash)
 		if err != nil {
 			return err
 		}
@@ -318,7 +318,7 @@ func (tx *transaction) rollupPredicate(predicateHash storage.HashKey) error {
 	}
 
 	for _, objectHash := range predicate.GetAllObjects() {
-		objectIndex, err := tx.snapshot.GetExtendedIndex(objectHash)
+		objectIndex, err := tx.getExtendedIndexByHash(objectHash)
 		if err == storage.ErrNotFound {
 			objectIndex = storage.NewEntityExtendedIndex(objectHash)
 			//if err := tx.snapshot.PutExtendedIndex(objectIndex); err != nil {
@@ -328,7 +328,7 @@ func (tx *transaction) rollupPredicate(predicateHash storage.HashKey) error {
 			return err
 		}
 
-		object, err := tx.snapshot.GetEntity(objectHash)
+		object, err := tx.getEntityByHash(objectHash)
 		if err != nil {
 			return err
 		}
@@ -523,7 +523,7 @@ func (tx *transaction) followPathFromObject(object storage.Entity, results *keym
 			fallthrough
 
 		case sparql.PATTERN_ONE_PLUS:
-			index, err := tx.snapshot.GetExtendedIndex(entity.Key())
+			index, err := tx.getExtendedIndexByHash(entity.Key())
 			if err != nil {
 				return err
 			}
@@ -533,7 +533,7 @@ func (tx *transaction) followPathFromObject(object storage.Entity, results *keym
 
 			// here, these entities are all connected by the required predicate
 			for _, entityHash := range entity.ListInEndpoints(predHash) {
-				nextEntity, err := tx.snapshot.GetEntity(entityHash)
+				nextEntity, err := tx.getEntityByHash(entityHash)
 				if err != nil {
 					return err
 				}
@@ -587,7 +587,7 @@ func (tx *transaction) followPathFromSubject(subject storage.Entity, results *ke
 			fallthrough
 
 		case sparql.PATTERN_ONE_PLUS:
-			index, err := tx.snapshot.GetExtendedIndex(entity.Key())
+			index, err := tx.getExtendedIndexByHash(entity.Key())
 			if err != nil {
 				return err
 			}
@@ -597,7 +597,7 @@ func (tx *transaction) followPathFromSubject(subject storage.Entity, results *ke
 
 			// here, these entities are all connected by the required predicate
 			for _, entityHash := range entity.ListOutEndpoints(predHash) {
-				nextEntity, err := tx.snapshot.GetEntity(entityHash)
+				nextEntity, err := tx.getEntityByHash(entityHash)
 				if err != nil {
 					return err
 				}
