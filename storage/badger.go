@@ -47,8 +47,9 @@ type BadgerStorageProvider struct {
 	basedir              string
 	versionsDir, openDir string
 	dbs                  map[Version]*badger.DB
+	openTxns             []*badger.Txn
 	vm                   *VersionManager
-	sync.RWMutex
+	l                    sync.RWMutex
 }
 
 // Initialize Badger-backed storage
@@ -137,23 +138,26 @@ func (bsp *BadgerStorageProvider) SaveNamespace(abbreviation string, uri string)
 // Close closes all underlying storage media
 // Further calls to the storage provider should return an error
 func (bsp *BadgerStorageProvider) Close() error {
-	bsp.Lock()
-	defer bsp.Unlock()
-	//TODO: close internal dbs?
+	bsp.l.Lock()
+	defer bsp.l.Unlock()
+	for _, tx := range bsp.openTxns {
+		tx.Discard()
+	}
 	for _, db := range bsp.dbs {
 		closeErr := db.Close()
 		if closeErr != nil {
 			return closeErr
 		}
 	}
+	//}
 	closeErr := bsp.vm.db.Close()
-	rmErr := os.RemoveAll(bsp.basedir)
 	if closeErr != nil {
 		return closeErr
 	}
-	if rmErr != nil {
-		return rmErr
-	}
+	//rmErr := os.RemoveAll(bsp.basedir)
+	//if rmErr != nil {
+	//	return rmErr
+	//}
 	return nil
 }
 
@@ -194,7 +198,6 @@ func (bsp *BadgerStorageProvider) AddGraph(name string) (version Version, exists
 		logrus.Error("// ", err)
 		return
 	}
-	logrus.Warning("Current version in add graph -> ", current)
 	_, found := bsp.dbs[current]
 	if current.Empty() || !found {
 		// create new version because it doesn't exist
@@ -247,8 +250,8 @@ func (bsp *BadgerStorageProvider) CreateVersion(name string) (tx Transaction, er
 		db    *badger.DB
 		found bool
 	)
-	bsp.Lock()
-	defer bsp.Unlock()
+	bsp.l.Lock()
+	defer bsp.l.Unlock()
 	current, err := bsp.CurrentVersion(name)
 	if err != nil {
 		return nil, err
@@ -256,7 +259,6 @@ func (bsp *BadgerStorageProvider) CreateVersion(name string) (tx Transaction, er
 	if db, found = bsp.dbs[current]; !found {
 		return nil, ErrGraphNotFound
 	}
-	logrus.Warning("Current version ", current)
 
 	// backup current version
 	//backupFileLocation := filepath.Join(bsp.versionsDir, current.Name, strconv.Itoa(int(current.Timestamp)))
@@ -282,48 +284,15 @@ func (bsp *BadgerStorageProvider) CreateVersion(name string) (tx Transaction, er
 	delete(bsp.dbs, current)
 	bsp.dbs[newversion] = db
 
-	//newVersionFileLocation := filepath.Join(bsp.openDir, newversion.Name, strconv.Iota(int(noversion.Timestamp)))
-	//if err = os.MkdirAll(newVersionFileLocation, 0700); err != nil {
-	//	return
-	//}
-	//opts := badger.DefaultOptions
-	//opts.Dir = newVersionFileLocation
-	//opts.ValueDir = newVersionFileLocation
-	//if bsp.dbs[version], err = badger.Open(opts); err != nil {
-	//	return err
-	//}
-	// load backup
-
-	//	newversion, err := bsp.vm.NewVersion(name)
-	//	if err != nil {
-	//		logrus.Error(err)
-	//		return
-	//	}
-	//	// file for the current version
-	//	dir := filepath.Join(bsp.basedir, current.Name, strconv.Itoa(int(current.Timestamp)))
-	//	backupFile, err := os.Create(dir)
-	//	if err != nil {
-	//		return
-	//	}
-	//
-	//	// backup since beginning of time
-	//	_, err = db.Backup(backupFile, 0)
-	//	if err != nil {
-	//		logrus.Error(err)
-	//		return
-	//	}
-	//
-	//	newversion, err := bsp.vm.NewVersion(name)
-	//	if err != nil {
-	//		logrus.Error(err)
-	//		return
-	//	}
-	//	logrus.Warning(newversion)
-
+	_tx := db.NewTransaction(true)
+	bsp.openTxns = append(bsp.openTxns, _tx)
 	tx = &BadgerGraph{
 		version:        newversion,
 		db:             db,
-		tx:             db.NewTransaction(true),
+		tx:             _tx,
+		idx:            len(bsp.openTxns) - 1,
+		l:              &bsp.l,
+		openTxns:       &bsp.openTxns,
 		readonly:       false,
 		backupLocation: filepath.Join(bsp.versionsDir, newversion.Name, strconv.Itoa(int(newversion.Timestamp))),
 		inverse:        make(map[turtle.URI]turtle.URI),
@@ -341,11 +310,10 @@ func (bsp *BadgerStorageProvider) OpenVersion(ver Version) (tx Transaction, err 
 		found      bool
 		backupFile *os.File
 	)
-	bsp.Lock()
-	defer bsp.Unlock()
+	bsp.l.Lock()
+	defer bsp.l.Unlock()
 	db, found = bsp.dbs[ver]
 	if !found {
-		logrus.Warning("Did not find open version ", ver)
 		backupFileLocation := filepath.Join(bsp.versionsDir, ver.Name, strconv.Itoa(int(ver.Timestamp)))
 		backupFile, err = os.Open(backupFileLocation)
 		defer backupFile.Close()
@@ -360,7 +328,7 @@ func (bsp *BadgerStorageProvider) OpenVersion(ver Version) (tx Transaction, err 
 		opts := badger.DefaultOptions
 		opts.Dir = newVersionFileLocation
 		opts.ValueDir = newVersionFileLocation
-		logrus.Warning("Opening ", ver, " at ", newVersionFileLocation)
+		logrus.Info("Opening ", ver, " at ", newVersionFileLocation)
 		if db, err = badger.Open(opts); err != nil {
 			return
 		}
@@ -369,15 +337,16 @@ func (bsp *BadgerStorageProvider) OpenVersion(ver Version) (tx Transaction, err 
 			return
 		}
 		bsp.dbs[ver] = db
-
-		//bsp.Unlock()
-	} else {
-		logrus.Warning("Found open version ", ver, ": ", db == nil)
 	}
+	_tx := db.NewTransaction(false)
+	bsp.openTxns = append(bsp.openTxns, _tx)
 	tx = &BadgerGraph{
 		version:  ver,
 		db:       db,
-		tx:       db.NewTransaction(false), // read-only
+		tx:       _tx,
+		idx:      len(bsp.openTxns) - 1,
+		l:        &bsp.l,
+		openTxns: &bsp.openTxns,
 		readonly: true,
 		inverse:  make(map[turtle.URI]turtle.URI),
 	}
@@ -395,6 +364,9 @@ type BadgerGraph struct {
 	version        Version
 	db             *badger.DB
 	tx             *badger.Txn
+	openTxns       *[]*badger.Txn
+	l              *sync.RWMutex
+	idx            int
 	readonly       bool
 	backupLocation string
 	inverse        map[turtle.URI]turtle.URI
@@ -524,8 +496,6 @@ func (bg *BadgerGraph) IterateAllEntities(f func(HashKey, Entity) bool) error {
 }
 
 func (bg *BadgerGraph) backup() error {
-	a, b := os.Stat(bg.backupLocation)
-	logrus.Warning("a ", a, "b ", b)
 	backupFile, err := os.Create(bg.backupLocation)
 	defer backupFile.Close()
 	if err != nil {
@@ -541,13 +511,11 @@ func (bg *BadgerGraph) backup() error {
 
 // Commit the transaction
 func (bg *BadgerGraph) Commit() error {
-	logrus.Warning("committing ", bg.version)
 	commitErr := bg.tx.Commit(nil)
 	if commitErr != nil {
 		return commitErr
 	}
 	if !bg.readonly {
-		logrus.Warning("backing up in commit")
 		err := bg.backup()
 		if err != nil {
 			return err
@@ -559,6 +527,10 @@ func (bg *BadgerGraph) Commit() error {
 // Release the transaction (read-only) or discard the transaction (rw)
 func (bg *BadgerGraph) Release() {
 	bg.tx.Discard()
+	(*bg.l).Lock()
+	defer (*bg.l).Unlock()
+	(*bg.openTxns)[bg.idx].Discard()
+	(*bg.openTxns) = append((*bg.openTxns)[:bg.idx], (*bg.openTxns)[bg.idx+1:]...)
 }
 
 // Version returns the current Version of the Transaction
@@ -646,9 +618,12 @@ func (bg *BadgerGraph) set(key, val []byte) error {
 	err := bg.tx.Set(key, val)
 	if err == badger.ErrTxnTooBig {
 		if err = bg.tx.Commit(nil); err != nil {
+			bg.tx.Discard()
 			return err
 		}
 		bg.tx = bg.db.NewTransaction(true)
+		(*bg.openTxns)[bg.idx].Discard()
+		(*bg.openTxns)[bg.idx] = bg.tx
 		return bg.set(key, val)
 	}
 	return err
