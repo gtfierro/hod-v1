@@ -734,7 +734,6 @@ func (tx *transaction) getObjectFromSubjectPred(subjectHash storage.HashKey, pat
 // Given a predicate, it returns pairs of (subject, object) that are connected by that relationship
 func (tx *transaction) getSubjectObjectFromPred(path []sparql.PathPattern) (soPair [][]storage.HashKey, err error) {
 	var pe storage.PredicateEntity
-	logrus.Debug(path[0])
 	pe, err = tx.getPredicateByURI(path[0].Predicate)
 	if err != nil {
 		err = errors.Wrapf(err, "Can't find predicate %v", path[0].Predicate)

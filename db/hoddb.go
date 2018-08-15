@@ -4,7 +4,7 @@ import (
 	"os"
 	"strings"
 	"sync"
-	//"time"
+	"time"
 
 	"github.com/gtfierro/hod/config"
 	query "github.com/gtfierro/hod/lang"
@@ -147,8 +147,10 @@ func (hod *HodDB) Close() error {
 func (hod *HodDB) RunQuery(q *sparql.Query) (result *QueryResult, rerr error) {
 
 	// assemble versions for each of the databases
+	totalQueryStart := time.Now()
 
 	// TODO: factor this out
+	findDatabasesStart := time.Now()
 	var targetGraphs []storage.Version
 	if q.From.AllDBs {
 		targetGraphs, rerr = hod.storage.Graphs()
@@ -184,7 +186,9 @@ func (hod *HodDB) RunQuery(q *sparql.Query) (result *QueryResult, rerr error) {
 
 		}
 	}
+	findDatabasesDur := time.Since(findDatabasesStart)
 
+	makeQueriesStart := time.Now()
 	// expand out the prefixes
 	q.IterTriples(func(triple sparql.Triple) sparql.Triple {
 		triple.Subject = hod.expand(triple.Subject)
@@ -218,6 +222,7 @@ func (hod *HodDB) RunQuery(q *sparql.Query) (result *QueryResult, rerr error) {
 	if len(queries) == 0 {
 		queries = append(queries, q)
 	}
+	makeQueriesDur := time.Since(makeQueriesStart)
 
 	result = new(QueryResult)
 	result.selectVars = q.Select.Vars
@@ -278,6 +283,11 @@ func (hod *HodDB) RunQuery(q *sparql.Query) (result *QueryResult, rerr error) {
 		}
 	}
 	result.fromRows(results, q.Select.Vars, true)
+	logrus.WithFields(logrus.Fields{
+		"total":       time.Since(totalQueryStart),
+		"findversion": findDatabasesDur,
+		"makequery":   makeQueriesDur,
+	}).Info("Query")
 	return
 }
 
