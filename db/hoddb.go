@@ -37,6 +37,7 @@ type HodDB struct {
 
 	// latest version
 	loaded_versions map[storage.Version]*transaction
+	versionCaches   map[storage.Version]*dbcache
 	sync.RWMutex
 }
 
@@ -46,6 +47,7 @@ func NewHodDB(cfg *config.Config) (*HodDB, error) {
 		cfg:             cfg,
 		namespaces:      make(map[string]string),
 		loaded_versions: make(map[storage.Version]*transaction),
+		versionCaches:   make(map[storage.Version]*dbcache),
 	}
 
 	hod.storage = &storage.BadgerStorageProvider{}

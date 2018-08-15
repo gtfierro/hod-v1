@@ -44,6 +44,7 @@ func (hod *HodDB) openTransaction(name string) (tx *transaction, err error) {
 		return
 	}
 	//hod.loaded_versions[tx.snapshot.Version()] = tx
+	hod.versionCaches[tx.snapshot.Version()] = tx.cache
 	logrus.Info("Using new version ", tx.snapshot.Version())
 	return
 }
@@ -70,9 +71,15 @@ func (hod *HodDB) openVersion(ver storage.Version) (tx *transaction, err error) 
 	tx = &transaction{
 		hashes:               make(map[turtle.URI]storage.HashKey),
 		inverseRelationships: make(map[storage.HashKey]storage.HashKey),
-		cache:                newCache(1),
+		//cache:                newCache(1),
 	}
 	tx.snapshot, err = hod.storage.OpenVersion(ver)
+	if cache, found := hod.versionCaches[ver]; found {
+		tx.cache = cache
+	} else {
+		tx.cache = newCache(1)
+		hod.versionCaches[ver] = tx.cache
+	}
 	//hod.loaded_versions[tx.snapshot.Version()] = tx
 	//logrus.Info("Using newer version ", tx.snapshot.Version())
 	return
