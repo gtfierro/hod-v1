@@ -46,14 +46,17 @@ rootLoop:
 	dg.plan = append(dg.plan, *next)
 
 	for len(dg.terms) > 0 {
-		for idx, term := range dg.terms {
+		var idx int
+		var term *queryTerm
+		for idx, term = range dg.terms {
 			if term.overlap(next) > 0 {
-				next = term
-				dg.plan = append(dg.plan, *next)
-				dg.terms = append(dg.terms[:idx], dg.terms[idx+1:]...)
 				break
 			}
 		}
+		next = term
+		dg.plan = append(dg.plan, *next)
+		dg.terms = append(dg.terms[:idx], dg.terms[idx+1:]...)
+
 	}
 	return dg
 }
