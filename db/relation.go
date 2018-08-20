@@ -31,7 +31,7 @@ func newRelation(vars []string) *relation {
 func (rel *relation) add1Value(key1 string, values *keymap) {
 	key1pos, found := rel.vars[key1]
 	if !found {
-		rel.vars[key1] = len(rel.vars) + 1
+		rel.vars[key1] = len(rel.vars)
 		key1pos = rel.vars[key1]
 		rel.multiindex[key1] = make(map[storage.HashKey]*roaring.Bitmap)
 	}
@@ -217,3 +217,15 @@ func (rel *relation) dumpRows(prefix string, ctx *queryContext) {
 //	s += "]"
 //	fmt.Println(s)
 //}
+
+func generateValues(numVars, numRows int) (ret [][]storage.HashKey) {
+	generator := storage.NewHashKeyGenerator(0)
+	for r := 0; r < numRows; r++ {
+		var row []storage.HashKey
+		for i := 0; i < numVars; i++ {
+			row = append(row, generator.GetKey())
+		}
+		ret = append(ret, row)
+	}
+	return ret
+}

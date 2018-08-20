@@ -321,6 +321,7 @@ func BenchmarkQueryPerformance1(b *testing.B) {
 }
 
 func BenchmarkINSERTPerformance1(b *testing.B) {
+	b.Skip()
 	cfg, err := config.ReadConfig("testhodconfig.yaml")
 	if err != nil {
 		b.Error(err)

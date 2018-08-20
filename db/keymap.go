@@ -1,6 +1,7 @@
 package db
 
 import (
+	"encoding/binary"
 	"github.com/gtfierro/hod/storage"
 )
 
@@ -14,40 +15,51 @@ func newKeymap() *keymap {
 	}
 }
 
-func (pt *keymap) Add(ent storage.HashKey) {
-	pt.m[ent] = struct{}{}
+func (km *keymap) Add(ent storage.HashKey) {
+	km.m[ent] = struct{}{}
 }
 
-func (pt *keymap) Has(ent storage.HashKey) bool {
-	_, found := pt.m[ent]
+func (km *keymap) Has(ent storage.HashKey) bool {
+	_, found := km.m[ent]
 	return found
 }
 
-func (pt *keymap) Len() int {
-	return len(pt.m)
+func (km *keymap) Len() int {
+	return len(km.m)
 }
 
-func (pt *keymap) Iter(iter func(ent storage.HashKey)) {
-	for k := range pt.m {
+func (km *keymap) Iter(iter func(ent storage.HashKey)) {
+	for k := range km.m {
 		iter(k)
 	}
 }
 
-func (pt *keymap) Delete(k storage.HashKey) {
-	delete(pt.m, k)
+func (km *keymap) Delete(k storage.HashKey) {
+	delete(km.m, k)
 }
 
-func (pt *keymap) DeleteMax() storage.HashKey {
-	max := pt.Max()
-	delete(pt.m, max)
+func (km *keymap) DeleteMax() storage.HashKey {
+	max := km.Max()
+	delete(km.m, max)
 	return max
 }
 
-func (pt *keymap) Max() storage.HashKey {
+func (km *keymap) Max() storage.HashKey {
 	var max storage.HashKey
-	for k := range pt.m {
-		max = k
-		break
+	for k := range km.m {
+		if max.LessThan(k) {
+			max = k
+		}
 	}
 	return max
+}
+
+func generateKeyMap(num, offset int) *keymap {
+	km := newKeymap()
+	for i := 0; i < num; i++ {
+		var key storage.HashKey
+		binary.LittleEndian.PutUint32(key[len(key)-4:], uint32(offset+i))
+		km.Add(key)
+	}
+	return km
 }
