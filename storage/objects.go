@@ -93,6 +93,26 @@ func (hk HashKey) LessThan(other HashKey) bool {
 	return binary.LittleEndian.Uint32(hk[4:]) < binary.LittleEndian.Uint32(other[4:])
 }
 
+type HashKeyGenerator struct {
+	num uint32
+	pfx uint32
+}
+
+func NewHashKeyGenerator(prefix uint32) *HashKeyGenerator {
+	return &HashKeyGenerator{
+		num: 0,
+		pfx: prefix,
+	}
+}
+
+func (gen *HashKeyGenerator) GetKey() HashKey {
+	var key HashKey
+	gen.num++
+	binary.LittleEndian.PutUint32(key[:], gen.pfx)
+	binary.LittleEndian.PutUint32(key[len(key)-4:], gen.num)
+	return key
+}
+
 /*
  ******************************
  * Bytes Entity
