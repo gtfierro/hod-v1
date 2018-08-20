@@ -20,11 +20,12 @@ var rowPool = sync.Pool{
 }
 
 func newRelationRow() *relationRow {
-	return rowPool.Get().(*relationRow)
+	row := rowPool.Get().(*relationRow)
+	row.content = row.content[:0]
+	return row
 }
 
 func (row *relationRow) release() {
-	row.content = row.content[:0]
 	rowPool.Put(row)
 }
 

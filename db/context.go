@@ -181,9 +181,7 @@ rowIter:
 }
 
 func (ctx *queryContext) release() {
-	for _, row := range ctx.rel.rows {
-		row.release()
-	}
+	ctx.rel.done()
 	for _, row := range ctx.rows {
 		finishResultRow(row)
 	}

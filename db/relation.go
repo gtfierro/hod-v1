@@ -28,6 +28,12 @@ func newRelation(vars []string) *relation {
 	return rel
 }
 
+func (rel *relation) done() {
+	for _, row := range rel.rows {
+		row.release()
+	}
+}
+
 func (rel *relation) add1Value(key1 string, values *keymap) {
 	key1pos, found := rel.vars[key1]
 	if !found {
@@ -81,7 +87,7 @@ func (rel *relation) add2Values(key1, key2 string, values [][]storage.HashKey) {
 		bitmap2 := rel.multiindex[key2][valuepair[1]]
 
 		// if the bitmaps are all non-nil, and the intersection is non-nil, then the value pair exists already
-		if bitmap1 != nil && bitmap2 != nil && !roaring.FastAnd(bitmap1, bitmap2).IsEmpty() {
+		if bitmap1 != nil && bitmap2 != nil && !roaring.And(bitmap1, bitmap2).IsEmpty() {
 			continue
 		}
 

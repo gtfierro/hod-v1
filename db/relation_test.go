@@ -87,21 +87,21 @@ func TestRelationJoin1ValueNoIntersection(t *testing.T) {
 }
 
 func BenchmarkRelationAdd1Value(b *testing.B) {
-	rel1 := newRelation([]string{"var1"})
 	var1Vals := generateKeyMap(5, 1)
 	b.ResetTimer()
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
+		rel1 := newRelation([]string{"var1"})
 		rel1.add1Value("var1", var1Vals)
 	}
 }
 
 func BenchmarkRelationAdd2Value(b *testing.B) {
-	rel2 := newRelation([]string{"var1", "var2"})
 	rel2vals := generateValues(2, 10)
 	b.ResetTimer()
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
+		rel2 := newRelation([]string{"var1", "var2"})
 		rel2.add2Values("var1", "var2", rel2vals)
 	}
 }
