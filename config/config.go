@@ -21,6 +21,8 @@ type Config struct {
 	// ontologies to load
 	Ontologies []string
 
+	StorageEngine string
+
 	EnableHTTP     bool
 	EnableBOSSWAVE bool
 
@@ -61,6 +63,7 @@ func (cfg *Config) Copy() *Config {
 		ShowOperationLatencies: cfg.ShowOperationLatencies,
 		ShowQueryLatencies:     cfg.ShowQueryLatencies,
 		LogLevel:               cfg.LogLevel,
+		StorageEngine:          cfg.StorageEngine,
 	}
 }
 
@@ -85,6 +88,7 @@ func init() {
 		prefix + "/src/github.com/gtfierro/hod/BrickUse.ttl",
 		prefix + "/src/github.com/gtfierro/hod/BrickTag.ttl",
 	})
+	viper.SetDefault("StorageEngine", "badger")
 
 	viper.SetDefault("EnableHTTP", true)
 	viper.SetDefault("EnableBOSSWAVE", false)
@@ -138,6 +142,7 @@ func ReadConfig(file string) (*Config, error) {
 		DisableQueryCache:      viper.GetBool("DisableQueryCache"),
 		Buildings:              viper.GetStringMapString("Buildings"),
 		Ontologies:             viper.GetStringSlice("Ontologies"),
+		StorageEngine:          viper.GetString("StorageEngine"),
 		ShowNamespaces:         viper.GetBool("ShowNamespaces"),
 		ShowDependencyGraph:    viper.GetBool("ShowDependencyGraph"),
 		ShowQueryPlan:          viper.GetBool("ShowQueryPlan"),
