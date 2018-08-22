@@ -47,7 +47,15 @@ func NewHodDB(cfg *config.Config) (*HodDB, error) {
 		versionCaches: make(map[storage.Version]*dbcache),
 	}
 
-	hod.storage = &storage.BadgerStorageProvider{}
+	switch cfg.StorageEngine {
+	case "memory":
+		hod.storage = &storage.MemoryStorageProvider{}
+	case "badger":
+		fallthrough
+	default:
+		hod.storage = &storage.BadgerStorageProvider{}
+	}
+
 	if err := hod.storage.Initialize(cfg); err != nil {
 		return nil, err
 	}
@@ -134,8 +142,8 @@ func (hod *HodDB) loadFiles(loadreq graphLoadParams) error {
 }
 
 // Close safely closes all of the underlying storage used by HodDB
-func (hod *HodDB) Close() error {
-	return hod.storage.Close()
+func (hod *HodDB) Close() {
+	hod.storage.Close()
 }
 
 // RunQuery executes a parsed query against HodDB. This is helpful if you want to avoid
