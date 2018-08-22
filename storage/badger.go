@@ -610,6 +610,7 @@ func (bg *BadgerGraph) PutPredicate(ent PredicateEntity) error {
 // PutReversePredicate stores the two URIs as inverses of each other
 func (bg *BadgerGraph) PutReversePredicate(uri, inverse turtle.URI) error {
 	bg.inverse[uri] = inverse
+	bg.inverse[inverse] = uri
 	return nil
 }
 
