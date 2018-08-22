@@ -98,6 +98,12 @@ EnableHTTP: false`, "gentrip1", path)
 	require.NoError(err)
 	require.Equal(0, len(result.Rows))
 
+	//TODO: make ListVersions top-level api call
+	versions, err := db.storage.ListVersions("gentrip1")
+	require.NoError(err)
+	//TODO: why is this 2?
+	require.Equal(2, len(versions))
+
 	// insert
 	_, err = db.RunQueryString("INSERT { ?r rdf:type brick:INSERTED } WHERE { ?r rdf:type brick:Room };")
 	require.NoError(err)
@@ -109,4 +115,9 @@ EnableHTTP: false`, "gentrip1", path)
 	result, err = db.RunQueryString("SELECT ?r WHERE { ?r rdf:type brick:AHU };")
 	require.NoError(err)
 	require.Equal(3, len(result.Rows))
+
+	versions, err = db.storage.ListVersions("gentrip1")
+	require.NoError(err)
+	fmt.Println(versions)
+	require.Equal(3, len(versions))
 }
