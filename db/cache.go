@@ -29,7 +29,7 @@ func newCache(maxsize int) *dbcache {
 		entityIndexCache:  make(map[storage.HashKey]storage.EntityExtendedIndex),
 		uriCache:          make(map[storage.HashKey]turtle.URI),
 		predCache:         make(map[storage.HashKey]storage.PredicateEntity),
-		pendingEvict:      make(chan storage.HashKey, 1e6),
+		pendingEvict:      make(chan storage.HashKey, 10),
 	}
 
 	//var timer = time.NewTimer(5 * time.Second)
