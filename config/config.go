@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
+	"strings"
 
 	"github.com/op/go-logging"
 	"github.com/spf13/viper"
@@ -125,6 +126,48 @@ func ReadConfig(file string) (*Config, error) {
 		viper.SetConfigFile(file)
 	}
 	if err := viper.ReadInConfig(); err != nil {
+		return nil, err
+	}
+	viper.AutomaticEnv()
+
+	level, err := logging.LogLevel(viper.GetString("LogLevel"))
+	if err != nil {
+		level = logging.DEBUG
+	}
+
+	c := &Config{
+		DBPath:                 viper.GetString("DBPath"),
+		ReloadOntologies:       viper.GetBool("ReloadOntologies"),
+		EnableHTTP:             viper.GetBool("EnableHTTP"),
+		EnableBOSSWAVE:         viper.GetBool("EnableBOSSWAVE"),
+		DisableQueryCache:      viper.GetBool("DisableQueryCache"),
+		Buildings:              viper.GetStringMapString("Buildings"),
+		Ontologies:             viper.GetStringSlice("Ontologies"),
+		StorageEngine:          viper.GetString("StorageEngine"),
+		ShowNamespaces:         viper.GetBool("ShowNamespaces"),
+		ShowDependencyGraph:    viper.GetBool("ShowDependencyGraph"),
+		ShowQueryPlan:          viper.GetBool("ShowQueryPlan"),
+		ShowQueryPlanLatencies: viper.GetBool("ShowQueryPlanLatencies"),
+		ShowOperationLatencies: viper.GetBool("ShowOperationLatencies"),
+		ShowQueryLatencies:     viper.GetBool("ShowQueryLatencies"),
+		LogLevel:               level,
+		ServerPort:             viper.GetString("ServerPort"),
+		UseIPv6:                viper.GetBool("UseIPv6"),
+		ListenAddress:          viper.GetString("ListenAddress"),
+		StaticPath:             viper.GetString("StaticPath"),
+		TLSHost:                viper.GetString("TLSHost"),
+		BW2_AGENT:              viper.GetString("BW2_AGENT"),
+		BW2_DEFAULT_ENTITY:     viper.GetString("BW2_DEFAULT_ENTITY"),
+		HodURI:                 viper.GetString("HodURI"),
+		EnableCPUProfile:       viper.GetBool("EnableCPUProfile"),
+		EnableMEMProfile:       viper.GetBool("EnableMEMProfile"),
+		EnableBlockProfile:     viper.GetBool("EnableBlockProfile"),
+	}
+	return c, nil
+}
+
+func ReadConfigFromString(configString string) (*Config, error) {
+	if err := viper.ReadConfig(strings.NewReader(configString)); err != nil {
 		return nil, err
 	}
 	viper.AutomaticEnv()
