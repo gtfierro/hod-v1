@@ -281,13 +281,13 @@ var productionsTable = ProdTab{
 		},
 	},
 	ProdTabEntry{
-		String: `DatasetClauseInsert : empty	<< ast.NewAllSelectClause() >>`,
+		String: `DatasetClauseInsert : empty	<< ast.NewAllFromClause() >>`,
 		Id:         "DatasetClauseInsert",
 		NTType:     13,
 		Index:      26,
 		NumSymbols: 0,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
-			return ast.NewAllSelectClause()
+			return ast.NewAllFromClause()
 		},
 	},
 	ProdTabEntry{

@@ -6,7 +6,7 @@ import (
 	"bytes"
 	"fmt"
 
-	"github.com/gtfierro/hod/lang/token"
+	"home/gabe/src/hod/lang/token"
 )
 
 type ErrorSymbol interface {

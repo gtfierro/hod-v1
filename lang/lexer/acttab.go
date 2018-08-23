@@ -5,7 +5,7 @@ package lexer
 import (
 	"fmt"
 
-	"github.com/gtfierro/hod/lang/token"
+	"home/gabe/src/hod/lang/token"
 )
 
 type ActionTable [NumStates]ActionRow

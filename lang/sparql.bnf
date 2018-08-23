@@ -75,7 +75,7 @@ DatasetClause
 DatasetClauseInsert
     : "TO" DBlist << ast.NewFromClause($1) >>
     | "TO" "*" << ast.NewAllFromClause() >>
-    | empty << ast.NewAllSelectClause() >>
+    | empty << ast.NewAllFromClause() >>
     ;
 
 TimeClause

@@ -6,8 +6,8 @@ import (
 	"bytes"
 	"fmt"
 
-	parseError "github.com/gtfierro/hod/lang/errors"
-	"github.com/gtfierro/hod/lang/token"
+	parseError "home/gabe/src/hod/lang/errors"
+	"home/gabe/src/hod/lang/token"
 )
 
 const (
