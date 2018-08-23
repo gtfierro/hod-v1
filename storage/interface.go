@@ -113,6 +113,8 @@ type Entity interface {
 	Bytes() []byte
 	// initializes this Enttity object from a serialized form
 	FromBytes([]byte) error
+	// copies the object
+	Copy() Entity
 	// add incoming predicate, subject. Returns false if already exists
 	AddInEdge(predicate, endpoint HashKey) bool
 	// add outgoing predicate, object. Returns false if already exists
@@ -133,6 +135,8 @@ type PredicateEntity interface {
 	Bytes() []byte
 	// initializes this PredicateEntity object from its serialized form
 	FromBytes([]byte) error
+	// copies the object
+	Copy() PredicateEntity
 	// add subject/object pair that uses this predicate. Returns false if already exists
 	AddSubjectObject(subject, object HashKey) bool
 	// list all objects for this predicate with the given subject
@@ -153,6 +157,8 @@ type EntityExtendedIndex interface {
 	Bytes() []byte
 	// initializes this ExtendedIndex object from its serialized form
 	FromBytes([]byte) error
+	// copies the object
+	Copy() EntityExtendedIndex
 	// add 1+ predicate edge to this entity (from subject)
 	AddInPlusEdge(predicate, endpoint HashKey) bool
 	// add 1+ predicate edge to this entity (to object)

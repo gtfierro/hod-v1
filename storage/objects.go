@@ -151,6 +151,19 @@ func (e *BytesEntity) FromBytes(b []byte) error {
 	return err
 }
 
+func (e *BytesEntity) Copy() Entity {
+	e2 := NewEntity(e.Key())
+	for k, v := range e.InEdges {
+		e2.InEdges[k] = make([]HashKey, len(v))
+		copy(e2.InEdges[k], v)
+	}
+	for k, v := range e.OutEdges {
+		e2.OutEdges[k] = make([]HashKey, len(v))
+		copy(e2.OutEdges[k], v)
+	}
+	return e2
+}
+
 // returns true if we added an endpoint; false if it was already there
 func (e *BytesEntity) AddInEdge(predicate, endpoint HashKey) bool {
 	var (
@@ -262,6 +275,23 @@ func (e *BytesPredicateEntity) FromBytes(b []byte) error {
 	return err
 }
 
+func (e *BytesPredicateEntity) Copy() PredicateEntity {
+	e2 := NewPredicateEntity(e.Key())
+	for k, v := range e.Subjects {
+		e2.Subjects[k] = make(map[string]uint32)
+		for vk, vv := range v {
+			e2.Subjects[k][vk] = vv
+		}
+	}
+	for k, v := range e.Objects {
+		e2.Objects[k] = make(map[string]uint32)
+		for vk, vv := range v {
+			e2.Objects[k][vk] = vv
+		}
+	}
+	return e2
+}
+
 // adds subject/object to Predicate index entry. Returns true if this changed the entity
 func (e *BytesPredicateEntity) AddSubjectObject(subject, object HashKey) bool {
 	changed := false
@@ -366,6 +396,19 @@ func (e *BytesEntityExtendedIndex) Bytes() []byte {
 func (e *BytesEntityExtendedIndex) FromBytes(b []byte) error {
 	_, err := e.UnmarshalMsg(b)
 	return err
+}
+
+func (e *BytesEntityExtendedIndex) Copy() EntityExtendedIndex {
+	e2 := NewEntityExtendedIndex(e.Key())
+	for k, v := range e.InPlusEdges {
+		e2.InPlusEdges[k] = make([]HashKey, len(v))
+		copy(e2.InPlusEdges[k], v)
+	}
+	for k, v := range e.OutPlusEdges {
+		e2.OutPlusEdges[k] = make([]HashKey, len(v))
+		copy(e2.OutPlusEdges[k], v)
+	}
+	return e2
 }
 
 // returns true if we added an endpoint; false if it was already there
