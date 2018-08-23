@@ -156,40 +156,52 @@ func (hod *HodDB) RunQuery(q *sparql.Query) (result *QueryResult, rerr error) {
 	// TODO: factor this out
 	findDatabasesStart := time.Now()
 	var targetGraphs []storage.Version
+	var names []string
 	if q.From.AllDBs {
-		targetGraphs, rerr = hod.storage.Graphs()
-		if rerr != nil {
+		_allgraphs, err := hod.storage.Graphs()
+		if err != nil {
+			rerr = err
 			return
 		}
-	} else {
-		for _, dbname := range q.From.Databases {
-			if q.IsInsert() {
-				versions, err := hod.storage.ListVersions(dbname)
-				if err != nil {
-					rerr = err
-					return
-				}
-				targetGraphs = append(targetGraphs, versions[len(versions)-1])
-			} else {
-				var version storage.Version
-				var err error
-				switch q.Time.Filter {
-				case sparql.AT:
-					version, err = hod.storage.VersionAt(dbname, q.Time.Timestamp)
-				case sparql.BEFORE:
-					version, err = hod.storage.VersionBefore(dbname, q.Time.Timestamp)
-				case sparql.AFTER:
-					version, err = hod.storage.VersionAfter(dbname, q.Time.Timestamp)
-				}
-				if err != nil {
-					rerr = err
-					return
-				}
-				targetGraphs = append(targetGraphs, version)
-			}
-
+		_n := make(map[string]struct{})
+		for _, ag := range _allgraphs {
+			_n[ag.Name] = struct{}{}
 		}
+		for n := range _n {
+			names = append(names, n)
+		}
+	} else {
+		names = q.From.Databases
 	}
+
+	for _, dbname := range names {
+		if q.IsInsert() {
+			versions, err := hod.storage.ListVersions(dbname)
+			if err != nil {
+				rerr = err
+				return
+			}
+			targetGraphs = append(targetGraphs, versions[len(versions)-1])
+		} else {
+			var version storage.Version
+			var err error
+			switch q.Time.Filter {
+			case sparql.AT:
+				version, err = hod.storage.VersionAt(dbname, q.Time.Timestamp)
+			case sparql.BEFORE:
+				version, err = hod.storage.VersionBefore(dbname, q.Time.Timestamp)
+			case sparql.AFTER:
+				version, err = hod.storage.VersionAfter(dbname, q.Time.Timestamp)
+			}
+			if err != nil {
+				rerr = err
+				return
+			}
+			targetGraphs = append(targetGraphs, version)
+		}
+
+	}
+	//}
 	findDatabasesDur := time.Since(findDatabasesStart)
 
 	makeQueriesStart := time.Now()
@@ -248,11 +260,7 @@ func (hod *HodDB) RunQuery(q *sparql.Query) (result *QueryResult, rerr error) {
 		for _, g := range targetGraphs {
 			logrus.Info("Run query against> ", g)
 			var tx *transaction
-			if parsedQuery.IsInsert() {
-				tx, err = hod.openTransaction(g.Name)
-			} else {
-				tx, err = hod.openVersion(g)
-			}
+			tx, err = hod.openVersion(g)
 
 			//defer tx.discard()
 			if err != nil {
