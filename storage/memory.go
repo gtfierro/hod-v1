@@ -61,21 +61,21 @@ func (msp *MemoryStorageProvider) AddGraph(name string) (version Version, exists
 	msp.Lock()
 	defer msp.Unlock()
 	current, err := msp.CurrentVersion(name)
-	if err != nil {
-		logrus.Error("// ", err)
-		return
-	}
-	_, found := msp.versions[current]
-	if current.Empty() || !found {
-		//create new version bc doesn't exist
-		newversion, verr := msp.vm.NewVersion(name)
-		if verr != nil {
-			err = verr
-			return
-		}
-		msp.versions[newversion] = nil // TODO: copy memorygraph
-		return newversion, false, nil
-	}
+	//if err != nil {
+	//	logrus.Error("// ", err)
+	//	return
+	//}
+	//_, found := msp.versions[current]
+	//if current.Empty() || !found {
+	//	//create new version bc doesn't exist
+	//	newversion, verr := msp.vm.NewVersion(name)
+	//	if verr != nil {
+	//		err = verr
+	//		return
+	//	}
+	//	msp.versions[newversion] = nil // TODO: copy memorygraph
+	//	return newversion, false, nil
+	//}
 	return current, true, nil
 }
 
@@ -85,24 +85,19 @@ func (msp *MemoryStorageProvider) CreateVersion(name string) (tx Transaction, er
 	msp.Lock()
 	defer msp.Unlock()
 	var (
-		db    *MemoryGraph
-		found bool
+		db *MemoryGraph
 	)
 	current, err := msp.CurrentVersion(name)
 	if err != nil {
 		return nil, err
 	}
-	if db, found = msp.versions[current]; !found {
-		return nil, ErrGraphNotFound
-	}
-
+	db = msp.versions[current]
 	newversion, err := msp.vm.NewVersion(name)
 	if err != nil {
 		logrus.Error(errors.Wrap(err, "could not create new version"))
 		return
 	}
 	msp.versions[newversion] = newMemoryGraph(db, newversion, false)
-	logrus.Info("newversion ", newversion)
 
 	return msp.versions[newversion], nil
 }
@@ -192,16 +187,16 @@ func newMemoryGraph(from *MemoryGraph, version Version, readonly bool) *MemoryGr
 			newm.entityHash[k] = v
 		}
 		for k, v := range from.entityObject {
-			newm.entityObject[k] = v
+			newm.entityObject[k] = v.Copy()
 		}
 		for k, v := range from.entityIndex {
-			newm.entityIndex[k] = v
+			newm.entityIndex[k] = v.Copy()
 		}
 		for k, v := range from.uri {
 			newm.uri[k] = v
 		}
 		for k, v := range from.pred {
-			newm.pred[k] = v
+			newm.pred[k] = v.Copy()
 		}
 	}
 
