@@ -359,6 +359,10 @@ func (bsp *BadgerStorageProvider) ListVersions(name string) (versions []Version,
 	return bsp.vm.ListVersions(name)
 }
 
+func (bsp *BadgerStorageProvider) Names() ([]string, error) {
+	return bsp.vm.Names()
+}
+
 // BadgerGraph is a badger transaction representing a Version of a Brick graph
 type BadgerGraph struct {
 	version        Version

@@ -56,6 +56,9 @@ type StorageProvider interface {
 	// list all stored versions
 	Graphs() ([]Version, error)
 
+	// list all names of graphs
+	Names() ([]string, error)
+
 	// return the set of saved abbreviation -> namespace URI mappings
 	GetNamespaces() (mapping map[string]string, err error)
 

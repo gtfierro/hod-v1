@@ -13,6 +13,7 @@ import (
 type VersionManager struct {
 	db             *sql.DB
 	select_version *sql.Stmt
+	name_query     *sql.Stmt
 	select_before  *sql.Stmt
 	select_after   *sql.Stmt
 	get_versions   *sql.Stmt
@@ -39,6 +40,11 @@ func CreateVersionManager(dir string) (*VersionManager, error) {
 		return nil, err
 	}
 
+	name_query, err := db.Prepare("select distinct(name) from versions;")
+	if err != nil {
+		return nil, err
+	}
+
 	prepared_before, err := db.Prepare("select version, name from versions where name = ? and version < ? order by version desc limit 2;")
 	if err != nil {
 		return nil, err
@@ -57,6 +63,7 @@ func CreateVersionManager(dir string) (*VersionManager, error) {
 	return &VersionManager{
 		db:             db,
 		select_version: prepared,
+		name_query:     name_query,
 		select_before:  prepared_before,
 		select_after:   prepared_after,
 		get_versions:   prepared_listall,
@@ -125,6 +132,25 @@ func (vm *VersionManager) AddVersion(v Version) (err error) {
 		return
 	}
 	return
+}
+
+// returns the names of all graphs that have at least 1 version
+func (vm *VersionManager) Names() ([]string, error) {
+	rows, err := vm.name_query.Query()
+	defer rows.Close()
+	if err != nil {
+		return nil, err
+	}
+	var names []string
+	for rows.Next() {
+		var n string
+		if err = rows.Scan(&n); err != nil {
+			return names, err
+		}
+		names = append(names, n)
+	}
+	return names, nil
+
 }
 
 func (vm *VersionManager) Graphs() ([]Version, error) {

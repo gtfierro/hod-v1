@@ -120,6 +120,10 @@ func (msp *MemoryStorageProvider) ListVersions(name string) ([]Version, error) {
 	return msp.vm.ListVersions(name)
 }
 
+func (msp *MemoryStorageProvider) Names() ([]string, error) {
+	return msp.vm.Names()
+}
+
 // returns the latest version of the given graph
 func (msp *MemoryStorageProvider) CurrentVersion(name string) (Version, error) {
 	return msp.vm.GetLatestVersion(name)
