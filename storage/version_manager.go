@@ -2,6 +2,7 @@ package storage
 
 import (
 	"database/sql"
+	"github.com/pkg/errors"
 	// import sqlite driver
 	_ "github.com/mattn/go-sqlite3"
 	logrus "github.com/sirupsen/logrus"
@@ -159,14 +160,18 @@ func (vm *VersionManager) GetVersionAt(name string, t time.Time) (version Versio
 func (vm *VersionManager) GetVersionBefore(name string, t time.Time) (version Version, err error) {
 	rows, err := vm.select_before.Query(name, t.UnixNano())
 	if err != nil {
+		err = errors.Wrap(err, "no query")
 		return
 	}
+	version = Version{Name: name}
 	defer rows.Close()
 	// current version
-	rows.Next()
-	err = rows.Scan(&version.Timestamp, &version.Name)
-	if err != nil {
-		return
+	if rows.Next() {
+		err = rows.Scan(&version.Timestamp, &version.Name)
+		if err != nil {
+			err = errors.Wrap(err, "scan here")
+			return
+		}
 	}
 	// version before if exists
 	if rows.Next() {
