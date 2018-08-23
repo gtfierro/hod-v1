@@ -65,9 +65,7 @@ func TestGenerateTriples(t *testing.T) {
 
 	cfgStr := fmt.Sprintf(`Buildings:
     %s: %s
-Ontologies:
-    - testbuildings/BrickFrame.ttl
-    - testbuildings/Brick.ttl
+Ontologies: []
 StorageEngine: memory
 ReloadOntologies: false
 DisableQueryCache: true
@@ -86,6 +84,11 @@ EnableHTTP: false`, "gentrip1", path)
 	defer db.Close()
 	require.NoError(err)
 
+	//TODO: make ListVersions top-level api call
+	versions, err := db.storage.ListVersions("gentrip1")
+	require.NoError(err)
+	require.Equal(1, len(versions))
+
 	result, err := db.RunQueryString("SELECT ?r WHERE { ?r rdf:type brick:Room };")
 	require.NoError(err)
 	require.Equal(1, len(result.Rows))
@@ -98,26 +101,30 @@ EnableHTTP: false`, "gentrip1", path)
 	require.NoError(err)
 	require.Equal(0, len(result.Rows))
 
-	//TODO: make ListVersions top-level api call
-	versions, err := db.storage.ListVersions("gentrip1")
-	require.NoError(err)
-	//TODO: why is this 2?
-	require.Equal(2, len(versions))
-
 	// insert
 	_, err = db.RunQueryString("INSERT { ?r rdf:type brick:INSERTED } WHERE { ?r rdf:type brick:Room };")
 	require.NoError(err)
+
+	versions, err = db.storage.ListVersions("gentrip1")
+	require.NoError(err)
+	require.Equal(2, len(versions))
 
 	// query new version
 	result, err = db.RunQueryString("SELECT ?r WHERE { ?r rdf:type brick:INSERTED };")
 	require.NoError(err)
 	require.Equal(1, len(result.Rows))
+
 	result, err = db.RunQueryString("SELECT ?r WHERE { ?r rdf:type brick:AHU };")
 	require.NoError(err)
 	require.Equal(3, len(result.Rows))
 
-	versions, err = db.storage.ListVersions("gentrip1")
+	result, err = db.RunQueryString(fmt.Sprintf("SELECT ?r WHERE { ?r rdf:type brick:INSERTED } BEFORE %d;", versions[1].Timestamp))
 	require.NoError(err)
-	fmt.Println(versions)
-	require.Equal(3, len(versions))
+	require.Equal(0, len(result.Rows))
+
+	result, err = db.RunQueryString("SELECT ?r WHERE { ?r rdf:type brick:INSERTED } BEFORE now;")
+	require.NoError(err)
+	result.Dump()
+	require.Equal(0, len(result.Rows))
+
 }
