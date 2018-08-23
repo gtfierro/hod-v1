@@ -177,11 +177,19 @@ EnableHTTP: false`, "gentrip1", path)
 	result.Dump()
 	require.Equal(0, len(result.Rows))
 
-	// insert no where
-	_, err = db.RunQueryString("INSERT { bldg:a rdf:type brick:Sensor . bldg:b rdf:type brick:Sensor } WHERE { ?r rdf:type brick:Room };")
+	// insert empty where
+	_, err = db.RunQueryString("INSERT { bldg:a rdf:type brick:Sensor . bldg:b rdf:type brick:Sensor } WHERE {};")
 	require.NoError(err)
 
 	result, err = db.RunQueryString("SELECT ?r WHERE { ?r rdf:type brick:Sensor };")
 	require.NoError(err)
 	require.Equal(2, len(result.Rows))
+
+	// insert empty where
+	_, err = db.RunQueryString("INSERT { bldg:c rdf:type brick:Sensor . bldg:d rdf:type brick:Sensor };")
+	require.NoError(err)
+
+	result, err = db.RunQueryString("SELECT ?r WHERE { ?r rdf:type brick:Sensor };")
+	require.NoError(err)
+	require.Equal(4, len(result.Rows))
 }
