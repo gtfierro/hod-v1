@@ -31,7 +31,7 @@ func generateTriples(spec map[string]int) (triples []turtle.Triple) {
 func triplesToFile(name string, triples []turtle.Triple) (path string, err error) {
 	fileContents := `
 @prefix bf: <https://brickschema.org/schema/1.0.3/BrickFrame#> .
-@prefix bldg: <http://buildsys.org/ontologies/building_example#> .
+@prefix bldg: <http://buildsys.org/ontologies/generated#> .
 @prefix brick: <https://brickschema.org/schema/1.0.3/Brick#> .
 @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
@@ -177,4 +177,11 @@ EnableHTTP: false`, "gentrip1", path)
 	result.Dump()
 	require.Equal(0, len(result.Rows))
 
+	// insert no where
+	_, err = db.RunQueryString("INSERT { bldg:a rdf:type brick:Sensor . bldg:b rdf:type brick:Sensor } WHERE { ?r rdf:type brick:Room };")
+	require.NoError(err)
+
+	result, err = db.RunQueryString("SELECT ?r WHERE { ?r rdf:type brick:Sensor };")
+	require.NoError(err)
+	require.Equal(2, len(result.Rows))
 }
