@@ -26,21 +26,16 @@ QueryUnit
 
 SelectQuery
     : SelectClause DatasetClause WhereClause TimeClause << ast.NewQueryMulti($0, $1, $2, $3, false) >>
-    | SelectClause WhereClause  TimeClause  << ast.NewQuery($0, $1, $2, false) >>
     | SelectClause DatasetClause WhereClause << ast.NewQueryMulti($0, $1, $2, nil, false) >>
-    | SelectClause WhereClause  << ast.NewQuery($0, $1, nil, false) >>
     ;
 
 CountQuery
     : CountClause DatasetClause WhereClause TimeClause << ast.NewQueryMulti($0, $1, $2, $3, true) >>
-    | CountClause WhereClause  TimeClause << ast.NewQuery($0, $1, $2, true) >>
     | CountClause DatasetClause WhereClause << ast.NewQueryMulti($0, $1, $2, nil, true) >>
-    | CountClause WhereClause  << ast.NewQuery($0, $1, nil, true) >>
     ;
 
 UpdateQuery
-    : InsertClause DatasetClause WhereClause << ast.NewInsertQueryMulti($0, $1, $2, false) >>
-    | InsertClause WhereClause << ast.NewInsertQuery($0, $1, false) >>
+    : InsertClause DatasetClauseInsert WhereClause << ast.NewInsertQueryMulti($0, $1, $2, false) >>
     ;
 
 SelectClause
@@ -74,6 +69,13 @@ Var : var << ast.ParseString($0) >> ;
 DatasetClause
     : "FROM" DBlist << ast.NewFromClause($1) >>
     | "FROM" "*" << ast.NewAllFromClause() >>
+    | empty << ast.NewAllSelectClause() >>
+    ;
+
+DatasetClauseInsert
+    : "TO" DBlist << ast.NewFromClause($1) >>
+    | "TO" "*" << ast.NewAllFromClause() >>
+    | empty << ast.NewAllSelectClause() >>
     ;
 
 TimeClause
@@ -89,6 +91,7 @@ WhereClause
     | "WHERE" "{" TriplesBlock RestOfWhereList "}"  << ast.NewWhereClauseWithGraphGroup($2, $3) >>
     | "WHERE" "{" TriplesBlock "." RestOfWhereList "}"  << ast.NewWhereClauseWithGraphGroup($2, $4) >>
     | "WHERE" "{" RestOfWhereList "}"               << ast.NewWhereClauseGraphGroup($2) >>
+    | empty << ast.NewWhereClause([]ast.Triple{}) >>
     ;
 
 TriplesBlock
