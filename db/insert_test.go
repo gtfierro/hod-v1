@@ -51,7 +51,17 @@ func triplesToFile(name string, triples []turtle.Triple) (path string, err error
 	return f.Name(), nil
 }
 
-func TestGenerateTriples(t *testing.T) {
+func TestGenerateTriplesAndLoad(t *testing.T) {
+	require := require.New(t)
+
+	triples := generateTriples(map[string]int{
+		"Room": 1,
+		"AHU":  3,
+	})
+	require.Equal(4, len(triples))
+}
+
+func TestIngestGenerateTriples(t *testing.T) {
 	require := require.New(t)
 
 	triples := generateTriples(map[string]int{
@@ -96,8 +106,48 @@ EnableHTTP: false`, "gentrip1", path)
 	result, err = db.RunQueryString("SELECT ?r WHERE { ?r rdf:type brick:AHU };")
 	require.NoError(err)
 	require.Equal(3, len(result.Rows))
+}
 
-	result, err = db.RunQueryString("SELECT ?r WHERE { ?r rdf:type brick:INSERTED };")
+func TestGenerateTriplesInsert(t *testing.T) {
+	require := require.New(t)
+
+	triples := generateTriples(map[string]int{
+		"Room": 1,
+		"AHU":  3,
+	})
+	require.Equal(4, len(triples))
+
+	path, err := triplesToFile("gentrip1", triples)
+	require.NoError(err)
+	defer os.Remove(path)
+
+	cfgStr := fmt.Sprintf(`Buildings:
+    %s: %s
+Ontologies: []
+StorageEngine: memory
+ReloadOntologies: false
+DisableQueryCache: true
+ShowNamespaces: false
+ShowQueryPlan: false
+ShowDependencyGraph: false
+ShowQueryPlanLatencies: false
+ShowOperationLatencies: false
+ShowQueryLatencies: false
+LogLevel: Critical
+EnableBOSSWAVE: false
+EnableHTTP: false`, "gentrip1", path)
+	cfg, err := config.ReadConfigFromString(cfgStr)
+	require.NoError(err, cfgStr)
+	db, err := NewHodDB(cfg)
+	defer db.Close()
+	require.NoError(err)
+
+	//TODO: make ListVersions top-level api call
+	versions, err := db.storage.ListVersions("gentrip1")
+	require.NoError(err)
+	require.Equal(1, len(versions))
+
+	result, err := db.RunQueryString("SELECT ?r WHERE { ?r rdf:type brick:INSERTED };")
 	require.NoError(err)
 	require.Equal(0, len(result.Rows))
 

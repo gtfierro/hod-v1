@@ -5,6 +5,7 @@ Buildings:
 Ontologies:
     - "testbuildings/BrickFrame.ttl"
     - "testbuildings/Brick.ttl"
+StorageEngine: "badger"
 ReloadOntologies: false
 DisableQueryCache: true
 ShowNamespaces: false
