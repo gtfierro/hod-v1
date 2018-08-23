@@ -69,7 +69,7 @@ Var : var << ast.ParseString($0) >> ;
 DatasetClause
     : "FROM" DBlist << ast.NewFromClause($1) >>
     | "FROM" "*" << ast.NewAllFromClause() >>
-    | empty << ast.NewAllSelectClause() >>
+    | empty << ast.NewAllFromClause() >>
     ;
 
 DatasetClauseInsert
