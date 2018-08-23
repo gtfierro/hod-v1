@@ -1,3 +1,4 @@
+//go:generate gocc -p github.com/gtfierro/hod/lang -a sparql.bnf
 package sparql
 
 import (
