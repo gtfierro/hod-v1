@@ -14,8 +14,15 @@ install: generate
 	CGO_CFLAGS_ALLOW=.*/github.com/gtfierro/hod/turtle go install \
 		-ldflags "-s -w -X ${PROJECT}/version.Release=${RELEASE} \
 						-X ${PROJECT}/version.Commit=${COMMIT}"
+test: generate
+	- cd db && CGO_CFLAGS_ALLOW=.*/github.com/gtfierro/hod/turtle go test -v
+	- cd storage && CGO_CFLAGS_ALLOW=.*/github.com/gtfierro/hod/turtle go test -v
+	#- cd lang && CGO_CFLAGS_ALLOW=.*/github.com/gtfierro/hod/turtle go test -v
+	- cd turtle && CGO_CFLAGS_ALLOW=.*/github.com/gtfierro/hod/turtle go test -v
+
 generate:
 	cd server && go generate
+	- cd lang && go generate
 
 clean:
 	rm -f ${APP}
