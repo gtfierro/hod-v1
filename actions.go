@@ -83,9 +83,32 @@ func startCLI(c *cli.Context) error {
 	mdb, err := hod.NewHodDB(cfg)
 	if err != nil {
 		log.Error(err)
+		defer mdb.Close()
 		return err
 	}
-	return runInteractiveQuery(mdb)
+
+	interruptSignal := make(chan os.Signal, 1)
+	signal.Notify(interruptSignal, syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
+	done := make(chan struct{})
+	go runInteractiveQuery(mdb, interruptSignal)
+	go func() {
+		killSignal := <-interruptSignal
+		switch killSignal {
+		case os.Interrupt, syscall.SIGINT:
+			log.Warning("Caught SIGINT; closing...")
+			mdb.Close()
+		case syscall.SIGTERM:
+			log.Warning("Caught SIGTERM; closing...")
+			mdb.Close()
+		default:
+			log.Warning(killSignal)
+		}
+		close(done)
+		//return nil
+	}()
+	<-done
+	//return runInteractiveQuery(mdb)
+	return nil
 }
 
 func startServer(c *cli.Context) error {
@@ -246,14 +269,17 @@ func startServer(c *cli.Context) error {
 		}()
 	}
 	interruptSignal := make(chan os.Signal, 1)
-	signal.Notify(interruptSignal, os.Interrupt, syscall.SIGTERM)
+	signal.Notify(interruptSignal, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
 	killSignal := <-interruptSignal
 	switch killSignal {
-	case os.Interrupt:
+	case os.Interrupt, syscall.SIGINT:
 		log.Warning("SIGINT")
+		db.Close()
 	case syscall.SIGTERM:
 		log.Warning("SIGTERM")
+		db.Close()
 	}
+
 	if srv != nil {
 		srv.Shutdown(context.Background())
 	}
@@ -466,7 +492,7 @@ func gethash() string {
 	return fmt.Sprintf("%x", h.Sum(nil))
 }
 
-func runInteractiveQuery(db *hod.HodDB) error {
+func runInteractiveQuery(db *hod.HodDB, stop chan<- os.Signal) error {
 	currentUser, err := user.Current()
 	if err != nil {
 		log.Error(err)
@@ -487,7 +513,12 @@ func runInteractiveQuery(db *hod.HodDB) error {
 	})
 	for {
 		line, err := rl.Readline()
-		if err != nil {
+		if err == readline.ErrInterrupt {
+			// interactive query blocks receiving shutdown signal, so we send it manually
+			stop <- os.Interrupt
+			break
+		} else if err != nil {
+			log.Error(err)
 			break
 		}
 		if len(line) == 0 {
