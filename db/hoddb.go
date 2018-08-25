@@ -150,6 +150,10 @@ func (hod *HodDB) Close() {
 // the parsing overhead for whatever reason
 func (hod *HodDB) RunQuery(q *sparql.Query) (result *QueryResult, rerr error) {
 
+	if q.IsVersions() {
+		return hod.resolveVersionQuery(q.Version)
+	}
+
 	// assemble versions for each of the databases
 	totalQueryStart := time.Now()
 
@@ -183,21 +187,23 @@ func (hod *HodDB) RunQuery(q *sparql.Query) (result *QueryResult, rerr error) {
 			}
 			targetGraphs = append(targetGraphs, versions[len(versions)-1])
 		} else {
-			var version storage.Version
-			var err error
 			switch q.Time.Filter {
 			case sparql.AT:
-				version, err = hod.storage.VersionAt(dbname, q.Time.Timestamp)
-			case sparql.BEFORE:
-				version, err = hod.storage.VersionBefore(dbname, q.Time.Timestamp)
-			case sparql.AFTER:
-				version, err = hod.storage.VersionAfter(dbname, q.Time.Timestamp)
-			}
-			if err != nil {
+				_version, err := hod.storage.VersionAt(dbname, q.Time.Timestamp)
 				rerr = err
+				targetGraphs = append(targetGraphs, _version)
+			case sparql.BEFORE:
+				_versions, err := hod.storage.VersionsBefore(dbname, q.Time.Timestamp, 1)
+				rerr = err
+				targetGraphs = append(targetGraphs, _versions...)
+			case sparql.AFTER:
+				_versions, err := hod.storage.VersionsAfter(dbname, q.Time.Timestamp, 1)
+				rerr = err
+				targetGraphs = append(targetGraphs, _versions...)
+			}
+			if rerr != nil {
 				return
 			}
-			targetGraphs = append(targetGraphs, version)
 		}
 
 	}
@@ -398,5 +404,64 @@ func (hod *HodDB) QueryToClassDOT(q string) (dot string, err error) {
 }
 
 func (hod *HodDB) QueryToDOT(q string) (dot string, err error) {
+	return
+}
+
+func (hod *HodDB) Names() ([]string, error) {
+	return hod.storage.Names()
+}
+
+func (hod *HodDB) AllVersions() ([]storage.Version, error) {
+	return hod.storage.Graphs()
+}
+
+func (hod *HodDB) VersionAt(name string, t time.Time) (storage.Version, error) {
+	return hod.storage.VersionAt(name, t)
+}
+
+func (hod *HodDB) VersionAfter(name string, t time.Time, limit int) ([]storage.Version, error) {
+	return hod.storage.VersionsAfter(name, t, limit)
+}
+
+func (hod *HodDB) VersionBefore(name string, t time.Time, limit int) ([]storage.Version, error) {
+	return hod.storage.VersionsBefore(name, t, limit)
+}
+
+func (hod *HodDB) resolveVersionQuery(q sparql.VersionsQuery) (result *QueryResult, rerr error) {
+	if len(q.Names.Databases) == 0 && !q.Names.AllDBs {
+		var names []string
+		names, rerr = hod.Names()
+		logrus.Warning(names)
+		return
+	}
+
+	if q.Names.AllDBs {
+		q.Names.Databases, rerr = hod.Names()
+		if rerr != nil {
+			return
+		}
+	}
+
+	var versions []storage.Version
+	for _, dbname := range q.Names.Databases {
+		switch q.Filter.Filter {
+		case sparql.AT:
+			_version, err := hod.VersionAt(dbname, q.Filter.Timestamp)
+			rerr = err
+			versions = append(versions, _version)
+		case sparql.BEFORE:
+			_versions, err := hod.VersionBefore(dbname, q.Filter.Timestamp, q.Limit)
+			rerr = err
+			versions = append(versions, _versions...)
+		case sparql.AFTER:
+			_versions, err := hod.VersionAfter(dbname, q.Filter.Timestamp, q.Limit)
+			rerr = err
+			versions = append(versions, _versions...)
+		}
+		if rerr != nil {
+			return
+		}
+	}
+	logrus.Warning(versions)
 	return
 }
