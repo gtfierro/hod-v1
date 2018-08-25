@@ -130,7 +130,7 @@ func startServer(c *cli.Context) error {
 		log.Error(err)
 		return err
 	}
-	defer db.Close()
+	//defer db.Close()
 	var srv *http.Server
 	if cfg.EnableHTTP {
 		srv = server.StartHodServer(db, cfg)
@@ -519,7 +519,7 @@ func runInteractiveQuery(db *hod.HodDB, stop chan<- os.Signal) error {
 			break
 		} else if err != nil {
 			log.Error(err)
-			break
+			continue
 		}
 		if len(line) == 0 {
 			continue
@@ -536,7 +536,7 @@ func runInteractiveQuery(db *hod.HodDB, stop chan<- os.Signal) error {
 			log.Error(err)
 		} else if res, err := db.RunQueryString(bufQuery); err != nil {
 			log.Error(err)
-		} else {
+		} else if res != nil {
 			res.Dump()
 		}
 		bufQuery = ""
