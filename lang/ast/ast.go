@@ -18,6 +18,7 @@ const (
 	SELECT_QUERY QueryType = 1 << iota
 	INSERT_QUERY
 	DELETE_QUERY
+	VERSION_QUERY
 )
 
 var debug = false
@@ -37,6 +38,7 @@ type Query struct {
 	Insert    InsertClause
 	Where     WhereClause
 	Variables []string
+	Version   VersionsQuery
 	Type      QueryType
 }
 
@@ -53,6 +55,10 @@ func (q Query) IsInsert() bool {
 
 func (q Query) IsSelect() bool {
 	return (q.Type & SELECT_QUERY) == SELECT_QUERY
+}
+
+func (q Query) IsVersions() bool {
+	return (q.Type & VERSION_QUERY) == VERSION_QUERY
 }
 
 func (q Query) CopyWithNewTerms(terms []Triple) Query {
@@ -562,4 +568,53 @@ func (p Pattern) String() string {
 		return "*"
 	}
 	return "unknown"
+}
+
+type VersionsQuery struct {
+	Filter TimeClause
+	Names  FromClause
+	Limit  int
+}
+
+func NewVersionQueryNames() (Query, error) {
+	var q = Query{
+		Type: VERSION_QUERY,
+		Version: VersionsQuery{
+			Names: FromClause{
+				AllDBs: false,
+			},
+		},
+	}
+	return q, nil
+}
+
+func NewVersionQuery(timeclause, graphselection, limit interface{}) (Query, error) {
+	var err error
+	q := Query{
+		Type: VERSION_QUERY,
+	}
+	vq := VersionsQuery{
+		Limit: limit.(int),
+	}
+	if timeclause == nil {
+		vq.Filter, err = NewTimeClause(AT, "now")
+		if err != nil {
+			return q, err
+		}
+	} else {
+		vq.Filter = timeclause.(TimeClause)
+	}
+
+	if graphselection != nil {
+		vq.Names = graphselection.(FromClause)
+	}
+
+	q.Version = vq
+	return q, nil
+}
+
+func ParseNumber(i interface{}) (int, error) {
+	//string(i.(*token.Token).Lit)
+	integer, err := strconv.ParseInt(string(i.(*token.Token).Lit), 10, 64)
+	return int(integer), err
 }
