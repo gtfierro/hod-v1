@@ -135,13 +135,13 @@ func (msp *MemoryStorageProvider) VersionAt(name string, timestamp time.Time) (V
 }
 
 // returns the version active before the one active at the given timestamp
-func (msp *MemoryStorageProvider) VersionBefore(name string, timestamp time.Time) (Version, error) {
-	return msp.vm.GetVersionBefore(name, timestamp)
+func (msp *MemoryStorageProvider) VersionsBefore(name string, timestamp time.Time, limit int) ([]Version, error) {
+	return msp.vm.GetVersionsBefore(name, timestamp, limit)
 }
 
 // returns the version active after the one active at the given timestamp
-func (msp *MemoryStorageProvider) VersionAfter(name string, timestamp time.Time) (Version, error) {
-	return msp.vm.GetVersionAfter(name, timestamp)
+func (msp *MemoryStorageProvider) VersionsAfter(name string, timestamp time.Time, limit int) ([]Version, error) {
+	return msp.vm.GetVersionsAfter(name, timestamp, limit)
 }
 
 // list all stored versions

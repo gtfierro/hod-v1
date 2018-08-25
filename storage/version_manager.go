@@ -14,6 +14,7 @@ type VersionManager struct {
 	db             *sql.DB
 	select_version *sql.Stmt
 	name_query     *sql.Stmt
+	select_at      *sql.Stmt
 	select_before  *sql.Stmt
 	select_after   *sql.Stmt
 	get_versions   *sql.Stmt
@@ -45,12 +46,17 @@ func CreateVersionManager(dir string) (*VersionManager, error) {
 		return nil, err
 	}
 
-	prepared_before, err := db.Prepare("select version, name from versions where name = ? and version < ? order by version desc limit 2;")
+	prepared_at, err := db.Prepare("select version, name from versions where name = ? and version < ? order by version desc limit 1;")
 	if err != nil {
 		return nil, err
 	}
 
-	prepared_after, err := db.Prepare("select version, name from versions where name = ? and version > ? order by version desc limit 1;")
+	prepared_before, err := db.Prepare("select version, name from versions where name = ? and version < ? order by version desc limit 1,?;")
+	if err != nil {
+		return nil, err
+	}
+
+	prepared_after, err := db.Prepare("select version, name from versions where name = ? and version > ? order by version desc limit ?;")
 	if err != nil {
 		return nil, err
 	}
@@ -64,6 +70,7 @@ func CreateVersionManager(dir string) (*VersionManager, error) {
 		db:             db,
 		select_version: prepared,
 		name_query:     name_query,
+		select_at:      prepared_at,
 		select_before:  prepared_before,
 		select_after:   prepared_after,
 		get_versions:   prepared_listall,
@@ -171,7 +178,7 @@ func (vm *VersionManager) Graphs() ([]Version, error) {
 }
 
 func (vm *VersionManager) GetVersionAt(name string, t time.Time) (version Version, err error) {
-	rows, err := vm.select_before.Query(name, t.UnixNano())
+	rows, err := vm.select_at.Query(name, t.UnixNano())
 	if err != nil {
 		return
 	}
@@ -183,41 +190,37 @@ func (vm *VersionManager) GetVersionAt(name string, t time.Time) (version Versio
 	return
 }
 
-func (vm *VersionManager) GetVersionBefore(name string, t time.Time) (version Version, err error) {
-	rows, err := vm.select_before.Query(name, t.UnixNano())
+func (vm *VersionManager) GetVersionsBefore(name string, t time.Time, limit int) (versions []Version, err error) {
+	rows, err := vm.select_before.Query(name, t.UnixNano(), limit)
 	if err != nil {
 		err = errors.Wrap(err, "no query")
 		return
 	}
-	version = Version{Name: name}
 	defer rows.Close()
 	// current version
-	if rows.Next() {
-		err = rows.Scan(&version.Timestamp, &version.Name)
-		if err != nil {
-			err = errors.Wrap(err, "scan here")
+	for rows.Next() {
+		var v Version
+		if err = rows.Scan(&v.Timestamp, &v.Name); err != nil {
 			return
 		}
-	}
-	// version before if exists
-	if rows.Next() {
-		err = rows.Scan(&version.Timestamp, &version.Name)
-		if err != nil {
-			return
-		}
+		versions = append(versions, v)
 	}
 	return
 }
 
-func (vm *VersionManager) GetVersionAfter(name string, t time.Time) (version Version, err error) {
-	rows, err := vm.select_after.Query(name, t.UnixNano())
+func (vm *VersionManager) GetVersionsAfter(name string, t time.Time, limit int) (versions []Version, err error) {
+	rows, err := vm.select_after.Query(name, t.UnixNano(), limit)
 	if err != nil {
 		return
 	}
 	defer rows.Close()
+	// current version
 	for rows.Next() {
-		err = rows.Scan(&version.Timestamp, &version.Name)
-		return
+		var v Version
+		if err = rows.Scan(&v.Timestamp, &v.Name); err != nil {
+			return
+		}
+		versions = append(versions, v)
 	}
 	return
 }
