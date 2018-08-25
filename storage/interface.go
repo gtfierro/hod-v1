@@ -48,10 +48,10 @@ type StorageProvider interface {
 	VersionAt(name string, timestamp time.Time) (Version, error)
 
 	// returns the version active before the one active at the given timestamp
-	VersionBefore(name string, timestamp time.Time) (Version, error)
+	VersionsBefore(name string, timestamp time.Time, limit int) ([]Version, error)
 
 	// returns the version active after the one active at the given timestamp
-	VersionAfter(name string, timestamp time.Time) (Version, error)
+	VersionsAfter(name string, timestamp time.Time, limit int) ([]Version, error)
 
 	// list all stored versions
 	Graphs() ([]Version, error)
