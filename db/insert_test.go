@@ -174,7 +174,6 @@ EnableHTTP: false`, "gentrip1", path)
 
 	result, err = db.RunQueryString("SELECT ?r WHERE { ?r rdf:type brick:INSERTED } BEFORE now;")
 	require.NoError(err)
-	result.Dump()
 	require.Equal(0, len(result.Rows))
 
 	// insert empty where
