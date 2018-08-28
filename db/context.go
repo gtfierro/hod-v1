@@ -3,6 +3,7 @@ package db
 import (
 	"fmt"
 
+	"github.com/gtfierro/hod/proto"
 	"github.com/gtfierro/hod/storage"
 	//logrus "github.com/sirupsen/logrus"
 )
@@ -144,8 +145,15 @@ func (ctx *queryContext) dumpRow(prefix string, row *relationRow) {
 	fmt.Println(s)
 }
 
-func (ctx *queryContext) getResults() (results []*resultRow) {
-	results = make([]*resultRow, len(ctx.rel.rows))
+func (ctx *queryContext) release() {
+	ctx.rel.done()
+	for _, row := range ctx.rows {
+		finishResultRow(row)
+	}
+}
+
+func (ctx *queryContext) getResults() (results []*proto.Row) {
+	results = make([]*proto.Row, len(ctx.rel.rows))
 	var jtest = make(map[uint32]struct{})
 	numRows := 0
 	var positions = make([]int, len(ctx.selectVars))
@@ -154,35 +162,27 @@ func (ctx *queryContext) getResults() (results []*resultRow) {
 	}
 rowIter:
 	for _, row := range ctx.rel.rows {
-		//logrus.Info(row)
 		hash := hashRowWithPos(row, positions)
 		if _, found := jtest[hash]; found {
 			continue
 		}
 		jtest[hash] = struct{}{}
 
-		resultrow := getResultRow(len(ctx.selectVars))
-		ctx.rows = append(ctx.rows, resultrow)
-		for idx, varname := range ctx.selectVars {
+		var resultrow = new(proto.Row)
+
+		for _, varname := range ctx.selectVars {
 			val := row.valueAt(ctx.variablePosition[varname])
 			if val == storage.EmptyKey {
 				continue rowIter
 			}
-			var err error
-			resultrow.row[idx], err = ctx.tx.getURI(row.valueAt(ctx.variablePosition[varname]))
+			uri, err := ctx.tx.getURI(row.valueAt(ctx.variablePosition[varname]))
 			if err != nil {
 				panic(err)
 			}
+			resultrow.Uris = append(resultrow.Uris, &proto.URI{Namespace: uri.Namespace, Value: uri.Value})
 		}
 		results[numRows] = resultrow
 		numRows++
 	}
 	return results[:numRows]
-}
-
-func (ctx *queryContext) release() {
-	ctx.rel.done()
-	for _, row := range ctx.rows {
-		finishResultRow(row)
-	}
 }

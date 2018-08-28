@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/gtfierro/hod/proto"
 	"github.com/gtfierro/hod/turtle"
 
 	"github.com/gtfierro/btree"
@@ -166,3 +167,97 @@ func finishResultRow(r *resultRow) {
 //		i = b.DeleteMax()
 //	}
 //}
+
+type resultBuilder struct {
+	selectVars []string
+	elapsed    time.Duration
+	count      int64
+	rows       []*proto.Row
+}
+
+func newResultBuilder(selectvars []string) *resultBuilder {
+	return &resultBuilder{
+		selectVars: selectvars,
+		count:      0,
+	}
+}
+
+func (builder *resultBuilder) addRowsFrom(ctx *queryContext) error {
+	builder.rows = append(builder.rows, ctx.getResults()...)
+	return nil
+}
+
+func (builder *resultBuilder) addRow(row []turtle.URI) {
+}
+
+func (builder *resultBuilder) addRowString(ss []string) {
+	var row = new(proto.Row)
+	for _, s := range ss {
+		row.Uris = append(row.Uris, &proto.URI{Value: s})
+	}
+	builder.rows = append(builder.rows, row)
+}
+
+func (builder *resultBuilder) finish() *proto.QueryResponse {
+	builder.count = int64(len(builder.rows))
+	return &proto.QueryResponse{
+		Variable: builder.selectVars,
+		Rows:     builder.rows,
+		Count:    builder.count,
+	}
+}
+
+func DumpQueryResponse(resp *proto.QueryResponse) {
+	if resp.Count == 0 {
+		fmt.Println("No results")
+		return
+	}
+	var dmp strings.Builder
+
+	rowlens := make(map[string]int, len(resp.Variable))
+
+	for _, varname := range resp.Variable {
+		rowlens[varname] = len(varname)
+	}
+
+	for _, row := range resp.Rows {
+		for idx, value := range row.Uris {
+			varname := resp.Variable[idx]
+			uri := turtle.URI{Namespace: value.Namespace, Value: value.Value}
+			fmt.Println(value, len(uri.String()))
+			if rowlens[varname] < len(uri.String()) {
+				rowlens[varname] = len(uri.String())
+			}
+		}
+	}
+	for k, v := range rowlens {
+		fmt.Println(">", k, v)
+	}
+
+	totallen := 0
+	for _, length := range rowlens {
+		totallen += length + 2
+	}
+
+	fmt.Fprintf(&dmp, "+%s+\n", strings.Repeat("-", totallen+len(rowlens)-1))
+	// header
+	fmt.Fprintf(&dmp, "|")
+	for _, varname := range resp.Variable {
+		fmt.Fprintf(&dmp, " %s%s|", varname, strings.Repeat(" ", rowlens[varname]-len(varname)+1))
+	}
+	fmt.Fprintf(&dmp, "\n")
+	fmt.Fprintf(&dmp, "+%s+\n", strings.Repeat("-", totallen+len(rowlens)-1))
+
+	for _, row := range resp.Rows {
+		fmt.Fprintf(&dmp, "|")
+		for idx, varname := range resp.Variable {
+			uri := turtle.URI{Namespace: row.Uris[idx].Namespace, Value: row.Uris[idx].Value}
+			valuelen := len(uri.String())
+			fmt.Fprintf(&dmp, " %s%s |", uri, strings.Repeat(" ", rowlens[varname]-valuelen))
+		}
+		fmt.Fprintf(&dmp, "\n")
+	}
+	fmt.Fprintf(&dmp, "+%s+\n", strings.Repeat("-", totallen+len(rowlens)-1))
+	fmt.Println(dmp.String())
+	fmt.Println("Count:", resp.Count)
+}

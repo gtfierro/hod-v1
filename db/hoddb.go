@@ -1,6 +1,7 @@
 package db
 
 import (
+	"context"
 	"os"
 	"strings"
 	"sync"
@@ -9,6 +10,7 @@ import (
 	"github.com/gtfierro/hod/config"
 	query "github.com/gtfierro/hod/lang"
 	sparql "github.com/gtfierro/hod/lang/ast"
+	"github.com/gtfierro/hod/proto"
 	"github.com/gtfierro/hod/storage"
 	"github.com/gtfierro/hod/turtle"
 
@@ -150,17 +152,303 @@ func (hod *HodDB) Close() {
 // the parsing overhead for whatever reason
 func (hod *HodDB) RunQuery(q *sparql.Query) (result *QueryResult, rerr error) {
 
-	if q.IsVersions() {
-		return hod.resolveVersionQuery(q.Version)
+	return
+}
+
+//
+// 	if q.IsVersions() {
+// 		return hod.resolveVersionQuery(q.Version)
+// 	}
+//
+// 	// assemble versions for each of the databases
+// 	totalQueryStart := time.Now()
+//
+// 	// TODO: factor this out
+// 	findDatabasesStart := time.Now()
+// 	var targetGraphs []storage.Version
+// 	var names []string
+// 	if q.From.AllDBs {
+// 		_allgraphs, err := hod.storage.Graphs()
+// 		if err != nil {
+// 			rerr = err
+// 			return
+// 		}
+// 		_n := make(map[string]struct{})
+// 		for _, ag := range _allgraphs {
+// 			_n[ag.Name] = struct{}{}
+// 		}
+// 		for n := range _n {
+// 			names = append(names, n)
+// 		}
+// 	} else {
+// 		names = q.From.Databases
+// 	}
+//
+// 	for _, dbname := range names {
+// 		if q.IsInsert() {
+// 			versions, err := hod.storage.ListVersions(dbname)
+// 			if err != nil {
+// 				rerr = err
+// 				return
+// 			}
+// 			targetGraphs = append(targetGraphs, versions[len(versions)-1])
+// 		} else {
+// 			switch q.Time.Filter {
+// 			case sparql.AT:
+// 				_version, err := hod.storage.VersionAt(dbname, q.Time.Timestamp)
+// 				rerr = err
+// 				targetGraphs = append(targetGraphs, _version)
+// 			case sparql.BEFORE:
+// 				_versions, err := hod.storage.VersionsBefore(dbname, q.Time.Timestamp, 1)
+// 				rerr = err
+// 				targetGraphs = append(targetGraphs, _versions...)
+// 			case sparql.AFTER:
+// 				_versions, err := hod.storage.VersionsAfter(dbname, q.Time.Timestamp, 1)
+// 				rerr = err
+// 				targetGraphs = append(targetGraphs, _versions...)
+// 			}
+// 			if rerr != nil {
+// 				return
+// 			}
+// 		}
+//
+// 	}
+// 	//}
+// 	findDatabasesDur := time.Since(findDatabasesStart)
+//
+// 	makeQueriesStart := time.Now()
+// 	// expand out the prefixes
+// 	q.IterTriples(func(triple sparql.Triple) sparql.Triple {
+// 		triple.Subject = hod.expand(triple.Subject)
+// 		triple.Object = hod.expand(triple.Object)
+// 		for idx2, pred := range triple.Predicates {
+// 			triple.Predicates[idx2].Predicate = hod.expand(pred.Predicate)
+// 		}
+// 		return triple
+// 	})
+//
+// 	// expand the graphgroup unions
+// 	var ors [][]sparql.Triple
+// 	if q.Where.GraphGroup != nil {
+// 		for _, group := range q.Where.GraphGroup.Expand() {
+// 			newterms := make([]sparql.Triple, len(q.Where.Terms))
+// 			copy(newterms, q.Where.Terms)
+// 			ors = append(ors, append(newterms, group...))
+// 		}
+// 	}
+//
+// 	var queries []*sparql.Query
+//
+// 	for _, group := range ors {
+// 		tmpQ := q.CopyWithNewTerms(group)
+// 		tmpQ.PopulateVars()
+// 		if tmpQ.Select.AllVars {
+// 			tmpQ.Select.Vars = tmpQ.Variables
+// 		}
+// 		queries = append(queries, &tmpQ)
+// 	}
+// 	if len(queries) == 0 {
+// 		queries = append(queries, q)
+// 	}
+// 	makeQueriesDur := time.Since(makeQueriesStart)
+//
+// 	result = new(QueryResult)
+// 	result.selectVars = q.Select.Vars
+// 	var results []*resultRow
+//
+// 	for _, parsedQuery := range queries {
+// 		// form dependency graph and query plan
+// 		dg := makeDependencyGraph(parsedQuery)
+// 		qp, err := formQueryPlan(dg, parsedQuery)
+// 		if err != nil {
+// 			rerr = err
+// 			return
+// 		}
+// 		for _, op := range qp.operations {
+// 			logrus.Info("op | ", op)
+// 		}
+//
+// 		//parsedQuery.PopulateVars()
+// 		for _, g := range targetGraphs {
+// 			logrus.Info("Run query against> ", g)
+// 			var tx *transaction
+// 			tx, err = hod.openVersion(g)
+//
+// 			//defer tx.discard()
+// 			if err != nil {
+// 				rerr = err
+// 				return
+// 			}
+// 			// TODO: turn the graph into a transaction
+// 			ctx, err := newQueryContext(qp, tx)
+// 			defer ctx.release()
+// 			if err != nil {
+// 				rerr = errors.Wrap(err, "Could not get snapshot")
+// 			}
+//
+// 			for _, op := range ctx.operations {
+// 				//now := time.Now()
+// 				err := op.run(ctx)
+// 				if err != nil {
+// 					rerr = err
+// 					return
+// 				}
+// 			}
+// 			_results := ctx.getResults()
+// 			results = append(results, _results...)
+//
+// 			if parsedQuery.IsInsert() {
+// 				var intermediateResult = new(QueryResult)
+// 				intermediateResult.fromRows(_results, q.Select.Vars, true)
+// 				err := hod.insert(g.Name, parsedQuery.Insert, intermediateResult)
+// 				if err != nil {
+// 					return result, err
+// 				}
+// 			}
+// 		}
+// 	}
+// 	result.fromRows(results, q.Select.Vars, true)
+// 	logrus.WithFields(logrus.Fields{
+// 		"total":       time.Since(totalQueryStart),
+// 		"findversion": findDatabasesDur,
+// 		"makequery":   makeQueriesDur,
+// 	}).Info("Query")
+// 	return
+// }
+
+// RunQueryString executes a query against HodDB
+func (hod *HodDB) RunQueryString(querystring string) (result *proto.QueryResponse, err error) {
+	return hod.ExecuteQuery(context.Background(), &proto.QueryRequest{Query: querystring})
+}
+
+func (hod *HodDB) expand(uri turtle.URI) turtle.URI {
+	if !strings.HasPrefix(uri.Value, "?") {
+		if full, found := hod.namespaces[uri.Namespace]; found {
+			uri.Namespace = full
+		}
+	}
+	return uri
+}
+
+func (hod *HodDB) insert(graph string, insert sparql.InsertClause, result *proto.QueryResponse) (resp *proto.QueryResponse, err error) {
+	builder := newResultBuilder([]string{"subject", "predicate", "object"})
+	var additions turtle.DataSet
+	//var stats queryStats
+	var positions = make(map[string]int)
+	for pos, varname := range result.Variable {
+		positions[varname] = pos
+	}
+	for _, insertTerm := range insert.Terms {
+		if result.Count == 0 {
+			additions.AddTripleURIs(insertTerm.Subject, insertTerm.Predicates[0].Predicate, insertTerm.Object)
+		} else {
+			for _, row := range result.Rows {
+				newterm := insertTerm.Copy()
+				// replace all variables with content from query
+				if newterm.Subject.IsVariable() {
+					if pos, found := positions[newterm.Subject.Value]; found {
+						newterm.Subject = turtle.URI{row.Uris[pos].Namespace, row.Uris[pos].Value}
+					}
+				}
+				pred := newterm.Predicates[0].Predicate
+				if pred.IsVariable() {
+					if pos, found := positions[pred.Value]; found {
+						newterm.Predicates[0].Predicate = turtle.URI{row.Uris[pos].Namespace, row.Uris[pos].Value}
+					}
+				}
+				if newterm.Object.IsVariable() {
+					if pos, found := positions[newterm.Object.Value]; found {
+						newterm.Object = turtle.URI{row.Uris[pos].Namespace, row.Uris[pos].Value}
+					}
+				}
+				additions.AddTripleURIs(newterm.Subject, newterm.Predicates[0].Predicate, newterm.Object)
+				builder.addRowString([]string{newterm.Subject.String(), newterm.Predicates[0].Predicate.String(), newterm.Object.String()})
+				//stats.NumInserted += 1
+			}
+		}
 	}
 
-	// assemble versions for each of the databases
+	tx, err := hod.openTransaction(graph)
+	if err != nil {
+		tx.discard()
+		return builder.finish(), err
+	}
+	if err := tx.addTriples(additions); err != nil {
+		tx.discard()
+		return builder.finish(), err
+	}
+	if err := tx.commit(); err != nil {
+		tx.discard()
+		return builder.finish(), err
+	}
+	//if err := hod.buildTextIndex(additions); err != nil {
+	//	return err
+	//}
+	//err = hod.saveIndexes()
+	//if err != nil {
+	//	return err
+	//}
+	//stats.InsertTime = time.Since(insertStart)
+	//return stats, nil
+	return builder.finish(), nil
+}
+
+func (hod *HodDB) Search(q string, n int) (results []string, err error) {
+	return
+}
+
+func (hod *HodDB) QueryToClassDOT(q string) (dot string, err error) {
+	return
+}
+
+func (hod *HodDB) QueryToDOT(q string) (dot string, err error) {
+	return
+}
+
+func (hod *HodDB) Names() ([]string, error) {
+	return hod.storage.Names()
+}
+
+func (hod *HodDB) AllVersions() ([]storage.Version, error) {
+	return hod.storage.Graphs()
+}
+
+func (hod *HodDB) VersionAt(name string, t time.Time) (storage.Version, error) {
+	return hod.storage.VersionAt(name, t)
+}
+
+func (hod *HodDB) VersionAfter(name string, t time.Time, limit int) ([]storage.Version, error) {
+	return hod.storage.VersionsAfter(name, t, limit)
+}
+
+func (hod *HodDB) VersionBefore(name string, t time.Time, limit int) ([]storage.Version, error) {
+	return hod.storage.VersionsBefore(name, t, limit)
+}
+
+func (hod *HodDB) ExecuteQuery(ctx context.Context, request *proto.QueryRequest) (response *proto.QueryResponse, rerr error) {
 	totalQueryStart := time.Now()
+	defer ctx.Done()
 
 	// TODO: factor this out
 	findDatabasesStart := time.Now()
 	var targetGraphs []storage.Version
 	var names []string
+
+	if request == nil {
+		rerr = errors.New("No query provided")
+		return
+	}
+
+	q, err := query.Parse(request.Query)
+	if err != nil {
+		rerr = errors.Wrap(err, "could not parse query")
+		return
+	}
+
+	if q.IsVersions() {
+		return hod.resolveVersionQuery(q.Version)
+	}
+
 	if q.From.AllDBs {
 		_allgraphs, err := hod.storage.Graphs()
 		if err != nil {
@@ -246,9 +534,7 @@ func (hod *HodDB) RunQuery(q *sparql.Query) (result *QueryResult, rerr error) {
 	}
 	makeQueriesDur := time.Since(makeQueriesStart)
 
-	result = new(QueryResult)
-	result.selectVars = q.Select.Vars
-	var results []*resultRow
+	builder := newResultBuilder(q.Select.Vars)
 
 	for _, parsedQuery := range queries {
 		// form dependency graph and query plan
@@ -288,152 +574,39 @@ func (hod *HodDB) RunQuery(q *sparql.Query) (result *QueryResult, rerr error) {
 					return
 				}
 			}
-			_results := ctx.getResults()
-			results = append(results, _results...)
+
+			builder.addRowsFrom(ctx)
 
 			if parsedQuery.IsInsert() {
-				var intermediateResult = new(QueryResult)
-				intermediateResult.fromRows(_results, q.Select.Vars, true)
-				err := hod.insert(g.Name, parsedQuery.Insert, intermediateResult)
-				if err != nil {
-					return result, err
-				}
+				//var intermediateResult = new(QueryResult)
+				//intermediateResult.fromRows(_results, q.Select.Vars, true)
+				return hod.insert(g.Name, parsedQuery.Insert, builder.finish())
 			}
 		}
 	}
-	result.fromRows(results, q.Select.Vars, true)
+
+	response = builder.finish()
 	logrus.WithFields(logrus.Fields{
 		"total":       time.Since(totalQueryStart),
 		"findversion": findDatabasesDur,
 		"makequery":   makeQueriesDur,
 	}).Info("Query")
-	return
+	return response, nil
 }
 
-// RunQueryString executes a query against HodDB
-func (hod *HodDB) RunQueryString(querystring string) (result *QueryResult, err error) {
-	var (
-		q *sparql.Query
-	)
-	if q, err = query.Parse(querystring); err != nil {
-		err = errors.Wrap(err, "Could not parse hod query")
-		logrus.Error(err)
-		return
-	}
-
-	if result, err = hod.RunQuery(q); err != nil {
-		err = errors.Wrap(err, "Could not complete hod query")
-		logrus.Error(err)
-		return
-	}
-	return
-}
-
-func (hod *HodDB) expand(uri turtle.URI) turtle.URI {
-	if !strings.HasPrefix(uri.Value, "?") {
-		if full, found := hod.namespaces[uri.Namespace]; found {
-			uri.Namespace = full
-		}
-	}
-	return uri
-}
-
-func (hod *HodDB) insert(graph string, insert sparql.InsertClause, result *QueryResult) (err error) {
-	var additions turtle.DataSet
-	//var stats queryStats
-	for _, insertTerm := range insert.Terms {
-		if result.Count == 0 {
-			additions.AddTripleURIs(insertTerm.Subject, insertTerm.Predicates[0].Predicate, insertTerm.Object)
-		} else {
-			for _, row := range result.Rows {
-				newterm := insertTerm.Copy()
-				// replace all variables with content from query
-				if newterm.Subject.IsVariable() {
-					if value, found := row[newterm.Subject.Value]; found {
-						newterm.Subject = value
-					}
-				}
-				pred := newterm.Predicates[0].Predicate
-				if pred.IsVariable() {
-					if value, found := row[pred.Value]; found {
-						newterm.Predicates[0].Predicate = value
-					}
-				}
-				if newterm.Object.IsVariable() {
-					if value, found := row[newterm.Object.Value]; found {
-						newterm.Object = value
-					}
-				}
-				additions.AddTripleURIs(newterm.Subject, newterm.Predicates[0].Predicate, newterm.Object)
-				//stats.NumInserted += 1
-			}
-		}
-	}
-
-	tx, err := hod.openTransaction(graph)
-	if err != nil {
-		tx.discard()
-		return err
-	}
-	if err := tx.addTriples(additions); err != nil {
-		tx.discard()
-		return err
-	}
-	if err := tx.commit(); err != nil {
-		tx.discard()
-		return err
-	}
-	//if err := hod.buildTextIndex(additions); err != nil {
-	//	return err
-	//}
-	//err = hod.saveIndexes()
-	//if err != nil {
-	//	return err
-	//}
-	//stats.InsertTime = time.Since(insertStart)
-	//return stats, nil
-	return nil
-}
-
-func (hod *HodDB) Search(q string, n int) (results []string, err error) {
-	return
-}
-
-func (hod *HodDB) QueryToClassDOT(q string) (dot string, err error) {
-	return
-}
-
-func (hod *HodDB) QueryToDOT(q string) (dot string, err error) {
-	return
-}
-
-func (hod *HodDB) Names() ([]string, error) {
-	return hod.storage.Names()
-}
-
-func (hod *HodDB) AllVersions() ([]storage.Version, error) {
-	return hod.storage.Graphs()
-}
-
-func (hod *HodDB) VersionAt(name string, t time.Time) (storage.Version, error) {
-	return hod.storage.VersionAt(name, t)
-}
-
-func (hod *HodDB) VersionAfter(name string, t time.Time, limit int) ([]storage.Version, error) {
-	return hod.storage.VersionsAfter(name, t, limit)
-}
-
-func (hod *HodDB) VersionBefore(name string, t time.Time, limit int) ([]storage.Version, error) {
-	return hod.storage.VersionsBefore(name, t, limit)
-}
-
-func (hod *HodDB) resolveVersionQuery(q sparql.VersionsQuery) (result *QueryResult, rerr error) {
+func (hod *HodDB) resolveVersionQuery(q sparql.VersionsQuery) (response *proto.QueryResponse, rerr error) {
 	if len(q.Names.Databases) == 0 && !q.Names.AllDBs {
+		builder := newResultBuilder([]string{"name"})
 		var names []string
 		names, rerr = hod.Names()
-		logrus.Warning(names)
+		if rerr != nil {
+			return
+		}
+		builder.addRowString(names)
+		response = builder.finish()
 		return
 	}
+	builder := newResultBuilder([]string{"name", "version"})
 
 	if q.Names.AllDBs {
 		q.Names.Databases, rerr = hod.Names()
@@ -442,26 +615,29 @@ func (hod *HodDB) resolveVersionQuery(q sparql.VersionsQuery) (result *QueryResu
 		}
 	}
 
-	var versions []storage.Version
 	for _, dbname := range q.Names.Databases {
 		switch q.Filter.Filter {
 		case sparql.AT:
 			_version, err := hod.VersionAt(dbname, q.Filter.Timestamp)
 			rerr = err
-			versions = append(versions, _version)
+			builder.addRowString([]string{_version.Name, time.Unix(0, int64(_version.Timestamp)).Format(time.RFC3339)})
 		case sparql.BEFORE:
 			_versions, err := hod.VersionBefore(dbname, q.Filter.Timestamp, q.Limit)
 			rerr = err
-			versions = append(versions, _versions...)
+			for _, _version := range _versions {
+				builder.addRowString([]string{_version.Name, time.Unix(0, int64(_version.Timestamp)).Format(time.RFC3339)})
+			}
 		case sparql.AFTER:
 			_versions, err := hod.VersionAfter(dbname, q.Filter.Timestamp, q.Limit)
 			rerr = err
-			versions = append(versions, _versions...)
+			for _, _version := range _versions {
+				builder.addRowString([]string{_version.Name, time.Unix(0, int64(_version.Timestamp)).Format(time.RFC3339)})
+			}
 		}
 		if rerr != nil {
 			return
 		}
 	}
-	logrus.Warning(versions)
+	response = builder.finish()
 	return
 }

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"math/big"
+	"net"
 	"net/http"
 	"os"
 	"os/exec"
@@ -24,6 +25,9 @@ import (
 	"github.com/gtfierro/hod/server"
 	"github.com/gtfierro/hod/turtle"
 	"github.com/gtfierro/hod/version"
+
+	"github.com/gtfierro/hod/proto"
+	"google.golang.org/grpc"
 
 	"github.com/chzyer/readline"
 	"github.com/fatih/color"
@@ -130,11 +134,26 @@ func startServer(c *cli.Context) error {
 		log.Error(err)
 		return err
 	}
-	//defer db.Close()
+	defer db.Close()
 	var srv *http.Server
 	if cfg.EnableHTTP {
 		srv = server.StartHodServer(db, cfg)
 	}
+
+	// TODO: grpc configure/enable
+	if true {
+		port := 47808
+		lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
+		if err != nil {
+			log.Error(err)
+			return err
+		}
+		grpcServer := grpc.NewServer()
+		proto.RegisterHodDBServer(grpcServer, db)
+		log.Info("Serving on ", lis.Addr().String())
+		go grpcServer.Serve(lis)
+	}
+
 	if cfg.EnableBOSSWAVE {
 		client := bw2bind.ConnectOrExit(cfg.BW2_AGENT)
 		client.SetEntityFileOrExit(cfg.BW2_DEFAULT_ENTITY)
@@ -274,10 +293,11 @@ func startServer(c *cli.Context) error {
 	switch killSignal {
 	case os.Interrupt, syscall.SIGINT:
 		log.Warning("SIGINT")
-		db.Close()
+		//db.Close()
+		break
 	case syscall.SIGTERM:
 		log.Warning("SIGTERM")
-		db.Close()
+		//db.Close()
 	}
 
 	if srv != nil {
@@ -537,7 +557,7 @@ func runInteractiveQuery(db *hod.HodDB, stop chan<- os.Signal) error {
 		} else if res, err := db.RunQueryString(bufQuery); err != nil {
 			log.Error(err)
 		} else if res != nil {
-			res.Dump()
+			hod.DumpQueryResponse(res)
 		}
 		bufQuery = ""
 	}
