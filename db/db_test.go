@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/gtfierro/hod/config"
-	query "github.com/gtfierro/hod/lang"
 	"github.com/gtfierro/hod/turtle"
 	logrus "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
@@ -291,12 +290,7 @@ func BenchmarkQueryPerformance1(b *testing.B) {
 		b.Run(bm.name, func(b *testing.B) {
 			b.ReportAllocs()
 			for i := 0; i < b.N; i++ {
-				q, e := query.Parse(bm.query)
-				if e != nil {
-					b.Error(e)
-					continue
-				}
-				db.RunQuery(q)
+				db.RunQueryString(bm.query)
 			}
 		})
 	}
@@ -328,12 +322,7 @@ func BenchmarkINSERTPerformance1(b *testing.B) {
 		b.Run(bm.name, func(b *testing.B) {
 			b.ReportAllocs()
 			for i := 0; i < b.N; i++ {
-				q, e := query.Parse(bm.query)
-				if e != nil {
-					b.Error(e)
-					continue
-				}
-				db.RunQuery(q)
+				db.RunQueryString(bm.query)
 			}
 		})
 	}
