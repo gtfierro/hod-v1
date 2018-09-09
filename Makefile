@@ -1,5 +1,5 @@
 APP?=hod
-RELEASE?=0.6.0
+RELEASE?=0.7.0-dev
 COMMIT?=$(shell git rev-parse --short HEAD)
 PROJECT?=github.com/gtfierro/hod
 PERSISTDIR?=/etc/hod
@@ -21,6 +21,7 @@ test: generate
 	- cd turtle && CGO_CFLAGS_ALLOW=.*/github.com/gtfierro/hod/turtle go test -v
 
 generate:
+	protoc -I proto proto/hod.proto --go_out=plugins=grpc:proto
 	cd server && go generate
 	- cd lang && go generate
 
