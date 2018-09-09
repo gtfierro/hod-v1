@@ -602,7 +602,9 @@ func (hod *HodDB) resolveVersionQuery(q sparql.VersionsQuery) (response *proto.Q
 		if rerr != nil {
 			return
 		}
-		builder.addRowString(names)
+		for _, name := range names {
+			builder.addRowString([]string{name})
+		}
 		response = builder.finish()
 		return
 	}
