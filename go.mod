@@ -5,12 +5,13 @@ require (
 	github.com/RoaringBitmap/roaring v0.4.16
 	github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e
 	github.com/cihub/seelog v0.0.0-20170130134532-f561c5e57575 // indirect
+	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dgraph-io/badger v1.5.3
 	github.com/dgryski/go-farm v0.0.0-20180109070241-2de33835d102 // indirect
 	github.com/fatih/color v1.7.0
 	github.com/fsnotify/fsnotify v1.4.7 // indirect
 	github.com/glycerine/go-unsnap-stream v0.0.0-20180323001048-9f0cb55181dd // indirect
-	github.com/golang/protobuf v1.1.0 // indirect
+	github.com/golang/protobuf v1.1.0
 	github.com/golang/snappy v0.0.0-20180518054509-2e65f85255db // indirect
 	github.com/gtfierro/btree v0.0.0-20170220091241-bb3ec345bd67
 	github.com/hashicorp/hcl v0.0.0-20180404174102-ef8a98b0bbce // indirect
@@ -30,6 +31,7 @@ require (
 	github.com/philhofer/fwd v1.0.0 // indirect
 	github.com/pkg/errors v0.8.0
 	github.com/pkg/profile v1.2.1
+	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rakyll/statik v0.1.3
 	github.com/sirupsen/logrus v1.0.6
 	github.com/spf13/afero v1.1.1 // indirect
@@ -37,14 +39,17 @@ require (
 	github.com/spf13/jwalterweatherman v0.0.0-20180814060501-14d3d4c51834 // indirect
 	github.com/spf13/pflag v1.0.2 // indirect
 	github.com/spf13/viper v1.1.0
+	github.com/stretchr/testify v1.2.2
 	github.com/tinylib/msgp v1.0.2
 	github.com/ugorji/go v1.1.1 // indirect
 	github.com/urfave/cli v1.20.0
 	github.com/zhangxinngang/murmur v0.0.0-20140309145047-4e88ee1a5950
 	golang.org/x/crypto v0.0.0-20180820150726-614d502a4dac
-	golang.org/x/net v0.0.0-20180816102801-aaf60122140d // indirect
+	golang.org/x/net v0.0.0-20180816102801-aaf60122140d
 	golang.org/x/sys v0.0.0-20180820145501-1a700e749ce2 // indirect
 	golang.org/x/text v0.3.0 // indirect
+	google.golang.org/genproto v0.0.0-20180817151627-c66870c02cf8 // indirect
+	google.golang.org/grpc v1.14.0
 	gopkg.in/vmihailenco/msgpack.v2 v2.9.1 // indirect
 	gopkg.in/yaml.v2 v2.2.1 // indirect
 )
