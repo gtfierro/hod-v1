@@ -26,6 +26,7 @@ type Config struct {
 
 	EnableHTTP     bool
 	EnableBOSSWAVE bool
+	EnableGRPC     bool
 
 	ShowNamespaces         bool
 	ShowDependencyGraph    bool
@@ -40,6 +41,8 @@ type Config struct {
 	ListenAddress string
 	StaticPath    string
 	TLSHost       string
+
+	GRPCPort int
 
 	BW2_AGENT          string
 	BW2_DEFAULT_ENTITY string
@@ -91,8 +94,9 @@ func init() {
 	})
 	viper.SetDefault("StorageEngine", "badger")
 
-	viper.SetDefault("EnableHTTP", true)
+	viper.SetDefault("EnableHTTP", false)
 	viper.SetDefault("EnableBOSSWAVE", false)
+	viper.SetDefault("EnableGRPC", true)
 
 	viper.SetDefault("ShowNamespaces", true)
 	viper.SetDefault("ShowDependencyGraph", false)
@@ -107,6 +111,7 @@ func init() {
 	viper.SetDefault("ListenAddress", "127.0.0.1")
 	viper.SetDefault("StaticPath", prefix+"/src/github.com/gtfierro/hod/server")
 	viper.SetDefault("TLSHost", "") // disabled
+	viper.SetDefault("GRPCPort", "47808")
 
 	viper.SetDefault("HodURI", "scratch.ns/hod")
 
@@ -121,6 +126,43 @@ func init() {
 	viper.AddConfigPath(prefix + "/src/github.com/gtfierro/hod")
 }
 
+func getCfg() *Config {
+	level, err := logging.LogLevel(viper.GetString("LogLevel"))
+	if err != nil {
+		level = logging.DEBUG
+	}
+	return &Config{
+		DBPath:                 viper.GetString("DBPath"),
+		ReloadOntologies:       viper.GetBool("ReloadOntologies"),
+		EnableHTTP:             viper.GetBool("EnableHTTP"),
+		EnableBOSSWAVE:         viper.GetBool("EnableBOSSWAVE"),
+		EnableGRPC:             viper.GetBool("EnableGRPC"),
+		DisableQueryCache:      viper.GetBool("DisableQueryCache"),
+		Buildings:              viper.GetStringMapString("Buildings"),
+		Ontologies:             viper.GetStringSlice("Ontologies"),
+		StorageEngine:          viper.GetString("StorageEngine"),
+		ShowNamespaces:         viper.GetBool("ShowNamespaces"),
+		ShowDependencyGraph:    viper.GetBool("ShowDependencyGraph"),
+		ShowQueryPlan:          viper.GetBool("ShowQueryPlan"),
+		ShowQueryPlanLatencies: viper.GetBool("ShowQueryPlanLatencies"),
+		ShowOperationLatencies: viper.GetBool("ShowOperationLatencies"),
+		ShowQueryLatencies:     viper.GetBool("ShowQueryLatencies"),
+		LogLevel:               level,
+		ServerPort:             viper.GetString("ServerPort"),
+		UseIPv6:                viper.GetBool("UseIPv6"),
+		ListenAddress:          viper.GetString("ListenAddress"),
+		StaticPath:             viper.GetString("StaticPath"),
+		TLSHost:                viper.GetString("TLSHost"),
+		GRPCPort:               viper.GetInt("GRPCPort"),
+		BW2_AGENT:              viper.GetString("BW2_AGENT"),
+		BW2_DEFAULT_ENTITY:     viper.GetString("BW2_DEFAULT_ENTITY"),
+		HodURI:                 viper.GetString("HodURI"),
+		EnableCPUProfile:       viper.GetBool("EnableCPUProfile"),
+		EnableMEMProfile:       viper.GetBool("EnableMEMProfile"),
+		EnableBlockProfile:     viper.GetBool("EnableBlockProfile"),
+	}
+}
+
 func ReadConfig(file string) (*Config, error) {
 	if len(file) > 0 {
 		viper.SetConfigFile(file)
@@ -130,40 +172,7 @@ func ReadConfig(file string) (*Config, error) {
 	}
 	viper.AutomaticEnv()
 
-	level, err := logging.LogLevel(viper.GetString("LogLevel"))
-	if err != nil {
-		level = logging.DEBUG
-	}
-
-	c := &Config{
-		DBPath:                 viper.GetString("DBPath"),
-		ReloadOntologies:       viper.GetBool("ReloadOntologies"),
-		EnableHTTP:             viper.GetBool("EnableHTTP"),
-		EnableBOSSWAVE:         viper.GetBool("EnableBOSSWAVE"),
-		DisableQueryCache:      viper.GetBool("DisableQueryCache"),
-		Buildings:              viper.GetStringMapString("Buildings"),
-		Ontologies:             viper.GetStringSlice("Ontologies"),
-		StorageEngine:          viper.GetString("StorageEngine"),
-		ShowNamespaces:         viper.GetBool("ShowNamespaces"),
-		ShowDependencyGraph:    viper.GetBool("ShowDependencyGraph"),
-		ShowQueryPlan:          viper.GetBool("ShowQueryPlan"),
-		ShowQueryPlanLatencies: viper.GetBool("ShowQueryPlanLatencies"),
-		ShowOperationLatencies: viper.GetBool("ShowOperationLatencies"),
-		ShowQueryLatencies:     viper.GetBool("ShowQueryLatencies"),
-		LogLevel:               level,
-		ServerPort:             viper.GetString("ServerPort"),
-		UseIPv6:                viper.GetBool("UseIPv6"),
-		ListenAddress:          viper.GetString("ListenAddress"),
-		StaticPath:             viper.GetString("StaticPath"),
-		TLSHost:                viper.GetString("TLSHost"),
-		BW2_AGENT:              viper.GetString("BW2_AGENT"),
-		BW2_DEFAULT_ENTITY:     viper.GetString("BW2_DEFAULT_ENTITY"),
-		HodURI:                 viper.GetString("HodURI"),
-		EnableCPUProfile:       viper.GetBool("EnableCPUProfile"),
-		EnableMEMProfile:       viper.GetBool("EnableMEMProfile"),
-		EnableBlockProfile:     viper.GetBool("EnableBlockProfile"),
-	}
-	return c, nil
+	return getCfg(), nil
 }
 
 func ReadConfigFromString(configString string) (*Config, error) {
@@ -172,38 +181,5 @@ func ReadConfigFromString(configString string) (*Config, error) {
 	}
 	viper.AutomaticEnv()
 
-	level, err := logging.LogLevel(viper.GetString("LogLevel"))
-	if err != nil {
-		level = logging.DEBUG
-	}
-
-	c := &Config{
-		DBPath:                 viper.GetString("DBPath"),
-		ReloadOntologies:       viper.GetBool("ReloadOntologies"),
-		EnableHTTP:             viper.GetBool("EnableHTTP"),
-		EnableBOSSWAVE:         viper.GetBool("EnableBOSSWAVE"),
-		DisableQueryCache:      viper.GetBool("DisableQueryCache"),
-		Buildings:              viper.GetStringMapString("Buildings"),
-		Ontologies:             viper.GetStringSlice("Ontologies"),
-		StorageEngine:          viper.GetString("StorageEngine"),
-		ShowNamespaces:         viper.GetBool("ShowNamespaces"),
-		ShowDependencyGraph:    viper.GetBool("ShowDependencyGraph"),
-		ShowQueryPlan:          viper.GetBool("ShowQueryPlan"),
-		ShowQueryPlanLatencies: viper.GetBool("ShowQueryPlanLatencies"),
-		ShowOperationLatencies: viper.GetBool("ShowOperationLatencies"),
-		ShowQueryLatencies:     viper.GetBool("ShowQueryLatencies"),
-		LogLevel:               level,
-		ServerPort:             viper.GetString("ServerPort"),
-		UseIPv6:                viper.GetBool("UseIPv6"),
-		ListenAddress:          viper.GetString("ListenAddress"),
-		StaticPath:             viper.GetString("StaticPath"),
-		TLSHost:                viper.GetString("TLSHost"),
-		BW2_AGENT:              viper.GetString("BW2_AGENT"),
-		BW2_DEFAULT_ENTITY:     viper.GetString("BW2_DEFAULT_ENTITY"),
-		HodURI:                 viper.GetString("HodURI"),
-		EnableCPUProfile:       viper.GetBool("EnableCPUProfile"),
-		EnableMEMProfile:       viper.GetBool("EnableMEMProfile"),
-		EnableBlockProfile:     viper.GetBool("EnableBlockProfile"),
-	}
-	return c, nil
+	return getCfg(), nil
 }
