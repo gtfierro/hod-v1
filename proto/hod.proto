@@ -1,0 +1,28 @@
+syntax = "proto3";
+package proto;
+
+service HodDB {
+    rpc ExecuteQuery(QueryRequest) returns (QueryResponse);
+    // rpc NotifyChange(NotifyRequest) returns (NotifyResponse);
+}
+
+message QueryRequest {
+    string query = 1;
+}
+
+message QueryResponse {
+    repeated string variable = 1;
+    repeated Row rows = 2;
+    int64 count = 3;
+    int64 elapsed = 4;
+    repeated string errors = 5;
+}
+
+message Row {
+    repeated URI uris = 1;
+}
+
+message URI {
+    string namespace = 1;
+    string value = 2;
+}
