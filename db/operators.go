@@ -652,6 +652,10 @@ func (op *resolveVarTripleFromSubject) run(ctx *queryContext) error {
 	var relationContents [][]storage.HashKey
 
 	subjects := ctx.definitions[subjectVar]
+	if subjects.Len() == 0 {
+		subjects = ctx.getValuesFromRelation(subjectVar)
+	}
+
 	subjects.Iter(func(subjectKey storage.HashKey) {
 		subject, err := ctx.tx.getEntityByHash(subjectKey)
 		if err != nil {
@@ -701,6 +705,9 @@ func (op *resolveVarTripleFromObject) run(ctx *queryContext) error {
 	var relationContents [][]storage.HashKey
 
 	objects := ctx.definitions[objectVar]
+	if objects.Len() == 0 {
+		objects = ctx.getValuesFromRelation(objectVar)
+	}
 	objects.Iter(func(objectKey storage.HashKey) {
 		object, err := ctx.tx.getEntityByHash(objectKey)
 		if err != nil {
@@ -751,6 +758,9 @@ func (op *resolveVarTripleFromPredicate) run(ctx *queryContext) error {
 	var relationContents [][]storage.HashKey
 
 	predicates := ctx.definitions[predicateVar]
+	if predicates.Len() == 0 {
+		predicates = ctx.getValuesFromRelation(predicateVar)
+	}
 	var itererr error
 	predicates.Iter(func(predicateKey storage.HashKey) {
 		var subjectKey storage.HashKey
@@ -828,10 +838,14 @@ func (op *resolveVarTripleAll) run(ctx *queryContext) error {
 
 	relation.add3Values(subjectVar, predicateVar, objectVar, content)
 	if len(ctx.rel.rows) > 0 {
-		panic("This should not happen! Tell Gabe")
+		//panic("This should not happen! Tell Gabe")
+		logrus.Warning(subjectVar, predicateVar, objectVar)
+		ctx.rel.join(relation, []string{subjectVar}, ctx)
+		//ctx.markJoined(subjectVar)
+	} else {
+		// in this case, we just replace the relation
+		ctx.rel = relation
 	}
-	// in this case, we just replace the relation
-	ctx.rel = relation
 	ctx.markJoined(subjectVar)
 	ctx.markJoined(predicateVar)
 	ctx.markJoined(objectVar)

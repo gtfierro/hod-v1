@@ -224,6 +224,7 @@ func formQueryPlan(dg *dependencyGraph, q *sparql.Query) (*queryPlan, error) {
 				plan.addLink(subjectVar, objectVar)
 			default:
 				newop = &resolveSubjectObjectFromPred{term: term}
+				plan.addTopLevel(subjectVar)
 				plan.addLink(subjectVar, objectVar)
 			}
 		case !subjectIsVariable && !objectIsVariable && predicateIsVariable:

@@ -152,6 +152,16 @@ func (ctx *queryContext) release() {
 	}
 }
 
+func (ctx *queryContext) getValuesFromRelation(varname string) *keymap {
+	pos := ctx.variablePosition[varname]
+	km := newKeymap()
+	for _, row := range ctx.rel.rows {
+		val := row.valueAt(pos)
+		km.Add(val)
+	}
+	return km
+}
+
 func (ctx *queryContext) getResults() (results []*proto.Row) {
 	results = make([]*proto.Row, len(ctx.rel.rows))
 	var jtest = make(map[uint32]struct{})

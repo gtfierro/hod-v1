@@ -25,12 +25,17 @@ func (km *keymap) Has(ent storage.HashKey) bool {
 }
 
 func (km *keymap) Len() int {
+	if km == nil {
+		return 0
+	}
 	return len(km.m)
 }
 
 func (km *keymap) Iter(iter func(ent storage.HashKey)) {
-	for k := range km.m {
-		iter(k)
+	if km != nil {
+		for k := range km.m {
+			iter(k)
+		}
 	}
 }
 
