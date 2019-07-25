@@ -1,3 +1,5 @@
+**This is the old version of HodDB: the new version is at https://github.com/gtfierro/hoddb**
+
 # HodDB
 
 A database for [Brick](http://brickschema.org/)
