@@ -397,7 +397,7 @@ func (bg *BadgerGraph) GetURI(hash HashKey) (turtle.URI, error) {
 
 	if item, err := bg.tx.Get(hash[:]); err == badger.ErrKeyNotFound || item == nil {
 		return turtle.URI{}, ErrNotFound
-	} else if value, err := item.Value(); err != nil {
+	} else if value, err := item.ValueCopy(nil); err != nil {
 		return turtle.URI{}, err
 	} else {
 		return turtle.ParseURI(string(value)), err
@@ -421,7 +421,7 @@ func (bg *BadgerGraph) GetEntity(hash HashKey) (ent Entity, rerr error) {
 		rerr = err
 		return
 	}
-	bytes, err := item.Value()
+	bytes, err := item.ValueCopy(nil)
 	if err != nil {
 		rerr = err
 		return
@@ -442,7 +442,7 @@ func (bg *BadgerGraph) GetExtendedIndex(hash HashKey) (ent EntityExtendedIndex, 
 		rerr = err
 		return
 	}
-	bytes, err := item.Value()
+	bytes, err := item.ValueCopy(nil)
 	if err != nil {
 		rerr = err
 		return
@@ -463,7 +463,7 @@ func (bg *BadgerGraph) GetPredicate(hash HashKey) (ent PredicateEntity, rerr err
 		rerr = err
 		return
 	}
-	bytes, err := item.Value()
+	bytes, err := item.ValueCopy(nil)
 	if err != nil {
 		rerr = err
 		return
@@ -479,7 +479,7 @@ func (bg *BadgerGraph) IterateAllEntities(f func(HashKey, Entity) bool) error {
 	var start = []byte{0, 0, 0, 2, 0, 0, 0, 0}
 	defer iter.Close()
 	for iter.Seek(start); iter.ValidForPrefix([]byte{0, 0, 0, 2}); iter.Next() {
-		bytes, err := iter.Item().Value()
+		bytes, err := iter.Item().ValueCopy(nil)
 		if err != nil {
 			return err
 		}

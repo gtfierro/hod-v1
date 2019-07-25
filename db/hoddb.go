@@ -26,6 +26,7 @@ func init() {
 
 type graphLoadParams struct {
 	name     string
+	version  storage.Version
 	ttlfiles []string
 	done     chan error
 }
@@ -78,22 +79,27 @@ func NewHodDB(cfg *config.Config) (*HodDB, error) {
 			baseLoad.ttlfiles = append(baseLoad.ttlfiles, cfg.Ontologies...)
 			baseLoad.ttlfiles = append(baseLoad.ttlfiles, "")
 			baseLoad.done = make(chan error)
-			latest, existed, err := hod.storage.AddGraph(buildingname)
+			baseLoad.version, _, err = hod.storage.AddGraph(buildingname)
 			if err != nil {
 				return nil, err
 			}
-			logrus.WithFields(logrus.Fields{
-				"existed?": existed,
-				"version":  latest,
-				"filename": buildingttlfile,
-				"building": buildingname,
-			}).Info("Add graph")
 			baseLoad.ttlfiles[len(baseLoad.ttlfiles)-1] = buildingttlfile
 			baseLoad.name = buildingname
 			loadRequests = append(loadRequests, baseLoad)
 		}
 
+		var wg sync.WaitGroup
+		wg.Add(len(loadRequests))
+		//var loadLimit = 2
+		//var sem = make(chan struct{}, loadLimit)
 		for _, loadreq := range loadRequests {
+			loadreq := loadreq
+			//go func() {
+			//	sem <- struct{}{}
+			//	logrus.WithFields(logrus.Fields{
+			//		"version":  loadreq.version,
+			//		"filename": loadreq.ttlfiles[len(loadreq.ttlfiles)-1],
+			//	}).Info("Add graph")
 			if err := hod.loadFiles(loadreq); err != nil {
 				logrus.WithFields(logrus.Fields{
 					"building": loadreq.name,
@@ -102,7 +108,11 @@ func NewHodDB(cfg *config.Config) (*HodDB, error) {
 				}).Error("Load graph")
 				// TODO: report on channel
 			}
+			//	wg.Done()
+			//	<-sem
+			//}()
 		}
+		//wg.Wait()
 	} else {
 		logrus.Info("Continuing from existing databases")
 	}
@@ -140,6 +150,14 @@ func (hod *HodDB) loadFiles(loadreq graphLoadParams) error {
 		}
 		hod.Unlock()
 	}
+	//hod.Lock()
+	//for k := range hod.versionCaches {
+	//	if k.Name == loadreq.name {
+	//		hod.versionCaches[k].evictAll()
+	//		delete(hod.versionCaches, k)
+	//	}
+	//}
+	//hod.Unlock()
 	return tx.commit()
 }
 
@@ -439,6 +457,7 @@ func (hod *HodDB) ExecuteQuery(ctx context.Context, request *proto.QueryRequest)
 		return
 	}
 
+	logrus.Info(request.Query)
 	q, err := query.Parse(request.Query)
 	if err != nil {
 		rerr = errors.Wrap(err, "could not parse query")
@@ -465,6 +484,7 @@ func (hod *HodDB) ExecuteQuery(ctx context.Context, request *proto.QueryRequest)
 	} else {
 		names = q.From.Databases
 	}
+	logrus.Warning(names)
 
 	for _, dbname := range names {
 		if q.IsInsert() {

@@ -222,9 +222,9 @@ func DumpQueryResponse(resp *proto.QueryResponse) {
 
 	for _, row := range resp.Rows {
 		for idx, value := range row.Uris {
+			fmt.Println(idx, value, len(resp.Variable))
 			varname := resp.Variable[idx]
 			uri := turtle.URI{Namespace: value.Namespace, Value: value.Value}
-			fmt.Println(value, len(uri.String()))
 			if rowlens[varname] < len(uri.String()) {
 				rowlens[varname] = len(uri.String())
 			}

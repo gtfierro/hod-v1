@@ -56,12 +56,12 @@ func (hod *HodDB) openVersion(ver storage.Version) (tx *transaction, err error) 
 		inverseRelationships: make(map[storage.HashKey]storage.HashKey),
 	}
 	tx.snapshot, err = hod.storage.OpenVersion(ver)
-	if cache, found := hod.versionCaches[ver]; found {
-		tx.cache = cache
-	} else {
-		tx.cache = newCache(1)
-		hod.versionCaches[ver] = tx.cache
-	}
+	//if cache, found := hod.versionCaches[ver]; found {
+	//	tx.cache = cache
+	//} else {
+	//	tx.cache = newCache(1)
+	//	hod.versionCaches[ver] = tx.cache
+	//}
 	return
 }
 
@@ -72,6 +72,9 @@ func (tx *transaction) discard() {
 }
 
 func (tx *transaction) commit() error {
+	if tx.cache != nil {
+		tx.cache.evictAll()
+	}
 	return tx.snapshot.Commit()
 }
 
@@ -191,6 +194,7 @@ func (tx *transaction) addTriples(dataset turtle.DataSet) error {
 		"Triples":            tx.triplesAdded,
 		"Predicates":         predicatesAdded,
 	}).Info("Insert")
+	tx.cache.evictAll()
 
 	return nil
 }

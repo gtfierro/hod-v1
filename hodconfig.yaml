@@ -7,16 +7,23 @@
 #
 
 Buildings:
-    soda: buildings/berkeley.ttl
-    ciee: buildings/ciee.ttl
+    #cont: buildings/cont.ttl
+    #vmth: buildings/VMTH.ttl
+    #acad: buildings/ACAD.ttl
+    #ciee: buildings/ciee.ttl
+    berkeley: buildings/berkeley.ttl
+    example: buildings/example.ttl
+    #ibm: buildings/IBM_B3.ttl
+    #gtc: buildings/gtc_brick.ttl
+    #ebu3b: buildings/ebu3b_brick.ttl
 
 # the location of the database files
 #DBPath: _hoddb
 
 # list of links to ontology files to load before each building
-#Ontologies:
-#    -  "$GOPATH/src/github.com/gtfierro/hod/BrickFrame.ttl"
-#    -  "$GOPATH/src/github.com/gtfierro/hod/Brick.ttl"
+Ontologies:
+    -  "BrickFrame.ttl"
+    -  "Brick.ttl"
 
 # whether or not to reload the Brick database files
 #ReloadBrick: true
@@ -31,10 +38,10 @@ Buildings:
 ####
 #
 # Enable HTTP server
-#EnableHTTP: true
+EnableHTTP: false
 #
 # Enable BOSSWAVE server
-EnableBOSSWAVE: true
+EnableBOSSWAVE: false
 
 ####
 # configuration for verbosity during operation
@@ -44,10 +51,10 @@ EnableBOSSWAVE: true
 #ShowNamespaces: true
 
 # Show the built dependency graph of query terms
-#ShowDependencyGraph: false
+#ShowDependencyGraph: true
 
 # Show the set of operations in the query plan
-#ShowQueryPlan: false
+ShowQueryPlan: true
 
 # Show the latencies of creating the query plan
 #ShowQueryPlanLatencies: false
@@ -106,10 +113,10 @@ LogLevel: Debug
 # torch graphs, you will need to keep these both at false
 
 # Enable CPU profile
-#EnableCPUProfile: false
+EnableCPUProfile: false
 
 # Enable MEM profile
 #EnableMEMProfile: false
 
 # Enable Block profile
-#EnableBlockProfile: false
+EnableBlockProfile: false

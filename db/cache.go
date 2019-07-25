@@ -57,6 +57,27 @@ func newCache(maxsize int) *dbcache {
 	return c
 }
 
+func (cache *dbcache) evictAll() {
+	cache.Lock()
+	for k := range cache.entityHashCache {
+		delete(cache.entityHashCache, k)
+	}
+	for k := range cache.entityObjectCache {
+		delete(cache.entityObjectCache, k)
+	}
+	for k := range cache.entityIndexCache {
+		delete(cache.entityIndexCache, k)
+	}
+	for k := range cache.uriCache {
+		delete(cache.uriCache, k)
+	}
+	for k := range cache.predCache {
+		delete(cache.predCache, k)
+	}
+
+	cache.Unlock()
+}
+
 func (cache *dbcache) markHitOrMiss(b bool) {
 	if b {
 		atomic.AddUint64(&cache.hit, 1)

@@ -5,6 +5,7 @@ import (
 
 	"github.com/gtfierro/hod/proto"
 	"github.com/gtfierro/hod/storage"
+	"github.com/gtfierro/hod/turtle"
 	//logrus "github.com/sirupsen/logrus"
 )
 
@@ -83,7 +84,7 @@ func (ctx *queryContext) getValuesForVariable(varname string) *keymap {
 	if found {
 		return tree
 	}
-	return emptyHashTree
+	return ctx.getValuesFromRelation(varname)
 }
 
 func (ctx *queryContext) defineVariable(varname string, values *keymap) {
@@ -170,7 +171,7 @@ func (ctx *queryContext) getResults() (results []*proto.Row) {
 	for idx, varname := range ctx.selectVars {
 		positions[idx] = ctx.variablePosition[varname]
 	}
-rowIter:
+	//rowIter:
 	for _, row := range ctx.rel.rows {
 		hash := hashRowWithPos(row, positions)
 		if _, found := jtest[hash]; found {
@@ -182,12 +183,16 @@ rowIter:
 
 		for _, varname := range ctx.selectVars {
 			val := row.valueAt(ctx.variablePosition[varname])
+			var uri turtle.URI
+			var err error
 			if val == storage.EmptyKey {
-				continue rowIter
-			}
-			uri, err := ctx.tx.getURI(row.valueAt(ctx.variablePosition[varname]))
-			if err != nil {
-				panic(err)
+				uri = turtle.URI{Value: "n/a"}
+				//continue rowIter
+			} else {
+				uri, err = ctx.tx.getURI(row.valueAt(ctx.variablePosition[varname]))
+				if err != nil {
+					panic(err)
+				}
 			}
 			resultrow.Uris = append(resultrow.Uris, &proto.URI{Namespace: uri.Namespace, Value: uri.Value})
 		}

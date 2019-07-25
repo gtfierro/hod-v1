@@ -669,6 +669,7 @@ func (op *resolveVarTripleFromSubject) run(ctx *queryContext) error {
 		}
 	})
 
+	logrus.Warning(len(relationContents))
 	rsopRelation.add3Values(subjectVar, predicateVar, objectVar, relationContents)
 	ctx.rel.join(rsopRelation, []string{subjectVar}, ctx)
 	ctx.markJoined(subjectVar)

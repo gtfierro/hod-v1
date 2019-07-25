@@ -1,8 +1,16 @@
 syntax = "proto3";
 package proto;
 
+//import "google/api/annotations.proto";
+
+
 service HodDB {
-    rpc ExecuteQuery(QueryRequest) returns (QueryResponse);
+    rpc ExecuteQuery(QueryRequest) returns (QueryResponse) {
+ //       option (google.api.http) = {
+ //           post: "/v1/hod/query"
+ //           body: "*"
+ //       };
+    }
     // rpc NotifyChange(NotifyRequest) returns (NotifyResponse);
 }
 

@@ -10,7 +10,7 @@ import "C"
 import (
 	"io"
 	"io/ioutil"
-	"log"
+	//"log"
 	"os"
 	"strings"
 	"sync"
@@ -141,11 +141,11 @@ func (p *Parser) ParseReader(r io.Reader) (DataSet, time.Duration, error) {
 	defer func() {
 		os.Remove(f.Name())
 	}()
-	n, err := io.Copy(f, r)
+	_, err = io.Copy(f, r)
 	if err != nil {
 		return *p.dataset, time.Since(start), err
 	}
-	log.Printf("Wrote %d bytes", n)
+	//log.Printf("Wrote %d bytes", n)
 	p.parseFile(f.Name())
 	took := time.Since(start)
 	return *p.dataset, took, nil
