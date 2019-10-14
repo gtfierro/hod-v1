@@ -3,37 +3,34 @@ package db
 import (
 	"bytes"
 	"sync"
+
+	"github.com/gtfierro/hod/storage"
 )
 
-type Row struct {
+type relationRow struct {
 	content []byte
 }
 
-var ROWPOOL = sync.Pool{
+var rowPool = sync.Pool{
 	New: func() interface{} {
-		return &Row{
+		return &relationRow{
 			content: make([]byte, 64),
 		}
 	},
 }
 
-func NewRow() *Row {
-	return ROWPOOL.Get().(*Row)
-}
-
-func NewRowWithNum(withnum int) *Row {
-	row := ROWPOOL.Get().(*Row)
-	row.content = make([]byte, withnum*8+8)
+func newRelationRow() *relationRow {
+	row := rowPool.Get().(*relationRow)
+	row.content = row.content[:0]
 	return row
 }
 
-func (row *Row) release() {
-	row.content = row.content[:0]
-	ROWPOOL.Put(row)
+func (row *relationRow) release() {
+	rowPool.Put(row)
 }
 
-func (row *Row) copy() *Row {
-	gr := ROWPOOL.Get().(*Row)
+func (row *relationRow) copy() *relationRow {
+	gr := rowPool.Get().(*relationRow)
 	if len(gr.content) < len(row.content) {
 		gr.content = make([]byte, len(row.content))
 	}
@@ -41,7 +38,7 @@ func (row *Row) copy() *Row {
 	return gr
 }
 
-func (row *Row) addValue(pos int, value Key) {
+func (row *relationRow) addValue(pos int, value storage.HashKey) {
 	if len(row.content) < pos*8+8 {
 		nrow := make([]byte, pos*8+8)
 		copy(nrow, row.content)
@@ -50,8 +47,8 @@ func (row *Row) addValue(pos int, value Key) {
 	copy(row.content[pos*8:], value[:])
 }
 
-func (row Row) valueAt(pos int) Key {
-	var k Key
+func (row relationRow) valueAt(pos int) storage.HashKey {
+	var k storage.HashKey
 	if pos*8+8 > len(row.content) {
 		return k
 	}
@@ -59,6 +56,6 @@ func (row Row) valueAt(pos int) Key {
 	return k
 }
 
-func (row Row) equals(other Row) bool {
+func (row relationRow) equals(other relationRow) bool {
 	return bytes.Equal(row.content[:], other.content[:])
 }

@@ -1,5 +1,6 @@
 APP?=hod
-RELEASE?=0.6.0
+RELEASE?=0.7.0-dev
+GOPATH?=${HOME}/go
 COMMIT?=$(shell git rev-parse --short HEAD)
 PROJECT?=github.com/gtfierro/hod
 PERSISTDIR?=/etc/hod
@@ -14,8 +15,19 @@ install: generate
 	CGO_CFLAGS_ALLOW=.*/github.com/gtfierro/hod/turtle go install \
 		-ldflags "-s -w -X ${PROJECT}/version.Release=${RELEASE} \
 						-X ${PROJECT}/version.Commit=${COMMIT}"
+test: generate
+	- cd db && CGO_CFLAGS_ALLOW=.*/github.com/gtfierro/hod/turtle go test -v
+	- cd storage && CGO_CFLAGS_ALLOW=.*/github.com/gtfierro/hod/turtle go test -v
+	#- cd lang && CGO_CFLAGS_ALLOW=.*/github.com/gtfierro/hod/turtle go test -v
+	- cd turtle && CGO_CFLAGS_ALLOW=.*/github.com/gtfierro/hod/turtle go test -v
+
 generate:
+	protoc -I proto -I${GOPATH}/src/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis proto/hod.proto -I${GOPATH}/src/github.com/dan-compton --go_out=plugins=grpc:proto
+	protoc -I/usr/local/include -I. -I${GOPATH}/src -I${GOPATH}/src/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis -I${GOPATH}/src/github.com/dan-compton --grpc-gateway_out=logtostderr=true:. proto/hod.proto
+	protoc -I/usr/local/include -I. -I${GOPATH}/src -I${GOPATH}/src/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis -I${GOPATH}/src/github.com/dan-compton --swagger_out=logtostderr=true:. proto/hod.proto
+	python -m grpc_tools.protoc -Iproto -I${GOPATH}/src/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis --python_out=proto --grpc_python_out=proto proto/hod.proto
 	cd server && go generate
+	- cd lang && go generate
 
 clean:
 	rm -f ${APP}

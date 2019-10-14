@@ -3,60 +3,55 @@ package db
 import (
 	"fmt"
 
-	"github.com/pkg/errors"
+	"github.com/gtfierro/hod/proto"
+	"github.com/gtfierro/hod/storage"
+	"github.com/gtfierro/hod/turtle"
+	//logrus "github.com/sirupsen/logrus"
 )
 
-var trees = newBtreePool(BTREE_DEGREE)
 var emptyHashTree = newKeymap()
 
 type queryContext struct {
 	// maps variable name to a position in a row
 	variablePosition map[string]int
 	selectVars       []string
+	rows             []*resultRow
 
 	// variable definitions
 	definitions map[string]*keymap
 
-	rel *Relation
+	rel *relation
 
 	// names of joined variables
 	joined []string
 
-	t  *traversal
-	db *DB
+	tx *transaction
 	// embedded query plan
 	*queryPlan
 }
 
-func newQueryContext(plan *queryPlan, db *DB) (*queryContext, error) {
+func newQueryContext(plan *queryPlan, tx *transaction) (*queryContext, error) {
 	variablePosition := make(map[string]int)
 	definitions := make(map[string]*keymap)
 	for idx, variable := range plan.query.Variables {
 		variablePosition[variable] = idx
 	}
 
-	snap, err := db.snapshot()
-	if err != nil {
-		return nil, errors.Wrap(err, "Could not get snapshot")
-	}
-
 	return &queryContext{
 		variablePosition: variablePosition,
 		definitions:      definitions,
 		selectVars:       plan.selectVars,
-		rel:              NewRelation(plan.query.Variables),
-		db:               db,
+		rel:              newRelation(plan.query.Variables),
+		tx:               tx,
 		queryPlan:        plan,
-		t:                &traversal{snap, db.cache},
 	}, nil
 }
 
 func (ctx *queryContext) cardinalityUnique(varname string) int {
 	if tree, found := ctx.definitions[varname]; found {
 		return tree.Len()
-	} else {
-		return 0
 	}
+	return 0
 }
 
 func (ctx *queryContext) hasJoined(varname string) bool {
@@ -68,7 +63,7 @@ func (ctx *queryContext) hasJoined(varname string) bool {
 	return false
 }
 
-func (ctx *queryContext) validValue(varname string, value Key) bool {
+func (ctx *queryContext) validValue(varname string, value storage.HashKey) bool {
 	if tree, found := ctx.definitions[varname]; found {
 		return tree.Has(value)
 	}
@@ -89,7 +84,7 @@ func (ctx *queryContext) getValuesForVariable(varname string) *keymap {
 	if found {
 		return tree
 	}
-	return emptyHashTree
+	return ctx.getValuesFromRelation(varname)
 }
 
 func (ctx *queryContext) defineVariable(varname string, values *keymap) {
@@ -117,9 +112,9 @@ func (ctx *queryContext) restrictToResolved(varname string, values *keymap) {
 	}
 	// remove bad values
 
-	var toDelete []Key
+	var toDelete []storage.HashKey
 
-	values.Iter(func(k Key) {
+	values.Iter(func(k storage.HashKey) {
 		if !tree.Has(k) {
 			toDelete = append(toDelete, k)
 		}
@@ -135,12 +130,12 @@ func (ctx *queryContext) dumpRows() {
 	}
 }
 
-func (ctx *queryContext) dumpRow(prefix string, row *Row) {
+func (ctx *queryContext) dumpRow(prefix string, row *relationRow) {
 	s := prefix + " ["
 	for varName, pos := range ctx.variablePosition {
 		val := row.valueAt(pos)
-		if val != emptyKey {
-			uri, err := ctx.t.getURI(val)
+		if val != storage.EmptyKey {
+			uri, err := ctx.tx.getURI(val)
 			if err != nil {
 				panic(err)
 			}
@@ -151,15 +146,32 @@ func (ctx *queryContext) dumpRow(prefix string, row *Row) {
 	fmt.Println(s)
 }
 
-func (ctx *queryContext) getResults() (results []*ResultRow) {
-	results = make([]*ResultRow, len(ctx.rel.rows))
+func (ctx *queryContext) release() {
+	ctx.rel.done()
+	for _, row := range ctx.rows {
+		finishResultRow(row)
+	}
+}
+
+func (ctx *queryContext) getValuesFromRelation(varname string) *keymap {
+	pos := ctx.variablePosition[varname]
+	km := newKeymap()
+	for _, row := range ctx.rel.rows {
+		val := row.valueAt(pos)
+		km.Add(val)
+	}
+	return km
+}
+
+func (ctx *queryContext) getResults() (results []*proto.Row) {
+	results = make([]*proto.Row, len(ctx.rel.rows))
 	var jtest = make(map[uint32]struct{})
 	numRows := 0
 	var positions = make([]int, len(ctx.selectVars))
 	for idx, varname := range ctx.selectVars {
 		positions[idx] = ctx.variablePosition[varname]
 	}
-rowIter:
+	//rowIter:
 	for _, row := range ctx.rel.rows {
 		hash := hashRowWithPos(row, positions)
 		if _, found := jtest[hash]; found {
@@ -167,21 +179,25 @@ rowIter:
 		}
 		jtest[hash] = struct{}{}
 
-		resultrow := getResultRow(len(ctx.selectVars))
-		for idx, varname := range ctx.selectVars {
+		var resultrow = new(proto.Row)
+
+		for _, varname := range ctx.selectVars {
 			val := row.valueAt(ctx.variablePosition[varname])
-			if val == emptyKey {
-				continue rowIter
-			}
+			var uri turtle.URI
 			var err error
-			resultrow.row[idx], err = ctx.t.getURI(row.valueAt(ctx.variablePosition[varname]))
-			if err != nil {
-				panic(err)
+			if val == storage.EmptyKey {
+				uri = turtle.URI{Value: "n/a"}
+				//continue rowIter
+			} else {
+				uri, err = ctx.tx.getURI(row.valueAt(ctx.variablePosition[varname]))
+				if err != nil {
+					panic(err)
+				}
 			}
+			resultrow.Uris = append(resultrow.Uris, &proto.URI{Namespace: uri.Namespace, Value: uri.Value})
 		}
 		results[numRows] = resultrow
 		numRows++
-		row.release()
 	}
 	return results[:numRows]
 }

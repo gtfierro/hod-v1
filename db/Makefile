@@ -4,14 +4,12 @@ cover:
 	- CGO_CFLAGS_ALLOW=.*/github.com/gtfierro/hod/turtle go test -v -coverprofile=coverage.out
 	go tool cover -html=coverage.out -o=coverage.html
 bench:
-	- CGO_CFLAGS_ALLOW=.*/github.com/gtfierro/hod/turtle go test -v -test.bench=BenchmarkQuery -test.run=xyzxyzxyz
+	- CGO_CFLAGS_ALLOW=.*/github.com/gtfierro/hod/turtle go test -v -test.bench=. -test.run=xyzxyzxyz
 bench-cpu:
-	- CGO_CFLAGS_ALLOW=.*/github.com/gtfierro/hod/turtle go test -v -test.bench=BenchmarkQuery -test.run=xyzxyzxyz -cpuprofile=cpu.out
-bench-insert-cpu:
-	- CGO_CFLAGS_ALLOW=.*/github.com/gtfierro/hod/turtle go test -v -test.bench=INSERT -test.run=xyzxyzxyz -cpuprofile=cpu.out
+	- CGO_CFLAGS_ALLOW=.*/github.com/gtfierro/hod/turtle go test -v -test.bench=. -test.run=xyzxyzxyz -cpuprofile=cpu.out
 bench-mem:
-	- CGO_CFLAGS_ALLOW=.*/github.com/gtfierro/hod/turtle go test -v -test.bench=BenchmarkQuery -test.run=xyzxyzxyz -memprofile=mem.out
-bench-insert-mem:
-	- CGO_CFLAGS_ALLOW=.*/github.com/gtfierro/hod/turtle go test -v -test.bench=INSERT -test.run=xyzxyzxyz -memprofile=mem.out
+	- CGO_CFLAGS_ALLOW=.*/github.com/gtfierro/hod/turtle go test -v -test.bench=. -test.run=xyzxyzxyz -memprofile=mem.out
+bench-alloc-mem:
+	- CGO_CFLAGS_ALLOW=.*/github.com/gtfierro/hod/turtle go test -v -test.bench=. -test.run=xyzxyzxyz -memprofile=mem.out -test.memprofilerate=1
 clean:
 	rm coverage.out mem.out cpu.out block.out

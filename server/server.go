@@ -16,7 +16,7 @@ import (
 	"github.com/rakyll/statik/fs"
 
 	"github.com/op/go-logging"
-	"github.com/pkg/profile"
+	//"github.com/pkg/profile"
 	"golang.org/x/crypto/acme/autocert"
 )
 
@@ -53,13 +53,13 @@ func StartHodServer(db *hod.HodDB, cfg *config.Config) *http.Server {
 	}
 
 	// enable profiling if configured
-	if cfg.EnableCPUProfile {
-		defer profile.Start(profile.CPUProfile, profile.ProfilePath(".")).Stop()
-	} else if cfg.EnableMEMProfile {
-		defer profile.Start(profile.MemProfile, profile.ProfilePath(".")).Stop()
-	} else if cfg.EnableBlockProfile {
-		defer profile.Start(profile.BlockProfile, profile.ProfilePath(".")).Stop()
-	}
+	//	if cfg.EnableCPUProfile {
+	//		defer profile.Start(profile.CPUProfile, profile.ProfilePath(".")).Stop()
+	//	} else if cfg.EnableMEMProfile {
+	//		defer profile.Start(profile.MemProfile, profile.ProfilePath(".")).Stop()
+	//	} else if cfg.EnableBlockProfile {
+	//		defer profile.Start(profile.BlockProfile, profile.ProfilePath(".")).Stop()
+	//	}
 
 	// configure server
 	var (

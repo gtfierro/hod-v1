@@ -5,6 +5,7 @@ _digit : '0'-'9' ;
 _quote : '"' ;
 _varchar : (_uppercase | _lowercase | _digit | '_' | '-' ) ;
 _varstring : _varchar {_varchar} ;
+_number : _digit {_digit} ;
 _urichar : ( _uppercase | _lowercase | _digit | '_' | '\\' | '-' | '#' | '%' | '$' | '@' ) ;
 _uristring : _uristring {_uristring} ;
 _char : (_uppercase | _lowercase | _digit | '_' | '-' | ' ' | ':') ;
@@ -22,21 +23,37 @@ QueryUnit
     : SelectQuery ";" << $0, nil >>
     | CountQuery  ";" << $0, nil >>
     | UpdateQuery ";" << $0, nil >>
+    | VersionsQuery ";" << $0, nil >>
     ;
 
 SelectQuery
-    : SelectClause DatasetClause WhereClause << ast.NewQueryMulti($0, $1, $2, false) >>
-    | SelectClause WhereClause  << ast.NewQuery($0, $1, false) >>
+    : SelectClause DatasetClause WhereClause TimeClause << ast.NewQueryMulti($0, $1, $2, $3, false) >>
+    | SelectClause DatasetClause WhereClause << ast.NewQueryMulti($0, $1, $2, nil, false) >>
     ;
 
 CountQuery
-    : CountClause DatasetClause WhereClause << ast.NewQueryMulti($0, $1, $2, true) >>
-    | CountClause WhereClause  << ast.NewQuery($0, $1, true) >>
+    : CountClause DatasetClause WhereClause TimeClause << ast.NewQueryMulti($0, $1, $2, $3, true) >>
+    | CountClause DatasetClause WhereClause << ast.NewQueryMulti($0, $1, $2, nil, true) >>
     ;
 
 UpdateQuery
-    : InsertClause DatasetClause WhereClause << ast.NewInsertQueryMulti($0, $1, $2, false) >>
-    | InsertClause WhereClause << ast.NewInsertQuery($0, $1, false) >>
+    : InsertClause DatasetClauseInsert WhereClause << ast.NewInsertQueryMulti($0, $1, $2, false) >>
+    ;
+
+VersionsQuery
+    : "LIST" "NAMES" << ast.NewVersionQueryNames() >>
+    | "LIST" "VERSIONS" TimeClause VersionGraphSelection LimitClause << ast.NewVersionQuery($2, $3, $4) >>
+    ;
+
+VersionGraphSelection
+    : "FOR" DBlist << ast.NewFromClause($1) >>
+    | "FOR" "*" << ast.NewAllFromClause() >>
+    | empty << ast.NewAllFromClause() >>
+    ;
+
+LimitClause
+    : "LIMIT" Number << $1, nil >>
+    | empty << -1, nil >>
     ;
 
 SelectClause
@@ -66,10 +83,25 @@ DBlist
 
 String : string << ast.ParseString($0) >> ;
 Var : var << ast.ParseString($0) >> ;
+Number : string << ast.ParseNumber($0) >> ;
 
 DatasetClause
     : "FROM" DBlist << ast.NewFromClause($1) >>
     | "FROM" "*" << ast.NewAllFromClause() >>
+    | empty << ast.NewAllFromClause() >>
+    ;
+
+DatasetClauseInsert
+    : "TO" DBlist << ast.NewFromClause($1) >>
+    | "TO" "*" << ast.NewAllFromClause() >>
+    | empty << ast.NewAllFromClause() >>
+    ;
+
+TimeClause
+    : "AT" String << ast.NewTimeClause(ast.AT, $1) >>
+    | "BEFORE" String << ast.NewTimeClause(ast.BEFORE, $1) >>
+    | "AFTER" String << ast.NewTimeClause(ast.AFTER, $1) >>
+    | empty << ast.NewTimeClause(ast.AT, "now") >>
     ;
 
 WhereClause
@@ -79,6 +111,7 @@ WhereClause
     | "WHERE" "{" TriplesBlock RestOfWhereList "}"  << ast.NewWhereClauseWithGraphGroup($2, $3) >>
     | "WHERE" "{" TriplesBlock "." RestOfWhereList "}"  << ast.NewWhereClauseWithGraphGroup($2, $4) >>
     | "WHERE" "{" RestOfWhereList "}"               << ast.NewWhereClauseGraphGroup($2) >>
+    | empty << ast.NewWhereClause([]ast.Triple{}) >>
     ;
 
 TriplesBlock

@@ -125,7 +125,7 @@ var epsilon = int64(1000)
 func (p *Parser) parseFile(filename string) {
 	extension := filepath.Ext(filename)
 	files := chunkFile(filename)
-	log.Println(files)
+	//log.Println(files)
 	switch extension {
 	case "ttl", "turtle":
 		for _, filename := range files {
@@ -144,13 +144,13 @@ func (p *Parser) parseFile(filename string) {
 
 // Given a large source file, we need to chunk it into several smaller files.
 func chunkFile(filename string) []string {
-	numlines, numbytes := getFileSize(filename)
-	log.Println("Lines:", numlines, "Bytes:", numbytes)
+	numlines, _ := getFileSize(filename)
+	//log.Println("Lines:", numlines, "Bytes:", numbytes)
 	// if more than 10 million lines, then we need to chunk
 	var numFiles = int64(-1)
 	if numlines > linecutoff+epsilon {
 		numFiles = numlines / linecutoff
-		log.Printf("Splitting %s into %d files", filename, numFiles)
+		//log.Printf("Splitting %s into %d files", filename, numFiles)
 	} else {
 		// if not too many lines, then we just return the current filename
 		return []string{filename}
